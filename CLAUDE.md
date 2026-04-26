@@ -50,3 +50,23 @@
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
 - **Minimat Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
+## Project Facts
+
+- Repo: https://github.com/ghkim887/karaoke-search (public, MIT, default branch `main`)
+- Stack: pnpm + TypeScript + Astro + MiniSearch (frontend); cheerio + undici + wanakana + robots-parser (crawler); Biome, Vitest, Playwright. Hosted on Cloudflare Pages.
+- v1 primary data source: https://j-pop-playlist.tistory.com — artist summary posts. Parser contract in design spec.
+- Spec & plan: `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, `docs/superpowers/plans/YYYY-MM-DD-<topic>-plan.md`
+
+## Git Conventions
+
+- Conventional-commit prefixes: `docs:`, `chore:`, `feat:`, `fix:`, `refactor:`, `test:`.
+- Commit body via HEREDOC; include `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailer.
+- Stage paths explicitly. Never `git add -A` or `git add .`.
+- Default branch `main`. Push to `origin`.
+
+## Orchestration (Project Rule)
+
+- Main thread is orchestrator only. Delegate every work item to a specialized agent: `executor` (code), `code-reviewer` (review), `planner` (plans/specs), `document-specialist` (external docs), `verifier` (verification evidence), `explore` (codebase search), `git-master` (git ops).
+- Never self-approve. Author and review are always separate agent passes.
+- Trivial single-tool calls in service of orchestration (a single Read to route work, a Write of a memory entry) are OK from the main thread; everything else delegates.
