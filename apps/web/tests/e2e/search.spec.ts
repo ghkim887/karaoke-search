@@ -8,7 +8,7 @@ test.skip(
 );
 
 test('search returns a result card with at least one karaoke number', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('');
 
   const searchBox = page.getByLabel('가라오케 검색');
   await expect(searchBox).toBeVisible();
