@@ -1,6 +1,6 @@
 import type { Category, SongRecord } from '@karaoke/schema';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { filterByCategories } from '../lib/filter.js';
+import { filterByCategories, filterByVendors } from '../lib/filter.js';
 import type { IndexBundle } from '../lib/search.js';
 import { loadIndex } from '../lib/search.js';
 import { CategoryChips } from './CategoryChips.js';
@@ -9,6 +9,8 @@ import { ErrorState } from './ErrorState.js';
 import { NoResults } from './NoResults.js';
 import { ResultCard } from './ResultCard.js';
 import { SearchBox } from './SearchBox.js';
+import type { Vendor } from './VendorChips.js';
+import { VendorChips } from './VendorChips.js';
 
 const RESULT_LIMIT = 50;
 const DEBOUNCE_MS = 150;
@@ -33,6 +35,7 @@ export function App() {
   const [selectedCategories, setSelectedCategories] = useState<ReadonlySet<Category>>(
     () => new Set(),
   );
+  const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -87,14 +90,24 @@ export function App() {
       const rec = bundle.byId.get(String(hit.id));
       if (rec !== undefined) records.push(rec);
     }
-    return filterByCategories(records, selectedCategories).slice(0, RESULT_LIMIT);
-  }, [bundle, query, selectedCategories]);
+    const byCategory = filterByCategories(records, selectedCategories);
+    return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
+  }, [bundle, query, selectedCategories, selectedVendors]);
 
   const toggleCategory = (c: Category) => {
     setSelectedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(c)) next.delete(c);
       else next.add(c);
+      return next;
+    });
+  };
+
+  const toggleVendor = (v: Vendor) => {
+    setSelectedVendors((prev) => {
+      const next = new Set(prev);
+      if (next.has(v)) next.delete(v);
+      else next.add(v);
       return next;
     });
   };
@@ -107,6 +120,7 @@ export function App() {
     <main class="results">
       <SearchBox value={inputValue} onInput={handleInputChange} />
       <CategoryChips selected={selectedCategories} onToggle={toggleCategory} />
+      <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
         {resultCount}건 / {resultCount} results
       </span>
