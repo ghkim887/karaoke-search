@@ -18,6 +18,12 @@ const SEARCH_BOOSTS = {
   artist_ko: 2,
 } as const;
 
+/** Return type of `loadIndex`. Bundles the search index with an id→record map. */
+export interface IndexBundle {
+  index: MiniSearch<SongRecord>;
+  byId: Map<string, SongRecord>;
+}
+
 /**
  * Build a MiniSearch index from `records`. Field values that are `null` are
  * tolerated by MiniSearch and skipped during indexing.
@@ -41,14 +47,18 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
 }
 
 /**
- * Fetch the prebuilt `songs.json` from the static `/data/` path and build a
- * MiniSearch index in memory. Intended to run client-side after hydration.
+ * Fetch the prebuilt `songs.json` from the static `/data/` path, build a
+ * MiniSearch index, and return both the index and an id→record map so callers
+ * need only one network request.
  */
-export async function loadIndex(): Promise<MiniSearch<SongRecord>> {
+export async function loadIndex(): Promise<IndexBundle> {
   const res = await fetch('/data/songs.json');
   if (!res.ok) {
     throw new Error(`Failed to load /data/songs.json: ${res.status} ${res.statusText}`);
   }
   const records = (await res.json()) as SongRecord[];
-  return buildIndex(records);
+  const index = buildIndex(records);
+  const byId = new Map<string, SongRecord>();
+  for (const r of records) byId.set(r.id, r);
+  return { index, byId };
 }
