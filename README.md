@@ -68,7 +68,7 @@ The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub 
 
 - **v2** — TJ Media direct crawler for long-tail songs the blog misses
 - **v3+** — Native crawlers for 금영 (KY) and JOYSOUND
-- **Future** — Optional Cloudflare Worker for live-fallback queries
+- **Future** — Optional serverless live-fallback for queries that miss the static index (deferred indefinitely)
 
 ## License
 

@@ -6,7 +6,7 @@ Repo: pnpm + TypeScript monorepo on `main` at HEAD `3b5a735`. v1 ships ~21,259 r
 
 ## Required GitHub repository secrets
 
-Same as v1 (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`). No new secrets in v2.
+Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 0 — Schema migration: drop `proseka`, add `vtuber`
 

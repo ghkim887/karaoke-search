@@ -302,7 +302,7 @@ Shared types live in `packages/schema`. Both `packages/crawler` and `apps/web` d
 
 ## Deployment & Data Refresh
 
-Hosting: Cloudflare Pages (free, edge, Workers-ready for the v2 TJ-direct fallback).
+Hosting: GitHub Pages (free, static, Astro `base: '/karaoke-search/'`). Original v1 design proposed Cloudflare Pages; switched to GitHub Pages during Phase 7 implementation — no functional change, simpler secrets surface.
 
 `.github/workflows/crawl.yml`:
 - Triggers: `schedule: cron '0 18 * * 0'` (Sunday 03:00 KST) and `workflow_dispatch`.
@@ -314,7 +314,7 @@ Hosting: Cloudflare Pages (free, edge, Workers-ready for the v2 TJ-direct fallba
 
 `.github/workflows/deploy.yml`:
 - Trigger: `push` to `main`.
-- Steps: checkout → pnpm install → `pnpm --filter web build` → deploy `dist/` to Cloudflare Pages via the official action.
+- Steps: checkout → pnpm install → `pnpm -r build` → upload `apps/web/dist/` via `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`.
 
 Local dev:
 
@@ -326,14 +326,14 @@ pnpm --filter web dev                         # http://localhost:4321 with hot r
 
 Test fixture: `packages/crawler/test/fixtures/songs.sample.json` is committed and used by frontend dev when no live data is around, and by Vitest unit tests.
 
-Domain: a Cloudflare Pages `*.pages.dev` URL is fine for v1; a custom domain is optional later.
+Domain: `https://ghkim887.github.io/karaoke-search/` (GitHub Pages default). Custom domain is optional later.
 
 ## Future Work (v2+)
 
 - TJ-direct crawler as a long-tail fallback. Emits official Japanese title + artist only; no Korean translation attempt.
 - KY (금영) direct crawler.
 - JOYSOUND direct crawler.
-- Possible serverless live-fallback function on Cloudflare Workers for queries that miss the static index.
+- Possible serverless live-fallback function (vendor TBD) for queries that miss the static index — deferred indefinitely; v2 redesign does not need it.
 - Optional custom domain.
 
 ## Open Questions

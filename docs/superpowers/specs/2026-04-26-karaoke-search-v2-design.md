@@ -23,7 +23,7 @@ Non-Goals:
 - Direct adapters against KY (금영) or JOYSOUND or DAM. Deferred.
 - Non-JP vtubers (Hololive EN/ID, VShojo, indies). Deferred.
 - Romaji indexing. Already removed from v1 (`title_romaji` does not exist).
-- Live-fallback search via Cloudflare Workers. Still deferred.
+- Live-fallback search via any serverless backend. Still deferred — v2 stays static.
 - Server-side search. v2 stays static; if `songs.json` outgrows the client-side index budget, fix is captured as follow-up, not v2 scope.
 
 ## User-facing changes
@@ -316,7 +316,7 @@ Estimates:
 If `songs.json` crosses 30 MB, MiniSearch's client-side index may become slow on first load (parse + index build on the main thread). v2 does NOT solve this; instead Phase 5 measures the post-crawl size and load time, and if either degrades noticeably, files a follow-up issue with one of these mitigations as the v3 candidate fix:
 1. Lazy-load the index in a Web Worker.
 2. Split `songs.json` by category and load on demand.
-3. Move to a server-side search backed by Cloudflare Workers + a pre-built FlexSearch/MiniSearch shard.
+3. Move to a server-side search (vendor TBD) backed by a pre-built FlexSearch/MiniSearch shard.
 
 For v2: just measure and document. Defer the actual fix.
 

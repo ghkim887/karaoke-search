@@ -5,8 +5,6 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 
 ## Required GitHub repository secrets (set before Phase 7)
 
-- `CLOUDFLARE_API_TOKEN` — Cloudflare Pages deploy token, scoped to `Pages: Edit` for the project.
-- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare account ID hosting the Pages project.
 - `GITHUB_TOKEN` — provided by Actions; only needs `pull-requests: write` and `contents: write` for `crawl.yml`.
 
 ## Phase 0 — Repo scaffold
@@ -200,7 +198,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 - **Goal**: Boot an Astro static site with a search library that loads `songs.json` and builds a MiniSearch index using the spec's boosts.
 - **Deliverables**:
   - `apps/web/package.json` (`"name": "@karaoke/web"`, deps: `astro`, `@astrojs/preact`, `preact`, `minisearch`, `@karaoke/schema` workspace ref).
-  - `apps/web/astro.config.mjs` (`output: 'static'`, `integrations: [preact()]`, no Cloudflare adapter yet).
+  - `apps/web/astro.config.mjs` (`output: 'static'`, `integrations: [preact()]`, `base: '/karaoke-search/'` for GitHub Pages, no platform adapter).
   - `apps/web/tsconfig.json`.
   - `apps/web/src/pages/index.astro` — header, sticky search bar shell (no JS yet), dark-mode-default styles in a top-level `<style is:global>`, loads `/data/songs.json` at runtime via fetch.
   - `apps/web/src/lib/normalize.ts` — copy of `packages/crawler/src/normalize.ts`'s `normalize()` (NOT a re-export — this file ships to the client and the crawler version pulls in Node-only deps via siblings; a pure copy avoids that). Add a unit test asserting parity with the crawler's normalize across all 7 spec worked examples.
@@ -277,7 +275,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 
 ## Phase 7 — GitHub Actions
 
-- **Goal**: Automate a weekly crawl PR and a per-push deploy to Cloudflare Pages.
+- **Goal**: Automate a weekly crawl PR and a per-push deploy to GitHub Pages.
 - **Deliverables**:
   - `.github/workflows/crawl.yml`:
     - Triggers: `schedule: - cron: '0 18 * * 0'` and `workflow_dispatch` with optional `limit` input (default `0` → no limit).
@@ -287,7 +285,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
     - Save updated cache.
   - `.github/workflows/deploy.yml`:
     - Trigger: `push: branches: [main]`.
-    - Steps: checkout, setup-node, setup-pnpm, install, `pnpm --filter @karaoke/web build`, then `cloudflare/pages-action@v1` with `apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}`, `accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}`, `projectName: karaoke-search`, `directory: apps/web/dist`.
+    - Steps: checkout, setup-node, setup-pnpm, install, `pnpm --filter @karaoke/web build`, then `actions/upload-pages-artifact@v3` with `path: apps/web/dist`, then `actions/deploy-pages@v4`. No external secrets required — GITHUB_TOKEN suffices.
   - `.github/labels.yml` (optional) for the `crawl-output` label, applied via a one-time `gh label create crawl-output` command documented in plan body.
 - **Implementation notes**:
   - The atomic rename pattern: write to `songs.json.tmp`, then `mv songs.json.tmp songs.json`. If the crawler exits non-zero, the rename never happens and `songs.json` retains its previous content.
@@ -307,11 +305,11 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - Confirm `concurrency:` group on crawl.yml.
 - **Commit message**:
   ```
-  ci: add weekly crawl PR and cloudflare pages deploy workflows
+  ci: add weekly crawl PR and GitHub Pages deploy workflows
 
   crawl.yml runs Sundays 03:00 KST and on dispatch, atomically renames
   songs.json.tmp, closes prior crawl-output PRs, opens a new one.
-  deploy.yml builds @karaoke/web and ships to Cloudflare Pages on push
+  deploy.yml builds the workspace and publishes apps/web/dist to GitHub Pages on push
   to main.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
