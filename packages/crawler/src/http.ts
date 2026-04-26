@@ -4,8 +4,9 @@ import robotsParser from 'robots-parser';
 import { request } from 'undici';
 
 const USER_AGENT = 'karaoke-search-crawler/0.1 (+https://github.com/ghkim887/karaoke-search)';
-const RATE_LIMIT_BASE_MS = 1000;
-const RATE_LIMIT_JITTER_MS = 1000; // ±0.5s uniform
+// tistory.com is large enough to handle 4-6 req/sec; bumped from 1 req/sec.
+const RATE_LIMIT_BASE_MS = 200;
+const RATE_LIMIT_JITTER_MS = 100; // ±50ms uniform → 150–250ms gap
 const CACHE_PATH = resolve(process.cwd(), '.cache', 'http.json');
 
 interface CacheEntry {
@@ -49,7 +50,7 @@ async function writeJsonFileAtomic(path: string, value: unknown): Promise<void> 
  * Polite HTTP client for crawler adapters.
  *
  *  - User-Agent fixed to the project's honest UA string.
- *  - 1 req/sec base delay with ±0.5s uniform jitter, applied per process.
+ *  - ~4-6 req/sec via 200ms base delay + ±50ms uniform jitter, applied per process.
  *  - robots.txt is fetched once per host and consulted BEFORE the rate-limit
  *    timestamp is recorded — disallowed requests do not consume a slot.
  *  - ETag / Last-Modified disk cache at `.cache/http.json` (cwd-relative). On

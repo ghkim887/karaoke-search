@@ -3,6 +3,16 @@ import { HttpClient } from '../http.js';
 import { BlogCrawler } from './jpop-playlist-blog/crawler.js';
 
 /**
+ * Per-adapter crawl options. Adapters honor `limit` themselves; the pipeline
+ * passes it through unchanged.
+ */
+export interface CrawlOptions {
+  /** Maximum number of source pages (e.g., artist pages) the adapter should
+   * fetch. `undefined` means no cap. */
+  limit?: number;
+}
+
+/**
  * Source-specific crawler. Per-spec the interface yields `RawSongRecord`, but
  * for the Phase 2 pipeline we choose to keep adapters self-normalizing — each
  * adapter runs its own raw→`SongRecord` mapping internally so the pipeline
@@ -15,7 +25,7 @@ import { BlogCrawler } from './jpop-playlist-blog/crawler.js';
  */
 export interface Crawler {
   name: string;
-  crawl(): AsyncIterable<SongRecord>;
+  crawl(options?: CrawlOptions): AsyncIterable<SongRecord>;
 }
 
 /**

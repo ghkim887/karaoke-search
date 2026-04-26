@@ -11,7 +11,8 @@ Usage:
   karaoke-crawl [--limit <n>] [--source <slug>]... [--out <path>]
 
 Options:
-  --limit <n>      Per-source record cap. 0 or omitted means no cap.
+  --limit <n>      Per-source page cap (e.g. artist pages for the blog
+                   adapter). 0 or omitted means no cap.
   --source <slug>  Restrict to adapters whose name matches <slug>. Repeatable;
                    may also be a comma-separated list. If omitted, all
                    registered adapters run in registration order.

@@ -6,7 +6,9 @@ import { mergeRecords } from './merge.js';
 
 export interface RunPipelineOptions {
   adapters: Crawler[];
-  /** Per-source cap on records; `0` or omitted means no cap. */
+  /** Per-adapter source-page cap (e.g. artist pages). `0` or omitted means no
+   * cap. The pipeline forwards this to each adapter unchanged; adapters
+   * decide what "one unit" means. */
   limit?: number;
   outPath: string;
 }
@@ -18,8 +20,10 @@ export interface RunPipelineResult {
 /**
  * Source-agnostic pipeline.
  *
- *  1. Iterate `adapters` in registration order, collecting yielded records.
- *     If `limit > 0`, cap each adapter at `limit` records.
+ *  1. Iterate `adapters` in registration order, passing `{ limit }` to each.
+ *     Each adapter is responsible for honoring the cap on its own units
+ *     (e.g. artist-page fetches), so a limit of N produces a balanced sample
+ *     rather than truncating the resulting record list arbitrarily.
  *  2. Dedupe via `mergeRecords` (spec collision rules).
  *  3. Validate every merged record against `songRecordSchema`. Any failure
  *     aborts the pipeline (the throw propagates).
@@ -27,15 +31,12 @@ export interface RunPipelineResult {
  */
 export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipelineResult> {
   const { adapters, limit, outPath } = opts;
-  const cap = typeof limit === 'number' && limit > 0 ? limit : Number.POSITIVE_INFINITY;
+  const adapterOptions = typeof limit === 'number' && limit > 0 ? { limit } : undefined;
 
   const collected: SongRecord[] = [];
   for (const adapter of adapters) {
-    let count = 0;
-    for await (const record of adapter.crawl()) {
-      if (count >= cap) break;
+    for await (const record of adapter.crawl(adapterOptions)) {
       collected.push(record);
-      count++;
     }
   }
 
