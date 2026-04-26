@@ -63,10 +63,10 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 - **Verification**:
   - `pnpm --filter @karaoke/schema test` exits 0 and reports `≥6 tests passed` (one per worked example + one per failure case: missing `source_url`, empty `categories`, bad `karaoke_numbers` shape).
   - `pnpm --filter @karaoke/schema exec tsc --noEmit` exits 0.
-  - In the test output, the line for the imase record asserts `title_ko === null` and `title_romaji === null`.
+  - In the test output, the line for the imase record asserts `title_ko === null`.
 - **Review pass** (`code-reviewer`):
   - Confirm JSON Schema's `additionalProperties: false` on the root and on `karaoke_numbers`.
-  - Confirm the type and the schema are kept in sync (spec field-name parity: `title_primary`, `title_ko`, `title_romaji`, `artist_primary`, `artist_ko`, `release_year`, `karaoke_numbers`, `categories`, `crawled_at`, `source_url`, `id`).
+  - Confirm the type and the schema are kept in sync (spec field-name parity: `title_primary`, `title_ko`, `artist_primary`, `artist_ko`, `release_year`, `karaoke_numbers`, `categories`, `crawled_at`, `source_url`, `id`).
   - Confirm `validateSongRecord` is an `asserts` function (not a boolean predicate) so callers get refinement.
   - Confirm `Category` does NOT include any value outside the 5 listed in the spec.
 - **Commit message**:
@@ -83,41 +83,38 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 
 ## Phase 2 — Crawler core (no adapters)
 
-- **Goal**: Land the source-agnostic crawler pipeline (interface, registry, HTTP client, normalization, merger, romaji predicate, CLI) before any adapter exists.
+- **Goal**: Land the source-agnostic crawler pipeline (interface, registry, HTTP client, normalization, merger, CLI) before any adapter exists.
 - **Deliverables**:
-  - `packages/crawler/package.json` (`"name": "@karaoke/crawler"`, deps: `undici`, `cheerio`, `robots-parser`, `wanakana`, `ajv`, `ajv-formats`; devDeps: `vitest`, `@types/node`).
+  - `packages/crawler/package.json` (`"name": "@karaoke/crawler"`, deps: `undici`, `cheerio`, `robots-parser`, `ajv`, `ajv-formats`; devDeps: `vitest`, `@types/node`).
   - `packages/crawler/tsconfig.json`.
   - `packages/crawler/src/cli.ts` — `commander`-free hand-rolled flag parser for `--limit <n>`, `--source <slug>` (repeatable), `--out <path>` (default `apps/web/public/data/songs.json`).
   - `packages/crawler/src/pipeline.ts` — `runPipeline({ adapters, limit, outPath })`: iterates registered adapters, normalizes, dedupes via merger, validates against schema, writes `outPath.tmp` and renames.
   - `packages/crawler/src/http.ts` — undici-based fetcher with: 1 req/sec base delay, ±0.5s uniform jitter, in-process ETag/Last-Modified cache (file-backed at `.cache/http.json`), per-host `robots-parser` gate, honest UA `karaoke-search-crawler/0.1 (+https://github.com/ghkim887/karaoke-search)`.
-  - `packages/crawler/src/merge.ts` — `mergeRecords(records: SongRecord[]): SongRecord[]` keyed on `normalize(title_primary) + "|" + normalize(artist_primary)`. Fields `title_primary`, `title_ko`, `title_romaji`, `artist_primary`, `artist_ko`, `source_url` taken from registration-order winner; if same source, lower `crawled_at` wins. `karaoke_numbers` fields merged taking first non-null. `categories` set-unioned and re-sorted alphabetically.
+  - `packages/crawler/src/merge.ts` — `mergeRecords(records: SongRecord[]): SongRecord[]` keyed on `normalize(title_primary) + "|" + normalize(artist_primary)`. Fields `title_primary`, `title_ko`, `artist_primary`, `artist_ko`, `source_url` taken from registration-order winner; if same source, lower `crawled_at` wins. `karaoke_numbers` fields merged taking first non-null. `categories` set-unioned and re-sorted alphabetically.
   - `packages/crawler/src/normalize.ts` — exported `normalize(s: string): string` performing NFKC → `toLocaleLowerCase('und')` → strip everything outside `\p{L}\p{N}\p{M}` (use `/[^\p{L}\p{N}\p{M}]/gu`).
-  - `packages/crawler/src/romaji.ts` — `needsRomaji(title: string): boolean` returns `wanakana.isJapanese(title.normalize('NFKC'))`; `toRomaji(title: string): string` returns `wanakana.toRomaji(title.normalize('NFKC'))`.
   - `packages/crawler/src/adapters/index.ts` — `Crawler` interface + empty `adapters: Crawler[] = []` array (registration order is array order). Includes a `registerAdapter(c: Crawler)` for tests.
-  - Unit tests: `packages/crawler/test/normalize.test.ts`, `merge.test.ts`, `romaji.test.ts`.
+  - Unit tests: `packages/crawler/test/normalize.test.ts`, `merge.test.ts`.
 - **Implementation notes**:
   - Normalize worked examples (spec Section Data Model lines 99–106): assert `normalize('DECO*27') === 'deco27'`, `normalize('ヨルシカ') === 'ヨルシカ'`, `normalize('米津玄師') === '米津玄師'`, `normalize('YOASOBI') === 'yoasobi'`, `normalize('imase') === 'imase'`, `normalize('花に亡霊 (movie ver.)') === '花に亡霊moviever'`, `normalize('Mrs. GREEN APPLE') === 'mrsgreenapple'`.
-  - Romaji predicate worked examples (spec Section Frontend Romaji search): `needsRomaji('Lemon') === false`, `needsRomaji('NIGHT DANCER') === false`, `needsRomaji('Ｉｄｏｌ') === false` (post-NFKC becomes ASCII), `needsRomaji('花に亡霊 (movie ver.)') === true`, `needsRomaji('あぶく') === true`. Note: wanakana's `isJapanese` accepts ASCII space/punct as Japanese-compatible; mixed Japanese+Latin titles still return true after NFKC because they contain at least one kana/kanji.
   - Merge tests cover: (a) two sources both providing a number → both retained; (b) both sources providing the same number → first wins, no duplicates; (c) categories union deduped + sorted; (d) within-source tie broken by `crawled_at`.
   - HTTP rate limit: track last-request timestamp; sleep `1000 + (rand() - 0.5) * 1000` ms before each request. Tests for `http.ts` are skipped in CI (require network); leave a plain `// integration: run locally` comment instead.
   - CLI parser: split `process.argv.slice(2)`, simple loop, throw on unknown flag.
 - **Verification**:
-  - `pnpm --filter @karaoke/crawler test` exits 0 and prints `≥12 tests passed` across the three test files (5 normalize + 4 merge + 3 romaji minimum).
+  - `pnpm --filter @karaoke/crawler test` exits 0 and prints `≥9 tests passed` across the two test files (5 normalize + 4 merge minimum).
   - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
   - Running `node packages/crawler/dist/cli.js --help` (after `tsc -b`) exits 0 with usage text mentioning `--limit`, `--source`, `--out`.
 - **Review pass** (`code-reviewer`):
   - Confirm `mergeRecords` tie-break order matches spec Section Crawler Architecture stage 3 exactly: registration-order winner first, then lower `crawled_at` for same-source ties.
   - Confirm `normalize` strips characters using a single Unicode-property regex and not a hand-rolled blacklist.
   - Confirm `http.ts` queries `robots-parser` BEFORE recording the rate-limit timestamp (rejected requests should not consume the rate-limit slot).
-  - Confirm wanakana is NOT imported by anything in `apps/web/`.
   - Confirm CLI rejects unknown flags rather than silently ignoring them.
 - **Commit message**:
   ```
   feat(crawler): add source-agnostic pipeline core
 
   Land Crawler interface, adapter registry, undici-based rate-limited
-  fetcher, normalize()/merge()/romaji predicate, and CLI shell. Cover
-  spec worked examples in unit tests; no adapters yet.
+  fetcher, normalize()/merge(), and CLI shell. Cover spec worked
+  examples in unit tests; no adapters yet.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
@@ -129,7 +126,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 - **Deliverables**:
   - `packages/crawler/src/adapters/jpop-playlist-blog/parser.ts` — exports `parseArtistPage(html: string, sourceUrl: string): RawSongRecord[]`. Uses cheerio with the locked selectors from spec Section Parser contract: `div.tt_article_useless_p_margin table` (first table descendant), then `tbody > tr`, then `tr > td` (exactly 4). Splits cell 1 on `<br>`, unwraps `<strong>`/`<b>`/`<span>` before reading text. Hyphen/em-dash/en-dash → `null`. Empty / `&nbsp;`-only / whitespace-only cells → `null`.
   - `packages/crawler/src/adapters/jpop-playlist-blog/crawler.ts` — fetches `/98` and `/417`, extracts artist post URLs (`href` matching `^/\d+$`), dedupes URLs, fetches each artist page, calls parser, tags categories from index source(s) (URL appearing in both indexes ⇒ `["jpop", "vocaloid"]`), threads `RawSongRecord` to a normalizer.
-  - `packages/crawler/src/adapters/jpop-playlist-blog/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Generates `title_romaji` via `romaji.ts` only when `needsRomaji(title_primary)` and source did not provide a romaji. Builds `id` as `blog-${path-id}` from the artist URL plus a per-row index suffix when multiple rows share the artist (`blog-449-0`, `blog-449-1`...).
+  - `packages/crawler/src/adapters/jpop-playlist-blog/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Builds `id` as `blog-${path-id}` from the artist URL plus a per-row index suffix when multiple rows share the artist (`blog-449-0`, `blog-449-1`...).
   - `packages/crawler/src/adapters/index.ts` — append `BlogCrawler` instance to the `adapters` array.
   - `packages/crawler/test/fixtures/blog/ayase-449.html` (committed snapshot, fetched once and pretty-printed minimally to keep diff readable).
   - `packages/crawler/test/fixtures/blog/radwimps-215.html` (same).
@@ -152,7 +149,6 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - Confirm parser handles the case where `<br>` is `<br/>` or `<br>` interchangeably (cheerio normalizes — verify with a unit test).
   - Confirm hyphen normalization covers all three of `-` (U+002D), `–` (U+2013), `—` (U+2014) per spec.
   - Confirm crawler dedupes artist URLs across `/98` and `/417` BEFORE fetching, not after.
-  - Confirm normalizer never invents a `title_romaji` for already-Latin titles (`Lemon` → `null`).
   - Confirm fixtures are referenced by relative paths from the test file and the SHA-256 sidecar files exist.
 - **Commit message**:
   ```
@@ -208,7 +204,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - `apps/web/tsconfig.json`.
   - `apps/web/src/pages/index.astro` — header, sticky search bar shell (no JS yet), dark-mode-default styles in a top-level `<style is:global>`, loads `/data/songs.json` at runtime via fetch.
   - `apps/web/src/lib/normalize.ts` — copy of `packages/crawler/src/normalize.ts`'s `normalize()` (NOT a re-export — this file ships to the client and the crawler version pulls in Node-only deps via siblings; a pure copy avoids that). Add a unit test asserting parity with the crawler's normalize across all 7 spec worked examples.
-  - `apps/web/src/lib/search.ts` — `loadIndex(): Promise<MiniSearch<SongRecord>>` with field boosts from spec Section Frontend (`title_primary: 3, title_ko: 3, artist_primary: 2, artist_ko: 2, title_romaji: 1`), `searchOptions: { fuzzy: 0.2, prefix: true }`, `processTerm: (term) => normalize(term)`. Index documents using `id` as the MiniSearch key.
+  - `apps/web/src/lib/search.ts` — `loadIndex(): Promise<MiniSearch<SongRecord>>` with field boosts from spec Section Frontend (`title_primary: 3, title_ko: 3, artist_primary: 2, artist_ko: 2`), `searchOptions: { fuzzy: 0.2, prefix: true }`, `processTerm: (term) => normalize(term)`. Index documents using `id` as the MiniSearch key.
   - `apps/web/src/lib/search.test.ts` — Vitest unit test loading the sample fixture and asserting basic search returns hits.
   - `apps/web/vitest.config.ts`.
   - `apps/web/public/data/songs.json` — symlink target. If Phase 4 committed the live file, leave it; otherwise copy the sample fixture into `public/data/songs.json` so dev server has data.
@@ -222,16 +218,16 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - Running `pnpm --filter @karaoke/web dev` (manually, not in CI) and visiting `http://localhost:4321` shows a page that fetches `/data/songs.json` (verify in browser devtools network tab).
 - **Review pass** (`code-reviewer`):
   - Confirm `apps/web/src/lib/normalize.ts` does NOT import from `packages/crawler/`.
-  - Confirm MiniSearch boosts exactly match spec values (3,3,2,2,1).
+  - Confirm MiniSearch boosts exactly match spec values (3,3,2,2).
   - Confirm `output: 'static'` in `astro.config.mjs`.
-  - Confirm `apps/web` does not depend on `wanakana` or `cheerio` (crawler-only deps).
+  - Confirm `apps/web` does not depend on `cheerio` (crawler-only dep).
   - Confirm the parity test would actually fail if crawler-side normalize drifted.
 - **Commit message**:
   ```
   feat(web): scaffold astro static site with minisearch index
 
   Add Astro + Preact island setup, search.ts (MiniSearch with spec
-  boosts 3/3/2/2/1, fuzzy 0.2, prefix), and a client-side normalize.ts
+  boosts 3/3/2/2, fuzzy 0.2, prefix), and a client-side normalize.ts
   parity-tested against the crawler's normalize.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
@@ -250,16 +246,14 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - `apps/web/src/components/EmptyState.tsx` — shows featured artists; clicking one populates the search box.
   - `apps/web/src/components/NoResults.tsx` — bilingual "검색 결과가 없습니다 / 該当なし" + v2 hint.
   - Update `apps/web/src/pages/index.astro` to mount `<App client:load />`.
-  - `apps/web/src/lib/search.test.ts` — extend with two new tests:
-    - `query "abuku" matches a record with title_primary "あぶく"` (proves romaji index path; requires sample fixture to include such a record — add it in Phase 4 if missing, or skip the test with a gating record present).
+  - `apps/web/src/lib/search.test.ts` — extend with one new test:
     - `category filter is AND, not OR`: with selected `{jpop, anime}`, a record with `categories: ["jpop"]` does NOT match; a record with `categories: ["jpop", "anime"]` does match.
 - **Implementation notes**:
   - Top 50 cap: `results.slice(0, 50)`.
-  - The romaji search test depends on the sample fixture containing a record whose `title_primary` is in Japanese script and whose `title_romaji` is generated. If Phase 4's sample doesn't include one, augment the sample in this phase BEFORE adding the test (commit fixture change in same phase).
   - Click-to-copy uses optional chaining for older browsers without `navigator.clipboard`; fall back to a hidden textarea + `document.execCommand('copy')` only if needed (not required by spec — note as future-work in code comment if skipped).
   - Featured artists list: use names that exist in the live `songs.json` so clicking a featured chip yields hits.
 - **Verification**:
-  - `pnpm --filter @karaoke/web test` exits 0; the romaji test passes (`query "abuku"` returns ≥1 hit) and the AND filter test passes both branches.
+  - `pnpm --filter @karaoke/web test` exits 0; the AND filter test passes both branches.
   - `pnpm --filter @karaoke/web build` exits 0 and `dist/_astro/*.js` exists (Astro emits client islands here).
   - Manual: `pnpm --filter @karaoke/web dev`, type `"yoasobi"`, observe ≥1 result card; click a number badge, observe clipboard contains the digits.
 - **Review pass** (`code-reviewer`):

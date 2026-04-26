@@ -1,6 +1,6 @@
 # Karaoke Search Web — Design Spec
 
-A public, no-auth static web app for searching Japanese and Vocaloid songs available on Korean karaoke machines. Users query in Japanese, Korean, romaji, or Latin-script artist names and receive cross-system karaoke numbers (TJ Media, 금영, JOYSOUND) for each match. The system is built around a universal song-record schema, a pluggable adapter-based crawler pipeline, and a static Astro frontend with client-side full-text search.
+A public, no-auth static web app for searching Japanese and Vocaloid songs available on Korean karaoke machines. Users query in Japanese, Korean, or Latin-script artist names and receive cross-system karaoke numbers (TJ Media, 금영, JOYSOUND) for each match. The system is built around a universal song-record schema, a pluggable adapter-based crawler pipeline, and a static Astro frontend with client-side full-text search.
 
 ## Status
 
@@ -12,7 +12,7 @@ A public, no-auth static web app for searching Japanese and Vocaloid songs avail
 
 Goals:
 - Search-only public web app accessible without accounts.
-- Multi-script search: Japanese title, official Korean translated title, romaji, Japanese artist name, Korean artist name, Latin-script artist name.
+- Multi-script search: Japanese title, official Korean translated title, Japanese artist name, Korean artist name, Latin-script artist name.
 - Cross-source karaoke numbers (TJ Media / 금영 / JOYSOUND) shown together per song.
 - Pluggable crawler architecture so additional sources (KY-direct, JOYSOUND-direct, DAM, etc.) drop in as new adapters without schema or frontend changes.
 - Mobile-first UX optimized for use at a karaoke machine (click-to-copy numbers, dark mode).
@@ -78,7 +78,6 @@ All crawlers normalize into a single record shape. The frontend reads only this 
   "source_url": "https://j-pop-playlist.tistory.com/1596",
   "title_primary": "あぶく",          // official primary title — any script (ja/en/mixed)
   "title_ko": "거품",                 // official Korean title (nullable)
-  "title_romaji": "abuku",            // romanization for Latin-keyboard search (nullable; skip for already-Latin titles)
   "artist_primary": "ヨルシカ",       // official primary artist — any script (e.g. "imase", "YOASOBI", "ヨルシカ", "米津玄師")
   "artist_ko": "요루시카",            // (nullable)
   "release_year": 2023,               // int, nullable
@@ -118,7 +117,6 @@ Worked examples:
 {
   "title_primary": "NIGHT DANCER",
   "title_ko": null,
-  "title_romaji": null,
   "artist_primary": "imase",
   "artist_ko": "이마세"
 }
@@ -129,7 +127,6 @@ Worked examples:
 {
   "title_primary": "アイドル",
   "title_ko": "아이돌",
-  "title_romaji": "idol",
   "artist_primary": "YOASOBI",
   "artist_ko": "요아소비"
 }
@@ -140,7 +137,6 @@ Worked examples:
 {
   "title_primary": "Lemon",
   "title_ko": null,
-  "title_romaji": null,
   "artist_primary": "米津玄師",
   "artist_ko": "요네즈 켄시"
 }
@@ -151,7 +147,6 @@ Search index (client-side MiniSearch) field boosts:
 - `title_ko` (3x)
 - `artist_primary` (2x)
 - `artist_ko` (2x)
-- `title_romaji` (1x)
 
 ## Crawler Architecture
 
@@ -174,8 +169,8 @@ Pipeline:
 
 Stage roles:
 1. Crawler — source-specific. Knows the source's HTML and URLs. Emits raw records.
-2. Normalizer — source-specific. Maps raw records to the universal `SongRecord`. Includes wanakana (Hepburn) romaji generation when the title is Japanese script and `title_romaji` is missing.
-3. Deduper / Merger — source-agnostic. Key = `normalize(title_primary) + "|" + normalize(artist_primary)`. On collision: merge `karaoke_numbers` (take non-null from each source) and accumulate `categories` as a set union. On collision, the **first record wins for `title_primary`, `title_ko`, `title_romaji`, `artist_primary`, `artist_ko`, and `source_url`**. "First" is determined by source adapter registration order in `packages/crawler/src/adapters/index.ts`. Ties within a single source (same source emits two records that collide on the identity key) are resolved by lower `crawled_at` timestamp.
+2. Normalizer — source-specific. Maps raw records to the universal `SongRecord`.
+3. Deduper / Merger — source-agnostic. Key = `normalize(title_primary) + "|" + normalize(artist_primary)`. On collision: merge `karaoke_numbers` (take non-null from each source) and accumulate `categories` as a set union. On collision, the **first record wins for `title_primary`, `title_ko`, `artist_primary`, `artist_ko`, and `source_url`**. "First" is determined by source adapter registration order in `packages/crawler/src/adapters/index.ts`. Ties within a single source (same source emits two records that collide on the identity key) are resolved by lower `crawled_at` timestamp.
 4. Output — single `apps/web/public/data/songs.json`.
 
 v1 crawler — `BlogCrawler` (`jpop-playlist-blog` source):
@@ -224,7 +219,6 @@ Indexed fields and boosts:
 - `title_ko` (3x)
 - `artist_primary` (2x)
 - `artist_ko` (2x)
-- `title_romaji` (1x)
 
 Search settings:
 - Debounce: 150ms.
@@ -235,17 +229,14 @@ Search settings:
 - Category chips in v1 UI: `[ jpop ] [ vocaloid ] [ anime ]`. The `proseka` category is stored in the data but not exposed as a chip in v1. It becomes a chip when category coverage exceeds an arbitrary minimum (e.g., 20 songs).
 - Result cap: top 50, no pagination in v1.
 
+Romaji indexing is intentionally not provided in v1; mixed-script titles are searchable via title_primary normalization (NFKC + casefold).
+
 UI affordances:
 - Click-to-copy on each TJ/KY/JOY badge.
 - Monospace badges; missing values dimmed with em-dash.
 - Year and category tags on each card.
 - "Source ↗" link to `source_url` for attribution.
 - Dark mode default. Mobile-first layout: sticky search bar, single-column cards, tap-friendly badges.
-
-Romaji search:
-- Romaji is generated in the normalizer when `wanakana.isJapanese(NFKC(title_primary))` returns true. This excludes pure-Latin titles (`'Lemon'`, `'NIGHT DANCER'`) and fullwidth-Latin titles (`'Ｉｄｏｌ'`). For mixed-script titles containing any kana or kanji (`'花に亡霊 (movie ver.)'`), romaji is generated for the full string after `wanakana.toRomaji(NFKC(title_primary))`. If the source already supplied `title_romaji`, the source value is preserved unchanged. Generated romaji is stored in the search index but not displayed in UI.
-- Treated as transliteration, not invented content; does not violate the "official names only" rule.
-- wanakana runs in the crawler only and is not shipped to the client bundle.
 
 ## Repository Layout
 
@@ -282,7 +273,6 @@ karaoke/
         │   ├── cli.ts
         │   ├── pipeline.ts
         │   ├── http.ts
-        │   ├── romaji.ts
         │   ├── merge.ts
         │   └── adapters/
         │       ├── index.ts
@@ -303,7 +293,6 @@ karaoke/
 - cheerio — HTML parsing in crawler adapters.
 - undici — Node-native fetch in the crawler with ETag/Last-Modified caching.
 - robots-parser — checks `robots.txt` rules per host before fetching. Used by `packages/crawler/src/http.ts` as a gate on every request. Cached per-host for the duration of the run.
-- wanakana — Hepburn romaji generation, crawler-side only; not shipped to the client.
 - MiniSearch — ~6 KB client bundle, client-side full-text search.
 - Astro static — static site output with small TSX islands.
 - Vitest — unit tests for parser, normalizer, and merger.
