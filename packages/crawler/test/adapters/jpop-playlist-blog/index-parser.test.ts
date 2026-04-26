@@ -38,4 +38,16 @@ describe('parseIndexPage — synthetic', () => {
     </body></html>`;
     expect(parseIndexPage(html)).toEqual(['/449', '/215']);
   });
+
+  it('skips ranking/chart anchors, keeps artist anchors', () => {
+    const html = `<html><body>
+      <a href="/449">아야세 Ayase</a>
+      <a href="/1583">2026년 3월 조이사운드 월간 랭킹 [일본 노래방 순위]</a>
+      <a href="/9999">Annual Top 100 일본 차트</a>
+      <a href="/215">RADWIMPS</a>
+    </body></html>`;
+    // /1583 matches 월간, 랭킹, 순위 — skipped
+    // /9999 matches Top 100, 차트 — skipped
+    expect(parseIndexPage(html)).toEqual(['/449', '/215']);
+  });
 });

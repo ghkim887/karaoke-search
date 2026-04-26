@@ -14,6 +14,19 @@ import { load } from 'cheerio';
 const RELATIVE_RE = /^\/\d+$/;
 const ABSOLUTE_RE = /^https?:\/\/j-pop-playlist\.tistory\.com(\/\d+)$/;
 
+/**
+ * Matches anchor visible text that indicates a ranking / chart post rather
+ * than an artist-summary post. These include periodic JOYSOUND / karaoke
+ * ranking posts (e.g. "/1583 2026년 3월 일본 노래방 순위") that appear in the
+ * same index pages as artist posts but contain no useful song data.
+ *
+ * Korean terms: 랭킹 (ranking), 순위 (rank/chart), 차트 (chart),
+ *               월간 (monthly), 연간 (annual), 주간 (weekly),
+ *               연말 (year-end), 연초 (new-year).
+ * Latin pattern: Top N (e.g. "Top 100").
+ */
+const RANKING_TEXT_RE = /(랭킹|순위|차트|월간|연간|주간|연말|연초|top\s*\d+)/i;
+
 export function parseIndexPage(html: string): string[] {
   const $ = load(html);
   const seen = new Set<string>();
@@ -29,6 +42,10 @@ export function parseIndexPage(html: string): string[] {
       if (m) path = m[1] ?? null;
     }
     if (path === null) return;
+    // Skip ranking/chart posts — they share the same numeric-path shape as
+    // artist posts but contain no artist song tables.
+    const text = $(el).text().trim();
+    if (RANKING_TEXT_RE.test(text)) return;
     if (seen.has(path)) return;
     seen.add(path);
     out.push(path);
