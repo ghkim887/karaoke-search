@@ -1,4 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
+import { HttpClient } from '../http.js';
+import { BlogCrawler } from './jpop-playlist-blog/crawler.js';
 
 /**
  * Source-specific crawler. Per-spec the interface yields `RawSongRecord`, but
@@ -17,14 +19,27 @@ export interface Crawler {
 }
 
 /**
- * Registration-order list. Phase 3 appends the BlogCrawler instance here.
+ * Construct the registered adapter set. Phase 3 registers the
+ * `jpop-playlist-blog` BlogCrawler. Returning a fresh array per call keeps
+ * adapters with mutable internal state (HTTP cache, robots cache) isolated
+ * across pipeline runs in tests.
+ *
  * The merger uses array order as registration order for collision tie-breaks.
  */
-export const adapters: Crawler[] = [];
+export function buildAdapters(http: HttpClient): Crawler[] {
+  return [new BlogCrawler(http)];
+}
 
 /**
- * Append a crawler to the registry. Exposed primarily for tests; production
- * code should rely on the static `adapters` array shape.
+ * Default adapter set bound to a single shared `HttpClient`. The CLI consumes
+ * this directly. Tests that need adapter isolation should call
+ * `buildAdapters(new HttpClient())` instead.
+ */
+export const adapters: Crawler[] = buildAdapters(new HttpClient());
+
+/**
+ * Append a crawler to the default registry. Exposed primarily for tests;
+ * production code should rely on the static `adapters` array shape.
  */
 export function registerAdapter(c: Crawler): void {
   adapters.push(c);
