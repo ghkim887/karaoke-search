@@ -1,0 +1,3 @@
+- name: crawl-output
+  color: 0e8a16
+  description: Automated crawl output PR

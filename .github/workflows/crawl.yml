@@ -1,0 +1,75 @@
+name: crawl
+
+on:
+  schedule:
+    - cron: '0 18 * * 6'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max artists to crawl (0 = no limit)'
+        required: false
+        type: number
+        default: 0
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Restore HTTP cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/http.json
+          key: "crawl-http-${{ github.run_id }}"
+          restore-keys: |
+            crawl-http-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build crawler
+        run: pnpm --filter @karaoke/crawler exec tsc -b
+
+      - name: Run crawler
+        run: pnpm --filter @karaoke/crawler start -- --limit "${{ inputs.limit || 0 }}" --out apps/web/public/data/songs.json.tmp
+
+      - name: Atomic rename output
+        run: node -e "require('node:fs').renameSync('apps/web/public/data/songs.json.tmp','apps/web/public/data/songs.json')"
+
+      - name: Close prior crawl PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr list --label crawl-output --state open --json number -q '.[].number' | xargs -r -n1 gh pr close
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: "crawl/${{ github.run_id }}"
+          commit-message: "data: weekly crawl ${{ github.run_id }}"
+          title: "data: weekly crawl ${{ github.run_id }}"
+          body: |
+            Automated crawl output. See workflow run for logs.
+          labels: crawl-output
+          add-paths: apps/web/public/data/songs.json
