@@ -25,6 +25,7 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
       - run: pnpm --filter @karaoke/web build
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -46,11 +46,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build crawler
-        run: pnpm --filter @karaoke/crawler exec tsc -b
+      - name: Build packages
+        run: pnpm -r build
 
       - name: Run crawler
-        run: pnpm --filter @karaoke/crawler start -- --limit "${{ inputs.limit || 0 }}" --out apps/web/public/data/songs.json.tmp
+        run: pnpm --filter @karaoke/crawler start --limit "${{ inputs.limit || 0 }}" --out apps/web/public/data/songs.json.tmp
 
       - name: Atomic rename output
         run: node -e "require('node:fs').renameSync('apps/web/public/data/songs.json.tmp','apps/web/public/data/songs.json')"

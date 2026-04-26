@@ -29,7 +29,7 @@ interface ParsedArgs {
   help: boolean;
 }
 
-function parseArgs(argv: string[]): ParsedArgs {
+export function parseArgs(argv: string[]): ParsedArgs {
   const out: ParsedArgs = {
     limit: 0,
     sources: [],
@@ -38,6 +38,11 @@ function parseArgs(argv: string[]): ParsedArgs {
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
+    // Tolerate a literal `--` separator (pnpm convention) instead of
+    // treating it as an unknown flag. Continue parsing the rest of argv.
+    if (arg === '--') {
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       out.help = true;
       continue;

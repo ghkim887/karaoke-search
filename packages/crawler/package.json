@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "prestart": "tsc -b",
     "start": "node ./dist/cli.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
