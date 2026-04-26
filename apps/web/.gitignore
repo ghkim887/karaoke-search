@@ -2,3 +2,7 @@
 # packages/crawler/test/fixtures/songs.sample.json.
 public/data/songs.json
 public/data/songs.json.tmp
+
+# Playwright artifacts
+playwright-report/
+test-results/
