@@ -8,7 +8,6 @@ function record(over: Partial<SongRecord>): SongRecord {
     source_url: 'https://example.test/1',
     title_primary: 'あぶく',
     title_ko: null,
-    title_romaji: 'abuku',
     artist_primary: 'ヨルシカ',
     artist_ko: null,
     release_year: 2023,

@@ -15,13 +15,12 @@ expectTypeOf<SongRecord['karaoke_numbers']>().toEqualTypeOf<KaraokeNumbers>();
 const baseKaraokeNumbers: KaraokeNumbers = { tj: null, ky: null, joysound: null };
 
 describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
-  it('accepts imase – NIGHT DANCER and asserts title_ko/title_romaji are null', () => {
+  it('accepts imase – NIGHT DANCER and asserts title_ko is null', () => {
     const record: SongRecord = {
       id: 'blog-1700-0',
       source_url: 'https://j-pop-playlist.tistory.com/1700',
       title_primary: 'NIGHT DANCER',
       title_ko: null,
-      title_romaji: null,
       artist_primary: 'imase',
       artist_ko: '이마세',
       release_year: 2022,
@@ -31,9 +30,8 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
     };
 
     expect(() => validateSongRecord(record)).not.toThrow();
-    // Per plan Phase 1 verification: explicit null assertions for the imase row.
+    // Per plan Phase 1 verification: explicit null assertion for the imase row.
     expect(record.title_ko).toBeNull();
-    expect(record.title_romaji).toBeNull();
   });
 
   it('accepts YOASOBI – アイドル', () => {
@@ -42,7 +40,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       source_url: 'https://j-pop-playlist.tistory.com/1596',
       title_primary: 'アイドル',
       title_ko: '아이돌',
-      title_romaji: 'idol',
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       release_year: 2023,
@@ -60,7 +57,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       source_url: 'https://j-pop-playlist.tistory.com/823',
       title_primary: 'Lemon',
       title_ko: null,
-      title_romaji: null,
       artist_primary: '米津玄師',
       artist_ko: '요네즈 켄시',
       release_year: 2018,
@@ -79,7 +75,6 @@ describe('validateSongRecord — failure cases', () => {
       id: 'blog-1-0',
       title_primary: 'Foo',
       title_ko: null,
-      title_romaji: null,
       artist_primary: 'Bar',
       artist_ko: null,
       release_year: 2020,
@@ -97,7 +92,6 @@ describe('validateSongRecord — failure cases', () => {
       source_url: 'https://example.com/1',
       title_primary: 'Foo',
       title_ko: null,
-      title_romaji: null,
       artist_primary: 'Bar',
       artist_ko: null,
       release_year: 2020,
@@ -115,7 +109,6 @@ describe('validateSongRecord — failure cases', () => {
       source_url: 'https://example.com/1',
       title_primary: 'Foo',
       title_ko: null,
-      title_romaji: null,
       artist_primary: 'Bar',
       artist_ko: null,
       release_year: 2020,
@@ -126,6 +119,24 @@ describe('validateSongRecord — failure cases', () => {
 
     expect(() => validateSongRecord(bad)).toThrowError(/karaoke_numbers/);
   });
+
+  it('rejects a record that includes the dropped title_romaji field', () => {
+    const bad = {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/1',
+      title_primary: 'Foo',
+      title_ko: null,
+      title_romaji: 'foo',
+      artist_primary: 'Bar',
+      artist_ko: null,
+      release_year: 2020,
+      karaoke_numbers: { ...baseKaraokeNumbers },
+      categories: ['jpop'],
+      crawled_at: '2026-04-26T10:00:00Z',
+    };
+
+    expect(() => validateSongRecord(bad)).toThrowError(/additional properties/i);
+  });
 });
 
 describe('RawSongRecord type shape', () => {
@@ -134,7 +145,6 @@ describe('RawSongRecord type shape', () => {
       source_url: 'https://j-pop-playlist.tistory.com/1596',
       title_primary: 'アイドル',
       title_ko: '아이돌',
-      title_romaji: null,
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       release_year: 2023,
@@ -146,5 +156,8 @@ describe('RawSongRecord type shape', () => {
     // Type-level: RawSongRecord must NOT have id or crawled_at.
     expectTypeOf<RawSongRecord>().not.toHaveProperty('id');
     expectTypeOf<RawSongRecord>().not.toHaveProperty('crawled_at');
+    // Type-level: title_romaji has been removed from the schema.
+    expectTypeOf<RawSongRecord>().not.toHaveProperty('title_romaji');
+    expectTypeOf<SongRecord>().not.toHaveProperty('title_romaji');
   });
 });

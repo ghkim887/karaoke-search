@@ -86,9 +86,9 @@ function pickWinner(group: GroupEntry[]): GroupEntry {
  * `normalize(title_primary) + "|" + normalize(artist_primary)`.
  *
  * Collision rules (spec Section Crawler Architecture stage 3):
- *  - `title_primary`, `title_ko`, `title_romaji`, `artist_primary`,
- *    `artist_ko`, `source_url`, `release_year`, `id`, `crawled_at`:
- *    registration-order winner. Same-source ties break by lower `crawled_at`.
+ *  - `title_primary`, `title_ko`, `artist_primary`, `artist_ko`, `source_url`,
+ *    `release_year`, `id`, `crawled_at`: registration-order winner.
+ *    Same-source ties break by lower `crawled_at`.
  *  - `karaoke_numbers.{tj,ky,joysound}`: first non-null across the group.
  *  - `categories`: union, deduped, alphabetically sorted.
  *
@@ -120,7 +120,6 @@ export function mergeRecords(records: SongRecord[]): SongRecord[] {
       source_url: winner.source_url,
       title_primary: winner.title_primary,
       title_ko: winner.title_ko,
-      title_romaji: winner.title_romaji,
       artist_primary: winner.artist_primary,
       artist_ko: winner.artist_ko,
       release_year: winner.release_year,

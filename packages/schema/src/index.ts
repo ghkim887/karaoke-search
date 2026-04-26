@@ -30,8 +30,6 @@ export interface SongRecord {
   title_primary: string;
   /** Official Korean title. Nullable. */
   title_ko: string | null;
-  /** Hepburn romanization for Latin-keyboard search. Nullable; skipped for already-Latin titles. */
-  title_romaji: string | null;
   /** Official primary artist name in any script. */
   artist_primary: string;
   /** Official Korean artist name. Nullable. */
@@ -56,7 +54,6 @@ export interface RawSongRecord {
   source_url: string;
   title_primary: string;
   title_ko: string | null;
-  title_romaji: string | null;
   artist_primary: string;
   artist_ko: string | null;
   release_year: number | null;
@@ -82,7 +79,6 @@ export const songRecordSchema = {
     'source_url',
     'title_primary',
     'title_ko',
-    'title_romaji',
     'artist_primary',
     'artist_ko',
     'release_year',
@@ -101,7 +97,6 @@ export const songRecordSchema = {
     },
     title_primary: { type: 'string', minLength: 1 },
     title_ko: { type: ['string', 'null'] },
-    title_romaji: { type: ['string', 'null'] },
     artist_primary: { type: 'string', minLength: 1 },
     artist_ko: { type: ['string', 'null'] },
     release_year: {

@@ -1,7 +1,6 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
 import { normalizeRawRecords } from '../../../src/adapters/jpop-playlist-blog/normalizer.js';
-import { toRomaji } from '../../../src/romaji.js';
 
 const CRAWLED_AT = '2026-04-26T12:00:00.000Z';
 
@@ -10,7 +9,6 @@ function rawRecord(over: Partial<RawSongRecord>): RawSongRecord {
     source_url: 'https://j-pop-playlist.tistory.com/449',
     title_primary: 'Title',
     title_ko: '제목',
-    title_romaji: null,
     artist_primary: 'Artist',
     artist_ko: '아티스트',
     release_year: null,
@@ -47,37 +45,6 @@ describe('normalizeRawRecords', () => {
   it('tags categories ["jpop", "vocaloid"] for an artist in both indexes', () => {
     const recs = normalizeRawRecords([rawRecord({})], '/100', ['jpop', 'vocaloid'], CRAWLED_AT);
     expect(recs[0]?.categories).toEqual(['jpop', 'vocaloid']);
-  });
-
-  it('leaves title_romaji null for an already-Latin title (e.g., "Lemon")', () => {
-    const recs = normalizeRawRecords(
-      [rawRecord({ title_primary: 'Lemon' })],
-      '/449',
-      ['jpop'],
-      CRAWLED_AT,
-    );
-    expect(recs[0]?.title_romaji).toBeNull();
-  });
-
-  it('generates title_romaji = toRomaji(title) for a Japanese-script title', () => {
-    const recs = normalizeRawRecords(
-      [rawRecord({ title_primary: 'あぶく' })],
-      '/449',
-      ['jpop'],
-      CRAWLED_AT,
-    );
-    expect(recs[0]?.title_romaji).toBe(toRomaji('あぶく'));
-    expect(recs[0]?.title_romaji).not.toBeNull();
-  });
-
-  it('preserves a source-supplied title_romaji unchanged', () => {
-    const recs = normalizeRawRecords(
-      [rawRecord({ title_primary: 'あぶく', title_romaji: 'CUSTOM' })],
-      '/449',
-      ['jpop'],
-      CRAWLED_AT,
-    );
-    expect(recs[0]?.title_romaji).toBe('CUSTOM');
   });
 
   it('threads the passed crawled_at through every record', () => {

@@ -160,7 +160,6 @@ export function parseArtistPage(html: string, sourceUrl: string): RawSongRecord[
           source_url: sourceUrl,
           title_primary: titlePrimary,
           title_ko: titleKo,
-          title_romaji: null,
           artist_primary: artistPrimary,
           artist_ko: artistKo,
           release_year: null,

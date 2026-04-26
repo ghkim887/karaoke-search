@@ -48,12 +48,6 @@ describe('parseArtistPage — Ayase /449', () => {
     expect(records[0]?.artist_primary).toBe('Ayase');
   });
 
-  it('parser leaves title_romaji unset (the normalizer fills it)', () => {
-    for (const r of records) {
-      expect(r.title_romaji).toBeNull();
-    }
-  });
-
   it('parser leaves categories empty (the crawler tags them)', () => {
     for (const r of records) {
       expect(r.categories).toEqual([]);
