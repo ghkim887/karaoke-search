@@ -1,0 +1,104 @@
+---
+// Phase 5 skeleton. Phase 6 will mount the Preact island that performs search.
+const title = '가라오케 / カラオケ Search';
+---
+
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>{title}</title>
+    <style is:global>
+      :root {
+        --bg: #0b0d10;
+        --bg-elev: #14171c;
+        --fg: #e6e8eb;
+        --fg-muted: #8a93a0;
+        --accent: #8ab4ff;
+        --border: #232831;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          'Noto Sans KR',
+          'Noto Sans JP',
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      header.site-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg-elev);
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 1.25rem;
+      }
+
+      header.site-header h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      input.search-input {
+        width: 100%;
+        max-width: 640px;
+        padding: 0.6rem 0.85rem;
+        font-size: 1rem;
+        color: var(--fg);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        outline: none;
+      }
+
+      input.search-input:focus {
+        border-color: var(--accent);
+      }
+
+      main.results {
+        padding: 1.25rem;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      main.results .empty {
+        color: var(--fg-muted);
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>{title}</h1>
+      <input
+        class="search-input"
+        type="search"
+        placeholder="제목 / アーティスト / artist…"
+        autocomplete="off"
+        spellcheck="false"
+        disabled
+      />
+    </header>
+    <main class="results">
+      <p class="empty">검색 UI 준비 중 / 検索 UI 準備中.</p>
+    </main>
+  </body>
+</html>
