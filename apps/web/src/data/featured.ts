@@ -12,7 +12,7 @@ export const featured: {
   vocaloid: string[];
   anime: string[];
 } = {
-  jpop: ['米津玄師', 'ずっと真夜中でいいのに。｜ZUTOMAYO', 'back number', 'King Gnu', 'ヨルシカ', 'YOASOBI'],
+  jpop: ['米津玄師', 'Ado', 'back number', 'King Gnu', 'ヨルシカ', 'YOASOBI'],
   vocaloid: ['DECO*27', '40mP｜40meterP', 'Orangestar', 'Neru', 'じん｜自然の敵P'],
   anime: [],
 };
