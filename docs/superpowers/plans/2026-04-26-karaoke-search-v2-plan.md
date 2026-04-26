@@ -1,7 +1,7 @@
 # Karaoke Search — v2 Implementation Plan
 
 Source spec: `docs/superpowers/specs/2026-04-26-karaoke-search-v2-design.md` (locked).
-v1 spec referenced: `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` (shared conventions: `Crawler` interface, normalize(), merge algorithm, operational discipline).
+v1 spec referenced: `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` (shared conventions: `Crawler` interface, `normalize()`, operational discipline). v1's merge algorithm is REPLACED in v2 — see Phase 0.5 below and spec Section "Dedup & Merge Algorithm (v2 redesign)".
 Repo: pnpm + TypeScript monorepo on `main` at HEAD `3b5a735`. v1 ships ~21,259 records across `jpop` + `vocaloid` from the j-pop-playlist Tistory blog.
 
 ## Required GitHub repository secrets
@@ -46,6 +46,59 @@ Same as v1 (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`). No
   ```
 - **Estimated agent time**: 25 min.
 
+## Phase 0.5 — Merger rewrite (two-tier match key + per-field ownership)
+
+- **Goal**: Replace v1's flat registration-order dedup with v2's two-tier match key (Tier A vendor-number union-find + Tier B fuzzy title+artist fallback) and per-field ownership table. See spec Section "Dedup & Merge Algorithm (v2 redesign)" for the locked design.
+- **Deliverables**:
+  - Rewrite `packages/crawler/src/merge.ts` (`mergeRecords`):
+    - Step 1: collect all `SongRecord[]` from all adapters (no per-adapter dedup beforehand).
+    - Step 2: cluster — Tier A first (union-find over non-null `karaoke_numbers.tj` / `.ky` / `.joysound`, per-vendor), Tier B for unclustered residuals (group by normalized `(title_primary, artist_primary)` key using the existing `normalize()` from `packages/crawler/src/normalize.ts` — do NOT introduce a more aggressive normalizer).
+    - Step 3: per-cluster apply the per-field ownership table from the spec. Emit one `SongRecord` per cluster.
+    - Conflict logging: when records cluster via Tier B but disagree on a vendor field that wasn't the clustering key, log a warning (structured object: `{ cluster_key, field, values, winner }`). Return aggregate counts + a sample of N=10 alongside the merged records (extends `mergeRecords`'s return shape, OR exposes a sibling getter — pick one and document).
+  - Wire the conflict aggregate into the crawl GitHub-Actions workflow's PR-body summary (extend the existing summary block in `.github/workflows/` — quantity-only summary plus the N=10 sample, NOT every conflict).
+  - Hand-crafted fixture test at `packages/crawler/test/merge.test.ts` (or extend existing) covering all of:
+    1. Two-source merge by shared TJ# (TJ-direct + blog).
+    2. Three-source merge by shared TJ# (TJ-direct + blog + namuwiki).
+    3. Blog-only island (no vendor number on the row → no cluster, stands alone with `karaoke_numbers.tj=null`).
+    4. Blog→TJ fuzzy match (Tier B; blog row has no TJ# but matches a TJ row by normalized `(title, artist)`).
+    5. Vendor-number conflict (Tier B cluster, sources disagree on a vendor field, highest-priority source wins, warning logged — assert the warning was emitted).
+    6. Multi-vendor merge (blog has `tj+ky`, namuwiki has `ky+joysound`; all three records vendor-number-overlap → one merged record with all three vendor fields populated).
+    7. TJ-less Vocaloid (only namuwiki contributes, becomes a standalone record with `title_primary` from namuwiki — verifies graceful degradation of the per-field ownership table when TJ-direct and blog are absent).
+- **Implementation notes**:
+  - `feat.` / `(movie ver.)` / `[Acoustic]` are NOT stripped by the Tier B normalizer. The current `normalize()` (lowercase + collapse whitespace) is the spec'd Tier B key. Do not extend it.
+  - Tier A is per-vendor: TJ #100 and KY #100 are unrelated and must NOT cluster. Implement as three separate index maps keyed by vendor.
+  - Per-field ownership uses fallback chains, not a flat priority. `release_year` chain is `blog → namuwiki → TJ-direct`; `title_primary` chain is `TJ-direct → blog → namuwiki`; etc. — see spec table.
+  - The flat priority `blog > namuwiki > TJ-direct` is retained ONLY for tiebreaking on the same vendor's number. Encode it as a single source-rank constant in the merger; do NOT scatter the order across files.
+  - Merge determinism: re-running the merger on the same input record array twice MUST produce byte-identical output. Sort cluster outputs deterministically (by `id` after assignment, or by `karaoke_numbers.tj ?? '￿'` then normalized title — pick one and document). Phase 5's smoke test will verify this end-to-end.
+- **Verification**:
+  - `pnpm --filter @karaoke/crawler test test/merge.test.ts` exits 0; all 7 fixture cases pass.
+  - The conflict-logging assertion in case 5 confirms a warning was emitted (count exactly 1 for that scenario).
+  - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
+  - Determinism micro-check inside the test file: build a fixed input array, call `mergeRecords` twice, deep-equal the two outputs (asserts cluster ordering is stable).
+  - Backward-compat check: re-run the existing v1 crawl pipeline against the live blog adapter only (`pnpm --filter @karaoke/crawler start --source jpop-playlist-blog --limit 5 --out /tmp/v2-merge-smoke.json`) and confirm output record count and field shapes match a baseline snapshot — single-source pipeline must still work end-to-end with the rewritten merger.
+- **Review pass** (`code-reviewer`):
+  - Confirm the merger implements Tier A as **per-vendor** union-find (not a single combined map). Cite line numbers.
+  - Confirm Tier B uses the existing `normalize()` and does NOT strip `feat.` / `(...)` / `[...]` suffixes. Read the diff against `packages/crawler/src/normalize.ts` and verify no new normalizer was added.
+  - Confirm the per-field ownership table is implemented as fallback chains per field, not a single flat priority order.
+  - Confirm conflict warnings are emitted for the vendor-number-disagreement-on-Tier-B case AND the aggregate is exposed for the PR-body summary wire-up.
+  - Confirm cluster output ordering is deterministic — explain how (which key, ascending or descending).
+  - Confirm all 7 fixture cases listed in the deliverables exist in `merge.test.ts` and each is named after the scenario.
+- **Commit message**:
+  ```
+  feat(crawler): rewrite mergeRecords with two-tier match key
+
+  Replace v1's flat registration-order dedup with v2's tiered scheme:
+  Tier A unions records sharing a vendor number (per-vendor: tj/ky/joy);
+  Tier B falls back to normalized (title, artist) for residuals.
+  Per-field ownership table replaces the flat blog>namu>tj precedence.
+  Tier B cross-source conflicts on a vendor field are logged and
+  aggregated for the crawl PR body. 7 fixture tests cover the locked
+  design's worked examples.
+
+  Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+  ```
+- **Estimated agent time**: 120 min.
+
 ## Phase 1 — Vtuber roster file
 
 - **Goal**: Land a static, unit-tested list of Hololive JP and Nijisanji JP talent names plus an `isVtuber()` helper, used by both the namuwiki and tj-media-direct adapters.
@@ -61,7 +114,7 @@ Same as v1 (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`). No
     - Normalize-equivalence: `isVtuber("ホシマチ スイセイ")` (with whitespace and katakana variant) still resolves to `"hololive"` if `星街すいせい` is in the roster (asserts that `isVtuber` reuses the crawler's `normalize()` for comparison).
 - **Implementation notes**:
   - Roster source: cross-reference NamuWiki's `홀로라이브_프로덕션` and `니지산지` agency pages with the corresponding Wikipedia EN list for spelling-variant coverage. Cite the source URLs in a top-of-file comment block.
-  - `isVtuber` MUST import `normalize` from `packages/crawler/src/normalize.ts` rather than ship its own normalizer — keeps roster matching consistent with the merger's identity key.
+  - `isVtuber` MUST import `normalize` from `packages/crawler/src/normalize.ts` rather than ship its own normalizer — keeps roster matching consistent with the merger's Tier B match key (see Phase 0.5).
   - Both lists are `readonly string[]` — TypeScript prevents accidental mutation by callers.
   - The file lives under `adapters/namuwiki/` for ownership reasons (NamuWiki agency pages are the source of truth) but its exports are imported by both adapters' normalizers.
 - **Verification**:
@@ -252,6 +305,7 @@ Same as v1 (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`). No
   - End-to-end: `pnpm --filter @karaoke/web build` exits 0 and the existing 50 KB gzipped JS bundle guard still passes.
   - Manual: `pnpm --filter @karaoke/web dev`, type a Hololive talent name (e.g., `星街すいせい`); ≥1 result with `categories.includes("vtuber")`.
   - Per-adapter success ratios captured in run log: BlogCrawler ≥90%, TJDirectCrawler ≥90%, NamuWikiCrawler ≥85%.
+  - Merge-determinism smoke test: stash the unmerged per-adapter record arrays from this run (or re-load them from the cached HTTP responses), then call the rewritten `mergeRecords` (from Phase 0.5) on the same input record set TWICE in the same process. The two output arrays must be byte-identical (deep-equal AND `JSON.stringify`-equal). Capture the assertion result in the commit body. Failure aborts the phase — escalate, do NOT relax the assertion.
 - **Review pass** (`code-reviewer`):
   - Confirm the live `songs.json` was actually produced by the crawler (not hand-edited): re-running with cached pages should produce identical output bar `crawled_at`.
   - Confirm the sample fixture covers all four v2 categories AND a multi-category record.
@@ -275,9 +329,9 @@ Same as v1 (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`). No
 
 - **Goal**: Make the v1 docs forward-compatible with v2's reality and surface the v2 changes in CLAUDE.md and README.
 - **Deliverables**:
-  - `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` — append a top-of-file note: `> v2 supersedes the Category union (`proseka` removed, `vtuber` added) and adds tj-media-direct + namuwiki adapters. See \`...-v2-design.md\` for v2 deltas.` Do NOT rewrite v1 prose.
-  - `docs/superpowers/plans/2026-04-26-karaoke-search-plan.md` — same kind of forward-pointer note.
-  - `CLAUDE.md` — Module Map updates (if present): list the two new adapter directories under `packages/crawler/src/adapters/`. Gotchas: NamuWiki's render strategy + per-host 2s rate cap; TJ-direct null-Korean records.
+  - `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` — append a top-of-file note: `> v2 supersedes the Category union (`proseka` removed, `vtuber` added), adds tj-media-direct + namuwiki adapters, and replaces the dedup/merge algorithm with a two-tier match key + per-field ownership table. See \`...-v2-design.md\` for v2 deltas.` Do NOT rewrite v1 prose.
+  - `docs/superpowers/plans/2026-04-26-karaoke-search-plan.md` — same kind of forward-pointer note (mention the merger rewrite alongside the new adapters).
+  - `CLAUDE.md` — Module Map updates (if present): list the two new adapter directories under `packages/crawler/src/adapters/`. Gotchas: NamuWiki's render strategy + per-host 2s rate cap; TJ-direct null-Korean records; merger's two-tier match key (Tier A vendor-number, Tier B fuzzy title+artist) — note that `feat.` / `(...)` / `[...]` suffixes are NOT stripped by Tier B by design.
   - `README.md` — feature list reflects 4-category coverage (`jpop`, `vocaloid`, `anime`, `vtuber`). Source list reflects three adapters.
 - **Implementation notes**:
   - The forward-pointer notes are minimal; they exist so a reader who lands on the v1 doc finds v2.

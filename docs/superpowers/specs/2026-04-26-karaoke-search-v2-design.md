@@ -7,7 +7,7 @@ v2 expands the karaoke-search corpus with two new data sources (TJ Media direct 
 - Date: 2026-04-26
 - Version: v2 design
 - Author: brainstorming session with user
-- Inherits all conventions from v1 spec at `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` (data model identity key, normalize() rules, dedup/merge algorithm, operational discipline). This document only describes deltas.
+- Inherits most conventions from v1 spec at `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` (`SongRecord` shape, `normalize()` rules, operational discipline, UA / robots / atomic-write posture). The dedup/merge algorithm is REPLACED — see Section "Dedup & Merge Algorithm (v2 redesign)" below. Other deltas described in this document.
 
 ## Goals & Non-Goals
 
@@ -17,7 +17,7 @@ Goals:
 - Populate the previously-empty `anime` category from TJ's `애니메이션` genre filter.
 - Introduce a new populated `vtuber` category covering Hololive JP + Nijisanji JP.
 - Maintain a static Vtuber artist roster, used both for tagging TJ-direct records and targeting NamuWiki pages.
-- Preserve registration-order dedup priority (`blog` > `namuwiki` > `tj-media-direct`).
+- Replace v1's flat registration-order dedup with a two-tier match key + per-field ownership table (see Section "Dedup & Merge Algorithm (v2 redesign)" below). TJ-direct becomes the canonical "songs spine"; blog and namuwiki contribute enrichment metadata onto the spine plus standalone island records.
 
 Non-Goals:
 - Direct adapters against KY (금영) or JOYSOUND or DAM. Deferred.
@@ -83,7 +83,76 @@ The matching JSON Schema fragment in `packages/schema/src/index.ts`:
 Migration plan:
 - Breaking schema change at the type level. Existing on-disk records are unaffected because none use `proseka` (verify with a one-line node check during the migration phase — see plan Phase 0).
 - All other field shapes (`SongRecord`, `RawSongRecord`, `KaraokeNumbers`, `id` regex, `source_url`, `crawled_at`) are unchanged.
-- Identity key (`normalize(title_primary) + "|" + normalize(artist_primary)`) and merge algorithm are unchanged (see v1 spec Section "Crawler Architecture").
+- Identity key and merge algorithm are REPLACED in v2 (the v1 single-key `normalize(title_primary) + "|" + normalize(artist_primary)` rule no longer applies). See Section "Dedup & Merge Algorithm (v2 redesign)" below.
+
+## Dedup & Merge Algorithm (v2 redesign)
+
+### Conceptual model
+
+TJ-direct is the canonical **"songs spine"** — TJ catalog numbers are vendor-assigned IDs and the strongest identity signal v2 has. Blog and NamuWiki contribute **enrichment metadata** (Korean titles/artists, release year, additional vendor numbers, additional categories) onto the spine, plus standalone "island" records when their content has no TJ counterpart.
+
+Mental model: SQL normalization. TJ-direct is the `songs` table; blog and namuwiki are `translations` / `metadata` tables that join on TJ# when available, or fall back to fuzzy `(title, artist)` match otherwise.
+
+TJ-less songs (KY-only, JOY-only, blog-only, namuwiki-only) ARE retained in the output as standalone records with `karaoke_numbers.tj = null`. They remain searchable. The spine metaphor is conceptual — it describes priority/ownership, not eligibility.
+
+### Two-tier match key
+
+The v1 single-key identity (`normalize(title_primary) + "|" + normalize(artist_primary)`) is replaced by a two-tier scheme:
+
+- **Tier A (hard match)**: two records cluster if they share a non-null value on the **same vendor field** (`karaoke_numbers.tj`, `karaoke_numbers.ky`, or `karaoke_numbers.joysound`). Per-vendor — TJ #100 and KY #100 are unrelated.
+- **Tier B (soft match)**: among records NOT clustered by Tier A, fall back to normalized `(title_primary, artist_primary)` match.
+
+The fuzzy normalizer for Tier B is **conservative**. The current `normalize()` (lowercase + collapse whitespace) is sufficient. It does NOT strip `feat. X`, `(movie ver.)`, `[Acoustic]`, etc. Songs with `feat.` variants either cluster via shared vendor numbers (Tier A, the realistic case where TJ assigns one TJ# to the canonical version), or remain separate records. This is intentional — aggressive suffix-stripping risks false-positive merging of remixes/covers/acoustic-versions as the same song.
+
+Clustering algorithm (executed in `mergeRecords`):
+
+1. Collect all `SongRecord[]` from all adapters (no per-adapter dedup beforehand).
+2. Tier A pass: union-find over vendor numbers. For each non-null `karaoke_numbers.tj`, `karaoke_numbers.ky`, `karaoke_numbers.joysound`, union the records that share that value.
+3. Tier B pass: among records still in singleton clusters after Tier A, group by normalized `(title_primary, artist_primary)` key. Merge same-key singletons into shared clusters.
+4. Apply per-field ownership (table below) to each cluster to produce one output `SongRecord` per cluster.
+
+### Per-field ownership table
+
+The flat v1 priority `blog > namuwiki > tj` is replaced by a per-field table. Different fields have different "owners".
+
+| Field | Owner (in fallback order) |
+| --- | --- |
+| `title_primary`, `artist_primary` | TJ-direct → blog → namuwiki |
+| `title_ko`, `artist_ko` | blog → namuwiki |
+| `release_year` | blog → namuwiki → TJ-direct |
+| `karaoke_numbers.tj`, `.ky`, `.joysound` | union of all non-null values across the cluster; if multiple sources disagree on the SAME vendor's value, highest-priority source wins (priority order: blog > namuwiki > TJ-direct, kept from v1 for tiebreaking only) |
+| `categories` | set-union of all contributing sources (sorted) |
+| `id` | highest-priority contributing source's local ID (priority order: blog > namuwiki > TJ-direct), formed as `{source_slug}-{source_local_id}` |
+| `source_url` | highest-priority contributing source's URL (priority order: blog > namuwiki > TJ-direct) |
+| `crawled_at` | latest of contributing sources |
+
+For TJ-less clusters the rule degrades gracefully: blog takes over `title_primary` when no TJ-direct record joined the cluster (next in fallback order); namuwiki takes over if blog is also absent.
+
+The "highest priority for tiebreaking" priority order (`blog > namuwiki > TJ-direct`) is retained from v1 — but ONLY for tiebreaking on the same field, not as a global merge-precedence rule. Adapter registration order in `packages/crawler/src/adapters/index.ts` reflects this priority for tiebreak determinism.
+
+### Crawl-time conflict logging
+
+When records cluster via Tier B (fuzzy `title+artist` match) but disagree on a vendor number neither shares as the clustering key (e.g., blog says `tj=68923`, namuwiki says `tj=68924`, clustered by string match alone), the merger logs a warning. The merger does NOT abort — highest-priority source's value wins per the ownership table.
+
+Warnings are returned as structured objects alongside the merged record array (not console output) so the crawl workflow can aggregate them into the PR body.
+
+The warnings are aggregated into the crawl PR body (extending the existing PR-body summary in the crawl GitHub-Actions workflow) so the user can spot-check upstream errors over time. Quantity-only summary in the PR body — total count plus a sample of N=10 (NOT every conflict).
+
+### Worked examples
+
+| Scenario | Cluster path | Output |
+| --- | --- | --- |
+| Blog row + TJ row share `tj=28311` | Tier A (vendor union) | Single record. `title_primary` = TJ's, `title_ko` = blog's, `karaoke_numbers.tj=28311`. |
+| Blog row + TJ row + Namu row all share `tj=68425`; Namu also has `ky=48374` | Tier A | Single record. `karaoke_numbers = {tj: 68425, ky: 48374, joysound: null}`. Categories set-unioned. |
+| Blog row has no TJ#, no KY#; matches a TJ row by normalized `(title, artist)` | Tier B | Single record. `title_primary` = TJ's. Conflict-log if blog's `karaoke_numbers.tj` were non-null and disagreed (here it's null, so no conflict). |
+| Namu row only — no TJ row, no blog row | neither tier (singleton) | Standalone record. `title_primary` = namu's. `karaoke_numbers.tj=null`. |
+| Blog row with no TJ#, no KY#, no JOY#; no other source matches | neither tier (singleton) | Standalone record. `title_primary` = blog's. `karaoke_numbers.tj=null`, `.ky=null`, `.joysound=null`. |
+| Blog row says `tj=68923`, Namu row says `tj=68924`, neither shares with the other; both fuzzy-match `(title, artist)` | Tier B | Single record, `karaoke_numbers.tj=68923` (blog wins), warning logged. |
+| Blog has `{tj, ky}`, Namu has `{ky, joysound}`, all three sources cluster via shared `ky` | Tier A | Single record. `karaoke_numbers` = union of all three vendor fields. |
+
+### Cross-tagging policy
+
+Each surfaced record carries the categories of its source page; the merger set-unions them (see per-field ownership table, `categories` row). So a Hololive cover that appears only on the Hololive list page gets `["vtuber"]`; if the same song clusters (Tier A via shared TJ#, or Tier B via fuzzy title+artist) with a Vocaloid-list record, the union is `["vocaloid", "vtuber"]`. Different-artist covers (Hololive talent covering a Vocaloid original) typically do NOT cluster — different artist breaks Tier B, and TJ usually issues distinct TJ#s for cover recordings, breaking Tier A — so they remain separate records. That is the intended behaviour.
 
 ## Source: TJ Media direct (`tj-media-direct`)
 
@@ -190,20 +259,22 @@ Maintenance:
 
 ## Crawler architecture changes
 
-Adapter registration order = dedup priority (see v1 spec Section "Crawler Architecture", stage 3). Updated registration order in `packages/crawler/src/adapters/index.ts`'s `adapters: Crawler[]` array:
+Adapter registration order in `packages/crawler/src/adapters/index.ts`'s `adapters: Crawler[]` array:
 
 ```
 [BlogCrawler, NamuWikiCrawler, TJDirectCrawler]
 ```
 
-Resulting precedence:
-- Blog wins for `title_ko`, `title_primary`, `artist_primary`, `artist_ko`, `source_url` when the same identity key collides.
-- NamuWiki fills records the blog does not have (e.g., long-tail Vocaloid B-sides; all Hololive/Nijisanji-only songs).
-- TJ-direct fills any remaining TJ numbers and adds long-tail Japanese-language artists not on either Korean source.
+This order encodes the per-field tiebreak priority `blog > namuwiki > TJ-direct` from Section "Dedup & Merge Algorithm (v2 redesign)". The order is consulted ONLY when the per-field ownership table calls for a tiebreak on the same vendor field. It is NOT a global merge-precedence rule — see the per-field ownership table for which source actually wins on each field.
 
-The existing `mergeRecords` algorithm already implements registration-order priority + per-field non-null union for `karaoke_numbers` + set-union for `categories`. No algorithmic changes required for v2 — only the array order changes.
+Resulting practical behaviour (from the per-field ownership table):
+- TJ-direct provides canonical `title_primary` / `artist_primary` (the "spine"); blog and namuwiki contribute `title_ko` / `artist_ko` and additional vendor numbers and categories on top.
+- NamuWiki adds the long-tail Vocaloid B-sides and Hololive/Nijisanji-only songs (standalone records when no TJ row joins the cluster).
+- Blog wins on `release_year` and on vendor-number disagreement tiebreaks.
 
-The pipeline still validates every record against `songRecordSchema` before writing. The schema's `Category` enum picks up the v2 union via Phase 0.
+`mergeRecords` is **rewritten** for v2 — Phase 0.5 in the implementation plan implements the two-tier match key (Tier A vendor-number union-find, then Tier B fuzzy `(title, artist)` match) and the per-field ownership table. The v1 single-key + flat-priority algorithm is retired.
+
+The pipeline still validates every record against `songRecordSchema` before writing. The schema's `Category` enum picks up the v2 union via Phase 0. The merger emits per-cluster conflict warnings (see Section "Crawl-time conflict logging") which Phase 0.5 wires into the crawl PR body summary.
 
 ## Frontend changes
 
@@ -253,4 +324,4 @@ For v2: just measure and document. Defer the actual fix.
 
 - NamuWiki's anti-bot posture is unknown until Phase 3's investigation step runs. If plain GET, raw-export, AND headless-render all fail under our honest UA, the namuwiki adapter is descoped to "blog + tj only" for v2 and the `vtuber` category populates from TJ-direct + the static roster alone (no Korean translations for vtuber records).
 - TJ's exact Japanese-only filter form (`cate_cd` value, additional language gating param if any) needs live capture in Phase 2's first step. The genre table above is provisional.
-- Cross-tagging policy: a song that is both a Vocaloid original AND covered by a Hololive talent — does the cover record get `["vocaloid", "vtuber"]` or just `["vtuber"]`? Spec answer: each surfaced record carries the categories of its source page; the merger set-unions them. So a cover that appears on the Hololive list page gets `["vtuber"]`; if the SAME identity key (same title + same artist) also appears on the Vocaloid list, it gets unioned to `["vocaloid", "vtuber"]`. Different-artist covers (Hololive talent covering a Vocaloid song) have a different identity key from the Vocaloid original and therefore stay separate records — that is the intended behaviour.
+
