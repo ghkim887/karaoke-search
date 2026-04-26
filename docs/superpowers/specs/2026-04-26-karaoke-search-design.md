@@ -87,7 +87,7 @@ All crawlers normalize into a single record shape. The frontend reads only this 
     "ky": null,                       // string|null — 금영
     "joysound": "647543"              // string|null
   },
-  "categories": ["jpop"],             // array of: "jpop"|"vocaloid"|"anime"|"proseka"|"vtuber" — at least one
+  "categories": ["jpop"],             // array of: "jpop"|"vocaloid"|"anime"|"proseka" — at least one
   "crawled_at": "2026-04-26T10:00:00Z"
 }
 ```
@@ -232,7 +232,7 @@ Search settings:
 - Fuzzy distance: 1.
 - Normalization: NFKC + casefold applied identically to both query and indexed fields.
 - Category chips: AND filter layered on the hit set.
-- Category chips in v1 UI: `[ jpop ] [ vocaloid ] [ anime ]`. The `proseka` and `vtuber` categories are stored in the data but not exposed as chips in v1. They become chips when category coverage exceeds an arbitrary minimum (e.g., 20 songs).
+- Category chips in v1 UI: `[ jpop ] [ vocaloid ] [ anime ]`. The `proseka` category is stored in the data but not exposed as a chip in v1. It becomes a chip when category coverage exceeds an arbitrary minimum (e.g., 20 songs).
 - Result cap: top 50, no pagination in v1.
 
 UI affordances:

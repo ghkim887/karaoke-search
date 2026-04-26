@@ -52,7 +52,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - `packages/schema/src/index.test.ts` — Vitest tests using `expectTypeOf` from `expect-type` plus runtime tests against the three worked examples in spec lines 117–146.
   - `packages/schema/vitest.config.ts`.
 - **Implementation notes**:
-  - `Category` is a string union: `"jpop" | "vocaloid" | "anime" | "proseka" | "vtuber"` (spec Section Data Model).
+  - `Category` is a string union: `"jpop" | "vocaloid" | "anime" | "proseka"` (spec Section Data Model).
   - `id` pattern `^[a-z0-9-]+-\d+$` (matches `blog-1596`).
   - `karaoke_numbers` keys `tj`, `ky`, `joysound` are required, values `string | null`.
   - `categories` is `minItems: 1`, `uniqueItems: true`.
@@ -244,7 +244,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
 - **Deliverables**:
   - `apps/web/src/components/SearchBox.tsx` — Preact island. 150ms debounce via `setTimeout`/`clearTimeout`. Calls into `search.ts`. Exposes results via a custom event or shared store (use `nanostores` if a store is needed; otherwise lift state to a single root island `App.tsx`).
   - `apps/web/src/components/App.tsx` — the single-island root that owns `query`, `selectedCategories`, `results`. Renders SearchBox, CategoryChips, and ResultCard list.
-  - `apps/web/src/components/CategoryChips.tsx` — three chips (`jpop`, `vocaloid`, `anime`) with toggle state. Selected set acts as AND filter on the hit set: a record is shown only if every selected chip is in `record.categories`. `proseka` and `vtuber` are NOT rendered as chips.
+  - `apps/web/src/components/CategoryChips.tsx` — three chips (`jpop`, `vocaloid`, `anime`) with toggle state. Selected set acts as AND filter on the hit set: a record is shown only if every selected chip is in `record.categories`. `proseka` is NOT rendered as a chip.
   - `apps/web/src/components/ResultCard.tsx` — bilingual title/artist, year, category tags, three monospace badges. Each badge is a `<button>` that calls `navigator.clipboard.writeText` and shows a 1-second "복사됨" toast. Missing values render dimmed em-dash. "Source ↗" link points to `record.source_url`.
   - `apps/web/src/data/featured.ts` — exports `featured: { jpop: string[]; vocaloid: string[]; anime: string[] }` listing 6 artist names per category. Used on the empty (no-query) state.
   - `apps/web/src/components/EmptyState.tsx` — shows featured artists; clicking one populates the search box.
@@ -263,7 +263,7 @@ Repo: greenfield TypeScript pnpm monorepo on `main` (3 commits), pushed to `http
   - `pnpm --filter @karaoke/web build` exits 0 and `dist/_astro/*.js` exists (Astro emits client islands here).
   - Manual: `pnpm --filter @karaoke/web dev`, type `"yoasobi"`, observe ≥1 result card; click a number badge, observe clipboard contains the digits.
 - **Review pass** (`code-reviewer`):
-  - Confirm CategoryChips only renders the three chips listed in spec Section Frontend (`jpop`, `vocaloid`, `anime`); `proseka`/`vtuber` MUST be absent from chip JSX even if present in data.
+  - Confirm CategoryChips only renders the three chips listed in spec Section Frontend (`jpop`, `vocaloid`, `anime`); `proseka` MUST be absent from chip JSX even if present in data.
   - Confirm AND-filter logic: `selectedCategories.every(c => record.categories.includes(c))`.
   - Confirm 150ms debounce is implemented per-keystroke (not a fixed interval poll).
   - Confirm click-to-copy uses `navigator.clipboard` (modern path) and fires on the `<button>` click handler.
