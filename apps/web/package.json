@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "postbuild": "node scripts/check-bundle-size.mjs",
     "preview": "astro preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@axe-core/playwright": "^4.11.2",
     "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.2",
     "jsdom": "^25.0.1",

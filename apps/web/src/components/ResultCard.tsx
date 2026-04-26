@@ -82,7 +82,13 @@ export function ResultCard({ record }: ResultCardProps) {
         <NumberBadge label="KY" value={record.karaoke_numbers.ky} testId="badge-ky" />
         <NumberBadge label="JOY" value={record.karaoke_numbers.joysound} testId="badge-joysound" />
       </div>
-      <a class="result-source" href={record.source_url} target="_blank" rel="noreferrer noopener">
+      <a
+        class="result-source"
+        href={record.source_url}
+        target="_blank"
+        rel="noreferrer noopener"
+        aria-label="원문 소스 새 창에서 열기"
+      >
         Source ↗
       </a>
     </article>

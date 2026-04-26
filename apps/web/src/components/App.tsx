@@ -5,6 +5,7 @@ import type { IndexBundle } from '../lib/search.js';
 import { loadIndex } from '../lib/search.js';
 import { CategoryChips } from './CategoryChips.js';
 import { EmptyState } from './EmptyState.js';
+import { ErrorState } from './ErrorState.js';
 import { NoResults } from './NoResults.js';
 import { ResultCard } from './ResultCard.js';
 import { SearchBox } from './SearchBox.js';
@@ -98,14 +99,21 @@ export function App() {
     });
   };
 
+  // Memoized count exposed via aria-live so screen readers announce only when
+  // the result count changes — not on every keystroke before debounce settles.
+  const resultCount = useMemo(() => results.length, [results]);
+
   return (
     <main class="results">
       <SearchBox value={inputValue} onInput={handleInputChange} />
       <CategoryChips selected={selectedCategories} onToggle={toggleCategory} />
+      <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
+        {resultCount}건 / {resultCount} results
+      </span>
       {loading ? (
         <p class="loading">검색 인덱스 로딩 중 / 検索インデックス読み込み中…</p>
       ) : error !== null ? (
-        <p class="error">인덱스 로드 실패: {error}</p>
+        <ErrorState message={error} />
       ) : query === '' ? (
         <EmptyState onPickArtist={handlePickArtist} />
       ) : results.length === 0 ? (

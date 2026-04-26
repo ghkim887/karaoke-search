@@ -1,6 +1,7 @@
 import type { SongRecord } from '@karaoke/schema';
 import MiniSearch from 'minisearch';
 import { normalize } from './normalize.js';
+import { fetchWithRetry } from './retry.js';
 
 /**
  * Fields indexed by MiniSearch. Keep in sync with the boost map below.
@@ -53,10 +54,9 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
  */
 export async function loadIndex(): Promise<IndexBundle> {
   const url = `${import.meta.env.BASE_URL}data/songs.json`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to load ${url}: ${res.status} ${res.statusText}`);
-  }
+  const res = await fetchWithRetry(url);
+  // fetchWithRetry guarantees an `ok` response or throws; parsing failures
+  // (200 OK with malformed JSON) are deterministic and propagate as-is.
   const records = (await res.json()) as SongRecord[];
   const index = buildIndex(records);
   const byId = new Map<string, SongRecord>();
