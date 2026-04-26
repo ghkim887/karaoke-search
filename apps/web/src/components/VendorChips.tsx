@@ -19,7 +19,7 @@ interface VendorChipsProps {
  */
 const CHIPS: ReadonlyArray<{ value: Vendor; label: string }> = [
   { value: 'tj', label: 'TJ' },
-  { value: 'ky', label: '금영 KY' },
+  { value: 'ky', label: 'KY' },
   { value: 'joysound', label: 'JOY' },
 ];
 
