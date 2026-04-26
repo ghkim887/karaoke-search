@@ -9,6 +9,7 @@ const HELP = `karaoke-crawl — run registered source adapters and emit songs.js
 
 Usage:
   karaoke-crawl [--limit <n>] [--source <slug>]... [--out <path>]
+                [--conflicts-out <path>]
 
 Options:
   --limit <n>      Per-source page cap (e.g. artist pages for the blog
@@ -19,6 +20,10 @@ Options:
   --out <path>     Output JSON path. Resolved relative to the repo root
                    (the directory containing pnpm-workspace.yaml). Defaults
                    to apps/web/public/data/songs.json.
+  --conflicts-out <path>
+                   Optional path for the Tier-B merge-conflict summary JSON
+                   ({ total, sample }). When set, the file is written even
+                   if total=0 (so the workflow can branch on its presence).
   --help           Print this message and exit 0.
 `;
 
@@ -26,6 +31,7 @@ interface ParsedArgs {
   limit: number;
   sources: string[];
   out: string;
+  conflictsOut: string | null;
   help: boolean;
 }
 
@@ -34,6 +40,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     limit: 0,
     sources: [],
     out: 'apps/web/public/data/songs.json',
+    conflictsOut: null,
     help: false,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -72,6 +79,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
       out.out = next;
       continue;
     }
+    if (arg === '--conflicts-out') {
+      const next = argv[++i];
+      if (next === undefined) throw new Error('--conflicts-out requires a value');
+      out.conflictsOut = next;
+      continue;
+    }
     throw new Error(`unknown flag: ${arg}`);
   }
   return out;
@@ -99,18 +112,28 @@ async function main(): Promise<void> {
 
   const repoRoot = findRepoRoot();
   const outPath = isAbsolute(parsed.out) ? parsed.out : resolve(repoRoot, parsed.out);
+  const conflictsOutPath = parsed.conflictsOut
+    ? isAbsolute(parsed.conflictsOut)
+      ? parsed.conflictsOut
+      : resolve(repoRoot, parsed.conflictsOut)
+    : undefined;
 
   const selected =
     parsed.sources.length === 0
       ? registeredAdapters
       : registeredAdapters.filter((a) => parsed.sources.includes(a.name));
 
-  const pipelineOpts =
-    parsed.limit > 0
-      ? { adapters: selected, limit: parsed.limit, outPath }
-      : { adapters: selected, outPath };
-  const { written } = await runPipeline(pipelineOpts);
+  const pipelineOpts: Parameters<typeof runPipeline>[0] = {
+    adapters: selected,
+    outPath,
+    ...(parsed.limit > 0 ? { limit: parsed.limit } : {}),
+    ...(conflictsOutPath ? { conflictsOutPath } : {}),
+  };
+  const { written, conflicts } = await runPipeline(pipelineOpts);
   process.stdout.write(`wrote ${written} records to ${outPath}\n`);
+  if (conflicts.length > 0) {
+    process.stdout.write(`merge conflicts: ${conflicts.length}\n`);
+  }
 }
 
 main().catch((err: unknown) => {

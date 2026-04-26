@@ -2,11 +2,16 @@ import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { normalize } from './normalize.js';
 
 /**
- * Identity key per spec: `normalize(title_primary) + "|" + normalize(artist_primary)`.
+ * Source priority (lower number = higher priority). Single source of truth
+ * for tiebreaks across this file. The order `blog > namu > tj` is retained
+ * from v1, but ONLY for tiebreaking on the same field — not as a global
+ * merge precedence rule. Per-field ownership chains live in `mergeCluster`.
  */
-function identityKey(r: SongRecord): string {
-  return `${normalize(r.title_primary)}|${normalize(r.artist_primary)}`;
-}
+const SOURCE_RANK: Record<string, number> = {
+  blog: 1,
+  namu: 2,
+  tj: 3,
+};
 
 /**
  * Source slug derived from the `id` prefix (everything before the first `-`).
@@ -19,115 +24,369 @@ function sourceSlug(r: SongRecord): string {
   return dash === -1 ? r.id : r.id.slice(0, dash);
 }
 
-function pickFirstNonNull<T>(values: (T | null)[]): T | null {
-  for (const v of values) {
+function sourceRank(slug: string): number {
+  return SOURCE_RANK[slug] ?? Number.POSITIVE_INFINITY;
+}
+
+/** Tier B clustering key (used for residuals after Tier A union-find). */
+function tierBKey(r: SongRecord): string {
+  return `${normalize(r.title_primary)}|${normalize(r.artist_primary)}`;
+}
+
+/**
+ * Structured warning emitted when records cluster via Tier B (fuzzy
+ * title+artist) AND disagree on a vendor field neither side used as the
+ * clustering key. The merger does NOT abort — highest-priority source wins
+ * per the ownership table — but the warning is surfaced for the crawl PR
+ * body summary.
+ */
+export interface MergeConflict {
+  /** Tier B cluster key — `normalize(title)|normalize(artist)`. */
+  cluster_key: string;
+  field: 'tj' | 'ky' | 'joysound';
+  values: { source: string; value: string }[];
+  /** The value that wins per source priority. */
+  winner: string;
+}
+
+export interface MergeResult {
+  records: SongRecord[];
+  conflicts: MergeConflict[];
+}
+
+// --- Union-Find ----------------------------------------------------------
+
+class UnionFind {
+  private parent: number[];
+
+  constructor(size: number) {
+    this.parent = Array.from({ length: size }, (_, i) => i);
+  }
+
+  find(i: number): number {
+    let root = i;
+    while (this.parent[root] !== root) {
+      // biome-ignore lint/style/noNonNullAssertion: index is always within bounds
+      root = this.parent[root]!;
+    }
+    // Path compression.
+    let cur = i;
+    while (this.parent[cur] !== root) {
+      // biome-ignore lint/style/noNonNullAssertion: index is always within bounds
+      const next = this.parent[cur]!;
+      this.parent[cur] = root;
+      cur = next;
+    }
+    return root;
+  }
+
+  union(a: number, b: number): void {
+    const ra = this.find(a);
+    const rb = this.find(b);
+    if (ra !== rb) this.parent[ra] = rb;
+  }
+}
+
+// --- Per-field ownership ------------------------------------------------
+
+/**
+ * Pick the first non-null value found by walking `ownerOrder` source slugs
+ * in priority order. Within a slug, multiple records' contributions are
+ * scanned in input order; the first non-null hit wins.
+ */
+function pickByOwnership<T>(
+  cluster: SongRecord[],
+  ownerOrder: string[],
+  field: (r: SongRecord) => T | null,
+): T | null {
+  for (const slug of ownerOrder) {
+    for (const r of cluster) {
+      if (sourceSlug(r) === slug) {
+        const v = field(r);
+        if (v !== null) return v;
+      }
+    }
+  }
+  // Fallback: any record in the cluster from a non-listed source.
+  for (const r of cluster) {
+    const v = field(r);
     if (v !== null) return v;
   }
   return null;
 }
 
-function mergeKaraokeNumbers(records: SongRecord[]): KaraokeNumbers {
-  return {
-    tj: pickFirstNonNull(records.map((r) => r.karaoke_numbers.tj)),
-    ky: pickFirstNonNull(records.map((r) => r.karaoke_numbers.ky)),
-    joysound: pickFirstNonNull(records.map((r) => r.karaoke_numbers.joysound)),
-  };
+/**
+ * Pick a string field by source priority — the highest-priority contributing
+ * source's value wins. Used for `id` and `source_url` (the v1 tiebreak rule
+ * retained for stable cross-source attribution).
+ */
+function pickByPriority(cluster: SongRecord[], field: (r: SongRecord) => string): string {
+  let winner = cluster[0];
+  if (!winner) throw new Error('empty cluster');
+  let winnerRank = sourceRank(sourceSlug(winner));
+  for (let i = 1; i < cluster.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: bounded by cluster length
+    const r = cluster[i]!;
+    const rank = sourceRank(sourceSlug(r));
+    if (rank < winnerRank) {
+      winner = r;
+      winnerRank = rank;
+    }
+  }
+  return field(winner);
 }
 
-function mergeCategories(records: SongRecord[]): Category[] {
+/**
+ * Merge a cluster's vendor numbers field-by-field.
+ *
+ *  - For each vendor (tj/ky/joysound), union all non-null contributions.
+ *  - When multiple records contribute DIFFERENT non-null values for the SAME
+ *    vendor, the highest-priority source's value wins (chain blog→namu→tj).
+ *  - If `tierBClusterKey` is non-null AND disagreement is detected on a
+ *    vendor field that was NOT the clustering key, emit a `MergeConflict`.
+ *    (Tier A clusters can't disagree on the joining vendor — they share it
+ *    by construction — but they CAN disagree on other vendors; those are
+ *    silently resolved by priority since the cluster identity is solid.)
+ */
+function mergeKaraokeNumbers(
+  cluster: SongRecord[],
+  tierBClusterKey: string | null,
+  conflicts: MergeConflict[],
+): KaraokeNumbers {
+  const vendors: ('tj' | 'ky' | 'joysound')[] = ['tj', 'ky', 'joysound'];
+  const result: KaraokeNumbers = { tj: null, ky: null, joysound: null };
+
+  for (const vendor of vendors) {
+    // Collect (slug, value) pairs of non-null contributions.
+    const contributions: { slug: string; value: string }[] = [];
+    for (const r of cluster) {
+      const v = r.karaoke_numbers[vendor];
+      if (v !== null) {
+        contributions.push({ slug: sourceSlug(r), value: v });
+      }
+    }
+    if (contributions.length === 0) continue;
+
+    // Highest-priority winner for this vendor.
+    let winner = contributions[0];
+    if (!winner) continue;
+    let winnerRank = sourceRank(winner.slug);
+    for (let i = 1; i < contributions.length; i++) {
+      // biome-ignore lint/style/noNonNullAssertion: bounded by length
+      const c = contributions[i]!;
+      const rank = sourceRank(c.slug);
+      if (rank < winnerRank) {
+        winner = c;
+        winnerRank = rank;
+      }
+    }
+    result[vendor] = winner.value;
+
+    // Conflict detection: Tier B cluster + disagreeing non-null values.
+    if (tierBClusterKey !== null) {
+      const distinctValues = new Set(contributions.map((c) => c.value));
+      if (distinctValues.size > 1) {
+        conflicts.push({
+          cluster_key: tierBClusterKey,
+          field: vendor,
+          values: contributions.map((c) => ({ source: c.slug, value: c.value })),
+          winner: winner.value,
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+function mergeCategories(cluster: SongRecord[]): Category[] {
   const set = new Set<Category>();
-  for (const r of records) {
+  for (const r of cluster) {
     for (const c of r.categories) set.add(c);
   }
   return [...set].sort();
 }
 
-interface GroupEntry {
-  record: SongRecord;
-  /** Position in the original input array. Lower wins across distinct sources. */
-  inputIndex: number;
+function mergeCluster(
+  cluster: SongRecord[],
+  wasTierB: boolean,
+  conflicts: MergeConflict[],
+): SongRecord {
+  if (cluster.length === 0) throw new Error('empty cluster');
+
+  const titleArtistChain = ['tj', 'blog', 'namu'];
+  const koChain = ['blog', 'namu'];
+  const yearChain = ['blog', 'namu', 'tj'];
+
+  const tierBClusterKey = wasTierB ? tierBKey(cluster[0] as SongRecord) : null;
+
+  // `crawled_at`: take the LATEST timestamp across the cluster (max).
+  let latestCrawledAt = cluster[0]?.crawled_at ?? '';
+  for (const r of cluster) {
+    if (r.crawled_at > latestCrawledAt) latestCrawledAt = r.crawled_at;
+  }
+
+  return {
+    id: pickByPriority(cluster, (r) => r.id),
+    source_url: pickByPriority(cluster, (r) => r.source_url),
+    title_primary:
+      pickByOwnership(cluster, titleArtistChain, (r) => r.title_primary) ??
+      // Field is non-null in the schema; this fallback should be unreachable
+      // but is kept type-safe.
+      cluster[0]?.title_primary ??
+      '',
+    title_ko: pickByOwnership(cluster, koChain, (r) => r.title_ko),
+    artist_primary:
+      pickByOwnership(cluster, titleArtistChain, (r) => r.artist_primary) ??
+      cluster[0]?.artist_primary ??
+      '',
+    artist_ko: pickByOwnership(cluster, koChain, (r) => r.artist_ko),
+    release_year: pickByOwnership(cluster, yearChain, (r) => r.release_year),
+    karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
+    categories: mergeCategories(cluster),
+    crawled_at: latestCrawledAt,
+  };
 }
 
-/**
- * Pick the collision winner among `group`.
- *
- *  - The lowest `inputIndex` from each distinct source represents that source
- *    in the cross-source comparison.
- *  - Cross-source: lowest `inputIndex` wins (registration order).
- *  - Same-source: lowest `crawled_at` wins.
- */
-function pickWinner(group: GroupEntry[]): GroupEntry {
-  // Step 1: per-source champion by lowest crawled_at.
-  const perSource = new Map<string, GroupEntry>();
-  for (const entry of group) {
-    const slug = sourceSlug(entry.record);
-    const incumbent = perSource.get(slug);
-    if (!incumbent) {
-      perSource.set(slug, entry);
-      continue;
-    }
-    if (entry.record.crawled_at < incumbent.record.crawled_at) {
-      perSource.set(slug, entry);
-    }
-  }
-  // Step 2: cross-source by lowest inputIndex among each source's champion.
-  let winner: GroupEntry | undefined;
-  for (const champ of perSource.values()) {
-    if (!winner || champ.inputIndex < winner.inputIndex) {
-      winner = champ;
-    }
-  }
-  if (!winner) throw new Error('empty group');
-  return winner;
-}
+// --- Public API ----------------------------------------------------------
 
 /**
- * Source-agnostic merger. Keys records on
- * `normalize(title_primary) + "|" + normalize(artist_primary)`.
+ * Two-tier dedup + per-field-ownership merge.
  *
- * Collision rules (spec Section Crawler Architecture stage 3):
- *  - `title_primary`, `title_ko`, `artist_primary`, `artist_ko`, `source_url`,
- *    `release_year`, `id`, `crawled_at`: registration-order winner.
- *    Same-source ties break by lower `crawled_at`.
- *  - `karaoke_numbers.{tj,ky,joysound}`: first non-null across the group.
- *  - `categories`: union, deduped, alphabetically sorted.
+ *   Tier A (hard match): per-vendor union-find. Records sharing a non-null
+ *   value on the same vendor field (`karaoke_numbers.tj` / `.ky` /
+ *   `.joysound`) are unioned. Per-vendor — TJ #100 and KY #100 are unrelated.
  *
- * Output preserves first-seen order of the identity keys.
+ *   Tier B (soft match): records still in singleton clusters after Tier A
+ *   are grouped by the `normalize(title_primary) + "|" + normalize(artist_primary)`
+ *   key and unioned. Records with no peer remain standalone.
+ *
+ *   Per-cluster ownership: each output field is taken from the
+ *   highest-priority contributing source per the spec's per-field table.
+ *   See `mergeCluster` for the chains.
+ *
+ * Determinism: cluster output is sorted by
+ *   1) `karaoke_numbers.tj ?? '￿'` ascending — TJ-less records go last.
+ *   2) `normalize(title_primary)` ascending — locale-stable string compare.
+ *   3) `id` ascending.
+ * The U+FFFF sentinel is the highest BMP code point, larger than any TJ#
+ * (which are ASCII digits), so null-tj records reliably sort to the end.
+ *
+ * Conflict warnings (Tier B vendor-number disagreements) are returned in
+ * `result.conflicts`. Console output is forbidden — callers aggregate them.
  */
-export function mergeRecords(records: SongRecord[]): SongRecord[] {
-  const groups = new Map<string, GroupEntry[]>();
-  const order: string[] = [];
+export function mergeRecords(records: SongRecord[]): MergeResult {
+  const conflicts: MergeConflict[] = [];
+  const n = records.length;
+  if (n === 0) return { records: [], conflicts };
 
-  records.forEach((record, idx) => {
-    const key = identityKey(record);
-    const existing = groups.get(key);
-    if (existing) {
-      existing.push({ record, inputIndex: idx });
-    } else {
-      groups.set(key, [{ record, inputIndex: idx }]);
-      order.push(key);
+  const uf = new UnionFind(n);
+
+  // --- Tier A: per-vendor union-find ---
+  // Three separate index maps. TJ and KY values that happen to match
+  // numerically must NOT cluster.
+  const tjIndex = new Map<string, number[]>();
+  const kyIndex = new Map<string, number[]>();
+  const joyIndex = new Map<string, number[]>();
+
+  for (let i = 0; i < n; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const r = records[i]!;
+    if (r.karaoke_numbers.tj !== null) {
+      const arr = tjIndex.get(r.karaoke_numbers.tj);
+      if (arr) arr.push(i);
+      else tjIndex.set(r.karaoke_numbers.tj, [i]);
     }
+    if (r.karaoke_numbers.ky !== null) {
+      const arr = kyIndex.get(r.karaoke_numbers.ky);
+      if (arr) arr.push(i);
+      else kyIndex.set(r.karaoke_numbers.ky, [i]);
+    }
+    if (r.karaoke_numbers.joysound !== null) {
+      const arr = joyIndex.get(r.karaoke_numbers.joysound);
+      if (arr) arr.push(i);
+      else joyIndex.set(r.karaoke_numbers.joysound, [i]);
+    }
+  }
+
+  for (const indexes of [tjIndex, kyIndex, joyIndex]) {
+    for (const idxs of indexes.values()) {
+      if (idxs.length < 2) continue;
+      // biome-ignore lint/style/noNonNullAssertion: length >= 2
+      const first = idxs[0]!;
+      for (let k = 1; k < idxs.length; k++) {
+        // biome-ignore lint/style/noNonNullAssertion: k in bounds
+        uf.union(first, idxs[k]!);
+      }
+    }
+  }
+
+  // --- Tier B: fallback for records still in singleton clusters ---
+  // A record is "still alone" iff its UF root only points to itself among
+  // the input set. Compute cluster sizes first, then group singletons by
+  // tierBKey and union them.
+  const sizeByRoot = new Map<number, number>();
+  for (let i = 0; i < n; i++) {
+    const root = uf.find(i);
+    sizeByRoot.set(root, (sizeByRoot.get(root) ?? 0) + 1);
+  }
+
+  const tierBGroups = new Map<string, number[]>();
+  for (let i = 0; i < n; i++) {
+    const root = uf.find(i);
+    if (sizeByRoot.get(root) !== 1) continue;
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const key = tierBKey(records[i]!);
+    const arr = tierBGroups.get(key);
+    if (arr) arr.push(i);
+    else tierBGroups.set(key, [i]);
+  }
+
+  // Track which roots were formed via Tier B so we can scope conflict
+  // detection to those clusters only.
+  const tierBRoots = new Set<number>();
+  for (const idxs of tierBGroups.values()) {
+    if (idxs.length < 2) continue;
+    // biome-ignore lint/style/noNonNullAssertion: length >= 2
+    const first = idxs[0]!;
+    for (let k = 1; k < idxs.length; k++) {
+      // biome-ignore lint/style/noNonNullAssertion: k in bounds
+      uf.union(first, idxs[k]!);
+    }
+    tierBRoots.add(uf.find(first));
+  }
+
+  // --- Materialize clusters ---
+  const clusters = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) {
+    const root = uf.find(i);
+    const arr = clusters.get(root);
+    if (arr) arr.push(i);
+    else clusters.set(root, [i]);
+  }
+
+  const merged: SongRecord[] = [];
+  for (const [root, idxs] of clusters) {
+    // biome-ignore lint/style/noNonNullAssertion: idx in bounds
+    const cluster = idxs.map((i) => records[i]!);
+    const wasTierB = tierBRoots.has(root);
+    merged.push(mergeCluster(cluster, wasTierB, conflicts));
+  }
+
+  // Deterministic sort. See docblock above for the rule.
+  merged.sort((a, b) => {
+    const at = a.karaoke_numbers.tj ?? '￿';
+    const bt = b.karaoke_numbers.tj ?? '￿';
+    if (at < bt) return -1;
+    if (at > bt) return 1;
+    const an = normalize(a.title_primary);
+    const bn = normalize(b.title_primary);
+    if (an < bn) return -1;
+    if (an > bn) return 1;
+    if (a.id < b.id) return -1;
+    if (a.id > b.id) return 1;
+    return 0;
   });
 
-  const out: SongRecord[] = [];
-  for (const key of order) {
-    const group = groups.get(key);
-    if (!group) continue;
-    const winner = pickWinner(group).record;
-    const groupRecords = group.map((g) => g.record);
-    const merged: SongRecord = {
-      id: winner.id,
-      source_url: winner.source_url,
-      title_primary: winner.title_primary,
-      title_ko: winner.title_ko,
-      artist_primary: winner.artist_primary,
-      artist_ko: winner.artist_ko,
-      release_year: winner.release_year,
-      karaoke_numbers: mergeKaraokeNumbers(groupRecords),
-      categories: mergeCategories(groupRecords),
-      crawled_at: winner.crawled_at,
-    };
-    out.push(merged);
-  }
-  return out;
+  return { records: merged, conflicts };
 }

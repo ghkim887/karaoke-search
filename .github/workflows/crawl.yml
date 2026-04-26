@@ -50,10 +50,35 @@ jobs:
         run: pnpm -r build
 
       - name: Run crawler
-        run: pnpm --filter @karaoke/crawler start --limit "${{ inputs.limit || 0 }}" --out apps/web/public/data/songs.json.tmp
+        run: pnpm --filter @karaoke/crawler start --limit "${{ inputs.limit || 0 }}" --out apps/web/public/data/songs.json.tmp --conflicts-out /tmp/merge-conflicts.json
 
       - name: Atomic rename output
         run: node -e "require('node:fs').renameSync('apps/web/public/data/songs.json.tmp','apps/web/public/data/songs.json')"
+
+      - name: Compose PR body with merge-conflict summary
+        id: pr_body
+        run: |
+          {
+            echo 'body<<EOF'
+            echo 'Automated crawl output. See workflow run for logs.'
+            if [ -f /tmp/merge-conflicts.json ]; then
+              total=$(node -e "console.log(JSON.parse(require('node:fs').readFileSync('/tmp/merge-conflicts.json','utf8')).total)")
+              if [ "$total" -gt 0 ]; then
+                echo ''
+                echo '## Merge conflicts during dedup'
+                echo "- Total: $total"
+                echo '- Sample (first 10):'
+                node -e "
+                  const s = JSON.parse(require('node:fs').readFileSync('/tmp/merge-conflicts.json','utf8'));
+                  for (const c of s.sample) {
+                    const vs = c.values.map(v => \`\${v.source}=\${v.value}\`).join(', ');
+                    console.log(\`  - \${c.field}: \${vs} -> winner: \${c.winner} (cluster_key=\${c.cluster_key})\`);
+                  }
+                "
+              fi
+            fi
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Close prior crawl PRs
         env:
@@ -67,7 +92,6 @@ jobs:
           branch: "crawl/${{ github.run_id }}"
           commit-message: "data: weekly crawl ${{ github.run_id }}"
           title: "data: weekly crawl ${{ github.run_id }}"
-          body: |
-            Automated crawl output. See workflow run for logs.
+          body: ${{ steps.pr_body.outputs.body }}
           labels: crawl-output
           add-paths: apps/web/public/data/songs.json

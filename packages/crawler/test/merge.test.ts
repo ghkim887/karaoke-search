@@ -18,74 +18,278 @@ function record(over: Partial<SongRecord>): SongRecord {
   };
 }
 
-describe('mergeRecords', () => {
-  it('retains both karaoke numbers when sources contribute different non-null fields', () => {
-    const a = record({
+describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
+  // ---------------------------------------------------------------------
+  // Case 1: Two-source merge by shared TJ#
+  // ---------------------------------------------------------------------
+  it('merges two sources sharing a TJ# (Tier A)', () => {
+    const tj = record({
+      id: 'tj-68923',
+      source_url: 'https://tj.test/68923',
+      title_primary: '群青',
+      title_ko: null,
+      artist_primary: 'YOASOBI',
+      artist_ko: null,
+      release_year: null,
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const blog = record({
       id: 'blog-1-0',
       source_url: 'https://blog.test/1',
-      karaoke_numbers: { tj: '12345', ky: null, joysound: null },
+      title_primary: 'Gunjō',
+      title_ko: '군청',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비',
+      release_year: 2020,
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+      categories: ['jpop'],
     });
-    const b = record({
-      id: 'tj-9-0',
-      source_url: 'https://tj.test/9',
-      karaoke_numbers: { tj: null, ky: '67890', joysound: null },
-    });
-    const out = mergeRecords([a, b]);
-    expect(out).toHaveLength(1);
-    expect(out[0]?.karaoke_numbers).toEqual({ tj: '12345', ky: '67890', joysound: null });
+
+    const { records, conflicts } = mergeRecords([tj, blog]);
+
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // title_primary chain TJ→blog→namu: TJ wins.
+    expect(m.title_primary).toBe('群青');
+    expect(m.artist_primary).toBe('YOASOBI');
+    // ko chain blog→namu: blog wins.
+    expect(m.title_ko).toBe('군청');
+    expect(m.artist_ko).toBe('요아소비');
+    // release_year chain blog→namu→tj: blog (2020) wins (TJ has null).
+    expect(m.release_year).toBe(2020);
+    expect(m.karaoke_numbers.tj).toBe('68923');
+    // id/source_url tiebreak: blog has higher priority (rank 1) than tj.
+    expect(m.id).toBe('blog-1-0');
+    expect(m.source_url).toBe('https://blog.test/1');
   });
 
-  it('keeps a single record when both sources provide the same number; first wins', () => {
-    const a = record({
+  // ---------------------------------------------------------------------
+  // Case 2: Three-source merge by shared TJ#
+  // ---------------------------------------------------------------------
+  it('merges three sources sharing a TJ# and applies the release_year chain', () => {
+    const tj = record({
+      id: 'tj-68923',
+      source_url: 'https://tj.test/68923',
+      title_primary: '群青',
+      artist_primary: 'YOASOBI',
+      release_year: 2019, // wrong on TJ; chain should ignore it.
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+    });
+    const blog = record({
       id: 'blog-1-0',
       source_url: 'https://blog.test/1',
+      title_primary: 'Gunjō',
+      title_ko: '군청',
+      artist_primary: 'YOASOBI',
+      release_year: 2020,
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+    });
+    const namu = record({
+      id: 'namu-1',
+      source_url: 'https://namu.test/1',
+      title_primary: '群青 (YOASOBI)',
+      title_ko: '군청 (나무)',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비',
+      release_year: 2021,
+      karaoke_numbers: { tj: '68923', ky: '47474', joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, blog, namu]);
+
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // release_year chain blog→namu→tj: blog (2020) wins.
+    expect(m.release_year).toBe(2020);
+    // title_primary chain TJ→blog→namu: TJ wins.
+    expect(m.title_primary).toBe('群青');
+    // title_ko chain blog→namu: blog wins.
+    expect(m.title_ko).toBe('군청');
+    // KY contributed only by namu — survives the union.
+    expect(m.karaoke_numbers).toEqual({ tj: '68923', ky: '47474', joysound: null });
+  });
+
+  // ---------------------------------------------------------------------
+  // Case 3: Blog-only island
+  // ---------------------------------------------------------------------
+  it('keeps a blog-only record with no vendor numbers as a standalone', () => {
+    const blog = record({
+      id: 'blog-99-0',
+      source_url: 'https://blog.test/99',
+      title_primary: '夜に駆ける',
+      title_ko: '밤에 달리다',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([blog]);
+
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: null, joysound: null });
+    expect(records[0]?.id).toBe('blog-99-0');
+  });
+
+  // ---------------------------------------------------------------------
+  // Case 4: Blog→TJ fuzzy match (Tier B)
+  // ---------------------------------------------------------------------
+  it('clusters a blog row to a TJ row via Tier B fuzzy (title, artist) match', () => {
+    const tj = record({
+      id: 'tj-12345',
+      source_url: 'https://tj.test/12345',
+      title_primary: 'チューリング・ラブ',
+      artist_primary: 'ナナヲアカリ',
       karaoke_numbers: { tj: '12345', ky: null, joysound: null },
+    });
+    const blog = record({
+      id: 'blog-2-0',
+      source_url: 'https://blog.test/2',
+      title_primary: 'チューリング・ラブ',
+      title_ko: '튜링 러브',
+      artist_primary: 'ナナヲアカリ',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, blog]);
+
+    expect(records).toHaveLength(1);
+    // No conflict: blog's tj is null, so no disagreement on tj.
+    expect(conflicts).toHaveLength(0);
+    expect(records[0]?.title_primary).toBe('チューリング・ラブ');
+    expect(records[0]?.title_ko).toBe('튜링 러브');
+    expect(records[0]?.karaoke_numbers.tj).toBe('12345');
+  });
+
+  // ---------------------------------------------------------------------
+  // Case 5: Vendor-number conflict on Tier B
+  // ---------------------------------------------------------------------
+  it('logs a Tier B vendor-number conflict and lets blog win the tj field', () => {
+    const blog = record({
+      id: 'blog-3-0',
+      source_url: 'https://blog.test/3',
+      title_primary: 'アイドル',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+    });
+    const namu = record({
+      id: 'namu-2',
+      source_url: 'https://namu.test/2',
+      title_primary: 'アイドル',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: '68924', ky: null, joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([blog, namu]);
+
+    expect(records).toHaveLength(1);
+    // Blog wins on tj (highest priority).
+    expect(records[0]?.karaoke_numbers.tj).toBe('68923');
+    // Exactly one conflict on the tj field.
+    expect(conflicts).toHaveLength(1);
+    const c = conflicts[0];
+    if (!c) throw new Error('no conflict');
+    expect(c.field).toBe('tj');
+    expect(c.winner).toBe('68923');
+    expect(c.values.map((v) => v.source).sort()).toEqual(['blog', 'namu']);
+    expect(c.values.map((v) => v.value).sort()).toEqual(['68923', '68924']);
+  });
+
+  // ---------------------------------------------------------------------
+  // Case 6: Multi-vendor merge via shared KY (Tier A)
+  // ---------------------------------------------------------------------
+  it('clusters records via shared KY# and unions all three vendor fields', () => {
+    const a = record({
+      id: 'tj-1',
+      source_url: 'https://tj.test/1',
+      title_primary: 'Song A',
+      artist_primary: 'Artist A',
+      karaoke_numbers: { tj: 'X', ky: 'Y', joysound: null },
     });
     const b = record({
-      id: 'tj-9-0',
-      source_url: 'https://tj.test/9',
-      karaoke_numbers: { tj: '12345', ky: null, joysound: null },
+      id: 'namu-3',
+      source_url: 'https://namu.test/3',
+      title_primary: 'Song A',
+      artist_primary: 'Artist A',
+      karaoke_numbers: { tj: null, ky: 'Y', joysound: 'Z' },
     });
-    const out = mergeRecords([a, b]);
-    expect(out).toHaveLength(1);
-    expect(out[0]?.karaoke_numbers.tj).toBe('12345');
-    expect(out[0]?.source_url).toBe('https://blog.test/1');
-    expect(out[0]?.id).toBe('blog-1-0');
+
+    const { records, conflicts } = mergeRecords([a, b]);
+
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: 'X', ky: 'Y', joysound: 'Z' });
   });
 
-  it('union-dedupes and alphabetically sorts categories from collisions', () => {
-    const a = record({ id: 'blog-1-0', categories: ['vocaloid'] });
-    const b = record({ id: 'tj-9-0', categories: ['jpop'] });
-    const out = mergeRecords([a, b]);
-    expect(out).toHaveLength(1);
-    expect(out[0]?.categories).toEqual(['jpop', 'vocaloid']);
+  // ---------------------------------------------------------------------
+  // Case 7: TJ-less Vocaloid (namu only)
+  // ---------------------------------------------------------------------
+  it('keeps a namuwiki-only Vocaloid record standalone with title_primary from namu', () => {
+    const namu = record({
+      id: 'namu-vocaloid-1',
+      source_url: 'https://namu.test/vocaloid/1',
+      title_primary: 'メルト',
+      title_ko: '멜트',
+      artist_primary: 'ryo',
+      release_year: 2007,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['vocaloid'],
+    });
+
+    const { records, conflicts } = mergeRecords([namu]);
+
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    expect(records[0]?.title_primary).toBe('メルト');
+    expect(records[0]?.karaoke_numbers.tj).toBeNull();
+    expect(records[0]?.id).toBe('namu-vocaloid-1');
   });
 
-  it('breaks within-source ties by lower crawled_at on the title fields', () => {
-    const later = record({
-      id: 'blog-1-0',
-      title_primary: 'あぶく',
-      title_ko: 'LATER',
-      crawled_at: '2026-04-26T11:00:00Z',
-    });
-    const earlier = record({
-      id: 'blog-1-0',
-      title_primary: 'あぶく',
-      title_ko: 'EARLIER',
-      crawled_at: '2026-04-26T09:00:00Z',
-    });
-    // `later` arrives first in registration order; the same-source tie-break
-    // by lower crawled_at must displace it with `earlier`.
-    const out = mergeRecords([later, earlier]);
-    expect(out).toHaveLength(1);
-    expect(out[0]?.title_ko).toBe('EARLIER');
-    expect(out[0]?.crawled_at).toBe('2026-04-26T09:00:00Z');
-  });
+  // ---------------------------------------------------------------------
+  // Determinism micro-check
+  // ---------------------------------------------------------------------
+  it('produces byte-identical output across two runs on the same input (determinism)', () => {
+    const input: SongRecord[] = [
+      record({
+        id: 'tj-100',
+        source_url: 'https://tj.test/100',
+        title_primary: 'Beta',
+        artist_primary: 'X',
+        karaoke_numbers: { tj: '100', ky: null, joysound: null },
+      }),
+      record({
+        id: 'blog-50-0',
+        source_url: 'https://blog.test/50',
+        title_primary: 'Beta',
+        title_ko: 'Beta-KO',
+        artist_primary: 'X',
+        karaoke_numbers: { tj: '100', ky: null, joysound: null },
+      }),
+      record({
+        id: 'blog-51-0',
+        source_url: 'https://blog.test/51',
+        title_primary: 'Alpha',
+        artist_primary: 'X',
+        karaoke_numbers: { tj: null, ky: null, joysound: null },
+      }),
+      record({
+        id: 'namu-99',
+        source_url: 'https://namu.test/99',
+        title_primary: 'Alpha',
+        artist_primary: 'X',
+        karaoke_numbers: { tj: null, ky: null, joysound: null },
+      }),
+    ];
 
-  it('preserves first-seen identity-key order across distinct songs', () => {
-    const a = record({ id: 'blog-1-0', title_primary: 'first', artist_primary: 'X' });
-    const b = record({ id: 'blog-2-0', title_primary: 'second', artist_primary: 'X' });
-    const out = mergeRecords([a, b]);
-    expect(out.map((r) => r.title_primary)).toEqual(['first', 'second']);
+    const a = mergeRecords(input);
+    const b = mergeRecords(input);
+
+    expect(a.records).toEqual(b.records);
+    expect(a.conflicts).toEqual(b.conflicts);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });

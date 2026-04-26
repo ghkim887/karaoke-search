@@ -2,7 +2,7 @@ import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
 import type { Crawler } from './adapters/index.js';
-import { mergeRecords } from './merge.js';
+import { type MergeConflict, mergeRecords } from './merge.js';
 
 export interface RunPipelineOptions {
   adapters: Crawler[];
@@ -11,10 +11,18 @@ export interface RunPipelineOptions {
    * decide what "one unit" means. */
   limit?: number;
   outPath: string;
+  /**
+   * Optional sibling-output path for the merge-conflicts JSON summary
+   * (Tier B vendor-number disagreements). When set, the pipeline writes
+   * `{ total, sample }` (sample=first 10) to this path so the crawl
+   * GitHub Actions workflow can append it to the PR body.
+   */
+  conflictsOutPath?: string;
 }
 
 export interface RunPipelineResult {
   written: number;
+  conflicts: MergeConflict[];
 }
 
 /**
@@ -30,7 +38,7 @@ export interface RunPipelineResult {
  *  4. Atomically write `outPath` via `outPath + ".tmp"` then rename.
  */
 export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipelineResult> {
-  const { adapters, limit, outPath } = opts;
+  const { adapters, limit, outPath, conflictsOutPath } = opts;
   const adapterOptions = typeof limit === 'number' && limit > 0 ? { limit } : undefined;
 
   const collected: SongRecord[] = [];
@@ -40,7 +48,7 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
     }
   }
 
-  const merged = mergeRecords(collected);
+  const { records: merged, conflicts } = mergeRecords(collected);
   for (const record of merged) {
     validateSongRecord(record);
   }
@@ -51,5 +59,14 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
   await writeFile(tmp, json, 'utf8');
   await rename(tmp, outPath);
 
-  return { written: merged.length };
+  if (conflictsOutPath) {
+    const summary = {
+      total: conflicts.length,
+      sample: conflicts.slice(0, 10),
+    };
+    await mkdir(dirname(conflictsOutPath), { recursive: true });
+    await writeFile(conflictsOutPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
+  }
+
+  return { written: merged.length, conflicts };
 }
