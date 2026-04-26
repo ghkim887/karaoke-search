@@ -21,7 +21,7 @@ export function SearchBox({ value, onInput }: SearchBoxProps) {
       class="search-input"
       type="search"
       aria-label="가라오케 검색"
-      placeholder="노래/아티스트/曲名/imase ..."
+      placeholder="곡명/가수명"
       autocomplete="off"
       spellcheck={false}
       value={value}
