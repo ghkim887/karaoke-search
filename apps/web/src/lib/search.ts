@@ -52,9 +52,10 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
  * need only one network request.
  */
 export async function loadIndex(): Promise<IndexBundle> {
-  const res = await fetch('/data/songs.json');
+  const url = `${import.meta.env.BASE_URL}data/songs.json`;
+  const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Failed to load /data/songs.json: ${res.status} ${res.statusText}`);
+    throw new Error(`Failed to load ${url}: ${res.status} ${res.statusText}`);
   }
   const records = (await res.json()) as SongRecord[];
   const index = buildIndex(records);
