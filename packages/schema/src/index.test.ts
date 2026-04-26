@@ -137,6 +137,42 @@ describe('validateSongRecord — failure cases', () => {
 
     expect(() => validateSongRecord(bad)).toThrowError(/additional properties/i);
   });
+
+  it('rejects a record whose categories contain the dropped proseka value', () => {
+    const bad = {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/1',
+      title_primary: 'Foo',
+      title_ko: null,
+      artist_primary: 'Bar',
+      artist_ko: null,
+      release_year: 2020,
+      karaoke_numbers: { ...baseKaraokeNumbers },
+      categories: ['proseka'],
+      crawled_at: '2026-04-26T10:00:00Z',
+    };
+
+    expect(() => validateSongRecord(bad)).toThrowError(/categories/);
+  });
+});
+
+describe('validateSongRecord — Category enum coverage', () => {
+  it('accepts a record whose categories contain the new vtuber value', () => {
+    const record: SongRecord = {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/1',
+      title_primary: 'Foo',
+      title_ko: null,
+      artist_primary: 'Bar',
+      artist_ko: null,
+      release_year: 2024,
+      karaoke_numbers: { ...baseKaraokeNumbers },
+      categories: ['vtuber'],
+      crawled_at: '2026-04-26T10:00:00Z',
+    };
+
+    expect(() => validateSongRecord(record)).not.toThrow();
+  });
 });
 
 describe('RawSongRecord type shape', () => {

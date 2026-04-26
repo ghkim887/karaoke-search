@@ -2,10 +2,10 @@ import Ajv, { type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 
 /**
- * Allowed song categories. v1 scope: exactly these four values, no others.
- * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-design.md, Data Model section.
+ * Allowed song categories. Exactly these four values, no others.
+ * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-v2-design.md, Data Model section.
  */
-export type Category = 'jpop' | 'vocaloid' | 'anime' | 'proseka';
+export type Category = 'jpop' | 'vocaloid' | 'anime' | 'vtuber';
 
 /**
  * Karaoke machine catalog numbers per source. All values nullable so a record
@@ -61,7 +61,7 @@ export interface RawSongRecord {
   categories: Category[];
 }
 
-const CATEGORY_VALUES: readonly Category[] = ['jpop', 'vocaloid', 'anime', 'proseka'];
+const CATEGORY_VALUES: readonly Category[] = ['jpop', 'vocaloid', 'anime', 'vtuber'];
 
 /**
  * Ajv-compatible JSON Schema for `SongRecord`.
