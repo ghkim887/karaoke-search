@@ -103,49 +103,65 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 2 — `tj-media-direct` adapter
 
-- **Goal**: Implement the TJ Media direct adapter (parser + crawler + normalizer) against committed HTML fixtures, then wire it into the registry as the lowest-priority source.
+- **Goal**: Implement the TJ Media direct adapter (parser + crawler + normalizer + artist seed list) against the committed HTML fixture, then wire it into the registry as the lowest-priority source.
+- **Pre-implementation investigation**: completed 2026-04-27 — fixture saved at `packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html` (sha256 `d48f53d7827b1215cd0c4490b7911b7463feb63131fcc132d6f2bc9ff45975f4`). Live verification confirmed:
+  - `nationType=JPN` is the only Japanese-content filter (no `cate_cd` exists; TJ segments only by nation).
+  - There is no browse-all URL — `searchTxt` must be non-empty and every search caps at ~200 results, requiring artist-fanout enumeration.
+  - `www.tjmedia.com` gates by User-Agent — bot UAs receive a static "site under maintenance" IIS page; a Chrome UA is served the live site. The adapter must spoof a Chrome UA.
+  - HTML structure is `<ul class="chart-list-area">` with `<li><ul class="grid-container list ico">` rows, not a `<table>`. See spec Section "Source: TJ Media direct" for the cell-class → schema-field map.
 - **Deliverables**:
-  - Pre-implementation investigation step:
-    - Capture two live HTML pages per Japanese-language genre (J-POP, 애니메이션, 보컬로이드) using `curl -A "karaoke-search-crawler/0.1 (+https://github.com/ghkim887-karaoke-search)" "<url>" > fixture.html`.
-    - Document in `packages/crawler/src/adapters/tj-media-direct/PARSER_CONTRACT.md` (a sibling spec, NOT a top-level docs file): the URL pattern, the form/query param names, the table selector, the per-row column order and count, and the missing-number convention.
-  - `packages/crawler/src/adapters/tj-media-direct/parser.ts` — `parseListingPage(html: string, sourceUrl: string, genre: TJGenre): RawSongRecord[]`. Uses cheerio per the pinned selectors.
-  - `packages/crawler/src/adapters/tj-media-direct/crawler.ts` — paginates per genre, calls parser, threads results through normalizer. Handles pagination cursor and "two empties to be safe" terminator.
-  - `packages/crawler/src/adapters/tj-media-direct/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Genre → category mapping per spec Section "Source: TJ Media direct" — TJ's `J-POP` → `[jpop]`, `애니메이션` → `[anime]`, `보컬로이드` → `[vocaloid]`. No per-record artist roster lookup.
-  - `packages/crawler/src/adapters/index.ts` — append `TJDirectCrawler` instance to the `adapters` array (lowest priority, after `BlogCrawler` and `NamuWikiCrawler` once the latter lands in Phase 3 — for now append it last; Phase 3 inserts `NamuWikiCrawler` between blog and tj).
-  - `packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html`, `anime-page-1.html`, `vocaloid-page-1.html` — committed snapshots, with sibling `.sha256` files.
-  - `packages/crawler/test/adapters/tj-media-direct/parser.test.ts` — fixture-based parser tests.
-  - `packages/crawler/test/adapters/tj-media-direct/normalizer.test.ts` — `RawSongRecord` → `SongRecord` mapping tests covering all three genre→category mappings.
+  - `packages/crawler/src/adapters/tj-media-direct/artists.ts` — exports a seed list of artist names. Initial population: union of unique `artist_primary` values from `apps/web/public/data/songs.json` plus a curated additions array for Hololive / Nijisanji JP talent and vocaloid producers / common chart artists. Executor records the final count in the commit body.
+  - `packages/crawler/src/adapters/tj-media-direct/parser.ts` — exports `parseListingPage(html: string, sourceUrl: string): RawSongRecord[]`. Uses cheerio per the pinned selectors. Selects `ul.chart-list-area > li > ul.grid-container.list > li.grid-item` cells per row; extracts:
+    - TJ# from `.grid-item.center.pos-type span.num2` text
+    - title from `.grid-item.title3 .flex-box p span` text
+    - artist from `.grid-item.title4.singer p span span.highlight` text; fall back to `.grid-item.title4.singer p span` text if the `highlight` wrapper is absent (TJ's search-match rendering — may not wrap every artist cell)
+    Lyricist (`.grid-item.title5`) and composer (`.grid-item.title6`) cells are not used.
+  - `packages/crawler/src/adapters/tj-media-direct/crawler.ts` — iterates the `artists.ts` seed list; per artist performs `nationType=JPN&strType=2&searchTxt=<encodeURIComponent(artist)>&pageNo=1..2&pageRowCnt=100`; stops at `pageNo=3` (the 200-cap means it always returns zero rows) or earlier on the first empty page. Threads results through normalizer.
+  - `packages/crawler/src/adapters/tj-media-direct/normalizer.ts` — maps `RawSongRecord` → `SongRecord` with `categories: ["jpop"]` for **every** record (no heuristic anime/vocaloid inference; those tags arrive via NamuWiki Tier A merges in the merger). `title_ko = null`, `artist_ko = null`, `release_year = null`. `id` format `tj-<num>`.
+  - `packages/crawler/src/adapters/index.ts` — append `TJDirectCrawler` instance to the `adapters` array (lowest priority; Phase 3 inserts `NamuWikiCrawler` between blog and tj).
+  - `packages/crawler/src/http.ts` — per-host config map for `www.tjmedia.com`: `{ minIntervalMs: 500, jitterMs: 100, userAgent: '<Chrome UA string>' }`. Reuse the existing per-host mechanism if it is already present; otherwise add it as a small surface-area patch in this phase.
+  - **Fixtures**: just `packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html` (the captured YOASOBI search result page) — already in the working tree from the recon step. **No separate per-genre fixtures** (TJ has no genre filter; the design is artist-fanout, not genre iteration).
+  - `packages/crawler/test/adapters/tj-media-direct/parser.test.ts` — parses the captured fixture; asserts:
+    - ≥10 rows extracted.
+    - The first row matches the YOASOBI sample from the spec (`tj-68781`, title `アイドル(推しの子 OP)`, artist `YOASOBI`).
+    - Every parsed `tj` matches `^\d+$`.
+  - `packages/crawler/test/adapters/tj-media-direct/normalizer.test.ts` — assertions:
+    - Every record has `categories: ["jpop"]` exactly (length 1, value `"jpop"`).
+    - Every record has `title_ko === null && artist_ko === null`.
+    - Every record's `id` matches `^tj-\d+$`.
+    - Every record has `karaoke_numbers.tj` non-null and `karaoke_numbers.ky === null && karaoke_numbers.joysound === null`.
+  - `packages/crawler/test/adapters/tj-media-direct/crawler.test.ts` — mocks the HTTP layer with the fixture content; iterates an artist list of 2–3 entries; confirms output count matches expectation, dedup-by-tj behavior across artists works correctly (two records sharing the same TJ# from two different artist queries should not double-emit), and the page-2-empty terminator stops the loop.
 - **Implementation notes**:
-  - URL and param shape MUST be re-confirmed from a live fetch in the investigation step before any code is written. Do NOT invent URLs from prior knowledge.
-  - The `TJGenre` type is a local string union (e.g., `"jpop" | "anime" | "vocaloid"`) used only as a parser argument; it is NOT exported from `@karaoke/schema`.
-  - Per-host rate override: TJ uses the default 1s/±0.5s. If the http client lacks a per-host override, add it as a small surface-area patch in this phase (`http.ts` accepts `{ minIntervalMs?: number }` per host).
-  - `id` assignment: `tj-${tj_song_number}` (e.g., `tj-28311`). The schema's `id` regex `^[a-z0-9-]+-\d+$` allows this.
-  - `release_year` extraction: only set when a 4-digit year unambiguously appears in a dedicated column. Otherwise `null`.
-  - Robots.txt re-verification: log the resolved `robots-parser` decision once per host on first request to make the run-log auditable.
+  - **Categorization is uniform**: `categories: ["jpop"]` for every TJ-direct record, full stop. The parenthetical anime/show name in the title cell (e.g., `(推しの子 OP)`) is parser-visible but not parsed for category inference. NamuWiki Tier A merges (Phase 3 + Phase 0.5 merger) supply `[anime]` and `[vocaloid]` tags via shared TJ# clustering.
+  - **No `TJGenre` type**: the previous draft had a 3-value genre union; TJ has no genre filter so this type is not introduced.
+  - **Chrome UA per-host override**: the `userAgent` field in the per-host config is new in v2. If `http.ts` doesn't yet support a per-host UA override (only `minIntervalMs` / `jitterMs`), extend it. Keep the default crawler UA for all other hosts.
+  - **Pagination terminator**: stop at the first empty page OR after `pageNo=2`, whichever comes first. The 200-record cap (2 × 100) guarantees `pageNo=3` is always empty; iterating it wastes a request.
+  - **Per-query success-ratio gate**: ≥90% of fetched listing pages parse without throwing. Computed per-query (not per-genre — there are no genres). Below 90%, the pipeline aborts.
+  - `id` assignment: `tj-${tj_song_number}` (e.g., `tj-68781`). The schema's `id` regex `^[a-z0-9-]+-\d+$` allows this.
+  - `release_year`: always `null` (not exposed on TJ listing rows).
+  - Robots.txt: TJ does not publish a `robots.txt` for either UA. The `robots-parser` gate runs per-request and returns "allowed" by default in the absence of a directives file. Log the resolved decision once per host on first request to keep the run-log auditable.
+  - Artist seed list size: the executor decides between (a) union with the full v1 blog corpus's `artist_primary` set (~60 artists) or (b) a tighter curated list. Capture the final count in the commit body.
 - **Verification**:
-  - `pnpm --filter @karaoke/crawler test test/adapters/tj-media-direct/parser.test.ts` passes with ≥10 records extracted from each genre fixture; every record has `karaoke_numbers.tj` non-null and digit-only.
-  - `pnpm --filter @karaoke/crawler test test/adapters/tj-media-direct/normalizer.test.ts` passes; assertions:
-    - `id` matches `^tj-\d+$`.
-    - Records from `J-POP` fixture have `categories: ["jpop"]`.
-    - Records from `애니메이션` fixture have `["anime"]`.
-    - Records from `보컬로이드` fixture have `["vocaloid"]`.
-    - All records have `title_ko === null && artist_ko === null`.
+  - `pnpm --filter @karaoke/crawler test test/adapters/tj-media-direct/` exits 0; all three test files (parser, normalizer, crawler) pass.
   - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
+  - **Manual smoke** (executor): `pnpm --filter @karaoke/crawler start --source tj-media-direct --limit 3 --out /tmp/tj-smoke.json` produces non-zero records, ALL with `categories: ['jpop']`, all with `karaoke_numbers.tj` non-null, all with `karaoke_numbers.ky === null && karaoke_numbers.joysound === null`. Capture the record count and a sample record in the commit body.
 - **Review pass** (`code-reviewer`):
-  - Confirm `PARSER_CONTRACT.md` documents the live URL pattern and param names captured during the investigation step (no invented URLs).
-  - Confirm the parser uses cheerio (not regex) and pins the table selector.
-  - Confirm pagination terminator is "two consecutive empty pages", not "first empty page".
-  - Confirm the genre→category mapping is exactly `J-POP → [jpop]`, `애니메이션 → [anime]`, `보컬로이드 → [vocaloid]` with no roster-based post-processing.
-  - Confirm the per-host rate-limit override is wired through `http.ts` if it was missing in v1.
-  - Confirm robots.txt is honored before the first request to `www.tjmedia.com` (capture in commit body whether the live `robots.txt` permits the path).
+  - Confirm the Chrome UA per-host override is wired in `http.ts` for `www.tjmedia.com` and is observed at request time (log line proves it).
+  - Confirm the artist seed list at `artists.ts` is non-empty and was actually used (not a stub).
+  - Confirm `categories` is uniformly `['jpop']` for every TJ record produced — read `normalizer.ts` and verify there is no heuristic inference logic (no regex on title for `OP|ED|アニメ|ボーカロイド` etc.).
+  - Confirm the parser uses cheerio (not regex) and pins the correct selectors: TJ# from `.grid-item.center.pos-type span.num2`, title from `.grid-item.title3 .flex-box p span`, artist from `.grid-item.title4.singer p span span.highlight` (with fallback to `p span`).
+  - Confirm the pagination terminator stops at page 2 or first-empty, whichever comes first (capture the chosen condition in code comment).
+  - Confirm robots.txt resolution is logged once per host on first request.
 - **Commit message**:
   ```
   feat(crawler): add tj-media-direct adapter
 
-  Implement parser, crawler, and normalizer for TJ Media's live song
-  search. Cover J-POP / 애니메이션 / 보컬로이드 genres with committed
-  HTML fixtures. Categories follow TJ's own genre vocabulary; Korean
-  fields stay null per spec.
+  Implement parser, crawler, normalizer, and artist seed list for TJ
+  Media's live accompaniment search. Categories are uniformly [jpop]
+  per TJ's catalog vocabulary; anime/vocaloid tags ride along via
+  NamuWiki Tier A merges. Chrome UA spoof per-host (TJ gates bot UAs
+  to a static maintenance page). 500ms+100ms rate limit. Korean fields
+  stay null.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
@@ -326,6 +342,6 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Open Questions
 
-- Should the namuwiki adapter ship a fourth page parser for `애니메이션_노래방_수록_목록` (or similar) if the investigation finds a maintained anime list? Spec defaults to "no — leave anime to TJ" if the page is missing or stale; user decision needed if a maintained page exists but is sparse (e.g., <500 records).
+- Should the namuwiki adapter ship a fourth page parser for `애니메이션_노래방_수록_목록` (or similar) if the investigation finds a maintained anime list? Without it, the `anime` category populates only from NamuWiki's vocaloid + holo + niji parsers when a record happens to also list anime context — which may be sparse. If a maintained anime list page exists, parsing it gives `anime` real coverage. User decision needed if a maintained page exists but is sparse (e.g., <500 records).
 - Should `featured.ts` move from a hand-maintained file to an auto-generated picked-from-data file? v2 keeps it hand-maintained (matches v1); raise as a v3 candidate if maintenance burden grows.
 - If `songs.json` exceeds 30 MB, which mitigation does the user want for v3 (Web Worker, category sharding, server-side search)? Capture the choice when the follow-up issue is filed in Phase 5.

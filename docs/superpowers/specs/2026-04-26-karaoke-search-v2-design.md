@@ -14,7 +14,7 @@ v2 expands the karaoke-search corpus with two new data sources (TJ Media direct 
 Goals:
 - Add `tj-media-direct` adapter against TJ Media's official song search.
 - Add `namuwiki` adapter covering NamuWiki's per-agency karaoke lists (Vocaloid + Hololive JP + Nijisanji JP, anime list page if maintained).
-- Populate the previously-empty `anime` category from TJ's `애니메이션` genre filter.
+- Populate the previously-empty `anime` category via NamuWiki Tier A merges onto the TJ-direct spine (TJ has no genre tag — every TJ record emits `[jpop]`; NamuWiki contributes the `[anime]` and `[vocaloid]` categories that ride along through the merger).
 - Replace v1's flat registration-order dedup with a two-tier match key + per-field ownership table (see Section "Dedup & Merge Algorithm (v2 redesign)" below). TJ-direct becomes the canonical "songs spine"; blog and namuwiki contribute enrichment metadata onto the spine plus standalone island records.
 
 Non-Goals:
@@ -154,45 +154,95 @@ Each surfaced record carries the categories of its source page; the merger set-u
 
 ## Source: TJ Media direct (`tj-media-direct`)
 
-Crawls TJ Media's official accompaniment search and emits records with TJ numbers only.
+Crawls TJ Media's official accompaniment search and emits records with TJ numbers only. Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged `["anime", "jpop"]` or `["jpop", "vocaloid"]`).
 
-Endpoint:
-- Base: `https://www.tjmedia.com/song/accompaniment` (the live URL must be re-verified before Phase 2 — TJ has historically rotated paths) `[verify before Phase 2]`.
-- Query parameters expected: a category code (`cate_cd` or similar) and a paging cursor. Exact param names captured in the parser-contract step of Phase 2.
-- Japanese-language content lives under multiple genre codes; the crawler iterates genre codes mapped to our category union.
+### Endpoint and query parameters
 
-Genre → category mapping:
+TJ segments its catalog only by **nation** (`KOR`/`ENG`/`JPN`). Anime, vocaloid, and standard J-POP all live under `nationType=JPN` — there is no genre filter. There is also no browse-all URL: `searchTxt` must be non-empty, and every search caps at ~200 results (2 pages × 100). Catalog enumeration therefore relies on **artist-list fanout** (see "Enumeration strategy" below), not on iterating a genre code.
 
-| TJ genre label | Our category | Notes |
+URL template:
+
+```
+https://www.tjmedia.com/song/accompaniment_search
+  ?nationType=JPN
+  &strType=2                  (search-field selector — 2 = 가수명 / artist)
+  &searchTxt=<artist name>    (URL-encoded; non-empty required)
+  &pageNo=N                   (1 or 2; the 200-record cap means page 3+ is always empty)
+  &pageRowCnt=100             (max page size)
+```
+
+Other `strType` values (`1`=곡명/title, `0`=전체/all) exist but are not used in v2; artist-fanout (`strType=2`) gives the most predictable per-artist coverage. Static HTML response — no JS render needed, no session cookies, no CSRF token.
+
+### HTML structure
+
+The result list is **not** a `<table>`. It's a `<ul class="chart-list-area music type-a type-b">` (the outer `<ul>` carries multiple classes; CSS class-selector `.chart-list-area` is sufficient to pin it) whose children are `<li>` rows; each row contains a `<ul class="grid-container list ico">` with five `<li class="grid-item ...">` cells.
+
+Text is not a direct child of the cell `<li>` — all fields are nested in `<p>` and `<span>` wrappers. The parser must traverse those wrappers; do not assume the text is a direct child of the cell.
+
+| Schema field | Cell class | Inner extraction path |
 | --- | --- | --- |
-| `J-POP` / `J-pop` | `jpop` | Primary jpop volume |
-| `애니메이션` | `anime` | Anime karaoke; includes anime OPs/EDs/inserts |
-| `보컬로이드` | `vocaloid` | Some overlap with NamuWiki vocaloid set |
+| `karaoke_numbers.tj` | `grid-item center pos-type` | `span.num2` text (TJ catalog number, digits only) |
+| `title_primary` | `grid-item title3` | `.flex-box p span` text (may include trailing parenthetical, e.g. `アイドル(推しの子 OP)`) |
+| `artist_primary` | `grid-item title4 singer` | `p span span.highlight` text; fall back to `p span` text if the `highlight` wrapper is absent (it is TJ's search-match rendering and may not appear for every row) |
+| (lyricist — unused) | `grid-item title5` | — |
+| (composer — unused) | `grid-item title6` | — |
 
-Available fields per row:
-- TJ song number (digits, e.g. `28311`).
-- Title (Japanese script).
-- Artist (Japanese script).
-- Occasionally lyricist / composer (ignored in v1 schema).
-- NOT available: Korean title, Korean artist, KY/JOYSOUND numbers, release year (release year is sometimes shown but unreliable; record as `null` unless a `YYYY` is unambiguously present).
+Available signal: TJ#, title (Japanese), artist (Japanese). NOT available on listing rows: Korean title, Korean artist, KY/JOYSOUND numbers, release year. The only on-page hint that a song is also an anime track is a parenthetical substring in the title cell (e.g. `(推しの子 OP)` for the YOASOBI sample) — TJ does not tag this as a category, and v2 does not parse it heuristically.
 
-Pagination strategy:
-- Iterate per genre code; for each, walk numeric pages (e.g. `?pageNo=1..N`) until an empty result set is returned twice in a row (the "two empties to be safe" guard handles transient blank pages).
-- Adapter records the highest seen page per genre to `.cache/tj-direct-pages.json` and uses it as a starting offset on subsequent runs (skips already-fetched pages when ETag/Last-Modified is set; otherwise re-fetches from page 1).
+### Enumeration strategy (artist-list fanout)
 
-Rate-limit and politeness:
-- Default crawler rate (1 req/sec, ±0.5s jitter) is acceptable. TJ's history suggests we may safely crawl that fast.
-- Per-host override is allowed via the http client's options struct: `{ minIntervalMs?: number; jitterMs?: number }`. Wire-up landed in v1's `http.ts` as part of Phase 2's surface area, OR added in v2 if missing.
-- Honest UA preserved: `karaoke-search-crawler/0.1 (+https://github.com/ghkim887/karaoke-search)`.
+Because there is no browse-all URL and the per-query cap is ~200 records, the adapter enumerates the catalog by feeding a curated **artist seed list** into `strType=2&searchTxt=<artist>` queries.
 
-Robots.txt:
-- Must be re-verified live before the first Phase 2 crawl run. The `robots-parser` gate already runs per-request.
+Seed = unique `artist_primary` values from the current `apps/web/public/data/songs.json` (≈60 artists from the v1 blog crawl) ∪ a curated additions list of Hololive / Nijisanji JP talent, vocaloid producers, and common chart artists. The seed list lives at `packages/crawler/src/adapters/tj-media-direct/artists.ts` (created in Phase 2).
 
-Adapter conformance:
+Per artist: walk `pageNo=1..2`, stop at the first page that returns zero rows or after page 2 (the 200-cap guarantees page 3+ is empty). Per-query parser success-ratio gate: ≥90% of fetched listing pages parse without throwing.
+
+### Sample record
+
+From the captured live YOASOBI search result (fixture `packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html`, sha256 `d48f53d7...`):
+
+```json
+{
+  "id": "tj-68781",
+  "source_url": "https://www.tjmedia.com/song/accompaniment_search?nationType=JPN&strType=2&searchTxt=YOASOBI",
+  "title_primary": "アイドル(推しの子 OP)",
+  "title_ko": null,
+  "artist_primary": "YOASOBI",
+  "artist_ko": null,
+  "release_year": null,
+  "karaoke_numbers": { "tj": "68781", "ky": null, "joysound": null },
+  "categories": ["jpop"],
+  "crawled_at": "2026-04-27T00:46:00.000Z"
+}
+```
+
+### Anti-bot signals and UA strategy
+
+`www.tjmedia.com` gates by User-Agent: a request with our honest crawler UA (`karaoke-search-crawler/...`) returns a static "site under maintenance" IIS page on every URL. A request with a real Chrome UA returns the live site normally. Neither UA is governed by a published `robots.txt` (the file does not exist for either UA), so bot-UA gating is the only bot-control signal TJ exposes.
+
+**The TJ-direct adapter therefore spoofs a Chrome UA** — implemented as a per-host UA override in `packages/crawler/src/http.ts` for `www.tjmedia.com`. This is a deliberate operational choice and a documented risk: TJ may add stronger bot-checks (CAPTCHA, IP rate-limit, fingerprinting) at any time, in which case the adapter degrades gracefully (empty result set, success-ratio gate trips, run aborts) and we revisit.
+
+### Rate limit and politeness
+
+Per-host override for `www.tjmedia.com`: **500 ms base + ±100 ms jitter** (vs the blog's 200 ms + ±50 ms). The slower cadence is conservative given the bot-UA signal — we want our pattern to look unremarkable.
+
+Wired through the http client's per-host options struct: `{ minIntervalMs: 500, jitterMs: 100, userAgent: '<Chrome UA string>' }`.
+
+### Adapter conformance
+
 - Implements the v1 `Crawler` interface: `name: "tj-media-direct"`, `crawl(opts?: CrawlOptions): AsyncIterable<SongRecord>` (see v1 spec Section "Crawler Architecture").
-- Yields already-normalized `SongRecord` (matching the BlogCrawler's pattern). `karaoke_numbers.tj` populated; `karaoke_numbers.ky` and `karaoke_numbers.joysound` always `null`. `title_ko = null`, `artist_ko = null`. `release_year = null` unless extracted with high confidence.
+- Yields already-normalized `SongRecord`.
+- Every record: `categories: ["jpop"]` (uniform — no heuristic anime/vocaloid inference).
+- `karaoke_numbers.tj` populated with the TJ catalog number; `karaoke_numbers.ky` and `karaoke_numbers.joysound` always `null`.
+- `title_ko = null`, `artist_ko = null` (TJ does not expose Korean fields on listing rows).
+- `release_year = null` (not exposed on listing rows).
+- `id` format: `tj-<num>` (e.g., `tj-68781`).
 
-Success-ratio gate: ≥90% of fetched listing pages must parse without throwing. Below 90%, the pipeline aborts with non-zero exit and no PR is opened (matches v1 budget).
+### Captured live evidence
+
+`packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html` — captured 2026-04-27 (sha256 `d48f53d7827b1215cd0c4490b7911b7463feb63131fcc132d6f2bc9ff45975f4`). Canonical sample for parser tests; query was `nationType=JPN&strType=2&searchTxt=YOASOBI&pageNo=1&pageRowCnt=100`.
+
+Success-ratio gate: ≥90% of fetched listing pages parse without throwing. Below 90%, the pipeline aborts with non-zero exit (matches v1 budget).
 
 ## Source: NamuWiki (`namuwiki`)
 
@@ -269,16 +319,16 @@ Inherited verbatim from v1 (UA, ETag/Last-Modified cache, `robots-parser` gate, 
 
 | Host | min interval | jitter | UA |
 | --- | --- | --- | --- |
-| `j-pop-playlist.tistory.com` | 1000 ms | ±500 ms | default |
-| `namu.wiki` | 2000 ms | ±500 ms | default |
-| `www.tjmedia.com` | 1000 ms | ±500 ms | default |
+| `j-pop-playlist.tistory.com` | 200 ms | ±50 ms | default crawler UA |
+| `namu.wiki` | 2000 ms | ±500 ms | default crawler UA |
+| `www.tjmedia.com` | 500 ms | ±100 ms | Chrome UA (per-host spoof — see Source: TJ Media direct) |
 
 Per-adapter success-ratio gate:
 - BlogCrawler: ≥90% (unchanged from v1).
 - TJDirectCrawler: ≥90%.
 - NamuWikiCrawler: ≥85% (relaxed for JS-render fragility).
 
-Index-page failures (e.g., the per-genre TJ root page or the NamuWiki list page itself) remain critical: any failure aborts the crawl immediately with non-zero exit.
+Index-page failures (e.g., the per-artist TJ search index page returning a non-2xx for a seeded artist, or the NamuWiki list page itself failing to load) remain critical: any failure aborts the crawl immediately with non-zero exit.
 
 ## Data scale and storage
 
@@ -288,12 +338,14 @@ Estimates:
 | --- | --- |
 | Blog (existing) | ~21k |
 | NamuWiki (vocaloid + holo + niji + maybe anime) | ~5k–10k |
-| TJ-direct (J-POP + 애니메이션 + 보컬로이드) | ~50k–100k |
-| Total after dedup | ~80k–130k |
+| TJ-direct (`nationType=JPN` × artist-fanout, ~60+ seed artists × 200-cap per query) | ~5k–15k |
+| Total after dedup | ~25k–40k |
 
-`apps/web/public/data/songs.json` could grow to ~30–60 MB.
+TJ-direct's value in v2 is **the catalog-number spine for the merger** (Tier A vendor-number clustering anchors on `karaoke_numbers.tj`), not bulk record contribution. The artist-fanout pattern intentionally trades coverage breadth for catalog-number reliability — a full TJ catalog is ~80k records, but enumerating it would require either a different endpoint TJ does not expose or per-page scraping at a cadence that risks the bot-gate. ~5–15k well-known-artist records is the design target.
 
-If `songs.json` crosses 30 MB, MiniSearch's client-side index may become slow on first load (parse + index build on the main thread). v2 does NOT solve this; instead Phase 5 measures the post-crawl size and load time, and if either degrades noticeably, files a follow-up issue with one of these mitigations as the v3 candidate fix:
+`apps/web/public/data/songs.json` could grow to ~15–25 MB.
+
+If `songs.json` crosses 30 MB, MiniSearch's client-side index may become slow on first load (parse + index build on the main thread). With v2's revised coverage estimate (~25–40k total) this is unlikely to trigger, but Phase 5 still measures the post-crawl size and load time; if either degrades noticeably, files a follow-up issue with one of these mitigations as the v3 candidate fix:
 1. Lazy-load the index in a Web Worker.
 2. Split `songs.json` by category and load on demand.
 3. Move to a server-side search (vendor TBD) backed by a pre-built FlexSearch/MiniSearch shard.
@@ -302,6 +354,14 @@ For v2: just measure and document. Defer the actual fix.
 
 ## Open Questions
 
-- NamuWiki's anti-bot posture is unknown until Phase 3's investigation step runs. If plain GET, raw-export, AND headless-render all fail under our honest UA, the namuwiki adapter is descoped to "blog + tj only" for v2 and Hololive/Nijisanji records populate from TJ-direct alone (still tagged `[jpop]` per TJ's genre, but without NamuWiki's Korean translations for those records).
-- TJ's exact Japanese-only filter form (`cate_cd` value, additional language gating param if any) needs live capture in Phase 2's first step. The genre table above is provisional.
+- NamuWiki's anti-bot posture is unknown until Phase 3's investigation step runs. If plain GET, raw-export, AND headless-render all fail under our honest UA, the namuwiki adapter is descoped to "blog + tj only" for v2 and Hololive/Nijisanji records populate from TJ-direct alone (tagged `[jpop]`, but without NamuWiki's Korean translations for those records).
+
+## Resolved (formerly open)
+
+- **TJ's Japanese-only filter form** — RESOLVED 2026-04-27. TJ segments only by nation (`nationType=JPN`); there is no genre filter and no `cate_cd` parameter. See Section "Source: TJ Media direct" for the full URL contract.
+- **TJ anti-bot posture** — RESOLVED 2026-04-27. Bot UAs (including our default crawler UA) get a static "site under maintenance" IIS page. Chrome UA is served the live site. The TJ-direct adapter spoofs a Chrome UA via per-host override; operational risk documented in Section "Source: TJ Media direct".
+
+## Accepted scope notes
+
+- TJ-direct ships with **partial catalog coverage by design** (~5–15k records via artist-fanout, vs the full TJ catalog of ~80k). This is acceptable because TJ-direct's role in v2 is the catalog-number spine for Tier A merges, not bulk record contribution. Expanding coverage would require either an undiscovered browse-all endpoint or substantially more aggressive crawling against TJ's bot-UA gate.
 
