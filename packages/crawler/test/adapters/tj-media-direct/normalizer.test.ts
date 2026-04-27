@@ -4,17 +4,16 @@ import { fileURLToPath } from 'node:url';
 import type { RawSongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
 import { normalize } from '../../../src/adapters/tj-media-direct/normalizer.js';
-import { parseListingPage } from '../../../src/adapters/tj-media-direct/parser.js';
+import { parseCatalogResponse } from '../../../src/adapters/tj-media-direct/parser.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
-const FIXTURE_PATH = resolve(HERE, '../../fixtures/tj-media-direct/jpop-page-1.html');
+const FIXTURE_PATH = resolve(HERE, '../../fixtures/tj-media-direct/catalog-sample.json');
+const SOURCE_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 const CRAWLED_AT = '2026-04-27T00:46:00.000Z';
+const FIXTURE = JSON.parse(readFileSync(FIXTURE_PATH, 'utf8'));
 
 describe('normalize — fixture-derived records', () => {
-  const html = readFileSync(FIXTURE_PATH, 'utf8');
-  const url =
-    'https://www.tjmedia.com/song/accompaniment_search?nationType=JPN&strType=2&searchTxt=YOASOBI&pageNo=1&pageRowCnt=100';
-  const raws = parseListingPage(html, url);
+  const raws = parseCatalogResponse(FIXTURE, SOURCE_URL);
   const records = raws.map((r) => normalize(r, CRAWLED_AT));
 
   it('every record has categories=["jpop"] exactly (length 1, value "jpop")', () => {
@@ -24,11 +23,10 @@ describe('normalize — fixture-derived records', () => {
     }
   });
 
-  it('every record has title_ko, artist_ko, and release_year null', () => {
+  it('every record has title_ko and artist_ko null', () => {
     for (const r of records) {
       expect(r.title_ko).toBeNull();
       expect(r.artist_ko).toBeNull();
-      expect(r.release_year).toBeNull();
     }
   });
 
@@ -38,13 +36,28 @@ describe('normalize — fixture-derived records', () => {
     }
   });
 
-  it('every record has karaoke_numbers.tj non-null and ky/joysound null', () => {
+  it('every record has karaoke_numbers.tj non-null and digit-only; ky/joysound null', () => {
     for (const r of records) {
       expect(r.karaoke_numbers.tj).not.toBeNull();
       expect(r.karaoke_numbers.tj).toMatch(/^\d+$/);
       expect(r.karaoke_numbers.ky).toBeNull();
       expect(r.karaoke_numbers.joysound).toBeNull();
     }
+  });
+
+  it('release_year is an integer in [1900, 2100] or null', () => {
+    for (const r of records) {
+      const y = r.release_year;
+      if (y === null) continue;
+      expect(Number.isInteger(y)).toBe(true);
+      expect(y).toBeGreaterThanOrEqual(1900);
+      expect(y).toBeLessThanOrEqual(2100);
+    }
+  });
+
+  it('at least one fixture record has a parseable release_year (publishdate)', () => {
+    const populated = records.filter((r) => r.release_year !== null);
+    expect(populated.length).toBeGreaterThan(0);
   });
 
   it('threads the passed crawled_at through every record', () => {
@@ -62,7 +75,7 @@ describe('normalize — fixture-derived records', () => {
 describe('normalize — direct unit cases', () => {
   function rawFor(over: Partial<RawSongRecord>): RawSongRecord {
     return {
-      source_url: 'https://www.tjmedia.com/song/accompaniment_search?nationType=JPN&strType=2',
+      source_url: SOURCE_URL,
       title_primary: 'Title',
       title_ko: null,
       artist_primary: 'Artist',
@@ -85,5 +98,15 @@ describe('normalize — direct unit cases', () => {
     // the category at the v2 spec's uniform value.
     const r = normalize(rawFor({}), CRAWLED_AT);
     expect(r.categories).toEqual(['jpop']);
+  });
+
+  it('passes release_year through when set', () => {
+    const r = normalize(rawFor({ release_year: 2023 }), CRAWLED_AT);
+    expect(r.release_year).toBe(2023);
+  });
+
+  it('passes release_year=null through unchanged', () => {
+    const r = normalize(rawFor({ release_year: null }), CRAWLED_AT);
+    expect(r.release_year).toBeNull();
   });
 });

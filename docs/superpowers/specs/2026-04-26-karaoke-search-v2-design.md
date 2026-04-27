@@ -154,62 +154,82 @@ Each surfaced record carries the categories of its source page; the merger set-u
 
 ## Source: TJ Media direct (`tj-media-direct`)
 
-Crawls TJ Media's official accompaniment search and emits records with TJ numbers only. Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged `["anime", "jpop"]` or `["jpop", "vocaloid"]`).
+Crawls TJ Media's legacy catalog JSON API and emits records with TJ numbers (and `release_year`). Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged `["anime", "jpop"]` or `["jpop", "vocaloid"]`).
 
-### Endpoint and query parameters
+### Endpoint and request body
 
-TJ segments its catalog only by **nation** (`KOR`/`ENG`/`JPN`). Anime, vocaloid, and standard J-POP all live under `nationType=JPN` — there is no genre filter. There is also no browse-all URL: `searchTxt` must be non-empty, and every search caps at ~200 results (2 pages × 100). Catalog enumeration therefore relies on **artist-list fanout** (see "Enumeration strategy" below), not on iterating a genre code.
-
-URL template:
+A single POST returns the catalog since the supplied month. Using `searchYm=200001` (Jan 2000) returns ~67k records covering the full historical TJ catalog as of the crawl date. The previously-spec'd artist-fanout enumeration is retired — one POST replaces it.
 
 ```
-https://www.tjmedia.com/song/accompaniment_search
-  ?nationType=JPN
-  &strType=2                  (search-field selector — 2 = 가수명 / artist)
-  &searchTxt=<artist name>    (URL-encoded; non-empty required)
-  &pageNo=N                   (1 or 2; the 200-record cap means page 3+ is always empty)
-  &pageRowCnt=100             (max page size)
+POST https://www.tjmedia.com/legacy/api/newSongOfMonth
+Content-Type: application/x-www-form-urlencoded
+
+searchYm=200001
 ```
 
-Other `strType` values (`1`=곡명/title, `0`=전체/all) exist but are not used in v2; artist-fanout (`strType=2`) gives the most predictable per-artist coverage. Static HTML response — no JS render needed, no session cookies, no CSRF token.
+No authentication, no CSRF token, no session cookies. Static JSON response (`Content-Type: application/json;charset=UTF-8`).
 
-### HTML structure
+### Response shape
 
-The result list is **not** a `<table>`. It's a `<ul class="chart-list-area music type-a type-b">` (the outer `<ul>` carries multiple classes; CSS class-selector `.chart-list-area` is sufficient to pin it) whose children are `<li>` rows; each row contains a `<ul class="grid-container list ico">` with five `<li class="grid-item ...">` cells.
+```json
+{
+  "resultCode": "99",
+  "resultData": {
+    "itemsTotalCount": 67296,
+    "items": [
+      {
+        "rownumber": 1,
+        "thumbnailImg": "https://www.tjmedia.com/SONG_ALBUMIMG/SONG_MATCH/074026_thumb.jpg",
+        "pro": 74026,
+        "indexTitle": "her",
+        "indexSong": "JVKE",
+        "word": "LAWSON JACOB DODGE,LAWSON ZACHARY JOHN",
+        "com": "LAWSON JACOB DODGE,LAWSON ZACHARY JOHN",
+        "icongubun": "",
+        "mv_yn": "N",
+        "publishdate": "2026-04-27"
+      }
+    ]
+  },
+  "GNB_MENU": [],
+  "resultMsg": "성공"
+}
+```
 
-Text is not a direct child of the cell `<li>` — all fields are nested in `<p>` and `<span>` wrappers. The parser must traverse those wrappers; do not assume the text is a direct child of the cell.
+Field map to `RawSongRecord`:
 
-| Schema field | Cell class | Inner extraction path |
+| Schema field | Source field | Notes |
 | --- | --- | --- |
-| `karaoke_numbers.tj` | `grid-item center pos-type` | `span.num2` text (TJ catalog number, digits only) |
-| `title_primary` | `grid-item title3` | `.flex-box p span` text (may include trailing parenthetical, e.g. `アイドル(推しの子 OP)`) |
-| `artist_primary` | `grid-item title4 singer` | `p span span.highlight` text; fall back to `p span` text if the `highlight` wrapper is absent (it is TJ's search-match rendering and may not appear for every row) |
-| (lyricist — unused) | `grid-item title5` | — |
-| (composer — unused) | `grid-item title6` | — |
+| `karaoke_numbers.tj` | `pro` (number) | cast to string |
+| `title_primary` | `indexTitle` (string) | |
+| `artist_primary` | `indexSong` (string) | despite the field name, this is the artist |
+| `release_year` | `publishdate` (`YYYY-MM-DD`) | leading 4 chars parsed as int; null if parse fails or year is outside `[1900, 2100]` |
 
-Available signal: TJ#, title (Japanese), artist (Japanese). NOT available on listing rows: Korean title, Korean artist, KY/JOYSOUND numbers, release year. The only on-page hint that a song is also an anime track is a parenthetical substring in the title cell (e.g. `(推しの子 OP)` for the YOASOBI sample) — TJ does not tag this as a category, and v2 does not parse it heuristically.
+Other fields (`word`, `com`, `thumbnailImg`, `icongubun`, `mv_yn`, `rownumber`) are ignored.
 
-### Enumeration strategy (artist-list fanout)
+### Loose-JP filter
 
-Because there is no browse-all URL and the per-query cap is ~200 records, the adapter enumerates the catalog by feeding a curated **artist seed list** into `strType=2&searchTxt=<artist>` queries.
+The catalog API returns the entire TJ catalog (~67k records, mostly Korean). The adapter applies a loose Japanese-relevance filter at the parser layer — a record is kept if its `indexTitle` or `indexSong` contains at least ONE of:
 
-Seed = unique `artist_primary` values from the current `apps/web/public/data/songs.json` (≈60 artists from the v1 blog crawl) ∪ a curated additions list of Hololive / Nijisanji JP talent, vocaloid producers, and common chart artists. The seed list lives at `packages/crawler/src/adapters/tj-media-direct/artists.ts` (created in Phase 2).
+- a hiragana char (`/[぀-ゟ]/`),
+- a katakana char (`/[゠-ヿ]/`), OR
+- a CJK unified ideograph (`/[一-鿿]/`) AND the same string contains no Hangul (`/[가-힯]/`).
 
-Per artist: walk `pageNo=1..2`, stop at the first page that returns zero rows or after page 2 (the 200-cap guarantees page 3+ is empty). Per-query parser success-ratio gate: ≥90% of fetched listing pages parse without throwing.
+Strings containing Hangul or only Latin script are NOT Japanese-relevant unless they also contain hiragana or katakana. This loose filter yields ~7,100 JP-relevant records out of 67,296. The strict variant (hiragana/katakana only) would yield ~4,000 records but loses Han-only Japanese titles like `紅蓮華`. The user accepted ~5% Chinese leak (~50–200 records) as the tradeoff for the broader coverage.
 
 ### Sample record
 
-From the captured live YOASOBI search result (fixture `packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html`, sha256 `d48f53d7...`):
+From the live response (`pro=68781`, captured 2026-04-27):
 
 ```json
 {
   "id": "tj-68781",
-  "source_url": "https://www.tjmedia.com/song/accompaniment_search?nationType=JPN&strType=2&searchTxt=YOASOBI",
+  "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
   "title_primary": "アイドル(推しの子 OP)",
   "title_ko": null,
   "artist_primary": "YOASOBI",
   "artist_ko": null,
-  "release_year": null,
+  "release_year": 2023,
   "karaoke_numbers": { "tj": "68781", "ky": null, "joysound": null },
   "categories": ["jpop"],
   "crawled_at": "2026-04-27T00:46:00.000Z"
@@ -218,15 +238,15 @@ From the captured live YOASOBI search result (fixture `packages/crawler/test/fix
 
 ### Anti-bot signals and UA strategy
 
-`www.tjmedia.com` gates by User-Agent: a request with our honest crawler UA (`karaoke-search-crawler/...`) returns a static "site under maintenance" IIS page on every URL. A request with a real Chrome UA returns the live site normally. Neither UA is governed by a published `robots.txt` (the file does not exist for either UA), so bot-UA gating is the only bot-control signal TJ exposes.
+The legacy catalog API has **no UA gating** — confirmed live 2026-04-27 with default UA, bot UA, and Chrome UA all returning 200. This is in contrast to the public HTML site (`/song/accompaniment_search`), which gates bot UAs to a static "site under maintenance" IIS page. The legacy API is open even when the public HTML site requires a Chrome UA.
 
-**The TJ-direct adapter therefore spoofs a Chrome UA** — implemented as a per-host UA override in `packages/crawler/src/http.ts` for `www.tjmedia.com`. This is a deliberate operational choice and a documented risk: TJ may add stronger bot-checks (CAPTCHA, IP rate-limit, fingerprinting) at any time, in which case the adapter degrades gracefully (empty result set, success-ratio gate trips, run aborts) and we revisit.
+The adapter therefore uses the project's default crawler UA. No Chrome spoof is needed. (The previous spec required a Chrome UA spoof for the HTML-scraping path; that requirement is retired alongside that path.)
 
 ### Rate limit and politeness
 
-Per-host override for `www.tjmedia.com`: **500 ms base + ±100 ms jitter** (vs the blog's 200 ms + ±50 ms). The slower cadence is conservative given the bot-UA signal — we want our pattern to look unremarkable.
+The adapter issues one POST per crawl run, so per-host rate-limit is essentially academic. The `www.tjmedia.com` per-host config retains a conservative **500 ms base + ±100 ms jitter** as documentation of intent — if any future code path adds a second request to TJ, it will already be polite.
 
-Wired through the http client's per-host options struct: `{ minIntervalMs: 500, jitterMs: 100, userAgent: '<Chrome UA string>' }`.
+Wired through the http client's per-host options struct: `{ minIntervalMs: 500, jitterMs: 100 }` (no `userAgent` override).
 
 ### Adapter conformance
 
@@ -234,15 +254,22 @@ Wired through the http client's per-host options struct: `{ minIntervalMs: 500, 
 - Yields already-normalized `SongRecord`.
 - Every record: `categories: ["jpop"]` (uniform — no heuristic anime/vocaloid inference).
 - `karaoke_numbers.tj` populated with the TJ catalog number; `karaoke_numbers.ky` and `karaoke_numbers.joysound` always `null`.
-- `title_ko = null`, `artist_ko = null` (TJ does not expose Korean fields on listing rows).
-- `release_year = null` (not exposed on listing rows).
+- `title_ko = null`, `artist_ko = null` (TJ does not expose Korean fields on the catalog API).
+- `release_year` populated from `publishdate` when parseable; null otherwise. Live coverage is effectively 100% — every catalog item has `publishdate`.
 - `id` format: `tj-<num>` (e.g., `tj-68781`).
+- `source_url` is the catalog endpoint URL itself (the API is the source; there is no per-record landing page).
+
+### Failure semantics
+
+Single POST per crawl. Either it works or it doesn't:
+
+- HTTP error (non-2xx, network failure, robots-disallow) → throw and abort the pipeline.
+- Malformed response shape → throw and abort.
+- No success-ratio gate (single request) and no per-vendor dedup needed (the API returns each `pro` exactly once).
 
 ### Captured live evidence
 
-`packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html` — captured 2026-04-27 (sha256 `d48f53d7827b1215cd0c4490b7911b7463feb63131fcc132d6f2bc9ff45975f4`). Canonical sample for parser tests; query was `nationType=JPN&strType=2&searchTxt=YOASOBI&pageNo=1&pageRowCnt=100`.
-
-Success-ratio gate: ≥90% of fetched listing pages parse without throwing. Below 90%, the pipeline aborts with non-zero exit (matches v1 budget).
+`packages/crawler/test/fixtures/tj-media-direct/catalog-sample.json` — trimmed snapshot of the live response (51 representative records: 31 JP-relevant + 10 Korean + 10 Latin-only, preserving the full response wrapper). Sibling `.sha256` file pins the fixture content. The full live capture was ~19 MB and is intentionally NOT committed.
 
 ## Source: NamuWiki (`namuwiki`)
 
@@ -321,11 +348,11 @@ Inherited verbatim from v1 (UA, ETag/Last-Modified cache, `robots-parser` gate, 
 | --- | --- | --- | --- |
 | `j-pop-playlist.tistory.com` | 200 ms | ±50 ms | default crawler UA |
 | `namu.wiki` | 2000 ms | ±500 ms | default crawler UA |
-| `www.tjmedia.com` | 500 ms | ±100 ms | Chrome UA (per-host spoof — see Source: TJ Media direct) |
+| `www.tjmedia.com` | 500 ms | ±100 ms | default crawler UA (legacy catalog API has no UA gating — see Source: TJ Media direct) |
 
 Per-adapter success-ratio gate:
 - BlogCrawler: ≥90% (unchanged from v1).
-- TJDirectCrawler: ≥90%.
+- TJDirectCrawler: not applicable — single POST per run; either it returns a parseable response or the pipeline aborts.
 - NamuWikiCrawler: ≥85% (relaxed for JS-render fragility).
 
 Index-page failures (e.g., the per-artist TJ search index page returning a non-2xx for a seeded artist, or the NamuWiki list page itself failing to load) remain critical: any failure aborts the crawl immediately with non-zero exit.
@@ -338,10 +365,10 @@ Estimates:
 | --- | --- |
 | Blog (existing) | ~21k |
 | NamuWiki (vocaloid + holo + niji + maybe anime) | ~5k–10k |
-| TJ-direct (`nationType=JPN` × artist-fanout, ~60+ seed artists × 200-cap per query) | ~5k–15k |
-| Total after dedup | ~25k–40k |
+| TJ-direct (catalog API + loose-JP filter) | ~4k–7k |
+| Total after dedup | ~25k–35k |
 
-TJ-direct's value in v2 is **the catalog-number spine for the merger** (Tier A vendor-number clustering anchors on `karaoke_numbers.tj`), not bulk record contribution. The artist-fanout pattern intentionally trades coverage breadth for catalog-number reliability — a full TJ catalog is ~80k records, but enumerating it would require either a different endpoint TJ does not expose or per-page scraping at a cadence that risks the bot-gate. ~5–15k well-known-artist records is the design target.
+TJ-direct's value in v2 is **the catalog-number spine for the merger** (Tier A vendor-number clustering anchors on `karaoke_numbers.tj`). With the legacy catalog API, every Japanese-relevant TJ entry (~7k records, live-verified count: 6,860 on 2026-04-27) is reachable in a single POST — the v1 artist-fanout cap is retired.
 
 `apps/web/public/data/songs.json` could grow to ~15–25 MB.
 
@@ -358,10 +385,11 @@ For v2: just measure and document. Defer the actual fix.
 
 ## Resolved (formerly open)
 
-- **TJ's Japanese-only filter form** — RESOLVED 2026-04-27. TJ segments only by nation (`nationType=JPN`); there is no genre filter and no `cate_cd` parameter. See Section "Source: TJ Media direct" for the full URL contract.
-- **TJ anti-bot posture** — RESOLVED 2026-04-27. Bot UAs (including our default crawler UA) get a static "site under maintenance" IIS page. Chrome UA is served the live site. The TJ-direct adapter spoofs a Chrome UA via per-host override; operational risk documented in Section "Source: TJ Media direct".
+- **TJ's Japanese-only filter form** — RESOLVED 2026-04-27 (initial recon). The public HTML site segments only by nation (`nationType=JPN`); there is no genre filter. Subsequently retired in favor of the catalog API path below.
+- **TJ anti-bot posture** — RESOLVED 2026-04-27 (initial recon). The public HTML site (`/song/accompaniment_search`) gates bot UAs to a static "site under maintenance" IIS page; a Chrome UA is required there. The legacy catalog API used by v2 has NO UA gating — see next entry.
+- **TJ catalog API discovery** — RESOLVED 2026-04-27 (follow-up recon). `POST https://www.tjmedia.com/legacy/api/newSongOfMonth` with body `searchYm=200001` returns the entire historical TJ catalog (~67k records) in one JSON response, including a populated `publishdate` field. No UA gating, no auth, no CSRF. This replaces the artist-fanout HTML-scrape design from the initial recon: 5× the coverage (~7k JP-relevant records vs ~5–15k via fanout) with 30× fewer requests, and `release_year` is now populated. The v2 adapter uses this path exclusively. See Section "Source: TJ Media direct".
 
 ## Accepted scope notes
 
-- TJ-direct ships with **partial catalog coverage by design** (~5–15k records via artist-fanout, vs the full TJ catalog of ~80k). This is acceptable because TJ-direct's role in v2 is the catalog-number spine for Tier A merges, not bulk record contribution. Expanding coverage would require either an undiscovered browse-all endpoint or substantially more aggressive crawling against TJ's bot-UA gate.
+- TJ-direct ships with **loose-JP filter coverage** (~7k JP-relevant records, ~5% Chinese leak accepted as the tradeoff for catching Han-only Japanese titles). The strict alternative (hiragana/katakana only) would yield ~4k records but lose titles like `紅蓮華`. User decision documented in the loose-JP filter section.
 

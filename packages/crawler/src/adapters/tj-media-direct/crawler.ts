@@ -1,48 +1,41 @@
-import type { RawSongRecord, SongRecord } from '@karaoke/schema';
+import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
-import { ARTIST_SEED_LIST } from './artists.js';
 import { normalize } from './normalizer.js';
-import { parseListingPage } from './parser.js';
+import { parseCatalogResponse } from './parser.js';
+
+const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
+/** "all songs since 2000-01" — returns the full historical TJ catalog (~67k). */
+const SEARCH_YM = '200001';
 
 /**
- * Per-run parse-success budget. Spec: ≥90% of fetched listing pages must
- * parse without throwing or the run aborts.
- */
-const PARSE_SUCCESS_RATIO_FLOOR = 0.9;
-
-/** Max page index the 200-record cap allows useful results from. */
-const MAX_PAGE_NO = 2;
-const PAGE_ROW_CNT = 100;
-const BASE_URL = 'https://www.tjmedia.com/song/accompaniment_search';
-
-/**
- * `TJDirectCrawler` enumerates TJ Media's accompaniment search via the
- * curated `ARTIST_SEED_LIST` (artist-fanout). For each seed it walks
- * `pageNo=1..2` (the 200-record per-query cap makes pageNo>=3 always empty);
- * it terminates the page loop early when page 1 returns zero rows.
+ * `TJDirectCrawler` fetches TJ Media's full historical catalog via a single
+ * POST to the legacy `newSongOfMonth` API and emits Japanese-relevant
+ * records as `SongRecord`s.
  *
- * Limit semantics mirror BlogCrawler: `options.limit` caps the number of
- * artist queries (not records).
+ * Endpoint contract (live-verified 2026-04-27):
+ *   POST https://www.tjmedia.com/legacy/api/newSongOfMonth
+ *   body: searchYm=200001 (form-urlencoded)
+ *
+ * No authentication, no UA gating (the legacy API is open even when the
+ * public HTML site requires a Chrome UA), no per-page loop. The single
+ * response yields ~67k catalog items; the parser's loose-JP filter narrows
+ * that to ~7k JP-relevant records.
  *
  * Failure semantics:
- *  - Fetch failures (robots-disallow, status >= 400, exceptions) count as
- *    "fetched but empty" — they tick the parse-success counters as
- *    fetched=yes, parsed=no — UNLESS robots disallows the URL or the
- *    underlying HttpClient throws, in which case we count fetch attempts
- *    only against the success ratio.
- *  - The per-run parse-success ratio is enforced AFTER all queries finish;
- *    below 90% the crawl throws and the pipeline aborts.
- *  - Cross-artist dedup-by-TJ#: a song that matches multiple artist queries
- *    (e.g. duets) is yielded only once.
+ *  - Any HTTP error (non-2xx, network failure, robots-disallow) throws and
+ *    aborts the pipeline. Single-request crawl — there is no retry path and
+ *    no success-ratio gate. Either it works or it doesn't.
+ *  - The parser also throws on a malformed response shape; that propagates.
+ *  - No dedup-by-tj logic is needed: the API returns each `pro` exactly once.
+ *
+ * Limit semantics: `options.limit` caps the number of records yielded
+ * (post JP-filter). Useful for smoke tests. `0`/undefined means no cap.
  */
 export class TJDirectCrawler implements Crawler {
   readonly name = 'tj-media-direct';
 
-  constructor(
-    private http: HttpClient,
-    private artists: readonly string[] = ARTIST_SEED_LIST,
-  ) {}
+  constructor(private http: HttpClient) {}
 
   async *crawl(options?: CrawlOptions): AsyncIterable<SongRecord> {
     const limit =
@@ -51,87 +44,32 @@ export class TJDirectCrawler implements Crawler {
         : Number.POSITIVE_INFINITY;
 
     const crawledAt = new Date().toISOString();
-    const yielded = new Set<string>();
-    const queued: SongRecord[] = [];
 
-    let pagesFetched = 0;
-    let pagesParsed = 0;
-
-    let attempted = 0;
-    for (const artist of this.artists) {
-      if (attempted >= limit) break;
-      attempted++;
-
-      for (let pageNo = 1; pageNo <= MAX_PAGE_NO; pageNo++) {
-        const url = buildUrl(artist, pageNo);
-        let body: string | null = null;
-        try {
-          const res = await this.http.fetch(url);
-          if (res === null) {
-            console.warn(`[tj-media-direct] ${artist} p${pageNo} blocked by robots.txt`);
-          } else if (res.status < 200 || res.status >= 300) {
-            console.warn(`[tj-media-direct] ${artist} p${pageNo} HTTP ${res.status}`);
-          } else {
-            body = res.body;
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.warn(`[tj-media-direct] ${artist} p${pageNo} fetch failed: ${msg}`);
-        }
-
-        if (body === null) {
-          // Couldn't fetch this page — treat as empty and stop iterating
-          // pages for this artist (don't speculatively burn page 2).
-          break;
-        }
-
-        pagesFetched++;
-        let raw: RawSongRecord[];
-        try {
-          raw = parseListingPage(body, url);
-          pagesParsed++;
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.warn(`[tj-media-direct] ${artist} p${pageNo} parse failed: ${msg}`);
-          break;
-        }
-
-        if (raw.length === 0) {
-          // First empty page terminates pagination — TJ's 200-cap means
-          // pageNo>=3 is always empty so we don't waste a request.
-          break;
-        }
-
-        for (const r of raw) {
-          const tj = r.karaoke_numbers.tj;
-          if (tj === null || yielded.has(tj)) continue;
-          yielded.add(tj);
-          queued.push(normalize(r, crawledAt));
-        }
-      }
+    const res = await this.http.postForm(CATALOG_URL, { searchYm: SEARCH_YM });
+    if (res === null) {
+      throw new Error(`[tj-media-direct] catalog fetch blocked by robots.txt: ${CATALOG_URL}`);
+    }
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error(
+        `[tj-media-direct] catalog fetch returned HTTP ${res.status} (${CATALOG_URL})`,
+      );
     }
 
-    if (pagesFetched > 0) {
-      const ratio = pagesParsed / pagesFetched;
-      if (ratio < PARSE_SUCCESS_RATIO_FLOOR) {
-        throw new Error(
-          `[tj-media-direct] parse success ratio ${ratio.toFixed(2)} below floor ` +
-            `${PARSE_SUCCESS_RATIO_FLOOR} (${pagesParsed}/${pagesFetched})`,
-        );
-      }
+    let json: unknown;
+    try {
+      json = JSON.parse(res.body);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`[tj-media-direct] catalog response is not valid JSON: ${msg}`);
     }
 
-    for (const r of queued) yield r;
+    const raw = parseCatalogResponse(json, CATALOG_URL);
+
+    let yielded = 0;
+    for (const r of raw) {
+      if (yielded >= limit) break;
+      yield normalize(r, crawledAt);
+      yielded++;
+    }
   }
-}
-
-function buildUrl(artist: string, pageNo: number): string {
-  const params = new URLSearchParams({
-    nationType: 'JPN',
-    strType: '2',
-    searchTxt: artist,
-    pageNo: String(pageNo),
-    pageRowCnt: String(PAGE_ROW_CNT),
-  });
-  return `${BASE_URL}?${params.toString()}`;
 }

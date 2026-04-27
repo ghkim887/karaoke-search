@@ -27,18 +27,18 @@ export interface HostConfig {
 /**
  * Per-host config table. Hosts not listed here use the project defaults.
  *
- * - `www.tjmedia.com` requires a Chrome UA: bot UAs (including our default)
- *   are served a static "site under maintenance" IIS page. The slower 500ms
- *   cadence is a politeness choice given the bot-UA gate.
+ * - `www.tjmedia.com`: the v2 TJ adapter hits the legacy catalog JSON API
+ *   (`/legacy/api/newSongOfMonth`), which has NO UA gating — confirmed live
+ *   2026-04-27 with default UA, bot UA, and Chrome UA all returning 200. The
+ *   conservative 500ms+100ms cadence is retained as a politeness choice; the
+ *   adapter only issues one POST per crawl run, so the cadence almost never
+ *   actually applies, but the entry documents the per-host posture.
  *
  * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-v2-design.md
  *       — "Operational discipline" table.
  */
 const HOST_CONFIG: Record<string, HostConfig> = {
   'www.tjmedia.com': {
-    userAgent:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-      '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     minIntervalMs: 500,
     jitterMs: 100,
   },
@@ -218,6 +218,49 @@ export class HttpClient {
     }
 
     const result: FetchResult = { status, body };
+    if (etag !== undefined) result.etag = etag;
+    if (lastModified !== undefined) result.lastModified = lastModified;
+    return result;
+  }
+
+  /**
+   * POST `url` with a form-urlencoded `body`, honoring robots.txt and the
+   * per-host rate limit. Returns `null` iff robots disallows the URL.
+   *
+   * Intentionally bypasses the on-disk conditional-request cache: the legacy
+   * APIs we POST to (e.g., TJ Media's `newSongOfMonth`) do not honor ETag
+   * or Last-Modified, and stuffing 19MB JSON blobs into `.cache/http.json`
+   * would thrash the cache file for no benefit.
+   */
+  async postForm(url: string, body: Record<string, string>): Promise<FetchResult | null> {
+    const parsed = new URL(url);
+    const origin = `${parsed.protocol}//${parsed.host}`;
+    const hostCfg = this.resolveHostConfig(parsed.host);
+    this.logHostOnce(parsed.host, hostCfg);
+
+    const robots = await this.getRobots(origin, hostCfg.userAgent);
+    const allowed = robots.isAllowed(url, hostCfg.userAgent);
+    if (allowed === false) {
+      return null;
+    }
+
+    await this.waitForRateLimit(hostCfg.minIntervalMs, hostCfg.jitterMs);
+
+    const encoded = new URLSearchParams(body).toString();
+    const headers: Record<string, string> = {
+      'user-agent': hostCfg.userAgent,
+      'content-type': 'application/x-www-form-urlencoded',
+    };
+
+    const res = await request(url, { method: 'POST', headers, body: encoded });
+    const status = res.statusCode;
+    const respBody = await res.body.text();
+    const etagHeader = res.headers.etag;
+    const lastModifiedHeader = res.headers['last-modified'];
+    const etag = typeof etagHeader === 'string' ? etagHeader : undefined;
+    const lastModified = typeof lastModifiedHeader === 'string' ? lastModifiedHeader : undefined;
+
+    const result: FetchResult = { status, body: respBody };
     if (etag !== undefined) result.etag = etag;
     if (lastModified !== undefined) result.lastModified = lastModified;
     return result;
