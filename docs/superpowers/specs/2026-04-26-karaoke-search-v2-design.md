@@ -215,7 +215,17 @@ The catalog API returns the entire TJ catalog (~67k records, mostly Korean). The
 - a katakana char (`/[゠-ヿ]/`), OR
 - a CJK unified ideograph (`/[一-鿿]/`) AND the same string contains no Hangul (`/[가-힯]/`).
 
-Strings containing Hangul or only Latin script are NOT Japanese-relevant unless they also contain hiragana or katakana. This loose filter yields ~7,100 JP-relevant records out of 67,296. The strict variant (hiragana/katakana only) would yield ~4,000 records but loses Han-only Japanese titles like `紅蓮華`. The user accepted ~5% Chinese leak (~50–200 records) as the tradeoff for the broader coverage.
+Strings containing Hangul or only Latin script are NOT Japanese-relevant unless they also contain hiragana or katakana. This loose filter yields ~7,100 JP-relevant records out of 67,296. The strict variant (hiragana/katakana only) would yield ~4,000 records but loses Han-only Japanese titles like `紅蓮華`.
+
+#### Chinese-artist denylist (always-on, post-filter)
+
+The Han-without-Hangul branch unavoidably leaks Cantopop / Mandopop catalog entries by well-known artists (`张学友`, `刘德华`, `邓丽君`, `王菲`, `蔡琴`, etc.). After the loose-JP filter passes, the artist name is normalized (whitespace-collapse + `toLowerCase()` + NFKC) and matched against a `~170`-entry seed denylist of recognized Chinese-music acts. Matches are dropped. Long-tail Chinese leak (≤4 records per artist not in the seed list) is accepted scope. Live impact at 2026-04-27: ~1,000 records dropped (the seed list covers heavy-catalog Chinese artists; the brief's 300-400 estimate undershot actual TJ representation).
+
+#### Blog-whitelist rescue (override)
+
+The loose-JP filter also drops Japanese acts whose names and titles are all-Latin (`GRANRODEO`, `halyosy`, `DREAMS COME TRUE`, `go!go!vanillas`, `Novelbright`, etc.) — the J-pop blog adapter already knows about these. To recover them, the parser accepts an optional `forceIncludeTjNumbers: ReadonlySet<string>`. When a TJ catalog row's `pro` is in the set, BOTH the loose-JP filter AND the Chinese denylist are bypassed for that record (rescue overrides denylist; the blog corpus is canonical). The crawler builds the set at construction time by reading `apps/web/public/data/songs.json` and extracting every record's `karaoke_numbers.tj`. If the file is missing, the rescue path silently degrades to an empty set with a single `console.warn`. This dependency on the on-disk blog corpus is a small architectural smell, parallel to `apps/web/src/lib/featured.ts`.
+
+Net coverage at 2026-04-27 with both refinements: **~5,860 JP-relevant records** (delta -1,001 vs the pre-refinement 6,860). The lower count reflects the wider-than-estimated denylist impact; the rescue path adds back ~145 records the blog already curated.
 
 ### Sample record
 

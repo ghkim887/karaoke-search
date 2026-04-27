@@ -103,6 +103,8 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 2 — `tj-media-direct` adapter
 
+> **Filter refinements (landed 2026-04-27, separate commit after the API pivot)**: parser now applies a Chinese-artist denylist (`~140`-entry seed list, normalized whitespace + lowercase + NFKC matching) AFTER the loose-JP filter passes, AND accepts an optional `forceIncludeTjNumbers` set sourced from the on-disk blog corpus that overrides BOTH the JP-filter and the denylist when a TJ# is already in the blog. Smoke at refinement time: 5,859 records (down from 6,860 baseline; the wider-than-expected denylist drop is offset by ~145 rescued all-Latin Japanese acts like GRANRODEO / halyosy / go!go!vanillas). See the design spec's "Loose-JP filter" subsection for the full rationale.
+
 - **Goal**: Implement the TJ Media direct adapter (JSON parser + single-POST crawler + normalizer) against the committed catalog-sample fixture, then wire it into the registry as the lowest-priority source.
 - **Pre-implementation investigation**: completed 2026-04-27 (twice — initial recon found the search-fanout HTML path; follow-up recon found the catalog JSON API which was used in the final design). The follow-up recon confirmed:
   - `POST https://www.tjmedia.com/legacy/api/newSongOfMonth` with body `searchYm=200001` returns the full historical TJ catalog (~67k items) in a single JSON response.

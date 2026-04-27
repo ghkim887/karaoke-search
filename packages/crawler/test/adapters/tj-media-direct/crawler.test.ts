@@ -11,10 +11,11 @@ const FIXTURE_TEXT = readFileSync(FIXTURE_PATH, 'utf8');
 const FIXTURE = JSON.parse(FIXTURE_TEXT);
 
 /**
- * The fixture's loose-JP-relevant subset — drives the expected output count.
- * Hand-built fixture: 31 JP-relevant + 10 Korean + 10 English-only.
+ * The fixture's loose-JP-relevant subset MINUS one denylisted Chinese artist
+ * record (pro=90015, 海来阿木). Hand-built fixture: 31 raw JP-relevant + 10
+ * Korean + 10 English-only -> 30 after denylist.
  */
-const EXPECTED_JP_COUNT = 31;
+const EXPECTED_JP_COUNT = 30;
 const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 
 interface Captured {
@@ -38,11 +39,14 @@ function buildHttp(opts: {
   };
 }
 
+/** Empty-set whitelist source — keeps existing tests free of rescue effects. */
+const emptyWhitelist = (): ReadonlySet<string> => new Set<string>();
+
 describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
   it('issues a single POST to the catalog endpoint with searchYm=200001', async () => {
     const captured: Captured[] = [];
     const http = buildHttp({ captured });
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     const records = [];
     for await (const r of crawler.crawl()) records.push(r);
 
@@ -54,7 +58,7 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('every emitted record has categories=["jpop"] and TJ number set', async () => {
     const http = buildHttp({});
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     const records = [];
     for await (const r of crawler.crawl()) records.push(r);
 
@@ -69,7 +73,7 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('honors options.limit by capping yielded records', async () => {
     const http = buildHttp({});
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     const records = [];
     for await (const r of crawler.crawl({ limit: 5 })) records.push(r);
     expect(records.length).toBe(5);
@@ -77,7 +81,7 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('throws when the HTTP layer returns a non-2xx status', async () => {
     const http = buildHttp({ status: 503, body: '<html>Service Unavailable</html>' });
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -87,7 +91,7 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('throws when the body is not valid JSON', async () => {
     const http = buildHttp({ status: 200, body: 'not json {{{' });
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -97,7 +101,7 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('throws when the response shape is unexpected (missing resultData)', async () => {
     const http = buildHttp({ status: 200, body: JSON.stringify({ resultCode: '00' }) });
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -109,11 +113,55 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
     const http = buildHttp({
       postFormImpl: async () => null,
     });
-    const crawler = new TJDirectCrawler(http as HttpClient);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
       }
     }).rejects.toThrow(/robots\.txt/);
+  });
+});
+
+describe('TJDirectCrawler.crawl — blog-whitelist rescue (refinement 2)', () => {
+  it('rescues an all-Latin Japanese act, drops a denylist Chinese act, and keeps a regular Japanese record', async () => {
+    const body = JSON.stringify({
+      resultCode: '00',
+      resultData: {
+        itemsTotalCount: 3,
+        items: [
+          // (1) all-Latin Japanese — would normally be filtered out, but in
+          //     the blog whitelist so the rescue path includes it.
+          {
+            pro: 11111,
+            indexTitle: 'Trash Candy',
+            indexSong: 'GRANRODEO',
+            publishdate: '2016-01-27',
+          },
+          // (2) Chinese denylist artist — NOT in the whitelist; must be dropped.
+          {
+            pro: 22222,
+            indexTitle: '吻別',
+            indexSong: '张学友',
+            publishdate: '1993-03-08',
+          },
+          // (3) Regular Japanese (kana) — kept by the loose-JP filter.
+          {
+            pro: 33333,
+            indexTitle: 'アイドル',
+            indexSong: 'YOASOBI',
+            publishdate: '2023-05-24',
+          },
+        ],
+      },
+    });
+    const http = buildHttp({ status: 200, body });
+    const whitelist = (): ReadonlySet<string> => new Set(['11111']);
+    const crawler = new TJDirectCrawler(http as HttpClient, whitelist);
+    const records = [];
+    for await (const r of crawler.crawl()) records.push(r);
+
+    expect(records.length).toBe(2);
+    const tjs = records.map((r) => r.karaoke_numbers.tj).sort();
+    expect(tjs).toEqual(['11111', '33333']);
   });
 });
