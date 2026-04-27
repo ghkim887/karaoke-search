@@ -10,6 +10,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 0 — Schema migration: drop `proseka`
 
+- **Status:** ✓ Shipped in commit `e5c36dd` (vtuber addition walked back in `2904878`).
 - **Goal**: Update the `Category` union and JSON Schema enum to the v2 set (drop unused `proseka`) without breaking any existing record on disk.
 - **History**: Phase 0 originally also added `vtuber` to the union. That addition was reverted in the same commit set after the v2 design simplified — Hololive/Nijisanji records now emit `[jpop]` per TJ Media's catalog vocabulary, so no `vtuber` category is needed. The pre-migration check now also asserts that no live record uses `vtuber` (none do — the addition never reached production data).
 - **Deliverables**:
@@ -50,6 +51,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 0.5 — Merger rewrite (two-tier match key + per-field ownership)
 
+- **Status:** ✓ Shipped in commit `250d57f`.
 - **Goal**: Replace v1's flat registration-order dedup with v2's two-tier match key (Tier A vendor-number union-find + Tier B fuzzy title+artist fallback) and per-field ownership table. See spec Section "Dedup & Merge Algorithm (v2 redesign)" for the locked design.
 - **Deliverables**:
   - Rewrite `packages/crawler/src/merge.ts` (`mergeRecords`):
@@ -102,6 +104,8 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Estimated agent time**: 120 min.
 
 ## Phase 2 — `tj-media-direct` adapter
+
+- **Status:** ✓ Shipped — initial artist-fanout in `4eec991` (walked back), catalog API pivot in `28f187c`, denylist + rescue refinements in `01c44f4`. Live output: 5,859 records, 100% `release_year`. Blog parse-bug fix landed alongside in `5305cc4` (multi-code cell handling).
 
 > **Filter refinements (landed 2026-04-27, separate commit after the API pivot)**: parser now applies a Chinese-artist denylist (`~140`-entry seed list, normalized whitespace + lowercase + NFKC matching) AFTER the loose-JP filter passes, AND accepts an optional `forceIncludeTjNumbers` set sourced from the on-disk blog corpus that overrides BOTH the JP-filter and the denylist when a TJ# is already in the blog. Smoke at refinement time: 5,859 records (down from 6,860 baseline; the wider-than-expected denylist drop is offset by ~145 rescued all-Latin Japanese acts like GRANRODEO / halyosy / go!go!vanillas). See the design spec's "Loose-JP filter" subsection for the full rationale.
 
@@ -174,6 +178,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 3 — `namuwiki` adapter
 
+- **Status:** Pending.
 - **Goal**: Implement the NamuWiki adapter (parser + crawler + normalizer) against committed HTML fixtures for the Vocaloid + Hololive + Nijisanji list pages, then wire it between blog and tj in registration order.
 - **Deliverables**:
   - Pre-implementation investigation step (`packages/crawler/src/adapters/namuwiki/RENDER_STRATEGY.md`):
@@ -234,6 +239,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 4 — Frontend featured-artist update
 
+- **Status:** Pending.
 - **Goal**: Seed `featured.ts` with real anime artists from the v2 corpus. Chip set stays at three (`J-POP / Vocaloid / Anime`) — no UI surface change.
 - **Deliverables**:
   - `apps/web/src/components/CategoryChips.tsx` — confirm chip-list constant is `["jpop", "vocaloid", "anime"]` (already correct in v1). Remove any lingering `proseka` reference if present.
@@ -270,6 +276,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 5 — Combined live crawl + sample fixture refresh
 
+- **Status:** Pending.
 - **Goal**: Run the full v2 pipeline (blog + namuwiki + tj-media-direct), measure the resulting `songs.json`, and refresh the sample fixture to span all three categories.
 - **Deliverables**:
   - Updated `apps/web/public/data/songs.json` from a real v2 crawl (re-tracked or gitignored per size — see notes).
@@ -312,6 +319,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 6 — Spec / plan / CLAUDE.md / README sync
 
+- **Status:** Pending (partially landing in this commit — CLAUDE.md and README v2 sync, plus per-phase status markers in this file and the spec).
 - **Goal**: Make the v1 docs forward-compatible with v2's reality and surface the v2 changes in CLAUDE.md and README.
 - **Deliverables**:
   - `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` — append a top-of-file note: `> v2 supersedes the Category union (`proseka` removed; final set is `jpop | vocaloid | anime`), adds tj-media-direct + namuwiki adapters, and replaces the dedup/merge algorithm with a two-tier match key + per-field ownership table. See \`...-v2-design.md\` for v2 deltas.` Do NOT rewrite v1 prose.

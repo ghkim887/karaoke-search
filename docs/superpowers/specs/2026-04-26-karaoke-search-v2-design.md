@@ -9,6 +9,17 @@ v2 expands the karaoke-search corpus with two new data sources (TJ Media direct 
 - Author: brainstorming session with user
 - Inherits most conventions from v1 spec at `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` (`SongRecord` shape, `normalize()` rules, operational discipline, UA / robots / atomic-write posture). The dedup/merge algorithm is REPLACED — see Section "Dedup & Merge Algorithm (v2 redesign)" below. Other deltas described in this document.
 
+## Implementation status
+
+- Phase 0 (schema migration) ✓ — `e5c36dd`, walked back partially in `2904878` (vtuber dropped, final union `jpop|vocaloid|anime`).
+- Phase 0.5 (merger rewrite — two-tier match key + per-field ownership + conflict aggregate) ✓ — `250d57f`.
+- Phase 2 (TJ-direct adapter) ✓ — `4eec991` (initial artist-fanout, walked back), `28f187c` (catalog API pivot), `01c44f4` (Chinese-artist denylist + blog-whitelist rescue).
+- Bug fixes ✓ — `5305cc4` (blog parser handles `<br>`-separated multi-code cells).
+- Phase 3 (NamuWiki adapter) — pending.
+- Phase 4 (frontend wire-up) — pending.
+- Phase 5 (combined live crawl + sample fixture refresh) — pending.
+- Phase 6 (CLAUDE.md / README sync) — partially landing in this commit.
+
 ## Goals & Non-Goals
 
 Goals:
