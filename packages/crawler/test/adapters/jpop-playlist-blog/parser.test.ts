@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseArtistPage } from '../../../src/adapters/jpop-playlist-blog/parser.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -147,5 +147,85 @@ describe('parseArtistPage — unit cases', () => {
     const recs = parseArtistPage(html, 'https://x.test/1');
     expect(recs).toHaveLength(1);
     expect(recs[0]?.title_primary).toBe('Title');
+  });
+});
+
+describe('parseArtistPage — number-cell defensive guards', () => {
+  function buildHtml(rowHtml: string): string {
+    return `<!doctype html><html><body>
+<div class="tt_article_useless_p_margin">
+  <blockquote><p><span><span>아티스트</span></span><br/><span><span>Artist</span></span></p></blockquote>
+  <table><tbody>${rowHtml}</tbody></table>
+</div>
+</body></html>`;
+  }
+
+  // Mirrors the live /523 中島美嘉 row — `25627<br>62161` previously fused
+  // into the 10-digit value `2562762161` because the parser called .text()
+  // on the <td> directly. Regression for the bug fixed in this commit.
+  it('returns null (and warns) for TJ cells listing two codes via <br>', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml(
+        '<tr><td><b><span style="font-size: 12px;">雪の華</span></b><br /><span><span>눈의 꽃</span></span></td>' +
+          '<td style="font-size: 11px;">25627<br>62161</td>' +
+          '<td>41637</td><td>31783</td></tr>',
+      );
+      const recs = parseArtistPage(html, 'https://j-pop-playlist.tistory.com/523');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.title_primary).toBe('雪の華');
+      expect(recs[0]?.karaoke_numbers).toEqual({ tj: null, ky: '41637', joysound: '31783' });
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping multi-value TJ cell/);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/雪の華/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  // Same bug in the second-half-is-canonical orientation (live /523 ALWAYS
+  // row); proves the fix doesn't depend on which half is the "real" code.
+  it('also nullifies multi-value cells where the canonical code is the second half', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml(
+        '<tr><td><span>ALWAYS</span></td>' +
+          '<td>27098<br>27011</td>' +
+          '<td>43189</td><td>91999</td></tr>',
+      );
+      const recs = parseArtistPage(html, 'https://j-pop-playlist.tistory.com/523');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  // Defensive length-cap fallback: even if a future regression fuses two
+  // codes without a <br> between them (no structural delimiter to split on),
+  // the cap rejects the impossible 12-digit value.
+  it('length-cap drops a TJ value over 6 digits and emits a console.warn', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml('<tr><td>Title</td><td>25627123456</td><td>1</td><td>2</td></tr>');
+      const recs = parseArtistPage(html, 'https://x.test/1');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping malformed TJ#/);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/exceeds digit cap 6/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  // Regular single-line numeric rows must continue to parse unchanged. The
+  // length cap is only a sanity check, not a format validator.
+  it('does not affect ordinary single-value number cells', () => {
+    const html = buildHtml('<tr><td>Title</td><td>25627</td><td>41637</td><td>31783</td></tr>');
+    const recs = parseArtistPage(html, 'https://x.test/1');
+    expect(recs).toHaveLength(1);
+    expect(recs[0]?.karaoke_numbers).toEqual({ tj: '25627', ky: '41637', joysound: '31783' });
   });
 });

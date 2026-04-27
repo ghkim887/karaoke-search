@@ -15,6 +15,15 @@ type CheerioNode = { type: string; name?: string };
 const HEADER_LABELS = new Set(['TJ', 'KY', 'JOYSOUND']);
 
 /**
+ * Permissive sanity caps on the number-string lengths. These are NOT exact
+ * format validators — they catch parser glitches that fuse two cells into
+ * one. Real TJ/KY codes are 4–6 digits; JOYSOUND codes are 5–7 digits. Any
+ * value above the cap is treated as malformed and returned as null with a
+ * `console.warn` so future regressions surface visibly.
+ */
+const NUMBER_LENGTH_CAPS = { tj: 6, ky: 6, joysound: 7 } as const;
+
+/**
  * Cell text classifier for the three karaoke-number columns.
  *
  *  - Hyphen / em-dash / en-dash (alone) → null (missing).
@@ -26,6 +35,60 @@ function classifyNumberCell(raw: string): string | null {
   if (trimmed === '') return null;
   if (/^[-—–]$/.test(trimmed)) return null;
   return trimmed;
+}
+
+/**
+ * Extract a karaoke number from a `<td>` cell, splitting on `<br>` so a row
+ * that lists two registered codes for the same title (e.g. `25627<br>62161`
+ * or `27098<br>27011`) is not silently fused into a 10-digit value.
+ *
+ * Resolution rules:
+ *  - 0 digit-bearing segments → null (missing).
+ *  - 1 digit-bearing segment   → return that segment's text.
+ *  - 2+ digit-bearing segments → null + warn. We cannot reliably pick which
+ *    code is "canonical" from the blog HTML alone (verified across the
+ *    /523 中島美嘉 and /209 imase posts: TJ catalog confirmed first-half for
+ *    `雪の華` and second-half for `ALWAYS`, so neither "first" nor "last"
+ *    is correct as a general heuristic).
+ *
+ * Also enforces `NUMBER_LENGTH_CAPS` as a defensive backstop for future
+ * structural glitches that fuse values without a `<br>` between them.
+ */
+function extractNumberCell(
+  $: ReturnType<typeof load>,
+  td: unknown,
+  field: 'tj' | 'ky' | 'joysound',
+  rowTitle: string,
+  sourceUrl: string,
+): string | null {
+  // biome-ignore lint/suspicious/noExplicitAny: cheerio Element superset
+  const html = $(td as any).html() ?? '';
+  const segments = html
+    .split(/<br\b[^>]*>/i)
+    .map((part) => {
+      const $part = load(`<root>${part}</root>`, null, false);
+      return classifyNumberCell($part('root').text());
+    })
+    .filter((s): s is string => s !== null);
+
+  if (segments.length === 0) return null;
+
+  if (segments.length > 1) {
+    console.warn(
+      `[blog] dropping multi-value ${field.toUpperCase()} cell "${segments.join(' | ')}" on row "${rowTitle}" (${sourceUrl})`,
+    );
+    return null;
+  }
+
+  const value = segments[0] as string;
+  if (/^\d+$/.test(value) && value.length > NUMBER_LENGTH_CAPS[field]) {
+    console.warn(
+      `[blog] dropping malformed ${field.toUpperCase()}# "${value}" on row "${rowTitle}" (length ${value.length} exceeds digit cap ${NUMBER_LENGTH_CAPS[field]}) (${sourceUrl})`,
+    );
+    return null;
+  }
+
+  return value;
 }
 
 /**
@@ -140,21 +203,26 @@ export function parseArtistPage(html: string, sourceUrl: string): RawSongRecord[
           return;
         }
 
-        const tj = classifyNumberCell($tds.eq(1).text());
-        const ky = classifyNumberCell($tds.eq(2).text());
-        const joysound = classifyNumberCell($tds.eq(3).text());
-
-        // Skip header rows — number cells hold literal column labels.
+        // Skip header rows first — number cells hold literal column labels.
+        const tjRaw = classifyNumberCell($tds.eq(1).text());
+        const kyRaw = classifyNumberCell($tds.eq(2).text());
+        const joysoundRaw = classifyNumberCell($tds.eq(3).text());
         if (
-          (tj !== null && HEADER_LABELS.has(tj)) ||
-          (ky !== null && HEADER_LABELS.has(ky)) ||
-          (joysound !== null && HEADER_LABELS.has(joysound))
+          (tjRaw !== null && HEADER_LABELS.has(tjRaw)) ||
+          (kyRaw !== null && HEADER_LABELS.has(kyRaw)) ||
+          (joysoundRaw !== null && HEADER_LABELS.has(joysoundRaw))
         ) {
           return;
         }
 
         const [titlePrimary, titleKo] = parseTitleCell($tds.eq(0));
         if (!titlePrimary) return; // empty title row — skip silently
+
+        // Re-extract number cells with `<br>`-aware splitting so multi-code
+        // rows (e.g. `25627<br>62161`) don't fuse into 10-digit junk.
+        const tj = extractNumberCell($, $tds.eq(1)[0], 'tj', titlePrimary, sourceUrl);
+        const ky = extractNumberCell($, $tds.eq(2)[0], 'ky', titlePrimary, sourceUrl);
+        const joysound = extractNumberCell($, $tds.eq(3)[0], 'joysound', titlePrimary, sourceUrl);
 
         records.push({
           source_url: sourceUrl,
