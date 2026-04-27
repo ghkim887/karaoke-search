@@ -1,6 +1,6 @@
 # Karaoke Search Web — v2 Design Spec
 
-v2 expands the karaoke-search corpus with two new data sources (TJ Media direct and NamuWiki) and broadens category coverage to four populated categories: `jpop`, `vocaloid`, `anime`, and `vtuber`. The frontend, schema validator, and core crawler pipeline remain in shape; the changes are additive adapters, a category-enum migration, and a static Vtuber roster.
+v2 expands the karaoke-search corpus with two new data sources (TJ Media direct and NamuWiki) and broadens category coverage to three populated categories: `jpop`, `vocaloid`, and `anime`. The frontend, schema validator, and core crawler pipeline remain in shape; the changes are additive adapters and a category-enum cleanup (drop the unused `proseka`).
 
 ## Status
 
@@ -15,27 +15,25 @@ Goals:
 - Add `tj-media-direct` adapter against TJ Media's official song search.
 - Add `namuwiki` adapter covering NamuWiki's per-agency karaoke lists (Vocaloid + Hololive JP + Nijisanji JP, anime list page if maintained).
 - Populate the previously-empty `anime` category from TJ's `애니메이션` genre filter.
-- Introduce a new populated `vtuber` category covering Hololive JP + Nijisanji JP.
-- Maintain a static Vtuber artist roster, used both for tagging TJ-direct records and targeting NamuWiki pages.
 - Replace v1's flat registration-order dedup with a two-tier match key + per-field ownership table (see Section "Dedup & Merge Algorithm (v2 redesign)" below). TJ-direct becomes the canonical "songs spine"; blog and namuwiki contribute enrichment metadata onto the spine plus standalone island records.
 
 Non-Goals:
 - Direct adapters against KY (금영) or JOYSOUND or DAM. Deferred.
-- Non-JP vtubers (Hololive EN/ID, VShojo, indies). Deferred.
+- A standalone `vtuber` category. TJ Media files Hololive/Nijisanji songs under J-POP and v2 follows that vocabulary; vtuber-origin records simply emit `categories: ['jpop']`.
 - Romaji indexing. Already removed from v1 (`title_romaji` does not exist).
 - Live-fallback search via any serverless backend. Still deferred — v2 stays static.
 - Server-side search. v2 stays static; if `songs.json` outgrows the client-side index budget, fix is captured as follow-up, not v2 scope.
 
 ## User-facing changes
 
-UI mock (4 chips, deterministic order):
+UI mock (3 chips, deterministic order):
 
 ```
 ┌──────────────────────────────────────────────────┐
 │            가라오케 / カラオケ Search            │
 ├──────────────────────────────────────────────────┤
 │  [ search box: 노래/아티스트/曲名/imase ...   🔍 ] │
-│  [ jpop ] [ vocaloid ] [ anime ] [ vtuber ]      │
+│  [ jpop ] [ vocaloid ] [ anime ]                 │
 ├──────────────────────────────────────────────────┤
 │  ▸ 星街すいせい — Stellar Stellar       [2021]  │
 │    호시마치 스이세이                             │
@@ -48,9 +46,9 @@ UI mock (4 chips, deterministic order):
 ```
 
 Frontend deltas:
-- `CategoryChips` renders four chips in this order: `jpop`, `vocaloid`, `anime`, `vtuber`. Same AND-filter semantics (see v1 spec Section "Frontend").
+- `CategoryChips` renders three chips in this order: `jpop`, `vocaloid`, `anime`. Same AND-filter semantics (see v1 spec Section "Frontend").
 - `proseka` chip never existed in the v1 UI; the data-side enum drops `proseka` outright (see Data Model deltas).
-- Featured-artist landing grows from two populated categories to four. `apps/web/src/data/featured.ts` adds real entries for `anime` and `vtuber` sourced from the v2 crawl.
+- Featured-artist landing grows from two populated categories to three. `apps/web/src/data/featured.ts` adds real entries for `anime` sourced from the v2 crawl.
 - Result counts grow: blog ~21k → estimated v2 corpus 30k–100k+ depending on TJ scope. The result cap (top 50, no pagination) is unchanged.
 
 The schema-driven UX (bilingual title/artist with em-dash for missing fields) handles TJ-direct's null-Korean records gracefully — no template changes required.
@@ -64,7 +62,7 @@ The schema-driven UX (bilingual title/artist with em-dash for missing fields) ha
 type Category = "jpop" | "vocaloid" | "anime" | "proseka";
 
 // after (v2)
-type Category = "jpop" | "vocaloid" | "anime" | "vtuber";
+type Category = "jpop" | "vocaloid" | "anime";
 ```
 
 The matching JSON Schema fragment in `packages/schema/src/index.ts`:
@@ -75,7 +73,7 @@ The matching JSON Schema fragment in `packages/schema/src/index.ts`:
     "type": "array",
     "minItems": 1,
     "uniqueItems": true,
-    "items": { "enum": ["jpop", "vocaloid", "anime", "vtuber"] }
+    "items": { "enum": ["jpop", "vocaloid", "anime"] }
   }
 }
 ```
@@ -143,7 +141,7 @@ The warnings are aggregated into the crawl PR body (extending the existing PR-bo
 | Scenario | Cluster path | Output |
 | --- | --- | --- |
 | Blog row + TJ row share `tj=28311` | Tier A (vendor union) | Single record. `title_primary` = TJ's, `title_ko` = blog's, `karaoke_numbers.tj=28311`. |
-| Blog row + TJ row + Namu row all share `tj=68425`; Namu also has `ky=48374` | Tier A | Single record. `karaoke_numbers = {tj: 68425, ky: 48374, joysound: null}`. Categories set-unioned. |
+| Blog row + TJ row + Namu row all share `tj=68425`; Namu also has `ky=48374` | Tier A | Single record. `karaoke_numbers = {tj: 68425, ky: 48374, joysound: null}`. Categories set-unioned (e.g., `["anime", "jpop"]`). |
 | Blog row has no TJ#, no KY#; matches a TJ row by normalized `(title, artist)` | Tier B | Single record. `title_primary` = TJ's. Conflict-log if blog's `karaoke_numbers.tj` were non-null and disagreed (here it's null, so no conflict). |
 | Namu row only — no TJ row, no blog row | neither tier (singleton) | Standalone record. `title_primary` = namu's. `karaoke_numbers.tj=null`. |
 | Blog row with no TJ#, no KY#, no JOY#; no other source matches | neither tier (singleton) | Standalone record. `title_primary` = blog's. `karaoke_numbers.tj=null`, `.ky=null`, `.joysound=null`. |
@@ -152,7 +150,7 @@ The warnings are aggregated into the crawl PR body (extending the existing PR-bo
 
 ### Cross-tagging policy
 
-Each surfaced record carries the categories of its source page; the merger set-unions them (see per-field ownership table, `categories` row). So a Hololive cover that appears only on the Hololive list page gets `["vtuber"]`; if the same song clusters (Tier A via shared TJ#, or Tier B via fuzzy title+artist) with a Vocaloid-list record, the union is `["vocaloid", "vtuber"]`. Different-artist covers (Hololive talent covering a Vocaloid original) typically do NOT cluster — different artist breaks Tier B, and TJ usually issues distinct TJ#s for cover recordings, breaking Tier A — so they remain separate records. That is the intended behaviour.
+Each surfaced record carries the categories of its source page; the merger set-unions them (see per-field ownership table, `categories` row). So a Hololive cover that appears only on the Hololive list page gets `["jpop"]` (NamuWiki Hololive/Nijisanji pages emit `[jpop]` per Section "Source: NamuWiki" below); if the same song clusters (Tier A via shared TJ#, or Tier B via fuzzy title+artist) with a Vocaloid-list record, the union is `["jpop", "vocaloid"]`. Different-artist covers (Hololive talent covering a Vocaloid original) typically do NOT cluster — different artist breaks Tier B, and TJ usually issues distinct TJ#s for cover recordings, breaking Tier A — so they remain separate records. That is the intended behaviour.
 
 ## Source: TJ Media direct (`tj-media-direct`)
 
@@ -170,8 +168,6 @@ Genre → category mapping:
 | `J-POP` / `J-pop` | `jpop` | Primary jpop volume |
 | `애니메이션` | `anime` | Anime karaoke; includes anime OPs/EDs/inserts |
 | `보컬로이드` | `vocaloid` | Some overlap with NamuWiki vocaloid set |
-
-Vtuber tagging is layered on top of whatever genre TJ assigned: after a record is normalized, the normalizer consults the Vtuber roster (see "Vtuber roster" below). If `artist_primary` matches a roster entry, `vtuber` is added to `categories` (set-union, sorted).
 
 Available fields per row:
 - TJ song number (digits, e.g. `28311`).
@@ -207,9 +203,11 @@ Pages targeted (initial set; URLs verified before Phase 3):
 | Page | Category | URL |
 | --- | --- | --- |
 | Vocaloid karaoke list | `vocaloid` | `https://namu.wiki/w/음성_합성_엔진_오리지널_곡/노래방_수록_목록` `[verify before Phase 3]` |
-| Hololive JP karaoke list | `vtuber` | `https://namu.wiki/w/홀로라이브_프로덕션/노래방_수록_목록` `[verify before Phase 3]` |
-| Nijisanji JP karaoke list | `vtuber` | `https://namu.wiki/w/니지산지/노래방_수록_목록` `[verify before Phase 3]` |
+| Hololive JP karaoke list | `jpop` | `https://namu.wiki/w/홀로라이브_프로덕션/노래방_수록_목록` `[verify before Phase 3]` |
+| Nijisanji JP karaoke list | `jpop` | `https://namu.wiki/w/니지산지/노래방_수록_목록` `[verify before Phase 3]` |
 | Anime karaoke list | `anime` | exists only if a maintained list page is found `[verify before Phase 3]` — otherwise leave anime to TJ |
+
+Hololive/Nijisanji songs are J-POP per TJ Media's own catalog vocabulary; v2 follows that convention rather than inventing a vtuber category that no upstream source naturally provides.
 
 Page-shape contract (validated against fixtures during Phase 3):
 - NamuWiki tables typically have columns like `[Korean title | Japanese title | Romaji | TJ# | KY# | Artist | Notes]`. Exact column count and order vary per page; the parser pins the contract per page (one parser variant per source page is acceptable — they share helpers but the table column map is page-specific).
@@ -235,27 +233,9 @@ Robots.txt: re-verified before crawl runs. The `robots-parser` gate is enforced 
 Adapter conformance:
 - Implements `Crawler`: `name: "namuwiki"`, yields `SongRecord` (already-normalized).
 - For each record: `title_ko` populated from the page-level row; `title_primary` populated from the Japanese cell; `karaoke_numbers.tj` and `karaoke_numbers.ky` populated if listed; `karaoke_numbers.joysound` always `null` (NamuWiki rarely lists JOYSOUND).
-- `categories`: assigned from the source page's pinned category (`vocaloid`, `vtuber`, or `anime`). Multi-source overlap (e.g., a song that's both vocaloid and vtuber) is handled by the merger's set-union — no special-case logic in this adapter.
+- `categories`: assigned from the source page's pinned category (`vocaloid` for Vocaloid list, `jpop` for Hololive/Nijisanji list, `anime` for the anime list page if scraped). Multi-source overlap is handled by the merger's set-union — no special-case logic in this adapter.
 
 Success-ratio gate: ≥85% of fetched pages must parse without throwing. The lower budget reflects the higher fragility of JS-rendered NamuWiki tables. Below 85%, the pipeline aborts with non-zero exit.
-
-## Vtuber roster
-
-Static file at `packages/crawler/src/adapters/namuwiki/vtuber-roster.ts` (the file lives under `namuwiki/` because the NamuWiki adapter owns the roster's source-of-truth pages, but the file's exports are imported by both the namuwiki and tj-media-direct normalizers).
-
-Exports:
-- `HOLOLIVE_JP: string[]` — Hololive JP talents, names exactly as they appear in our data (Japanese script preferred since both upstream sources are Japanese-first; common variants included where a talent uses both kanji and hiragana stage names).
-- `NIJISANJI_JP: string[]` — Nijisanji JP talents, same convention.
-- `isVtuber(artist: string): "hololive" | "nijisanji" | null` — helper that normalize()-compares the input artist against both lists and returns the matching agency tag, or `null` if no match.
-
-Used at two points:
-1. In `tj-media-direct`'s normalizer, to add the `vtuber` tag if `isVtuber(artist_primary) !== null`.
-2. By NamuWiki's crawler, to know which subset of pages to fetch (the Hololive and Nijisanji list-pages cover the same talent set; the roster pins the canonical names).
-
-Maintenance:
-- v2 ships ~30–50 names per agency. Roster source: agency-side NamuWiki pages (`홀로라이브_프로덕션`, `니지산지`) cross-checked against Wikipedia's English-language pages for spelling variants.
-- Updates land as ordinary commits to the roster file. No separate publish step.
-- Roster is unit-tested: known names match (`星街すいせい`, `月ノ美兎`), known non-vtubers do not (`YOASOBI`, `米津玄師`).
 
 ## Crawler architecture changes
 
@@ -278,10 +258,10 @@ The pipeline still validates every record against `songRecordSchema` before writ
 
 ## Frontend changes
 
-- `apps/web/src/components/CategoryChips.tsx` — render four chips in the order `[ jpop ] [ vocaloid ] [ anime ] [ vtuber ]`. AND-filter semantics unchanged (`selectedCategories.every(c => record.categories.includes(c))`). The `proseka` chip is removed (was never rendered, but the chip-list constant referenced it).
-- `apps/web/src/data/featured.ts` — type widens to `{ jpop: string[]; vocaloid: string[]; anime: string[]; vtuber: string[] }`. Each list contains 6 artist names. Names MUST exist in `apps/web/public/data/songs.json` after the v2 crawl so clicking a featured chip yields hits — this is verified in Phase 4 by a sample-fixture cross-check.
+- `apps/web/src/components/CategoryChips.tsx` — render three chips in the order `[ jpop ] [ vocaloid ] [ anime ]`. AND-filter semantics unchanged (`selectedCategories.every(c => record.categories.includes(c))`). The `proseka` chip is removed (was never rendered, but the chip-list constant referenced it).
+- `apps/web/src/data/featured.ts` — type widens to `{ jpop: string[]; vocaloid: string[]; anime: string[] }`. Each list contains 6 artist names. Names MUST exist in `apps/web/public/data/songs.json` after the v2 crawl so clicking a featured chip yields hits — this is verified in Phase 4 by a sample-fixture cross-check.
 - `apps/web/src/components/ResultCard.tsx` — no template change. The bilingual em-dash convention covers TJ-direct's null-Korean records as-is.
-- `apps/web/src/lib/search.ts` — no boost change. The new `vtuber` category is a category, not a search field; no MiniSearch reconfiguration.
+- `apps/web/src/lib/search.ts` — no boost change. The new sources contribute records, not a new search field; no MiniSearch reconfiguration.
 
 ## Operational discipline
 
@@ -322,6 +302,6 @@ For v2: just measure and document. Defer the actual fix.
 
 ## Open Questions
 
-- NamuWiki's anti-bot posture is unknown until Phase 3's investigation step runs. If plain GET, raw-export, AND headless-render all fail under our honest UA, the namuwiki adapter is descoped to "blog + tj only" for v2 and the `vtuber` category populates from TJ-direct + the static roster alone (no Korean translations for vtuber records).
+- NamuWiki's anti-bot posture is unknown until Phase 3's investigation step runs. If plain GET, raw-export, AND headless-render all fail under our honest UA, the namuwiki adapter is descoped to "blog + tj only" for v2 and Hololive/Nijisanji records populate from TJ-direct alone (still tagged `[jpop]` per TJ's genre, but without NamuWiki's Korean translations for those records).
 - TJ's exact Japanese-only filter form (`cate_cd` value, additional language gating param if any) needs live capture in Phase 2's first step. The genre table above is provisional.
 

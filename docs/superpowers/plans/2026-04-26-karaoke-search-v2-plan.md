@@ -8,18 +8,19 @@ Repo: pnpm + TypeScript monorepo on `main` at HEAD `3b5a735`. v1 ships ~21,259 r
 
 Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
-## Phase 0 — Schema migration: drop `proseka`, add `vtuber`
+## Phase 0 — Schema migration: drop `proseka`
 
-- **Goal**: Update the `Category` union and JSON Schema enum to the v2 set without breaking any existing record on disk.
+- **Goal**: Update the `Category` union and JSON Schema enum to the v2 set (drop unused `proseka`) without breaking any existing record on disk.
+- **History**: Phase 0 originally also added `vtuber` to the union. That addition was reverted in the same commit set after the v2 design simplified — Hololive/Nijisanji records now emit `[jpop]` per TJ Media's catalog vocabulary, so no `vtuber` category is needed. The pre-migration check now also asserts that no live record uses `vtuber` (none do — the addition never reached production data).
 - **Deliverables**:
-  - `packages/schema/src/index.ts` — `Category` union changes from `"jpop" | "vocaloid" | "anime" | "proseka"` to `"jpop" | "vocaloid" | "anime" | "vtuber"`.
-  - `packages/schema/src/index.ts` — JSON Schema `categories.items.enum` changes to `["jpop", "vocaloid", "anime", "vtuber"]`.
-  - `packages/schema/src/index.test.ts` — update enum-coverage tests to reference the v2 four-value union; add a negative test asserting `proseka` is rejected and `vtuber` is accepted.
-  - Pre-migration data check: a one-off `node -e` invocation, run before edits, that asserts no live record uses `proseka`. If any do, abort the phase and escalate.
+  - `packages/schema/src/index.ts` — `Category` union changes from `"jpop" | "vocaloid" | "anime" | "proseka"` to `"jpop" | "vocaloid" | "anime"`.
+  - `packages/schema/src/index.ts` — JSON Schema `categories.items.enum` changes to `["jpop", "vocaloid", "anime"]`.
+  - `packages/schema/src/index.test.ts` — update enum-coverage tests to reference the v2 three-value union; assert that BOTH `proseka` AND `vtuber` are rejected, and that all three live values (`jpop`, `vocaloid`, `anime`) are accepted.
+  - Pre-migration data check: a one-off `node -e` invocation, run before edits, that asserts no live record uses `proseka` or `vtuber`. If any do, abort the phase and escalate.
 - **Implementation notes**:
   - Run the pre-migration check first:
     ```bash
-    node -e "const r=require('./apps/web/public/data/songs.json'); const bad=r.filter(x=>x.categories.includes('proseka')); console.log('proseka records:', bad.length); process.exit(bad.length===0?0:1)"
+    node -e "const r=require('./apps/web/public/data/songs.json'); const bad=r.filter(x=>x.categories.includes('proseka')||x.categories.includes('vtuber')); console.log('proseka+vtuber records:', bad.length); process.exit(bad.length===0?0:1)"
     ```
     Exit 0 confirms migration is safe. Exit 1 means a record needs hand-fixing — escalate.
   - The schema's `id` regex, `karaoke_numbers` shape, and `release_year` bounds are unchanged.
@@ -27,20 +28,21 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Verification**:
   - `pnpm --filter @karaoke/schema test` exits 0 with the updated enum tests passing.
   - `pnpm --filter @karaoke/schema exec tsc --noEmit` exits 0.
-  - Repo-wide grep: `grep -rn '"proseka"\|: "proseka"\|proseka' packages/ apps/ --include='*.ts' --include='*.tsx' --include='*.json'` returns zero hits except in commit message scaffolding or this plan file.
-  - `node -e "const {validateSongRecord}=require('./packages/schema/src/index.ts'); ..."` (or its compiled equivalent) succeeds against every record in the existing `apps/web/public/data/songs.json`.
+  - Repo-wide grep: `grep -rn 'proseka\|vtuber' packages/ apps/ --include='*.ts' --include='*.tsx' --include='*.json'` returns zero hits except in commit message scaffolding or this plan file.
+  - `node -e "const {validateSongRecord}=require('./packages/schema/dist/index.js'); ..."` succeeds against every record in the existing `apps/web/public/data/songs.json`.
 - **Review pass** (`code-reviewer`):
   - Confirm both the TS union AND the JSON Schema enum changed in lockstep.
   - Confirm the pre-migration check command and its output were captured in the commit body.
-  - Confirm no test still references `proseka`.
-  - Confirm the negative test for `proseka` is a real Ajv rejection (not just a TS compile-error check).
+  - Confirm no test still references `proseka` or `vtuber` as accepted values.
+  - Confirm the negative tests for `proseka` and `vtuber` are real Ajv rejections (not just TS compile-error checks).
 - **Commit message**:
   ```
-  feat(schema): swap proseka for vtuber in Category union
+  feat(schema): drop proseka from Category union
 
-  Drop unused proseka from the v1 union and add vtuber to support v2's
-  Hololive + Nijisanji JP coverage. Verified zero live records use
-  proseka before the swap. JSON Schema enum updated in lockstep.
+  Trim the unused proseka value from the v1 union; v2 keeps the three
+  populated categories (jpop, vocaloid, anime). Verified zero live
+  records use proseka before the swap. JSON Schema enum updated in
+  lockstep.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
@@ -99,45 +101,6 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
   ```
 - **Estimated agent time**: 120 min.
 
-## Phase 1 — Vtuber roster file
-
-- **Goal**: Land a static, unit-tested list of Hololive JP and Nijisanji JP talent names plus an `isVtuber()` helper, used by both the namuwiki and tj-media-direct adapters.
-- **Deliverables**:
-  - `packages/crawler/src/adapters/namuwiki/vtuber-roster.ts` — exports:
-    - `HOLOLIVE_JP: readonly string[]` — ~30–50 talent names, Japanese script preferred (e.g., `星街すいせい`, `兎田ぺこら`, `宝鐘マリン`, `Mori Calliope` — JP gen members only). Common variants included if a talent uses both kanji and hiragana stage names.
-    - `NIJISANJI_JP: readonly string[]` — ~30–50 talent names (e.g., `月ノ美兎`, `葛葉`, `叶`, `星川サラ`).
-    - `isVtuber(artist: string): "hololive" | "nijisanji" | null` — normalize()-compares input against both lists and returns the agency tag or `null`.
-  - `packages/crawler/test/adapters/namuwiki/vtuber-roster.test.ts` — Vitest tests covering:
-    - At least 5 known Hololive names match `"hololive"`.
-    - At least 5 known Nijisanji names match `"nijisanji"`.
-    - At least 5 known non-vtubers (`YOASOBI`, `米津玄師`, `imase`, `ヨルシカ`, `RADWIMPS`) return `null`.
-    - Normalize-equivalence: `isVtuber("ホシマチ スイセイ")` (with whitespace and katakana variant) still resolves to `"hololive"` if `星街すいせい` is in the roster (asserts that `isVtuber` reuses the crawler's `normalize()` for comparison).
-- **Implementation notes**:
-  - Roster source: cross-reference NamuWiki's `홀로라이브_프로덕션` and `니지산지` agency pages with the corresponding Wikipedia EN list for spelling-variant coverage. Cite the source URLs in a top-of-file comment block.
-  - `isVtuber` MUST import `normalize` from `packages/crawler/src/normalize.ts` rather than ship its own normalizer — keeps roster matching consistent with the merger's Tier B match key (see Phase 0.5).
-  - Both lists are `readonly string[]` — TypeScript prevents accidental mutation by callers.
-  - The file lives under `adapters/namuwiki/` for ownership reasons (NamuWiki agency pages are the source of truth) but its exports are imported by both adapters' normalizers.
-- **Verification**:
-  - `pnpm --filter @karaoke/crawler test test/adapters/namuwiki/vtuber-roster.test.ts` exits 0 with ≥4 test cases passing.
-  - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
-  - `grep -c '^  "' packages/crawler/src/adapters/namuwiki/vtuber-roster.ts` shows ≥60 entries (combined Hololive + Nijisanji).
-- **Review pass** (`code-reviewer`):
-  - Confirm `isVtuber` calls into `normalize()` from the crawler core, not a local copy.
-  - Confirm the roster is `readonly` at the type level.
-  - Confirm the source-citation comment lists at least the NamuWiki agency-page URLs.
-  - Confirm the roster does not include EN/ID branches (Hololive EN, Hololive ID, NIJISANJI EN/IN/KR) — v2 is JP only.
-- **Commit message**:
-  ```
-  feat(crawler): add Hololive JP + Nijisanji JP vtuber roster
-
-  Static roster used by tj-media-direct (tagging) and namuwiki (page
-  targeting). Includes normalize-aware isVtuber() helper. ~30-50 names
-  per agency, JP-branch only.
-
-  Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
-  ```
-- **Estimated agent time**: 45 min.
-
 ## Phase 2 — `tj-media-direct` adapter
 
 - **Goal**: Implement the TJ Media direct adapter (parser + crawler + normalizer) against committed HTML fixtures, then wire it into the registry as the lowest-priority source.
@@ -147,33 +110,32 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
     - Document in `packages/crawler/src/adapters/tj-media-direct/PARSER_CONTRACT.md` (a sibling spec, NOT a top-level docs file): the URL pattern, the form/query param names, the table selector, the per-row column order and count, and the missing-number convention.
   - `packages/crawler/src/adapters/tj-media-direct/parser.ts` — `parseListingPage(html: string, sourceUrl: string, genre: TJGenre): RawSongRecord[]`. Uses cheerio per the pinned selectors.
   - `packages/crawler/src/adapters/tj-media-direct/crawler.ts` — paginates per genre, calls parser, threads results through normalizer. Handles pagination cursor and "two empties to be safe" terminator.
-  - `packages/crawler/src/adapters/tj-media-direct/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Genre → category mapping per spec Section "Source: TJ Media direct". Vtuber tagging via `isVtuber(record.artist_primary)`.
+  - `packages/crawler/src/adapters/tj-media-direct/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Genre → category mapping per spec Section "Source: TJ Media direct" — TJ's `J-POP` → `[jpop]`, `애니메이션` → `[anime]`, `보컬로이드` → `[vocaloid]`. No per-record artist roster lookup.
   - `packages/crawler/src/adapters/index.ts` — append `TJDirectCrawler` instance to the `adapters` array (lowest priority, after `BlogCrawler` and `NamuWikiCrawler` once the latter lands in Phase 3 — for now append it last; Phase 3 inserts `NamuWikiCrawler` between blog and tj).
   - `packages/crawler/test/fixtures/tj-media-direct/jpop-page-1.html`, `anime-page-1.html`, `vocaloid-page-1.html` — committed snapshots, with sibling `.sha256` files.
   - `packages/crawler/test/adapters/tj-media-direct/parser.test.ts` — fixture-based parser tests.
-  - `packages/crawler/test/adapters/tj-media-direct/normalizer.test.ts` — `RawSongRecord` → `SongRecord` mapping tests including vtuber-tagging.
+  - `packages/crawler/test/adapters/tj-media-direct/normalizer.test.ts` — `RawSongRecord` → `SongRecord` mapping tests covering all three genre→category mappings.
 - **Implementation notes**:
   - URL and param shape MUST be re-confirmed from a live fetch in the investigation step before any code is written. Do NOT invent URLs from prior knowledge.
   - The `TJGenre` type is a local string union (e.g., `"jpop" | "anime" | "vocaloid"`) used only as a parser argument; it is NOT exported from `@karaoke/schema`.
   - Per-host rate override: TJ uses the default 1s/±0.5s. If the http client lacks a per-host override, add it as a small surface-area patch in this phase (`http.ts` accepts `{ minIntervalMs?: number }` per host).
   - `id` assignment: `tj-${tj_song_number}` (e.g., `tj-28311`). The schema's `id` regex `^[a-z0-9-]+-\d+$` allows this.
   - `release_year` extraction: only set when a 4-digit year unambiguously appears in a dedicated column. Otherwise `null`.
-  - Vtuber tagging: in normalizer, after building the `SongRecord`, call `isVtuber(record.artist_primary)`; if non-null, push `"vtuber"` into `categories` and re-sort.
   - Robots.txt re-verification: log the resolved `robots-parser` decision once per host on first request to make the run-log auditable.
 - **Verification**:
   - `pnpm --filter @karaoke/crawler test test/adapters/tj-media-direct/parser.test.ts` passes with ≥10 records extracted from each genre fixture; every record has `karaoke_numbers.tj` non-null and digit-only.
   - `pnpm --filter @karaoke/crawler test test/adapters/tj-media-direct/normalizer.test.ts` passes; assertions:
     - `id` matches `^tj-\d+$`.
-    - Records from `J-POP` fixture have `categories: ["jpop"]` (or `["jpop", "vtuber"]` if the artist matches the roster).
-    - Records from `애니메이션` fixture have `["anime"]` (plus `"vtuber"` for matching artists).
+    - Records from `J-POP` fixture have `categories: ["jpop"]`.
+    - Records from `애니메이션` fixture have `["anime"]`.
+    - Records from `보컬로이드` fixture have `["vocaloid"]`.
     - All records have `title_ko === null && artist_ko === null`.
-    - At least one fixture record (synthetic if needed) tagged `vtuber` via roster match.
   - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
 - **Review pass** (`code-reviewer`):
   - Confirm `PARSER_CONTRACT.md` documents the live URL pattern and param names captured during the investigation step (no invented URLs).
   - Confirm the parser uses cheerio (not regex) and pins the table selector.
   - Confirm pagination terminator is "two consecutive empty pages", not "first empty page".
-  - Confirm `isVtuber` is called on `artist_primary` (not on the raw artist cell text before normalization) and the resulting category list is sorted.
+  - Confirm the genre→category mapping is exactly `J-POP → [jpop]`, `애니메이션 → [anime]`, `보컬로이드 → [vocaloid]` with no roster-based post-processing.
   - Confirm the per-host rate-limit override is wired through `http.ts` if it was missing in v1.
   - Confirm robots.txt is honored before the first request to `www.tjmedia.com` (capture in commit body whether the live `robots.txt` permits the path).
 - **Commit message**:
@@ -182,8 +144,8 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
   Implement parser, crawler, and normalizer for TJ Media's live song
   search. Cover J-POP / 애니메이션 / 보컬로이드 genres with committed
-  HTML fixtures. Vtuber tagging via static roster. Korean fields stay
-  null per spec.
+  HTML fixtures. Categories follow TJ's own genre vocabulary; Korean
+  fields stay null per spec.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
@@ -200,7 +162,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
     - Pick the simplest strategy that yields a parseable table for ALL three pages, document the choice and rationale, and pin it in the adapter.
   - `packages/crawler/src/adapters/namuwiki/parser.ts` — exports `parseVocaloidList(html, sourceUrl): RawSongRecord[]`, `parseHololiveList(...)`, `parseNijisanjiList(...)`. Each variant pins the column order/count for that page.
   - `packages/crawler/src/adapters/namuwiki/crawler.ts` — fetches the three target URLs (using the chosen render strategy), threads each through its parser + normalizer.
-  - `packages/crawler/src/adapters/namuwiki/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Categories assigned per source page (`vocaloid`, `vtuber`, `vtuber`). `id` assigned as `namu-<slugified-page-anchor>-<row-index>`.
+  - `packages/crawler/src/adapters/namuwiki/normalizer.ts` — maps `RawSongRecord` → `SongRecord`. Categories assigned per source page (`vocaloid` for the Vocaloid list, `jpop` for the Hololive JP list, `jpop` for the Nijisanji JP list — Hololive/Nijisanji songs are J-POP per TJ Media's catalog vocabulary). `id` assigned as `namu-<slugified-page-anchor>-<row-index>`.
   - `packages/crawler/src/adapters/index.ts` — insert `NamuWikiCrawler` between `BlogCrawler` and `TJDirectCrawler` so the final registration order is `[BlogCrawler, NamuWikiCrawler, TJDirectCrawler]`.
   - `packages/crawler/test/fixtures/namuwiki/vocaloid.html`, `hololive.html`, `nijisanji.html` — committed snapshots with `.sha256` siblings.
   - `packages/crawler/test/adapters/namuwiki/parser.test.ts` — fixture-based parser tests, one block per page.
@@ -218,11 +180,12 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Verification**:
   - `pnpm --filter @karaoke/crawler test test/adapters/namuwiki/parser.test.ts` passes; per-page assertions:
     - Vocaloid fixture yields ≥30 records; ≥80% have non-null `title_primary` AND non-null `title_ko`.
-    - Hololive fixture yields ≥20 records; every record has `categories.includes("vtuber")` after normalization.
-    - Nijisanji fixture yields ≥20 records; same vtuber assertion.
+    - Hololive fixture yields ≥20 records; every record has `categories.includes("jpop")` after normalization.
+    - Nijisanji fixture yields ≥20 records; same `jpop` assertion.
   - `pnpm --filter @karaoke/crawler test test/adapters/namuwiki/normalizer.test.ts` passes; assertions:
     - `id` matches `^namu-[a-z0-9-]+-\d+$`.
-    - Hololive/Nijisanji records have `categories: ["vtuber"]` exactly (before merger union with other sources).
+    - Hololive/Nijisanji records have `categories: ["jpop"]` exactly (before merger union with other sources).
+    - Vocaloid records have `categories: ["vocaloid"]` exactly.
     - At least one record has both `karaoke_numbers.tj` and `karaoke_numbers.ky` non-null.
     - All records have `karaoke_numbers.joysound === null`.
   - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
@@ -236,59 +199,60 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
   - Confirm the parser does NOT include the romaji column anywhere in its output.
 - **Commit message**:
   ```
-  feat(crawler): add namuwiki adapter for vocaloid + vtuber lists
+  feat(crawler): add namuwiki adapter for vocaloid + holo/niji lists
 
   Implement parser, crawler, and normalizer for NamuWiki's per-agency
   karaoke list pages. Cover Vocaloid, Hololive JP, Nijisanji JP with
-  committed HTML fixtures. Per-host 2s rate cap. Inserted between blog
-  and tj-media-direct in registration order.
+  committed HTML fixtures. Hololive/Nijisanji records emit [jpop] per
+  TJ Media's catalog vocabulary. Per-host 2s rate cap. Inserted between
+  blog and tj-media-direct in registration order.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
 - **Estimated agent time**: 150 min.
 
-## Phase 4 — Frontend chip + featured-artist update
+## Phase 4 — Frontend featured-artist update
 
-- **Goal**: Surface the v2 four-chip filter in the UI and seed `featured.ts` with real anime + vtuber artists from the v2 corpus.
+- **Goal**: Seed `featured.ts` with real anime artists from the v2 corpus. Chip set stays at three (`J-POP / Vocaloid / Anime`) — no UI surface change.
 - **Deliverables**:
-  - `apps/web/src/components/CategoryChips.tsx` — chip-list constant changes from `["jpop", "vocaloid", "anime"]` (v1) to `["jpop", "vocaloid", "anime", "vtuber"]`. Order is deterministic (declarative array). Selected-set semantics unchanged. Remove any lingering `proseka` reference.
-  - `apps/web/src/data/featured.ts` — type widens to `{ jpop: string[]; vocaloid: string[]; anime: string[]; vtuber: string[] }`. Each list contains exactly 6 artist names that exist in the v2 `apps/web/public/data/songs.json`.
-  - `apps/web/src/lib/search.test.ts` — extend existing AND-filter test to cover the new `vtuber` category: a `vtuber`-selected query against a record with `categories: ["vocaloid"]` does NOT match; a record with `["vocaloid", "vtuber"]` does match.
+  - `apps/web/src/components/CategoryChips.tsx` — confirm chip-list constant is `["jpop", "vocaloid", "anime"]` (already correct in v1). Remove any lingering `proseka` reference if present.
+  - `apps/web/src/data/featured.ts` — type stays at `{ jpop: string[]; vocaloid: string[]; anime: string[] }`. Each list contains exactly 6 artist names that exist in the v2 `apps/web/public/data/songs.json`. v1 left `anime` empty; v2 fills it from the new TJ-direct corpus.
+  - `apps/web/src/lib/search.test.ts` — extend existing AND-filter coverage for the now-populated `anime` category: a record with `categories: ["jpop"]` does NOT match an `anime`-selected query; a record with `["anime", "jpop"]` matches both an `anime`-only and an `anime+jpop` selection.
   - Optional: `apps/web/test/featured.test.ts` — Vitest test that loads `featured.ts` and `apps/web/public/data/songs.json` (or the sample fixture) and asserts every featured artist name appears as `artist_primary` in at least one record.
 - **Implementation notes**:
   - The chip-list constant lives in a single source file. Do NOT duplicate it across components.
   - Featured-artist names: pick from real v2 records (selection happens AFTER Phase 5's live crawl — sequence Phase 5 first if needed; for this phase, use the sample-fixture artists that will be expanded in Phase 5).
   - Result-cap and 150ms debounce are unchanged from v1.
-  - Bundle-size guard: the new chip should not add measurable bundle weight; the existing 50 KB gzipped guard from v1 Phase 9 remains the gate.
+  - Bundle-size guard: featured.ts gains six string entries (anime); the existing 50 KB gzipped guard from v1 Phase 9 remains the gate.
 - **Verification**:
-  - `pnpm --filter @karaoke/web test` exits 0; the extended AND-filter test passes both `vtuber` branches.
+  - `pnpm --filter @karaoke/web test` exits 0; the extended AND-filter test passes the new `anime` branches.
   - `pnpm --filter @karaoke/web build` exits 0.
-  - Manual: `pnpm --filter @karaoke/web dev`, click the `vtuber` chip; results filter to vtuber-tagged records only.
-  - If `featured.test.ts` is included, it exits 0 with all 24 featured names matching at least one record.
+  - Manual: `pnpm --filter @karaoke/web dev`, click the `anime` chip; results filter to anime-tagged records only (now non-empty in v2).
+  - If `featured.test.ts` is included, it exits 0 with all 18 featured names matching at least one record.
 - **Review pass** (`code-reviewer`):
-  - Confirm `CategoryChips.tsx` renders four chips in the order `[jpop, vocaloid, anime, vtuber]`.
+  - Confirm `CategoryChips.tsx` renders three chips in the order `[jpop, vocaloid, anime]`.
   - Confirm AND-filter logic still uses `selectedCategories.every(c => record.categories.includes(c))`.
-  - Confirm `featured.ts`'s widened type is reflected in any consumer (`EmptyState.tsx` likely).
-  - Confirm no `proseka` reference remains anywhere in `apps/web/src`.
+  - Confirm `featured.ts`'s `anime` list contains 6 real artists found in `songs.json`.
+  - Confirm no `proseka` or `vtuber` reference remains anywhere in `apps/web/src`.
   - Confirm the `featured.test.ts` (if added) reads from a stable path and would catch a typo'd artist name.
 - **Commit message**:
   ```
-  feat(web): add vtuber chip and seed anime + vtuber featured artists
+  feat(web): seed anime featured artists from v2 corpus
 
-  CategoryChips renders [jpop, vocaloid, anime, vtuber] in order.
-  featured.ts widens to four categories with 6 names each, sourced from
-  the v2 crawl. AND-filter test extended to cover vtuber.
+  featured.ts gains 6 anime artists pulled from the v2 crawl. Chip set
+  stays at [jpop, vocaloid, anime]. AND-filter test extended to cover
+  the now-populated anime category.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
-- **Estimated agent time**: 50 min.
+- **Estimated agent time**: 35 min.
 
 ## Phase 5 — Combined live crawl + sample fixture refresh
 
-- **Goal**: Run the full v2 pipeline (blog + namuwiki + tj-media-direct), measure the resulting `songs.json`, and refresh the sample fixture to span all four categories.
+- **Goal**: Run the full v2 pipeline (blog + namuwiki + tj-media-direct), measure the resulting `songs.json`, and refresh the sample fixture to span all three categories.
 - **Deliverables**:
   - Updated `apps/web/public/data/songs.json` from a real v2 crawl (re-tracked or gitignored per size — see notes).
-  - Updated `packages/crawler/test/fixtures/songs.sample.json` — 12–16 anonymized records covering ≥1 `jpop`, ≥1 `vocaloid`, ≥1 `anime`, ≥1 `vtuber`, ≥1 multi-category (e.g., `["vocaloid", "vtuber"]` or `["jpop", "vtuber"]`). "Anonymized" same as v1: real records with `id` rewritten to `sample-N` and `source_url` rewritten to a stable spec-example URL.
+  - Updated `packages/crawler/test/fixtures/songs.sample.json` — 12–16 anonymized records covering ≥1 `jpop`, ≥1 `vocaloid`, ≥1 `anime`, ≥1 multi-category (e.g., `["anime", "jpop"]` or `["jpop", "vocaloid"]`). "Anonymized" same as v1: real records with `id` rewritten to `sample-N` and `source_url` rewritten to a stable spec-example URL.
   - `packages/crawler/test/fixtures/sample.test.ts` — extend to assert at least one record per v2 category and at least one multi-category record.
   - Run-log capture (in commit body): per-adapter record counts, success ratios, total runtime, final `songs.json` size in bytes and after gzip.
   - If `songs.json` exceeds 30 MB or page load degrades noticeably (>2s on 4G simulation), file a follow-up issue titled `data: songs.json size mitigation (v3)` listing the three mitigation candidates from spec Section "Data scale and storage". Proceed.
@@ -300,15 +264,15 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
   - If the file crosses 30 MB raw, the follow-up issue is filed but `songs.json` is committed regardless (size-mitigation is v3 work, not v2 scope).
 - **Verification**:
   - Post-crawl record count: `node -e "console.log(require('./apps/web/public/data/songs.json').length)"` prints a number ≥30000.
-  - Per-category counts: a small node one-liner prints non-zero counts for each of `jpop`, `vocaloid`, `anime`, `vtuber`.
+  - Per-category counts: a small node one-liner prints non-zero counts for each of `jpop`, `vocaloid`, `anime`.
   - Sample fixture: `pnpm --filter @karaoke/crawler test test/fixtures/sample.test.ts` exits 0; record count ∈ [12, 16].
   - End-to-end: `pnpm --filter @karaoke/web build` exits 0 and the existing 50 KB gzipped JS bundle guard still passes.
-  - Manual: `pnpm --filter @karaoke/web dev`, type a Hololive talent name (e.g., `星街すいせい`); ≥1 result with `categories.includes("vtuber")`.
+  - Manual: `pnpm --filter @karaoke/web dev`, type a Hololive talent name (e.g., `星街すいせい`); ≥1 result with `categories.includes("jpop")`.
   - Per-adapter success ratios captured in run log: BlogCrawler ≥90%, TJDirectCrawler ≥90%, NamuWikiCrawler ≥85%.
   - Merge-determinism smoke test: stash the unmerged per-adapter record arrays from this run (or re-load them from the cached HTTP responses), then call the rewritten `mergeRecords` (from Phase 0.5) on the same input record set TWICE in the same process. The two output arrays must be byte-identical (deep-equal AND `JSON.stringify`-equal). Capture the assertion result in the commit body. Failure aborts the phase — escalate, do NOT relax the assertion.
 - **Review pass** (`code-reviewer`):
   - Confirm the live `songs.json` was actually produced by the crawler (not hand-edited): re-running with cached pages should produce identical output bar `crawled_at`.
-  - Confirm the sample fixture covers all four v2 categories AND a multi-category record.
+  - Confirm the sample fixture covers all three v2 categories AND a multi-category record.
   - Confirm per-adapter success ratios meet their gates (cite the run-log lines in the review comment).
   - Confirm the size mitigation follow-up issue is filed when applicable, and the commit body includes the size measurements regardless.
 - **Commit message**:
@@ -317,9 +281,9 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
   Run blog + namuwiki + tj-media-direct end-to-end. Update songs.json
   with the v2 corpus (records, size, per-category counts in body).
-  Sample fixture grows to 12-16 records spanning jpop/vocaloid/anime/
-  vtuber plus a multi-category record. Schema validation passes for
-  every record.
+  Sample fixture grows to 12-16 records spanning jpop/vocaloid/anime
+  plus a multi-category record. Schema validation passes for every
+  record.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
@@ -329,10 +293,10 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 - **Goal**: Make the v1 docs forward-compatible with v2's reality and surface the v2 changes in CLAUDE.md and README.
 - **Deliverables**:
-  - `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` — append a top-of-file note: `> v2 supersedes the Category union (`proseka` removed, `vtuber` added), adds tj-media-direct + namuwiki adapters, and replaces the dedup/merge algorithm with a two-tier match key + per-field ownership table. See \`...-v2-design.md\` for v2 deltas.` Do NOT rewrite v1 prose.
+  - `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` — append a top-of-file note: `> v2 supersedes the Category union (`proseka` removed; final set is `jpop | vocaloid | anime`), adds tj-media-direct + namuwiki adapters, and replaces the dedup/merge algorithm with a two-tier match key + per-field ownership table. See \`...-v2-design.md\` for v2 deltas.` Do NOT rewrite v1 prose.
   - `docs/superpowers/plans/2026-04-26-karaoke-search-plan.md` — same kind of forward-pointer note (mention the merger rewrite alongside the new adapters).
-  - `CLAUDE.md` — Module Map updates (if present): list the two new adapter directories under `packages/crawler/src/adapters/`. Gotchas: NamuWiki's render strategy + per-host 2s rate cap; TJ-direct null-Korean records; merger's two-tier match key (Tier A vendor-number, Tier B fuzzy title+artist) — note that `feat.` / `(...)` / `[...]` suffixes are NOT stripped by Tier B by design.
-  - `README.md` — feature list reflects 4-category coverage (`jpop`, `vocaloid`, `anime`, `vtuber`). Source list reflects three adapters.
+  - `CLAUDE.md` — Module Map updates (if present): list the two new adapter directories under `packages/crawler/src/adapters/`. Gotchas: NamuWiki's render strategy + per-host 2s rate cap; NamuWiki Hololive/Nijisanji pages emit `[jpop]` (TJ Media's catalog files them under J-POP); TJ-direct null-Korean records; merger's two-tier match key (Tier A vendor-number, Tier B fuzzy title+artist) — note that `feat.` / `(...)` / `[...]` suffixes are NOT stripped by Tier B by design.
+  - `README.md` — feature list reflects 3-category coverage (`jpop`, `vocaloid`, `anime`). Source list reflects three adapters.
 - **Implementation notes**:
   - The forward-pointer notes are minimal; they exist so a reader who lands on the v1 doc finds v2.
   - Do not edit the body of the v1 spec or v1 plan. Only the top-of-file note.
@@ -341,19 +305,20 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Verification**:
   - `grep -n 'v2 supersedes' docs/superpowers/specs/2026-04-26-karaoke-search-design.md` finds the forward-pointer.
   - `grep -n 'v2 supersedes' docs/superpowers/plans/2026-04-26-karaoke-search-plan.md` finds the forward-pointer.
-  - `grep -n 'vtuber' README.md` finds the v2 feature mention.
+  - `grep -n 'anime' README.md` finds the v2 feature mention (`anime` is now populated).
   - No source code touched in this phase: `git diff --stat` shows only `*.md` files.
 - **Review pass** (`code-reviewer`):
   - Confirm the forward-pointer notes are top-of-file and do NOT alter v1 prose.
   - Confirm CLAUDE.md edits are scoped to Module Map + Gotchas.
-  - Confirm README's category list mentions all four populated v2 categories.
+  - Confirm README's category list mentions all three populated v2 categories.
 - **Commit message**:
   ```
   docs: forward-point v1 docs at v2 and refresh CLAUDE.md + README
 
   Append v2-supersedes notes to v1 spec and plan. Update CLAUDE.md
   Module Map / Gotchas with namuwiki + tj-media-direct details. Update
-  README's feature list to reflect 4-category coverage.
+  README's feature list to reflect 3-category coverage with anime now
+  populated.
 
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
@@ -363,5 +328,4 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 - Should the namuwiki adapter ship a fourth page parser for `애니메이션_노래방_수록_목록` (or similar) if the investigation finds a maintained anime list? Spec defaults to "no — leave anime to TJ" if the page is missing or stale; user decision needed if a maintained page exists but is sparse (e.g., <500 records).
 - Should `featured.ts` move from a hand-maintained file to an auto-generated picked-from-data file? v2 keeps it hand-maintained (matches v1); raise as a v3 candidate if maintenance burden grows.
-- Vtuber overlap policy is set in spec ("each record carries the categories of its source page; merger set-unions"). Confirm this is the desired behaviour before merging Phase 3.
 - If `songs.json` exceeds 30 MB, which mitigation does the user want for v3 (Web Worker, category sharding, server-side search)? Capture the choice when the follow-up issue is filed in Phase 5.

@@ -154,11 +154,9 @@ describe('validateSongRecord — failure cases', () => {
 
     expect(() => validateSongRecord(bad)).toThrowError(/categories/);
   });
-});
 
-describe('validateSongRecord — Category enum coverage', () => {
-  it('accepts a record whose categories contain the new vtuber value', () => {
-    const record: SongRecord = {
+  it('rejects a record whose categories contain the dropped vtuber value', () => {
+    const bad = {
       id: 'blog-1-0',
       source_url: 'https://example.com/1',
       title_primary: 'Foo',
@@ -171,7 +169,29 @@ describe('validateSongRecord — Category enum coverage', () => {
       crawled_at: '2026-04-26T10:00:00Z',
     };
 
-    expect(() => validateSongRecord(record)).not.toThrow();
+    expect(() => validateSongRecord(bad)).toThrowError(/categories/);
+  });
+});
+
+describe('validateSongRecord — Category enum coverage', () => {
+  it('accepts records for each of the three live category values', () => {
+    const liveValues: Category[] = ['jpop', 'vocaloid', 'anime'];
+    for (const value of liveValues) {
+      const record: SongRecord = {
+        id: 'blog-1-0',
+        source_url: 'https://example.com/1',
+        title_primary: 'Foo',
+        title_ko: null,
+        artist_primary: 'Bar',
+        artist_ko: null,
+        release_year: 2024,
+        karaoke_numbers: { ...baseKaraokeNumbers },
+        categories: [value],
+        crawled_at: '2026-04-26T10:00:00Z',
+      };
+
+      expect(() => validateSongRecord(record)).not.toThrow();
+    }
   });
 });
 
