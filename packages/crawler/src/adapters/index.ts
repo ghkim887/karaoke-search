@@ -1,6 +1,7 @@
 import type { SongRecord } from '@karaoke/schema';
 import { HttpClient } from '../http.js';
 import { BlogCrawler } from './jpop-playlist-blog/crawler.js';
+import { TJDirectCrawler } from './tj-media-direct/crawler.js';
 
 /**
  * Per-adapter crawl options. Adapters honor `limit` themselves; the pipeline
@@ -37,7 +38,7 @@ export interface Crawler {
  * The merger uses array order as registration order for collision tie-breaks.
  */
 export function buildAdapters(http: HttpClient): Crawler[] {
-  return [new BlogCrawler(http)];
+  return [new BlogCrawler(http), new TJDirectCrawler(http)];
 }
 
 /**
