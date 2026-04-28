@@ -60,11 +60,25 @@ const title = '노래방 검색기';
         letter-spacing: -0.01em;
       }
 
+      .search-input-wrap {
+        position: relative;
+        max-width: 640px;
+      }
+
+      .search-input-icon {
+        position: absolute;
+        top: 50%;
+        left: 0.9rem;
+        transform: translateY(-50%);
+        color: var(--fg-muted);
+        pointer-events: none;
+      }
+
       input.search-input {
         width: 100%;
         max-width: 640px;
-        padding: 0.6rem 0.85rem;
-        font-size: 1rem;
+        padding: 0.7rem 1rem 0.7rem 2.4rem;
+        font-size: 1.05rem;
         color: var(--fg);
         background: var(--bg);
         border: 1px solid var(--border);
@@ -73,7 +87,8 @@ const title = '노래방 검색기';
       }
 
       input.search-input:focus {
-        border-color: var(--accent);
+        border: 2px solid var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
       }
 
       main.results {
