@@ -5,7 +5,7 @@
  *
  * - `jpop`: top-6 by record count in v1 data.
  * - `vocaloid`: top-6 by record count in v1 data.
- * - `anime`: empty in v1; `EmptyState` renders a placeholder for this section.
+ * - `anime`: curated 6-pick set spanning anime-song artists with broad TJ catalog coverage.
  */
 export const featured: {
   jpop: string[];
@@ -14,5 +14,5 @@ export const featured: {
 } = {
   jpop: ['米津玄師', 'Ado', 'back number', 'King Gnu', 'ヨルシカ', 'YOASOBI'],
   vocaloid: ['DECO*27', '40mP｜40meterP', 'Orangestar', 'Neru', 'じん｜自然の敵P'],
-  anime: [],
+  anime: ['LISA', 'Linked Horizon', '鈴木このみ', 'fripSide', 'EGOIST', 'ClariS'],
 };
