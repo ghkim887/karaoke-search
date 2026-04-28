@@ -125,13 +125,39 @@ export function App() {
 
   return (
     <main class="results">
-      <SearchBox value={inputValue} onInput={handleInputChange} />
+      <SearchBox value={inputValue} onInput={handleInputChange} disabled={loading} />
       <CategoryChips selected={selectedCategories} onToggle={toggleCategory} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
         {resultCount}건 / {resultCount} results
       </span>
-      {loading ? (
+      {error !== null ? (
+        <ErrorState message={error} />
+      ) : query === '' ? (
+        <>
+          <EmptyState
+            onPickArtist={handlePickArtist}
+            favoriteIds={favoriteIds}
+            byId={bundle?.byId ?? null}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+          />
+          {loading && (
+            <p class="loading">
+              {SONG_COUNT_DISPLAY}곡 검색 인덱스 빌드 중 / Building {SONG_COUNT_DISPLAY}-song index
+              <span class="loading-dot" aria-hidden="true">
+                .
+              </span>
+              <span class="loading-dot" aria-hidden="true">
+                .
+              </span>
+              <span class="loading-dot" aria-hidden="true">
+                .
+              </span>
+            </p>
+          )}
+        </>
+      ) : loading ? (
         <p class="loading">
           {SONG_COUNT_DISPLAY}곡 검색 인덱스 빌드 중 / Building {SONG_COUNT_DISPLAY}-song index
           <span class="loading-dot" aria-hidden="true">
@@ -144,16 +170,6 @@ export function App() {
             .
           </span>
         </p>
-      ) : error !== null ? (
-        <ErrorState message={error} />
-      ) : query === '' ? (
-        <EmptyState
-          onPickArtist={handlePickArtist}
-          favoriteIds={favoriteIds}
-          byId={bundle?.byId ?? null}
-          isFavorite={isFavorite}
-          onToggleFavorite={toggleFavorite}
-        />
       ) : results.length === 0 ? (
         <NoResults />
       ) : (

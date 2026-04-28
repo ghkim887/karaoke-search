@@ -4,6 +4,8 @@ interface SearchBoxProps {
   /** Called on every input event with the current raw string value.
    *  The parent is responsible for debouncing before running a search. */
   onInput: (value: string) => void;
+  /** When true, the input is disabled and shows a "loading index" placeholder. */
+  disabled?: boolean;
 }
 
 /**
@@ -11,10 +13,11 @@ interface SearchBoxProps {
  * value and the debounce timer so that programmatic updates (e.g. clicking a
  * featured-artist chip) are immediately reflected in the input box.
  */
-export function SearchBox({ value, onInput }: SearchBoxProps) {
+export function SearchBox({ value, onInput, disabled = false }: SearchBoxProps) {
   const handleInput = (e: Event) => {
     onInput((e.currentTarget as HTMLInputElement).value);
   };
+  const placeholder = disabled ? '검색 인덱스 로딩 중… / Loading search index…' : '곡명/가수명';
 
   return (
     <div class="search-input-wrap">
@@ -35,11 +38,12 @@ export function SearchBox({ value, onInput }: SearchBoxProps) {
         class="search-input"
         type="search"
         aria-label="가라오케 검색"
-        placeholder="곡명/가수명"
+        placeholder={placeholder}
         autocomplete="off"
         spellcheck={false}
         enterkeyhint="search"
         value={value}
+        disabled={disabled}
         onInput={handleInput}
       />
     </div>
