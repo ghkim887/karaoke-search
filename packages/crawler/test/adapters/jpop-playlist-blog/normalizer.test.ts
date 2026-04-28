@@ -41,9 +41,15 @@ describe('normalizeRawRecords', () => {
     expect(recs[0]?.categories).toEqual(['vocaloid']);
   });
 
-  it('tags categories ["jpop", "vocaloid"] for an artist in both indexes', () => {
-    const recs = normalizeRawRecords([rawRecord({})], '/100', ['jpop', 'vocaloid'], CRAWLED_AT);
-    expect(recs[0]?.categories).toEqual(['jpop', 'vocaloid']);
+  it('tags categories ["vocaloid"] for an artist in both indexes', () => {
+    // The crawler call site applies `applyCategoryExclusivity` to the
+    // jpop/vocaloid set-union BEFORE invoking the normalizer, so the
+    // pair `["jpop", "vocaloid"]` collapses to `["vocaloid"]` at
+    // normalize time. (The schema now enforces this rule directly, and
+    // the normalizer validates against the schema — passing `["jpop",
+    // "vocaloid"]` here would throw.)
+    const recs = normalizeRawRecords([rawRecord({})], '/100', ['vocaloid'], CRAWLED_AT);
+    expect(recs[0]?.categories).toEqual(['vocaloid']);
   });
 
   it('threads the passed crawled_at through every record', () => {

@@ -297,10 +297,7 @@ describe('applyCategoryExclusivity — jpop drops when anime/vocaloid present', 
   });
 
   it('drops jpop from [jpop, anime, vocaloid]', () => {
-    expect(applyCategoryExclusivity(['anime', 'jpop', 'vocaloid'])).toEqual([
-      'anime',
-      'vocaloid',
-    ]);
+    expect(applyCategoryExclusivity(['anime', 'jpop', 'vocaloid'])).toEqual(['anime', 'vocaloid']);
   });
 
   it('leaves [anime, vocaloid] unchanged', () => {

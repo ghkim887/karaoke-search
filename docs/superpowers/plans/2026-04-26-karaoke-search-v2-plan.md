@@ -241,7 +241,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Deliverables**:
   - `apps/web/src/components/CategoryChips.tsx` — confirm chip-list constant is `["jpop", "vocaloid", "anime"]` (already correct in v1). Remove any lingering `proseka` reference if present.
   - `apps/web/src/data/featured.ts` — type stays at `{ jpop: string[]; vocaloid: string[]; anime: string[] }`. Each list contains exactly 6 artist names that exist in the v2 `apps/web/public/data/songs.json`. v1 left `anime` empty; v2 fills it from the new TJ-direct corpus.
-  - `apps/web/src/lib/search.test.ts` — extend existing AND-filter coverage for the now-populated `anime` category: a record with `categories: ["jpop"]` does NOT match an `anime`-selected query; a record with `["anime", "jpop"]` matches both an `anime`-only and an `anime+jpop` selection.
+  - `apps/web/src/lib/search.test.ts` — extend existing AND-filter coverage for the now-populated `anime` category: a record with `categories: ["jpop"]` does NOT match an `anime`-selected query; a record with `["anime"]` matches an `anime`-selected query, and a record with `["anime", "vocaloid"]` matches both `anime`-only and `anime+vocaloid` selections. (Note: `["anime", "jpop"]` is rejected by the schema's mutual-exclusivity rule and is not a valid test fixture.)
   - Optional: `apps/web/test/featured.test.ts` — Vitest test that loads `featured.ts` and `apps/web/public/data/songs.json` (or the sample fixture) and asserts every featured artist name appears as `artist_primary` in at least one record.
 - **Implementation notes**:
   - The chip-list constant lives in a single source file. Do NOT duplicate it across components.
@@ -277,7 +277,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Goal**: Run the full v2 pipeline (blog + namuwiki + tj-media-direct), measure the resulting `songs.json`, and refresh the sample fixture to span all three categories.
 - **Deliverables**:
   - Updated `apps/web/public/data/songs.json` from a real v2 crawl (re-tracked or gitignored per size — see notes).
-  - Updated `packages/crawler/test/fixtures/songs.sample.json` — 12–16 anonymized records covering ≥1 `jpop`, ≥1 `vocaloid`, ≥1 `anime`, ≥1 multi-category (e.g., `["anime", "jpop"]` or `["jpop", "vocaloid"]`). "Anonymized" same as v1: real records with `id` rewritten to `sample-N` and `source_url` rewritten to a stable spec-example URL.
+  - Updated `packages/crawler/test/fixtures/songs.sample.json` — 12–16 anonymized records covering ≥1 `jpop`, ≥1 `vocaloid`, ≥1 `anime`, ≥1 multi-category (must be `["anime", "vocaloid"]` — the only schema-conformant multi-category combo, since the JSON Schema rejects `jpop` paired with `anime`/`vocaloid`). "Anonymized" same as v1: real records with `id` rewritten to `sample-N` and `source_url` rewritten to a stable spec-example URL.
   - `packages/crawler/test/fixtures/sample.test.ts` — extend to assert at least one record per v2 category and at least one multi-category record.
   - Run-log capture (in commit body): per-adapter record counts, success ratios, total runtime, final `songs.json` size in bytes and after gzip.
   - If `songs.json` exceeds 30 MB or page load degrades noticeably (>2s on 4G simulation), file a follow-up issue titled `data: songs.json size mitigation (v3)` listing the three mitigation candidates from spec Section "Data scale and storage". Proceed.

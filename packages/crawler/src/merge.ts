@@ -204,6 +204,8 @@ function mergeKaraokeNumbers(
  * `anime` or `vocaloid` (or both), `jpop` is dropped. The rule never
  * empties the array — it only triggers when at least one of `anime` /
  * `vocaloid` is present, so the surviving array always has a member.
+ * (Note: the schema's `categories.minItems: 1` makes an empty input
+ * unreachable in production — defensive but unreachable.)
  *
  * Examples:
  *   ['jpop']                       -> ['jpop']            (unchanged)

@@ -1,5 +1,6 @@
 import type { Category, SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
+import { applyCategoryExclusivity } from '../../merge.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { parseIndexPage } from './index-parser.js';
 import { normalizeRawRecords } from './normalizer.js';
@@ -101,7 +102,7 @@ export class BlogCrawler implements Crawler {
           console.warn(`[jpop-playlist-blog] ${artistPath} parsed 0 rows`);
           continue;
         }
-        const categories = [...categorySet].sort() as Category[];
+        const categories = applyCategoryExclusivity([...categorySet].sort() as Category[]);
         const records = normalizeRawRecords(raw, artistPath, categories, crawledAt);
         for (const r of records) queued.push(r);
         succeeded++;

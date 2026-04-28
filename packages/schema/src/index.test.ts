@@ -42,7 +42,7 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: '68425', ky: '48374', joysound: '631234' },
-      categories: ['anime', 'jpop'],
+      categories: ['anime'],
       crawled_at: '2026-04-26T10:00:00Z',
     };
 
@@ -182,6 +182,56 @@ describe('validateSongRecord — Category enum coverage', () => {
 
       expect(() => validateSongRecord(record)).not.toThrow();
     }
+  });
+});
+
+describe('categories mutual-exclusivity', () => {
+  function recordWithCategories(categories: Category[]): SongRecord {
+    return {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/1',
+      title_primary: 'Foo',
+      title_ko: null,
+      artist_primary: 'Bar',
+      artist_ko: null,
+      karaoke_numbers: { ...baseKaraokeNumbers },
+      categories,
+      crawled_at: '2026-04-26T10:00:00Z',
+    } as SongRecord;
+  }
+
+  it('accepts categories: ["jpop"]', () => {
+    expect(() => validateSongRecord(recordWithCategories(['jpop']))).not.toThrow();
+  });
+
+  it('accepts categories: ["anime"]', () => {
+    expect(() => validateSongRecord(recordWithCategories(['anime']))).not.toThrow();
+  });
+
+  it('accepts categories: ["vocaloid"]', () => {
+    expect(() => validateSongRecord(recordWithCategories(['vocaloid']))).not.toThrow();
+  });
+
+  it('accepts categories: ["anime", "vocaloid"] (Black Rock Shooter case)', () => {
+    expect(() => validateSongRecord(recordWithCategories(['anime', 'vocaloid']))).not.toThrow();
+  });
+
+  it('rejects categories: ["jpop", "anime"]', () => {
+    expect(() => validateSongRecord(recordWithCategories(['jpop', 'anime']))).toThrowError(
+      /categories/,
+    );
+  });
+
+  it('rejects categories: ["jpop", "vocaloid"]', () => {
+    expect(() => validateSongRecord(recordWithCategories(['jpop', 'vocaloid']))).toThrowError(
+      /categories/,
+    );
+  });
+
+  it('rejects categories: ["jpop", "anime", "vocaloid"]', () => {
+    expect(() =>
+      validateSongRecord(recordWithCategories(['jpop', 'anime', 'vocaloid'])),
+    ).toThrowError(/categories/);
   });
 });
 

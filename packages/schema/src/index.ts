@@ -113,6 +113,17 @@ export const songRecordSchema = {
         type: 'string',
         enum: CATEGORY_VALUES,
       },
+      // Mutual-exclusivity: if `anime` or `vocaloid` is present, `jpop`
+      // must NOT also be. `anime` + `vocaloid` together is allowed (e.g.,
+      // Black Rock Shooter). Defense-in-depth alongside the merger's
+      // `applyCategoryExclusivity` runtime safeguard.
+      if: {
+        anyOf: [{ contains: { const: 'anime' } }, { contains: { const: 'vocaloid' } }],
+      },
+      // biome-ignore lint/suspicious/noThenProperty: JSON Schema if/then keyword, not a Promise
+      then: {
+        not: { contains: { const: 'jpop' } },
+      },
     },
     crawled_at: {
       type: 'string',

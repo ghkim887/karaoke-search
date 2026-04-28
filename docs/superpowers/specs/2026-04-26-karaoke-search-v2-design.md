@@ -84,7 +84,19 @@ The matching JSON Schema fragment in `packages/schema/src/index.ts`:
     "type": "array",
     "minItems": 1,
     "uniqueItems": true,
-    "items": { "enum": ["jpop", "vocaloid", "anime"] }
+    "items": { "enum": ["jpop", "vocaloid", "anime"] },
+    // Mutual-exclusivity: if `anime` or `vocaloid` is present, `jpop`
+    // must NOT also be. Encoded directly in the schema (defense-in-depth
+    // alongside the merger's `applyCategoryExclusivity` runtime safeguard).
+    "if": {
+      "anyOf": [
+        { "contains": { "const": "anime" } },
+        { "contains": { "const": "vocaloid" } }
+      ]
+    },
+    "then": {
+      "not": { "contains": { "const": "jpop" } }
+    }
   }
 }
 ```
@@ -129,7 +141,7 @@ The flat v1 priority `blog > namuwiki > tj` is replaced by a per-field table. Di
 | `title_primary`, `artist_primary` | TJ-direct → blog → namuwiki |
 | `title_ko`, `artist_ko` | blog → namuwiki |
 | `karaoke_numbers.tj`, `.ky`, `.joysound` | union of all non-null values across the cluster; if multiple sources disagree on the SAME vendor's value, highest-priority source wins (priority order: blog > namuwiki > TJ-direct, kept from v1 for tiebreaking only) |
-| `categories` | set-union of all contributing sources, then mutual-exclusivity rule applied: if the union contains `anime` or `vocaloid`, `jpop` is dropped (final array sorted) |
+| `categories` | set-union of all contributing sources, then mutual-exclusivity rule applied: if the union contains `anime` or `vocaloid`, `jpop` is dropped (final array sorted). The same rule is also encoded directly in the JSON Schema (`if/then` with `contains`), so `validateSongRecord` rejects non-conformant records up front; the merger's `applyCategoryExclusivity` is defense-in-depth for cluster-time set-unions. |
 | `id` | highest-priority contributing source's local ID (priority order: blog > namuwiki > TJ-direct), formed as `{source_slug}-{source_local_id}` |
 | `source_url` | highest-priority contributing source's URL (priority order: blog > namuwiki > TJ-direct) |
 | `crawled_at` | latest of contributing sources |
@@ -151,7 +163,7 @@ The warnings are aggregated into the crawl PR body (extending the existing PR-bo
 | Scenario | Cluster path | Output |
 | --- | --- | --- |
 | Blog row + TJ row share `tj=28311` | Tier A (vendor union) | Single record. `title_primary` = TJ's, `title_ko` = blog's, `karaoke_numbers.tj=28311`. |
-| Blog row + TJ row + Namu row all share `tj=68425`; Namu also has `ky=48374` | Tier A | Single record. `karaoke_numbers = {tj: 68425, ky: 48374, joysound: null}`. Categories set-unioned (e.g., `["anime", "jpop"]`). |
+| Blog row + TJ row + Namu row all share `tj=68425`; Namu also has `ky=48374` | Tier A | Single record. `karaoke_numbers = {tj: 68425, ky: 48374, joysound: null}`. Categories set-unioned then exclusivity-reduced (e.g., blog `["jpop"]` + TJ `["jpop"]` + Namu `["anime"]` → `["jpop", "anime"]` → `["anime"]`). |
 | Blog row has no TJ#, no KY#; matches a TJ row by normalized `(title, artist)` | Tier B | Single record. `title_primary` = TJ's. Conflict-log if blog's `karaoke_numbers.tj` were non-null and disagreed (here it's null, so no conflict). |
 | Namu row only — no TJ row, no blog row | neither tier (singleton) | Standalone record. `title_primary` = namu's. `karaoke_numbers.tj=null`. |
 | Blog row with no TJ#, no KY#, no JOY#; no other source matches | neither tier (singleton) | Standalone record. `title_primary` = blog's. `karaoke_numbers.tj=null`, `.ky=null`, `.joysound=null`. |
@@ -164,7 +176,7 @@ Each surfaced record carries the categories of its source page; the merger set-u
 
 ## Source: TJ Media direct (`tj-media-direct`)
 
-Crawls TJ Media's legacy catalog JSON API and emits records with TJ numbers. Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged record where the merger's category-exclusivity rule strips `jpop` and keeps `[anime]` or `[vocaloid]`).
+Crawls TJ Media's legacy catalog JSON API and emits records with TJ numbers. Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged record where the schema-encoded category-exclusivity rule (also enforced by the merger) strips `jpop` and keeps `[anime]` or `[vocaloid]`).
 
 ### Endpoint and request body
 
