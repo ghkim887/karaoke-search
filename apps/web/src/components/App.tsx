@@ -26,18 +26,41 @@ const DEBOUNCE_MS = 150;
 // merger's final record count (currently 26,401 records).
 const SONG_COUNT_DISPLAY = '26,401';
 
-/** Case-insensitive substring match against the four MiniSearch fields. Used
- *  ONLY by the Favorites tab — Browse uses the real MiniSearch index. The
- *  favorites set is bounded by the user (in the dozens), so a linear pass is
- *  sub-millisecond and avoids building a second index. */
-function matchesQuery(record: SongRecord, query: string): boolean {
+/** Scope → list of MiniSearch fields to consult. `'all'` is `null` (the
+ *  explicit sentinel that drives the Browse call site to omit the `fields`
+ *  option entirely, preserving the literal pre-Phase-2 call shape). */
+const SCOPE_FIELDS: Readonly<Record<Scope, readonly string[] | null>> = {
+  all: null,
+  title: ['title_primary', 'title_ko'],
+  artist: ['artist_primary', 'artist_ko'],
+};
+
+/** Case-insensitive substring match against the MiniSearch fields selected
+ *  by `scope`. Used ONLY by the Favorites tab — Browse uses the real
+ *  MiniSearch index. The favorites set is bounded by the user (in the
+ *  dozens), so a linear pass is sub-millisecond and avoids building a
+ *  second index. */
+function matchesQuery(record: SongRecord, query: string, scope: Scope): boolean {
   const q = query.toLowerCase();
-  return (
-    record.title_primary.toLowerCase().includes(q) ||
-    (record.title_ko?.toLowerCase().includes(q) ?? false) ||
-    record.artist_primary.toLowerCase().includes(q) ||
-    (record.artist_ko?.toLowerCase().includes(q) ?? false)
-  );
+  switch (scope) {
+    case 'title':
+      return (
+        record.title_primary.toLowerCase().includes(q) ||
+        (record.title_ko?.toLowerCase().includes(q) ?? false)
+      );
+    case 'artist':
+      return (
+        record.artist_primary.toLowerCase().includes(q) ||
+        (record.artist_ko?.toLowerCase().includes(q) ?? false)
+      );
+    default:
+      return (
+        record.title_primary.toLowerCase().includes(q) ||
+        (record.title_ko?.toLowerCase().includes(q) ?? false) ||
+        record.artist_primary.toLowerCase().includes(q) ||
+        (record.artist_ko?.toLowerCase().includes(q) ?? false)
+      );
+  }
 }
 
 /**
@@ -110,10 +133,9 @@ export function App() {
     setQuery(name);
   };
 
-  /** Pick the candidate set per (activeTab, query), then run the existing
-   *  chip + slice pipeline. Browse uses MiniSearch; Favorites does a linear
-   *  substring pass over the user-bounded favorites set. */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scope is forward-compat for Phase 2 (it will be consumed in the memo body when the search call honors scope); listing it now keeps the deps array stable across the phase boundary.
+  /** Pick the candidate set per (activeTab, query, scope), then run the
+   *  existing chip + slice pipeline. Browse uses MiniSearch; Favorites does
+   *  a linear substring pass over the user-bounded favorites set. */
   const results: SongRecord[] = useMemo(() => {
     if (bundle === null) return [];
     let candidates: SongRecord[];
@@ -124,11 +146,16 @@ export function App() {
         const rec = bundle.byId.get(id);
         if (rec !== undefined) favRecords.push(rec);
       }
-      candidates = query === '' ? favRecords : favRecords.filter((r) => matchesQuery(r, query));
+      candidates =
+        query === '' ? favRecords : favRecords.filter((r) => matchesQuery(r, query, scope));
     } else {
       // Browse candidate set: full-corpus MiniSearch on a non-empty query.
       if (query === '') return [];
-      const hits = bundle.index.search(query);
+      const scopeFields = SCOPE_FIELDS[scope];
+      const hits =
+        scopeFields === null
+          ? bundle.index.search(query)
+          : bundle.index.search(query, { fields: [...scopeFields] });
       const records: SongRecord[] = [];
       for (const hit of hits) {
         const rec = bundle.byId.get(String(hit.id));
@@ -138,7 +165,6 @@ export function App() {
     }
     const byCategory = filterByCategories(candidates, selectedCategories);
     return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
-    // `scope` listed for forward-compat — Phase 2 will read it inside the memo body.
   }, [bundle, query, activeTab, favoriteIds, selectedCategories, selectedVendors, scope]);
 
   const toggleCategory = (c: Category) => {
