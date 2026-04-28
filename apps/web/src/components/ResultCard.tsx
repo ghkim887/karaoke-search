@@ -69,7 +69,7 @@ export function ResultCard({ record }: ResultCardProps) {
       <div class="result-artist">{artistText}</div>
       <div class="result-tags">
         {record.categories.map((c) => (
-          <span key={c} class="badge badge-category">
+          <span key={c} class={`badge badge-category badge-category-${c}`}>
             {c}
           </span>
         ))}
