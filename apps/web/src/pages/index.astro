@@ -1,5 +1,6 @@
 ---
 import { App } from '../components/App';
+import Footer from '../components/Footer.astro';
 const title = '노래방 검색기';
 ---
 
@@ -457,6 +458,32 @@ const title = '노래방 검색기';
         font-size: 0.85rem;
         opacity: 0.8;
       }
+
+      footer.site-footer {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.8rem;
+        color: var(--fg-muted);
+        line-height: 1.6;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .site-footer-sep {
+        padding: 0 0.5rem;
+      }
+
+      .site-footer-link {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .site-footer-link:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -464,5 +491,6 @@ const title = '노래방 검색기';
       <h1>{title}</h1>
     </header>
     <App client:load />
+    <Footer />
   </body>
 </html>

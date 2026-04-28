@@ -1,0 +1,44 @@
+---
+import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { formatDbDate } from '../lib/footer-date.js';
+
+// Resolve the repo root so `git log` finds the tracked path regardless of the
+// build cwd. Footer.astro lives at apps/web/src/components/, so four ".." steps
+// land at the monorepo root.
+const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url));
+
+let gitOutput = '';
+try {
+  gitOutput = execSync('git log -1 --format=%cs -- apps/web/public/data/songs.json', {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+} catch {
+  // git unavailable, shallow checkout, or path not in history — fall through.
+}
+
+const dbDate = formatDbDate(gitOutput, process.env.SOURCE_DATE_EPOCH);
+---
+
+<footer class="site-footer">
+  <span>노래방 검색기</span>
+  {dbDate !== '' && (
+    <>
+      <span aria-hidden="true" class="site-footer-sep">·</span>
+      <span>DB 업데이트 {dbDate}</span>
+    </>
+  )}
+  <span aria-hidden="true" class="site-footer-sep">·</span>
+  <span>MIT</span>
+  <span aria-hidden="true" class="site-footer-sep">·</span>
+  <a
+    class="site-footer-link"
+    href="https://github.com/ghkim887/karaoke-search"
+    target="_blank"
+    rel="noreferrer noopener"
+  >
+    GitHub ↗
+  </a>
+</footer>
