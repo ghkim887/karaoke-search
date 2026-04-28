@@ -4,7 +4,7 @@ A bilingual web app for discovering Japanese and Vocaloid karaoke songs availabl
 
 ## What is this?
 
-Karaoke Search lets you find ~25,675 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, dark mode, no sign-up required.
+Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, dark mode, no sign-up required.
 
 **Live:** https://ghkim887.github.io/karaoke-search/
 
@@ -14,7 +14,7 @@ Karaoke Search lets you find ~25,675 Japanese karaoke songs by title (Japanese o
 - **Multi-system support** — TJ Media (TJ), 금영 (KY), JOYSOUND karaoke numbers in one place
 - **Click-to-copy** — Copy karaoke numbers with a single tap
 - **Mobile-first dark mode** — Optimized for phone screens; works offline after first load
-- **~25,675 songs live** — blog + TJ Media combined corpus; 250+ artists indexed and cross-referenced
+- **~26,400 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced
 - **Device-local favorites** — star songs and find them instantly; stored in your browser, no account needed
 
 ## Data Sources & Attribution
