@@ -23,7 +23,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       title_ko: null,
       artist_primary: 'imase',
       artist_ko: '이마세',
-      release_year: 2022,
       karaoke_numbers: { tj: '68318', ky: null, joysound: null },
       categories: ['jpop'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -42,7 +41,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       title_ko: '아이돌',
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
-      release_year: 2023,
       karaoke_numbers: { tj: '68425', ky: '48374', joysound: '631234' },
       categories: ['anime', 'jpop'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -59,7 +57,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       title_ko: null,
       artist_primary: '米津玄師',
       artist_ko: '요네즈 켄시',
-      release_year: 2018,
       karaoke_numbers: { tj: '28335', ky: '84555', joysound: null },
       categories: ['jpop'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -77,7 +74,6 @@ describe('validateSongRecord — failure cases', () => {
       title_ko: null,
       artist_primary: 'Bar',
       artist_ko: null,
-      release_year: 2020,
       karaoke_numbers: { ...baseKaraokeNumbers },
       categories: ['jpop'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -94,7 +90,6 @@ describe('validateSongRecord — failure cases', () => {
       title_ko: null,
       artist_primary: 'Bar',
       artist_ko: null,
-      release_year: 2020,
       karaoke_numbers: { ...baseKaraokeNumbers },
       categories: [],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -111,7 +106,6 @@ describe('validateSongRecord — failure cases', () => {
       title_ko: null,
       artist_primary: 'Bar',
       artist_ko: null,
-      release_year: 2020,
       karaoke_numbers: { tj: null, ky: null, joysound: null, dam: '12345' },
       categories: ['jpop'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -129,7 +123,6 @@ describe('validateSongRecord — failure cases', () => {
       title_romaji: 'foo',
       artist_primary: 'Bar',
       artist_ko: null,
-      release_year: 2020,
       karaoke_numbers: { ...baseKaraokeNumbers },
       categories: ['jpop'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -146,7 +139,6 @@ describe('validateSongRecord — failure cases', () => {
       title_ko: null,
       artist_primary: 'Bar',
       artist_ko: null,
-      release_year: 2020,
       karaoke_numbers: { ...baseKaraokeNumbers },
       categories: ['proseka'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -163,7 +155,6 @@ describe('validateSongRecord — failure cases', () => {
       title_ko: null,
       artist_primary: 'Bar',
       artist_ko: null,
-      release_year: 2024,
       karaoke_numbers: { ...baseKaraokeNumbers },
       categories: ['vtuber'],
       crawled_at: '2026-04-26T10:00:00Z',
@@ -184,7 +175,6 @@ describe('validateSongRecord — Category enum coverage', () => {
         title_ko: null,
         artist_primary: 'Bar',
         artist_ko: null,
-        release_year: 2024,
         karaoke_numbers: { ...baseKaraokeNumbers },
         categories: [value],
         crawled_at: '2026-04-26T10:00:00Z',
@@ -203,7 +193,6 @@ describe('RawSongRecord type shape', () => {
       title_ko: '아이돌',
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
-      release_year: 2023,
       karaoke_numbers: { tj: null, ky: null, joysound: null },
       categories: ['jpop'],
     };
@@ -215,5 +204,8 @@ describe('RawSongRecord type shape', () => {
     // Type-level: title_romaji has been removed from the schema.
     expectTypeOf<RawSongRecord>().not.toHaveProperty('title_romaji');
     expectTypeOf<SongRecord>().not.toHaveProperty('title_romaji');
+    // Type-level: release_year has been removed from the schema.
+    expectTypeOf<RawSongRecord>().not.toHaveProperty('release_year');
+    expectTypeOf<SongRecord>().not.toHaveProperty('release_year');
   });
 });

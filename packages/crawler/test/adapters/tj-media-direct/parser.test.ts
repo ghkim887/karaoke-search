@@ -28,8 +28,6 @@ describe('parseCatalogResponse — catalog-sample.json fixture', () => {
     expect(idol).toBeDefined();
     expect(idol?.title_primary).toBe('アイドル(推しの子 OP)');
     expect(idol?.artist_primary).toBe('YOASOBI');
-    // publishdate=2023-05-24 in the live capture.
-    expect(idol?.release_year).toBe(2023);
     expect(idol?.title_ko).toBeNull();
     expect(idol?.artist_ko).toBeNull();
     expect(idol?.karaoke_numbers.ky).toBeNull();
@@ -59,16 +57,6 @@ describe('parseCatalogResponse — catalog-sample.json fixture', () => {
       expect(r.karaoke_numbers.ky).toBeNull();
       expect(r.karaoke_numbers.joysound).toBeNull();
       expect(r.categories).toEqual(['jpop']);
-    }
-  });
-
-  it('release_year is an integer in [1900, 2100] or null', () => {
-    for (const r of records) {
-      const y = r.release_year;
-      if (y === null) continue;
-      expect(Number.isInteger(y)).toBe(true);
-      expect(y).toBeGreaterThanOrEqual(1900);
-      expect(y).toBeLessThanOrEqual(2100);
     }
   });
 
@@ -275,40 +263,6 @@ describe('parseCatalogResponse — direct unit cases', () => {
     const records = parseCatalogResponse(json, SOURCE_URL);
     expect(records.length).toBe(1);
     expect(records[0]?.karaoke_numbers.tj).toBe('1');
-  });
-
-  it('parses publishdate to release_year and falls back to null on bad input', () => {
-    const json = {
-      resultCode: '00',
-      resultData: {
-        itemsTotalCount: 3,
-        items: [
-          { pro: 1, indexTitle: 'アイドル', indexSong: 'YOASOBI', publishdate: '2023-05-24' },
-          { pro: 2, indexTitle: 'アイドル2', indexSong: 'YOASOBI', publishdate: 'not-a-date' },
-          { pro: 3, indexTitle: 'アイドル3', indexSong: 'YOASOBI', publishdate: '' },
-        ],
-      },
-    };
-    const records = parseCatalogResponse(json, SOURCE_URL);
-    expect(records[0]?.release_year).toBe(2023);
-    expect(records[1]?.release_year).toBeNull();
-    expect(records[2]?.release_year).toBeNull();
-  });
-
-  it('clamps out-of-range years to null', () => {
-    const json = {
-      resultCode: '00',
-      resultData: {
-        itemsTotalCount: 2,
-        items: [
-          { pro: 1, indexTitle: 'アイドル', indexSong: 'YOASOBI', publishdate: '1899-12-31' },
-          { pro: 2, indexTitle: 'アイドル2', indexSong: 'YOASOBI', publishdate: '2101-01-01' },
-        ],
-      },
-    };
-    const records = parseCatalogResponse(json, SOURCE_URL);
-    expect(records[0]?.release_year).toBeNull();
-    expect(records[1]?.release_year).toBeNull();
   });
 
   it('throws when response is not an object', () => {

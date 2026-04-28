@@ -34,8 +34,6 @@ export interface SongRecord {
   artist_primary: string;
   /** Official Korean artist name. Nullable. */
   artist_ko: string | null;
-  /** Release year. Integer in [1900, 2100], or null. */
-  release_year: number | null;
   /** Cross-source karaoke numbers. */
   karaoke_numbers: KaraokeNumbers;
   /** At least one category, no duplicates. */
@@ -56,7 +54,6 @@ export interface RawSongRecord {
   title_ko: string | null;
   artist_primary: string;
   artist_ko: string | null;
-  release_year: number | null;
   karaoke_numbers: KaraokeNumbers;
   categories: Category[];
 }
@@ -81,7 +78,6 @@ export const songRecordSchema = {
     'title_ko',
     'artist_primary',
     'artist_ko',
-    'release_year',
     'karaoke_numbers',
     'categories',
     'crawled_at',
@@ -99,11 +95,6 @@ export const songRecordSchema = {
     title_ko: { type: ['string', 'null'] },
     artist_primary: { type: 'string', minLength: 1 },
     artist_ko: { type: ['string', 'null'] },
-    release_year: {
-      type: ['integer', 'null'],
-      minimum: 1900,
-      maximum: 2100,
-    },
     karaoke_numbers: {
       type: 'object',
       additionalProperties: false,

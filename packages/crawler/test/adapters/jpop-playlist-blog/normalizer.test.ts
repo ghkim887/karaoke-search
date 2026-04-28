@@ -11,7 +11,6 @@ function rawRecord(over: Partial<RawSongRecord>): RawSongRecord {
     title_ko: '제목',
     artist_primary: 'Artist',
     artist_ko: '아티스트',
-    release_year: null,
     karaoke_numbers: { tj: '1', ky: '2', joysound: '3' },
     categories: [],
     ...over,

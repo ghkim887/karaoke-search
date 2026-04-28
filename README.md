@@ -22,7 +22,7 @@ Karaoke Search lets you find ~21,000 Japanese karaoke songs by title (Japanese o
 This project pulls from two sources:
 
 - **[j-pop-playlist.tistory.com](https://j-pop-playlist.tistory.com/)** (primary, ~21k records) — a Korean blog that meticulously catalogs Japanese karaoke songs and maps them to TJ, 금영, and JOYSOUND karaoke numbers. Provides Korean translations of every title and artist.
-- **TJ Media catalog** (~5.9k additional records) — pulled directly via TJ Media's public-but-undocumented JSON API, anchored on TJ catalog numbers and including release years. Filtered to Japanese-relevance via a hiragana/katakana/Han heuristic plus a Chinese-artist denylist; titles already known to the blog are rescued back regardless.
+- **TJ Media catalog** (~5.9k additional records) — pulled directly via TJ Media's public-but-undocumented JSON API, anchored on TJ catalog numbers. Filtered to Japanese-relevance via a hiragana/katakana/Han heuristic plus a Chinese-artist denylist; titles already known to the blog are rescued back regardless.
 
 We surface only metadata (titles, artists, numbers)—no lyrics, no fan content. Each result links back to its source, and all JSON records include `source_url` for full transparency. **A big thanks to the j-pop-playlist blog author for maintaining the original Korean-translation resource.**
 

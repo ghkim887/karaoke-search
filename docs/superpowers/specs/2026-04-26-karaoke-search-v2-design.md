@@ -98,7 +98,7 @@ Migration plan:
 
 ### Conceptual model
 
-TJ-direct is the canonical **"songs spine"** — TJ catalog numbers are vendor-assigned IDs and the strongest identity signal v2 has. Blog and NamuWiki contribute **enrichment metadata** (Korean titles/artists, release year, additional vendor numbers, additional categories) onto the spine, plus standalone "island" records when their content has no TJ counterpart.
+TJ-direct is the canonical **"songs spine"** — TJ catalog numbers are vendor-assigned IDs and the strongest identity signal v2 has. Blog and NamuWiki contribute **enrichment metadata** (Korean titles/artists, additional vendor numbers, additional categories) onto the spine, plus standalone "island" records when their content has no TJ counterpart.
 
 Mental model: SQL normalization. TJ-direct is the `songs` table; blog and namuwiki are `translations` / `metadata` tables that join on TJ# when available, or fall back to fuzzy `(title, artist)` match otherwise.
 
@@ -128,9 +128,8 @@ The flat v1 priority `blog > namuwiki > tj` is replaced by a per-field table. Di
 | --- | --- |
 | `title_primary`, `artist_primary` | TJ-direct → blog → namuwiki |
 | `title_ko`, `artist_ko` | blog → namuwiki |
-| `release_year` | blog → namuwiki → TJ-direct |
 | `karaoke_numbers.tj`, `.ky`, `.joysound` | union of all non-null values across the cluster; if multiple sources disagree on the SAME vendor's value, highest-priority source wins (priority order: blog > namuwiki > TJ-direct, kept from v1 for tiebreaking only) |
-| `categories` | set-union of all contributing sources (sorted) |
+| `categories` | set-union of all contributing sources, then mutual-exclusivity rule applied: if the union contains `anime` or `vocaloid`, `jpop` is dropped (final array sorted) |
 | `id` | highest-priority contributing source's local ID (priority order: blog > namuwiki > TJ-direct), formed as `{source_slug}-{source_local_id}` |
 | `source_url` | highest-priority contributing source's URL (priority order: blog > namuwiki > TJ-direct) |
 | `crawled_at` | latest of contributing sources |
@@ -165,7 +164,7 @@ Each surfaced record carries the categories of its source page; the merger set-u
 
 ## Source: TJ Media direct (`tj-media-direct`)
 
-Crawls TJ Media's legacy catalog JSON API and emits records with TJ numbers (and `release_year`). Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged `["anime", "jpop"]` or `["jpop", "vocaloid"]`).
+Crawls TJ Media's legacy catalog JSON API and emits records with TJ numbers. Categorization is uniform: every TJ-direct record emits `categories: ["jpop"]`. TJ does not expose a per-row anime/vocaloid tag, and v2 deliberately does not infer one at the TJ adapter — those tags arrive via NamuWiki Tier A merges (a NamuWiki record with `[anime]` or `[vocaloid]` sharing a TJ# with a TJ-direct record produces a merged record where the merger's category-exclusivity rule strips `jpop` and keeps `[anime]` or `[vocaloid]`).
 
 ### Endpoint and request body
 
@@ -214,9 +213,8 @@ Field map to `RawSongRecord`:
 | `karaoke_numbers.tj` | `pro` (number) | cast to string |
 | `title_primary` | `indexTitle` (string) | |
 | `artist_primary` | `indexSong` (string) | despite the field name, this is the artist |
-| `release_year` | `publishdate` (`YYYY-MM-DD`) | leading 4 chars parsed as int; null if parse fails or year is outside `[1900, 2100]` |
 
-Other fields (`word`, `com`, `thumbnailImg`, `icongubun`, `mv_yn`, `rownumber`) are ignored.
+Other fields (`word`, `com`, `thumbnailImg`, `icongubun`, `mv_yn`, `rownumber`, `publishdate`) are ignored.
 
 ### Loose-JP filter
 
@@ -250,7 +248,6 @@ From the live response (`pro=68781`, captured 2026-04-27):
   "title_ko": null,
   "artist_primary": "YOASOBI",
   "artist_ko": null,
-  "release_year": 2023,
   "karaoke_numbers": { "tj": "68781", "ky": null, "joysound": null },
   "categories": ["jpop"],
   "crawled_at": "2026-04-27T00:46:00.000Z"
@@ -276,7 +273,6 @@ Wired through the http client's per-host options struct: `{ minIntervalMs: 500, 
 - Every record: `categories: ["jpop"]` (uniform — no heuristic anime/vocaloid inference).
 - `karaoke_numbers.tj` populated with the TJ catalog number; `karaoke_numbers.ky` and `karaoke_numbers.joysound` always `null`.
 - `title_ko = null`, `artist_ko = null` (TJ does not expose Korean fields on the catalog API).
-- `release_year` populated from `publishdate` when parseable; null otherwise. Live coverage is effectively 100% — every catalog item has `publishdate`.
 - `id` format: `tj-<num>` (e.g., `tj-68781`).
 - `source_url` is the catalog endpoint URL itself (the API is the source; there is no per-record landing page).
 
@@ -348,7 +344,7 @@ This order encodes the per-field tiebreak priority `blog > namuwiki > TJ-direct`
 Resulting practical behaviour (from the per-field ownership table):
 - TJ-direct provides canonical `title_primary` / `artist_primary` (the "spine"); blog and namuwiki contribute `title_ko` / `artist_ko` and additional vendor numbers and categories on top.
 - NamuWiki adds the long-tail Vocaloid B-sides and Hololive/Nijisanji-only songs (standalone records when no TJ row joins the cluster).
-- Blog wins on `release_year` and on vendor-number disagreement tiebreaks.
+- Blog wins on vendor-number disagreement tiebreaks.
 
 `mergeRecords` is **rewritten** for v2 — Phase 0.5 in the implementation plan implements the two-tier match key (Tier A vendor-number union-find, then Tier B fuzzy `(title, artist)` match) and the per-field ownership table. The v1 single-key + flat-priority algorithm is retired.
 
@@ -408,7 +404,7 @@ For v2: just measure and document. Defer the actual fix.
 
 - **TJ's Japanese-only filter form** — RESOLVED 2026-04-27 (initial recon). The public HTML site segments only by nation (`nationType=JPN`); there is no genre filter. Subsequently retired in favor of the catalog API path below.
 - **TJ anti-bot posture** — RESOLVED 2026-04-27 (initial recon). The public HTML site (`/song/accompaniment_search`) gates bot UAs to a static "site under maintenance" IIS page; a Chrome UA is required there. The legacy catalog API used by v2 has NO UA gating — see next entry.
-- **TJ catalog API discovery** — RESOLVED 2026-04-27 (follow-up recon). `POST https://www.tjmedia.com/legacy/api/newSongOfMonth` with body `searchYm=200001` returns the entire historical TJ catalog (~67k records) in one JSON response, including a populated `publishdate` field. No UA gating, no auth, no CSRF. This replaces the artist-fanout HTML-scrape design from the initial recon: 5× the coverage (~7k JP-relevant records vs ~5–15k via fanout) with 30× fewer requests, and `release_year` is now populated. The v2 adapter uses this path exclusively. See Section "Source: TJ Media direct".
+- **TJ catalog API discovery** — RESOLVED 2026-04-27 (follow-up recon). `POST https://www.tjmedia.com/legacy/api/newSongOfMonth` with body `searchYm=200001` returns the entire historical TJ catalog (~67k records) in one JSON response. No UA gating, no auth, no CSRF. This replaces the artist-fanout HTML-scrape design from the initial recon: 5× the coverage (~7k JP-relevant records vs ~5–15k via fanout) with 30× fewer requests. The v2 adapter uses this path exclusively. See Section "Source: TJ Media direct".
 
 ## Accepted scope notes
 

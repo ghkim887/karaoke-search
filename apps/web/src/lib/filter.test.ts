@@ -14,7 +14,6 @@ function rec(
     title_ko: null,
     artist_primary: id,
     artist_ko: null,
-    release_year: null,
     karaoke_numbers,
     categories,
     crawled_at: '2026-04-26T00:00:00.000Z',

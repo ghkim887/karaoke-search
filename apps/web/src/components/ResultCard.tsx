@@ -68,9 +68,6 @@ export function ResultCard({ record }: ResultCardProps) {
       <h2 class="result-title">{titleText}</h2>
       <div class="result-artist">{artistText}</div>
       <div class="result-tags">
-        {record.release_year !== null && (
-          <span class="badge badge-year">{record.release_year}</span>
-        )}
         {record.categories.map((c) => (
           <span key={c} class="badge badge-category">
             {c}

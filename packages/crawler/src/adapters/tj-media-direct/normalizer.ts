@@ -11,8 +11,6 @@ import { type RawSongRecord, type SongRecord, validateSongRecord } from '@karaok
  *    merges in the merger.
  *  - Korean fields (`title_ko`, `artist_ko`) stay `null` (TJ does not expose
  *    them via the catalog API).
- *  - `release_year` is passed through from the raw record (parser extracts
- *    it from `publishdate`).
  *  - `crawled_at` is supplied by the caller (one timestamp per crawl run,
  *    matching the blog adapter's pattern).
  */
@@ -31,7 +29,6 @@ export function normalize(raw: RawSongRecord, crawledAt: string): SongRecord {
     title_ko: null,
     artist_primary: raw.artist_primary,
     artist_ko: null,
-    release_year: raw.release_year,
     karaoke_numbers: { tj, ky: null, joysound: null },
     categories: ['jpop'],
     crawled_at: crawledAt,

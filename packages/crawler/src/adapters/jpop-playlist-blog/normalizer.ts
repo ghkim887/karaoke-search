@@ -40,7 +40,6 @@ export function normalizeRawRecords(
       title_ko: raw.title_ko,
       artist_primary: raw.artist_primary,
       artist_ko: raw.artist_ko,
-      release_year: raw.release_year,
       karaoke_numbers: { ...raw.karaoke_numbers },
       categories: [...categories],
       crawled_at: crawledAt,

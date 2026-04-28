@@ -24,7 +24,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
     node -e "const r=require('./apps/web/public/data/songs.json'); const bad=r.filter(x=>x.categories.includes('proseka')||x.categories.includes('vtuber')); console.log('proseka+vtuber records:', bad.length); process.exit(bad.length===0?0:1)"
     ```
     Exit 0 confirms migration is safe. Exit 1 means a record needs hand-fixing — escalate.
-  - The schema's `id` regex, `karaoke_numbers` shape, and `release_year` bounds are unchanged.
+  - The schema's `id` regex and `karaoke_numbers` shape are unchanged.
   - Confirm `apps/web/src/components/CategoryChips.tsx` did not hardcode `proseka` anywhere; if it did, that fix lands in Phase 4, not here.
 - **Verification**:
   - `pnpm --filter @karaoke/schema test` exits 0 with the updated enum tests passing.
@@ -71,7 +71,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Implementation notes**:
   - `feat.` / `(movie ver.)` / `[Acoustic]` are NOT stripped by the Tier B normalizer. The current `normalize()` (lowercase + collapse whitespace) is the spec'd Tier B key. Do not extend it.
   - Tier A is per-vendor: TJ #100 and KY #100 are unrelated and must NOT cluster. Implement as three separate index maps keyed by vendor.
-  - Per-field ownership uses fallback chains, not a flat priority. `release_year` chain is `blog → namuwiki → TJ-direct`; `title_primary` chain is `TJ-direct → blog → namuwiki`; etc. — see spec table.
+  - Per-field ownership uses fallback chains, not a flat priority. `title_primary` chain is `TJ-direct → blog → namuwiki`; `title_ko` chain is `blog → namuwiki`; etc. — see spec table.
   - The flat priority `blog > namuwiki > TJ-direct` is retained ONLY for tiebreaking on the same vendor's number. Encode it as a single source-rank constant in the merger; do NOT scatter the order across files.
   - Merge determinism: re-running the merger on the same input record array twice MUST produce byte-identical output. Sort cluster outputs deterministically (by `id` after assignment, or by `karaoke_numbers.tj ?? '￿'` then normalized title — pick one and document). Phase 5's smoke test will verify this end-to-end.
 - **Verification**:
@@ -105,7 +105,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 
 ## Phase 2 — `tj-media-direct` adapter
 
-- **Status:** ✓ Shipped — initial artist-fanout in `4eec991` (walked back), catalog API pivot in `28f187c`, denylist + rescue refinements in `01c44f4`. Live output: 5,859 records, 100% `release_year`. Blog parse-bug fix landed alongside in `5305cc4` (multi-code cell handling).
+- **Status:** ✓ Shipped — initial artist-fanout in `4eec991` (walked back), catalog API pivot in `28f187c`, denylist + rescue refinements in `01c44f4`. Live output: 5,859 records. Blog parse-bug fix landed alongside in `5305cc4` (multi-code cell handling).
 
 > **Filter refinements (landed 2026-04-27, separate commit after the API pivot)**: parser now applies a Chinese-artist denylist (`~140`-entry seed list, normalized whitespace + lowercase + NFKC matching) AFTER the loose-JP filter passes, AND accepts an optional `forceIncludeTjNumbers` set sourced from the on-disk blog corpus that overrides BOTH the JP-filter and the denylist when a TJ# is already in the blog. Smoke at refinement time: 5,859 records (down from 6,860 baseline; the wider-than-expected denylist drop is offset by ~145 rescued all-Latin Japanese acts like GRANRODEO / halyosy / go!go!vanillas). See the design spec's "Loose-JP filter" subsection for the full rationale.
 
@@ -113,13 +113,13 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
 - **Pre-implementation investigation**: completed 2026-04-27 (twice — initial recon found the search-fanout HTML path; follow-up recon found the catalog JSON API which was used in the final design). The follow-up recon confirmed:
   - `POST https://www.tjmedia.com/legacy/api/newSongOfMonth` with body `searchYm=200001` returns the full historical TJ catalog (~67k items) in a single JSON response.
   - No UA gating on the legacy API (default UA, bot UA, and Chrome UA all return 200) — even though the public HTML site requires a Chrome UA.
-  - Field map: `pro` → `karaoke_numbers.tj` (string-cast), `indexTitle` → `title_primary`, `indexSong` → `artist_primary` (despite the field name), `publishdate` → `release_year` (parse leading 4 chars as int, clamp to `[1900, 2100]`).
+  - Field map: `pro` → `karaoke_numbers.tj` (string-cast), `indexTitle` → `title_primary`, `indexSong` → `artist_primary` (despite the field name).
   - Live capture: `C:/Users/kmend/AppData/Local/Temp/tj-ym-200001.json` (~19 MB, 67,296 items, NOT committed).
 - **Deliverables**:
   - `packages/crawler/src/adapters/tj-media-direct/parser.ts` — exports `parseCatalogResponse(json: unknown, sourceUrl: string): RawSongRecord[]`. Validates the response has the expected shape (`resultData.items` is an array — throws on mismatch). Iterates items, applies the loose-JP filter, builds a `RawSongRecord` for each pass-through item. Skips items with empty/missing `pro`, `indexTitle`, or `indexSong`. No cheerio — pure JSON parsing.
     - Loose-JP filter: keep if `indexTitle` or `indexSong` contains a hiragana char OR a katakana char OR (a CJK ideograph AND no Hangul in the same string).
   - `packages/crawler/src/adapters/tj-media-direct/crawler.ts` — radically simpler than the v1 draft: one POST to the catalog API, parse JSON, pass to `parseCatalogResponse`, normalize each, yield. Honors `opts?.limit` by capping records yielded post-filter. No artist iteration, no per-page loop, no seed-list dependency. No success-ratio gate (single request — either it works or the pipeline aborts).
-  - `packages/crawler/src/adapters/tj-media-direct/normalizer.ts` — maps `RawSongRecord` → `SongRecord` with `categories: ["jpop"]` for **every** record, `title_ko=null`, `artist_ko=null`, `release_year` passed through from the raw record. `id` format `tj-<num>`.
+  - `packages/crawler/src/adapters/tj-media-direct/normalizer.ts` — maps `RawSongRecord` → `SongRecord` with `categories: ["jpop"]` for **every** record, `title_ko=null`, `artist_ko=null`. `id` format `tj-<num>`.
   - `packages/crawler/src/adapters/index.ts` — append `TJDirectCrawler` instance to the `adapters` array (lowest priority; Phase 3 inserts `NamuWikiCrawler` between blog and tj).
   - `packages/crawler/src/http.ts` — add a `postForm(url, body): Promise<FetchResult | null>` method that honors robots.txt + per-host rate limit but does NOT use the on-disk cache (the legacy API doesn't honor ETag/Last-Modified and we don't want to thrash the cache file with 19 MB blobs). Per-host config retains a `'www.tjmedia.com'` entry with `{ minIntervalMs: 500, jitterMs: 100 }` (no `userAgent` override — the legacy API has no UA gating).
   - **Fixtures** (replace the obsolete `jpop-page-1.html`):
@@ -127,7 +127,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
     - sibling `.sha256` file.
   - `packages/crawler/test/adapters/tj-media-direct/parser.test.ts` — parses the trimmed fixture; asserts:
     - JP-relevant record count matches expectation (the loose filter excludes Korean and Latin-only entries).
-    - The YOASOBI `アイドル(推しの子 OP)` record (`pro=68781`) maps per the field-map contract, including `release_year=2023`.
+    - The YOASOBI `アイドル(推しの子 OP)` record (`pro=68781`) maps per the field-map contract.
     - Every parsed `tj` matches `^\d+$`.
     - Hangul-containing records are excluded.
     - Records with empty/missing `pro`/`indexTitle`/`indexSong` are skipped.
@@ -137,7 +137,6 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
     - `title_ko === null && artist_ko === null`.
     - `id` matches `^tj-\d+$`.
     - `karaoke_numbers.tj` non-null and digit-only; `.ky` and `.joysound` null.
-    - `release_year` is an integer in `[1900, 2100]` OR null. At least one fixture record has a parseable date and at least one direct-unit case with `release_year=null` is included.
   - `packages/crawler/test/adapters/tj-media-direct/crawler.test.ts` — mocks `HttpClient.postForm` (the crawler no longer uses `fetch`); confirms output count matches expected JP-relevant subset, `opts.limit=5` caps yielded records to 5, the crawler throws on non-2xx / non-JSON / unexpected-shape / robots-disallow. The dedup-by-TJ# test from the v1 draft is REMOVED — the API returns each `pro` once.
 - **Implementation notes**:
   - **Categorization is uniform**: `categories: ["jpop"]` for every TJ-direct record, full stop. The parenthetical anime/show name in the title cell (e.g., `(推しの子 OP)`) is parser-visible but not parsed for category inference. NamuWiki Tier A merges (Phase 3 + Phase 0.5 merger) supply `[anime]` and `[vocaloid]` tags via shared TJ# clustering.
@@ -145,19 +144,17 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
   - **No Chrome UA spoof**: the legacy catalog API has no UA gating. Default crawler UA is used. The HTML-scrape requirement that previously demanded a Chrome UA is retired alongside that path.
   - **No per-page loop, no seed list**: one POST replaces the v1 artist-fanout. The `artists.ts` file is deleted.
   - `id` assignment: `tj-${pro}` (e.g., `tj-68781`). The schema's `id` regex `^[a-z0-9-]+-\d+$` allows this.
-  - `release_year` from `publishdate`: live coverage is effectively 100% (every catalog item has a `publishdate`).
   - Robots.txt: TJ does not publish a `robots.txt` for either UA. The `robots-parser` gate runs per-request and returns "allowed" by default in the absence of a directives file. Log the resolved decision once per host on first request to keep the run-log auditable.
 - **Verification**:
   - `pnpm --filter @karaoke/crawler test test/adapters/tj-media-direct/` exits 0; all three test files (parser, normalizer, crawler) pass.
   - `pnpm --filter @karaoke/crawler exec tsc --noEmit` exits 0.
-  - **Manual smoke** (executor): `pnpm --filter @karaoke/crawler start --source tj-media-direct --limit 0 --out /tmp/tj-api-full.json` produces ~4,000–7,500 records (live-verified count 6,860 on 2026-04-27), ALL with `categories: ['jpop']`, all with `karaoke_numbers.tj` non-null + digit-only, all with `karaoke_numbers.ky === null && karaoke_numbers.joysound === null`, ≥50% with `release_year` non-null (live: 100%).
+  - **Manual smoke** (executor): `pnpm --filter @karaoke/crawler start --source tj-media-direct --limit 0 --out /tmp/tj-api-full.json` produces ~4,000–7,500 records (live-verified count 6,860 on 2026-04-27), ALL with `categories: ['jpop']`, all with `karaoke_numbers.tj` non-null + digit-only, all with `karaoke_numbers.ky === null && karaoke_numbers.joysound === null`.
 - **Review pass** (`code-reviewer`):
   - Confirm `http.ts` has a new `postForm` method that bypasses the on-disk cache while still honoring robots.txt + rate limit.
   - Confirm the `www.tjmedia.com` per-host config retains the rate-limit but drops the `userAgent` override.
   - Confirm `categories` is uniformly `['jpop']` for every TJ record produced — read `normalizer.ts` and verify there is no heuristic inference logic (no regex on title for `OP|ED|アニメ|ボーカロイド` etc.).
   - Confirm the parser pulls from JSON (not HTML / cheerio) and applies the loose-JP filter exactly as specified.
   - Confirm the crawler issues exactly one POST (no per-page loop, no seed-list iteration, no dedup map).
-  - Confirm `release_year` is populated from `publishdate` and clamped to `[1900, 2100]` or null.
 - **Commit message**:
   ```
   feat(crawler): rewrite tj-media-direct on the legacy catalog API
@@ -166,7 +163,7 @@ Same as v1 — `GITHUB_TOKEN` (provided by Actions) only. No new secrets in v2.
   Media's legacy catalog JSON API (`/legacy/api/newSongOfMonth`,
   body `searchYm=200001`). Returns the full historical catalog
   (~67k items); the loose-JP filter narrows to ~7k JP-relevant
-  records with `release_year` now populated from `publishdate`.
+  records.
   No UA gating on the legacy API — Chrome spoof retired. Drops
   `artists.ts` seed list and the HTML fixture. Adds an http.ts
   `postForm` method that honors robots.txt + rate limit but

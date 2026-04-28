@@ -230,7 +230,6 @@ export function parseArtistPage(html: string, sourceUrl: string): RawSongRecord[
           title_ko: titleKo,
           artist_primary: artistPrimary,
           artist_ko: artistKo,
-          release_year: null,
           karaoke_numbers: { tj, ky, joysound },
           categories: [],
         });

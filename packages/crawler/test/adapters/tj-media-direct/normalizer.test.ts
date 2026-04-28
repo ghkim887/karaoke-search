@@ -45,21 +45,6 @@ describe('normalize — fixture-derived records', () => {
     }
   });
 
-  it('release_year is an integer in [1900, 2100] or null', () => {
-    for (const r of records) {
-      const y = r.release_year;
-      if (y === null) continue;
-      expect(Number.isInteger(y)).toBe(true);
-      expect(y).toBeGreaterThanOrEqual(1900);
-      expect(y).toBeLessThanOrEqual(2100);
-    }
-  });
-
-  it('at least one fixture record has a parseable release_year (publishdate)', () => {
-    const populated = records.filter((r) => r.release_year !== null);
-    expect(populated.length).toBeGreaterThan(0);
-  });
-
   it('threads the passed crawled_at through every record', () => {
     for (const r of records) {
       expect(r.crawled_at).toBe(CRAWLED_AT);
@@ -80,7 +65,6 @@ describe('normalize — direct unit cases', () => {
       title_ko: null,
       artist_primary: 'Artist',
       artist_ko: null,
-      release_year: null,
       karaoke_numbers: { tj: '12345', ky: null, joysound: null },
       categories: ['jpop'],
       ...over,
@@ -98,15 +82,5 @@ describe('normalize — direct unit cases', () => {
     // the category at the v2 spec's uniform value.
     const r = normalize(rawFor({}), CRAWLED_AT);
     expect(r.categories).toEqual(['jpop']);
-  });
-
-  it('passes release_year through when set', () => {
-    const r = normalize(rawFor({ release_year: 2023 }), CRAWLED_AT);
-    expect(r.release_year).toBe(2023);
-  });
-
-  it('passes release_year=null through unchanged', () => {
-    const r = normalize(rawFor({ release_year: null }), CRAWLED_AT);
-    expect(r.release_year).toBeNull();
   });
 });

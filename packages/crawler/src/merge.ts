@@ -199,12 +199,32 @@ function mergeKaraokeNumbers(
   return result;
 }
 
+/**
+ * Apply the category mutual-exclusivity rule: if `cats` contains either
+ * `anime` or `vocaloid` (or both), `jpop` is dropped. The rule never
+ * empties the array — it only triggers when at least one of `anime` /
+ * `vocaloid` is present, so the surviving array always has a member.
+ *
+ * Examples:
+ *   ['jpop']                       -> ['jpop']            (unchanged)
+ *   ['jpop', 'anime']              -> ['anime']
+ *   ['jpop', 'vocaloid']           -> ['vocaloid']
+ *   ['jpop', 'anime', 'vocaloid']  -> ['anime', 'vocaloid']
+ *   ['anime', 'vocaloid']          -> ['anime', 'vocaloid'] (unchanged)
+ */
+export function applyCategoryExclusivity(cats: Category[]): Category[] {
+  if (cats.includes('anime') || cats.includes('vocaloid')) {
+    return cats.filter((c) => c !== 'jpop');
+  }
+  return cats;
+}
+
 function mergeCategories(cluster: SongRecord[]): Category[] {
   const set = new Set<Category>();
   for (const r of cluster) {
     for (const c of r.categories) set.add(c);
   }
-  return [...set].sort();
+  return applyCategoryExclusivity([...set].sort());
 }
 
 function mergeCluster(
@@ -216,7 +236,6 @@ function mergeCluster(
 
   const titleArtistChain = ['tj', 'blog', 'namu'];
   const koChain = ['blog', 'namu'];
-  const yearChain = ['blog', 'namu', 'tj'];
 
   const tierBClusterKey = wasTierB ? tierBKey(cluster[0] as SongRecord) : null;
 
@@ -241,7 +260,6 @@ function mergeCluster(
       cluster[0]?.artist_primary ??
       '',
     artist_ko: pickByOwnership(cluster, koChain, (r) => r.artist_ko),
-    release_year: pickByOwnership(cluster, yearChain, (r) => r.release_year),
     karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
     categories: mergeCategories(cluster),
     crawled_at: latestCrawledAt,

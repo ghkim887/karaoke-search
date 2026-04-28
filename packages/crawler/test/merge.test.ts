@@ -1,6 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
-import { mergeRecords } from '../src/merge.js';
+import { applyCategoryExclusivity, mergeRecords } from '../src/merge.js';
 
 function record(over: Partial<SongRecord>): SongRecord {
   return {
@@ -10,7 +10,6 @@ function record(over: Partial<SongRecord>): SongRecord {
     title_ko: null,
     artist_primary: 'ヨルシカ',
     artist_ko: null,
-    release_year: 2023,
     karaoke_numbers: { tj: null, ky: null, joysound: null },
     categories: ['jpop'],
     crawled_at: '2026-04-26T10:00:00Z',
@@ -30,7 +29,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       title_ko: null,
       artist_primary: 'YOASOBI',
       artist_ko: null,
-      release_year: null,
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
       categories: ['jpop'],
     });
@@ -41,7 +39,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       title_ko: '군청',
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
-      release_year: 2020,
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
       categories: ['jpop'],
     });
@@ -58,8 +55,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
     // ko chain blog→namu: blog wins.
     expect(m.title_ko).toBe('군청');
     expect(m.artist_ko).toBe('요아소비');
-    // release_year chain blog→namu→tj: blog (2020) wins (TJ has null).
-    expect(m.release_year).toBe(2020);
     expect(m.karaoke_numbers.tj).toBe('68923');
     // id/source_url tiebreak: blog has higher priority (rank 1) than tj.
     expect(m.id).toBe('blog-1-0');
@@ -69,13 +64,12 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
   // ---------------------------------------------------------------------
   // Case 2: Three-source merge by shared TJ#
   // ---------------------------------------------------------------------
-  it('merges three sources sharing a TJ# and applies the release_year chain', () => {
+  it('merges three sources sharing a TJ# with per-field ownership chains', () => {
     const tj = record({
       id: 'tj-68923',
       source_url: 'https://tj.test/68923',
       title_primary: '群青',
       artist_primary: 'YOASOBI',
-      release_year: 2019, // wrong on TJ; chain should ignore it.
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
     });
     const blog = record({
@@ -84,7 +78,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       title_primary: 'Gunjō',
       title_ko: '군청',
       artist_primary: 'YOASOBI',
-      release_year: 2020,
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
     });
     const namu = record({
@@ -94,7 +87,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       title_ko: '군청 (나무)',
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
-      release_year: 2021,
       karaoke_numbers: { tj: '68923', ky: '47474', joysound: null },
     });
 
@@ -104,8 +96,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
     expect(conflicts).toHaveLength(0);
     const m = records[0];
     if (!m) throw new Error('no record');
-    // release_year chain blog→namu→tj: blog (2020) wins.
-    expect(m.release_year).toBe(2020);
     // title_primary chain TJ→blog→namu: TJ wins.
     expect(m.title_primary).toBe('群青');
     // title_ko chain blog→namu: blog wins.
@@ -235,7 +225,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       title_primary: 'メルト',
       title_ko: '멜트',
       artist_primary: 'ryo',
-      release_year: 2007,
       karaoke_numbers: { tj: null, ky: null, joysound: null },
       categories: ['vocaloid'],
     });
@@ -291,5 +280,109 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
     expect(a.records).toEqual(b.records);
     expect(a.conflicts).toEqual(b.conflicts);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+});
+
+describe('applyCategoryExclusivity — jpop drops when anime/vocaloid present', () => {
+  it('leaves [jpop] unchanged', () => {
+    expect(applyCategoryExclusivity(['jpop'])).toEqual(['jpop']);
+  });
+
+  it('drops jpop from [jpop, anime]', () => {
+    expect(applyCategoryExclusivity(['anime', 'jpop'])).toEqual(['anime']);
+  });
+
+  it('drops jpop from [jpop, vocaloid]', () => {
+    expect(applyCategoryExclusivity(['jpop', 'vocaloid'])).toEqual(['vocaloid']);
+  });
+
+  it('drops jpop from [jpop, anime, vocaloid]', () => {
+    expect(applyCategoryExclusivity(['anime', 'jpop', 'vocaloid'])).toEqual([
+      'anime',
+      'vocaloid',
+    ]);
+  });
+
+  it('leaves [anime, vocaloid] unchanged', () => {
+    expect(applyCategoryExclusivity(['anime', 'vocaloid'])).toEqual(['anime', 'vocaloid']);
+  });
+
+  it('leaves [anime] unchanged', () => {
+    expect(applyCategoryExclusivity(['anime'])).toEqual(['anime']);
+  });
+
+  it('leaves [vocaloid] unchanged', () => {
+    expect(applyCategoryExclusivity(['vocaloid'])).toEqual(['vocaloid']);
+  });
+});
+
+describe('mergeRecords — category exclusivity (set-union then jpop drop)', () => {
+  it('strips jpop when a Tier A cluster set-unions to jpop+anime', () => {
+    const tj = record({
+      id: 'tj-50000',
+      source_url: 'https://tj.test/50000',
+      title_primary: '夜に駆ける',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: '50000', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const blog = record({
+      id: 'blog-200-0',
+      source_url: 'https://blog.test/200',
+      title_primary: '夜に駆ける',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: '50000', ky: null, joysound: null },
+      categories: ['anime'],
+    });
+
+    const { records } = mergeRecords([tj, blog]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.categories).toEqual(['anime']);
+  });
+
+  it('strips jpop when a Tier A cluster set-unions to jpop+anime+vocaloid', () => {
+    const tj = record({
+      id: 'tj-50001',
+      source_url: 'https://tj.test/50001',
+      title_primary: 'メルト',
+      artist_primary: 'ryo',
+      karaoke_numbers: { tj: '50001', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const blog = record({
+      id: 'blog-201-0',
+      source_url: 'https://blog.test/201',
+      title_primary: 'メルト',
+      artist_primary: 'ryo',
+      karaoke_numbers: { tj: '50001', ky: null, joysound: null },
+      categories: ['anime'],
+    });
+    const namu = record({
+      id: 'namu-300',
+      source_url: 'https://namu.test/300',
+      title_primary: 'メルト',
+      artist_primary: 'ryo',
+      karaoke_numbers: { tj: '50001', ky: null, joysound: null },
+      categories: ['vocaloid'],
+    });
+
+    const { records } = mergeRecords([tj, blog, namu]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.categories).toEqual(['anime', 'vocaloid']);
+  });
+
+  it('preserves [anime, vocaloid] (the Black-Rock-Shooter case) untouched', () => {
+    const blog = record({
+      id: 'blog-202-0',
+      source_url: 'https://blog.test/202',
+      title_primary: 'ブラック★ロックシューター',
+      artist_primary: 'supercell',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['anime', 'vocaloid'],
+    });
+
+    const { records } = mergeRecords([blog]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.categories).toEqual(['anime', 'vocaloid']);
   });
 });

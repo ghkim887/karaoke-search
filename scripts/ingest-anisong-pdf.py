@@ -349,7 +349,6 @@ def main() -> int:
                 'title_ko': None,
                 'artist_primary': artist,
                 'artist_ko': r['artist_ko'],
-                'release_year': None,
                 'karaoke_numbers': {
                     'tj': code,
                     'ky': None,
