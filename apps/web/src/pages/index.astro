@@ -325,6 +325,30 @@ const title = '노래방 검색기';
         border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
       }
 
+      .favorite-star {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.85rem;
+        font: inherit;
+        font-size: 1.2rem;
+        line-height: 1;
+        background: transparent;
+        border: 0;
+        padding: 0.25rem 0.4rem;
+        cursor: pointer;
+        color: var(--fg-muted);
+        transition: color 120ms ease;
+      }
+
+      .favorite-star:hover {
+        color: color-mix(in srgb, #ffc857 50%, transparent);
+      }
+
+      .favorite-star-on,
+      .favorite-star-on:hover {
+        color: #ffc857;
+      }
+
       .result-title {
         margin: 0;
         font-size: 1.05rem;

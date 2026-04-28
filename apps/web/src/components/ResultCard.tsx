@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 
 interface ResultCardProps {
   record: SongRecord;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
 }
 
 /**
@@ -59,12 +61,21 @@ function NumberBadge({ label, value, testId }: NumberBadgeProps) {
   );
 }
 
-export function ResultCard({ record }: ResultCardProps) {
+export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardProps) {
   const titleText = joinBilingual(record.title_primary, record.title_ko);
   const artistText = joinBilingual(record.artist_primary, record.artist_ko);
 
   return (
     <article class="result-card" data-testid="result-card">
+      <button
+        type="button"
+        class={`favorite-star ${isFavorite ? 'favorite-star-on' : ''}`}
+        aria-label="즐겨찾기 / Favorite"
+        aria-pressed={isFavorite}
+        onClick={() => onToggleFavorite(record.id)}
+      >
+        {isFavorite ? '★' : '☆'}
+      </button>
       <h2 class="result-title">{titleText}</h2>
       <div class="result-artist">{artistText}</div>
       <div class="result-tags">

@@ -1,5 +1,6 @@
 import type { Category, SongRecord } from '@karaoke/schema';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useFavorites } from '../lib/favorites.js';
 import { filterByCategories, filterByVendors } from '../lib/filter.js';
 import type { IndexBundle } from '../lib/search.js';
 import { loadIndex } from '../lib/search.js';
@@ -42,6 +43,7 @@ export function App() {
   );
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
 
   useEffect(() => {
     let cancelled = false;
@@ -152,7 +154,11 @@ export function App() {
         <ul class="result-list">
           {results.map((r) => (
             <li key={r.id} class="result-list-item">
-              <ResultCard record={r} />
+              <ResultCard
+                record={r}
+                isFavorite={isFavorite(r.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             </li>
           ))}
         </ul>
