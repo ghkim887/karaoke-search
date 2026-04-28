@@ -15,7 +15,7 @@ Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese o
 - **Click-to-copy** — Copy karaoke numbers with a single tap
 - **Mobile-first dark mode** — Optimized for phone screens; works offline after first load
 - **~26,400 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced
-- **Device-local favorites** — star songs and find them instantly; stored in your browser, no account needed
+- **Device-local favorites** — star songs and find them instantly on a dedicated `즐겨찾기` tab (`검색` / `즐겨찾기`); stored in your browser, no account needed
 
 ## Data Sources & Attribution
 

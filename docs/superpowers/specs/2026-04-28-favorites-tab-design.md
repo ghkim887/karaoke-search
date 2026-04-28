@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-28
 **HEAD:** `faec6a4`
-**Status:** Approved for plan
+**Status:** Shipped (HEAD 26bc24c)
 **Scope:** Single PR — promote the favorites preview out of the empty-state into a top-level tab on the search page. Frontend-only; no schema, crawler, or storage changes.
 
 ---
@@ -63,6 +63,8 @@ The tab bar lives at the top of `<main class="results">`, immediately above the 
 | Favorites | any, 0 favorites | `FavoritesEmpty` placeholder ("No favorites yet — tap ★ on a result to add one"). |
 | Either | corpus still loading | Existing loading message; tab bar buttons inert. |
 | Either | corpus load error | Existing `ErrorState` (unchanged). |
+
+> **Note on loading precedence**: when `activeTab === 'browse' && query === '' && loading === true`, both `<EmptyState>` and the loading message render together (the existing loading-mitigation behavior added in commit `cd54633` predates this design and is intentionally preserved). For all other loading-window cases (Favorites tab loading, Browse with a typed query loading), only the loading message renders. Tab buttons are inert during the loading window regardless.
 
 ### Why substring match (not MiniSearch) inside the Favorites tab
 
@@ -232,7 +234,9 @@ Switching tabs **preserves** the search box value and the chip selections — th
 
 ## Open questions
 
-None. All decisions taken during brainstorming:
+None remaining. The Phase 2 review surfaced one previously-implicit precedence rule (Browse+empty+loading co-render) which is now documented inline in the body-rendering rules above.
+
+All decisions taken during brainstorming:
 
 - **Mode shape:** mode switch with search/filters preserved within Favorites (option B).
 - **Persistence:** ephemeral, resets to Browse on reload (option A).
