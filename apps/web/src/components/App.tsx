@@ -15,6 +15,11 @@ import { VendorChips } from './VendorChips.js';
 const RESULT_LIMIT = 50;
 const DEBOUNCE_MS = 150;
 
+// Hard-coded record count surfaced in the loading state. Update whenever
+// `apps/web/public/data/songs.json` is regenerated. Keep in sync with the
+// merger's final record count (currently 26,401 records).
+const SONG_COUNT_DISPLAY = '26,401';
+
 /**
  * Single root island. Fetches `/data/songs.json` once on mount, builds the
  * MiniSearch index, then re-runs queries reactively on `query` /
@@ -125,7 +130,18 @@ export function App() {
         {resultCount}건 / {resultCount} results
       </span>
       {loading ? (
-        <p class="loading">검색 인덱스 로딩 중 / Loading search index…</p>
+        <p class="loading">
+          {SONG_COUNT_DISPLAY}곡 검색 인덱스 빌드 중 / Building {SONG_COUNT_DISPLAY}-song index
+          <span class="loading-dot" aria-hidden="true">
+            .
+          </span>
+          <span class="loading-dot" aria-hidden="true">
+            .
+          </span>
+          <span class="loading-dot" aria-hidden="true">
+            .
+          </span>
+        </p>
       ) : error !== null ? (
         <ErrorState message={error} />
       ) : query === '' ? (
