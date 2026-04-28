@@ -20,7 +20,7 @@
 - Decision taken in plan: substring matcher for the Favorites tab lives inline in `App.tsx`'s `results` memo (helper named `matchesQuery(record, query)`). It does **not** become a `lib/` module — single call site, eight lines, no reuse value yet.
 - Decision taken in plan: `<NoResults>` is the fallback for "Favorites tab + typed query + zero matches" per spec edge case 3. `<FavoritesEmpty>` is **only** rendered when `favoriteIds.length === 0`. Order-of-checks in the render block matters and is spelled out in Phase 2.
 - Decision taken in plan: switching tabs preserves the `inputValue` and `query` (debounced) state. No `setInputValue('')` on tab switch — the spec explicitly says chip selections and search box value carry over.
-- Decision taken in plan: the sticky offset for the tab bar uses a CSS custom property `--header-height` declared on `header.site-header` (per spec Risks & mitigations §1). The tab bar reads `top: var(--header-height)`. The header's height is hardcoded at the property declaration site (e.g. `--header-height: 5.25rem`) calculated against the existing 1rem padding + 1.4rem h1 + 0.75rem margin + ~2.4rem input — small calc done once at the property declaration; consumed on the tab bar.
+- Decision taken in plan: the sticky offset for the tab bar uses a CSS custom property `--header-height` declared on `:root` (not on `header.site-header` — CSS custom properties don't propagate cross-sibling, so `:root` is required for the tab bar inside `<main>` to inherit it). The tab bar reads `top: var(--header-height, 5.25rem)`. The value is calculated against the existing 1rem padding + 1.4rem h1 + 0.75rem margin + ~2.4rem input — small calc done once at the property declaration; consumed on the tab bar. See Phase 3 Step 1.
 
 ---
 
@@ -91,7 +91,9 @@ Pure presentational. No props. Single short paragraph. The bilingual sweep (`gre
 
 ### Step 4: Implement `TabBar.tsx`
 
-Create `apps/web/src/components/TabBar.tsx`. Mirror the `CategoryChips.tsx` / `VendorChips.tsx` pattern (fieldset-free, but uses `role="tablist"` instead). Key shape:
+> **Note on spec language ("mirrors CategoryChips/VendorChips"):** Despite the spec language, the `<fieldset>`+`<legend>` wrapper is INTENTIONALLY NOT used here. `role="tablist"` is semantically incompatible with `<fieldset>` (which expects form-control children). The "mirroring" applies to: the refs array pattern, the Arrow-Left/Arrow-Right key handler, and the per-button styling. Use a plain `<div role="tablist" aria-label="결과 보기 모드">` wrapper instead.
+
+Create `apps/web/src/components/TabBar.tsx`. Mirror the `CategoryChips.tsx` / `VendorChips.tsx` pattern (refs array, Arrow-Left/Right key handler, per-button styling) but use `role="tablist"` instead of `<fieldset>`. Key shape:
 
 ```tsx
 import { useRef } from 'preact/hooks';
@@ -208,19 +210,32 @@ Expected: zero hits. The new files contain no hiragana/katakana.
 
 Append to `apps/web/src/components/App.test.tsx`. Each new test mounts `<App />` into a host div under jsdom (the file already has the `// @vitest-environment jsdom` pragma).
 
-**Critical:** these tests need a populated `byId` map. Two acceptable fixtures:
-- **Option A** (preferred — matches existing pattern): use `vi.mock('../lib/search.js', () => ({ loadIndex: vi.fn().mockResolvedValue({ index: <fake>, byId: <map> }) }))` to short-circuit the corpus fetch. Requires constructing a tiny fake `MiniSearch`-shaped object with a `.search(query)` method that returns hits matching the test fixtures. **Decision taken in plan: use Option A.** Mock at the test-file scope; pass a Map of 3–4 fixture records (one per category, mix of starred/unstarred) and a stub `index.search()` that filters the records by lowercase substring match on `title_primary` so the Browse-typed-query tests work without a real MiniSearch index.
-- **Option B** (rejected): build a real MiniSearch over a fixture corpus inside the test. Slower; more setup; not worth it for these tests.
+**Critical:** these tests need a populated `byId` map. The mock must be scoped carefully to avoid breaking the existing `App loading state` and `App loading-state mitigation` tests, which rely on `loadIndex` being an unresolved async function that keeps `loading === true` for the assertion window.
 
-Add a top-of-file fixture block (above the `describe(...)` calls):
+**Mock scoping (revised)**: do NOT use a file-level `vi.mock`. Instead:
+1. Keep the existing `App loading state` and `App loading-state mitigation` tests untouched. They continue to work with the real (un-stubbed) `loadIndex` because they assert during the loading window before any awaited resolution.
+2. For the new tab-behavior tests, scope the mock inside a single `describe('App tab behavior', () => { ... })` block. At the top of that describe, do:
+   ```ts
+   import * as searchModule from '../../lib/search.js';
+   // ...
+   beforeEach(() => {
+     vi.spyOn(searchModule, 'loadIndex').mockResolvedValue(fixtureBundle);
+   });
+   afterEach(() => {
+     vi.restoreAllMocks();
+   });
+   ```
+3. Each test that needs the corpus loaded should `await waitFor(() => screen.getByRole('tablist'))` (or similar) before asserting on tab behavior. This ensures the resolved-bundle path has run.
+4. The "tab buttons inert during loading" test (App test 10) needs a one-off override: `vi.spyOn(searchModule, 'loadIndex').mockReturnValueOnce(new Promise(() => {}))` so the promise never resolves and `loading` stays `true` for the assertion window.
+
+Add a fixture block above the `describe('App tab behavior', ...)` group (not at file scope):
 
 ```tsx
 import type { SongRecord } from '@karaoke/schema';
-import { vi } from 'vitest';
 
 const fixtureRecords: SongRecord[] = [
   { id: 'r1', title_primary: 'Idol', title_ko: '아이돌', artist_primary: 'YOASOBI', artist_ko: '요아소비', categories: ['jpop'], karaoke_numbers: { tj: '12345', ky: null, joysound: null }, source_url: 'https://example.invalid/1' },
-  { id: 'r2', title_primary: 'KICK BACK', title_ko: null, artist_primary: '米津玄師', artist_ko: '요네즈 켄시', categories: ['jpop', 'anime'], karaoke_numbers: { tj: '67890', ky: null, joysound: null }, source_url: 'https://example.invalid/2' },
+  { id: 'r2', title_primary: 'KICK BACK', title_ko: null, artist_primary: '米津玄師', artist_ko: '요네즈 켄시', categories: ['anime'], karaoke_numbers: { tj: '67890', ky: null, joysound: null }, source_url: 'https://example.invalid/2' },
   { id: 'r3', title_primary: 'Senbonzakura', title_ko: '천본앵', artist_primary: '初音ミク', artist_ko: '하츠네 미쿠', categories: ['vocaloid'], karaoke_numbers: { tj: null, ky: '11111', joysound: null }, source_url: 'https://example.invalid/3' },
 ];
 const byId = new Map(fixtureRecords.map((r) => [r.id, r] as const));
@@ -235,9 +250,7 @@ const fakeIndex = {
       .map((r) => ({ id: r.id }));
   },
 };
-vi.mock('../lib/search.js', () => ({
-  loadIndex: vi.fn().mockResolvedValue({ index: fakeIndex, byId }),
-}));
+const fixtureBundle = { index: fakeIndex, byId };
 ```
 
 Test cases (each its own `it(...)` block; some may share a `describe('App tab behavior', ...)` group):
@@ -250,8 +263,8 @@ Test cases (each its own `it(...)` block; some may share a `describe('App tab be
    - Pre-seed favorites = `['r3', 'r1', 'r2']`. Mount, click Favorites tab, click the Vocaloid chip. Assert the rendered card count is 1 AND it contains `Senbonzakura` (only `r3` is `vocaloid`).
 4. **With Favorites active, typing a query narrows the body to favorites whose title or artist contains the query (case-insensitive).**
    - Pre-seed favorites = `['r1', 'r2', 'r3']`. Mount, click Favorites tab, type `idol` in the search box (use `fireEvent.input` or mutate `input.value` and dispatch an `input` event), advance debounce (`vi.useFakeTimers()` + `vi.advanceTimersByTime(150)`). Assert exactly 1 card renders AND its text contains `Idol`.
-5. **With Favorites active and zero favorites, `<FavoritesEmpty>` renders — not the search-results path.**
-   - Ensure `localStorage` is empty for the favorites key. Mount, click Favorites tab. Assert `host.querySelector('.favorites-empty')` is non-null AND `host.querySelector('.result-list')` IS null.
+5. **With Favorites active and zero favorites (corpus loaded), `<FavoritesEmpty>` renders — not the search-results path.**
+   - Ensure `localStorage` is empty for the favorites key. Mount, await corpus load (so `loading === false`), then click Favorites tab. Assert `host.querySelector('.favorites-empty')` is non-null AND `host.querySelector('.result-list')` IS null. Note: this test asserts the post-load zero-favorites state — it does NOT cover the loading window. The loading-window case is App test 10.
 6. **Toggling off the last favorite while on the Favorites tab → placeholder appears; tab stays Favorites.**
    - Pre-seed favorites = `['r1']`. Mount, click Favorites tab. Confirm 1 card renders. Click the star button on that card (look up by `[data-testid="favorite-star"]` or by aria-label) to unfavorite. Assert `host.querySelector('.favorites-empty')` becomes non-null AND the Favorites tab is still `aria-selected="true"`.
 7. **Toggling on a favorite while on Browse → tab does not switch; body unchanged.**
@@ -266,7 +279,7 @@ Test cases (each its own `it(...)` block; some may share a `describe('App tab be
 Notes for the executor:
 - Tests 4 and 8 require fake timers for the 150 ms debounce. Reset timers via `vi.useRealTimers()` in `afterEach` to keep test isolation.
 - Tests 2, 3, 6, 8, 9 require `localStorage` seeding before mount. Use `beforeEach` to clear it (`localStorage.removeItem('karaoke-favorites:v1')`).
-- Test 10 needs a per-test `loadIndex` override that supersedes the file-level `vi.mock`. Use `vi.mocked(loadIndex).mockReturnValueOnce(new Promise(() => {}))` or restructure that one test into its own `describe` with its own mock.
+- Test 10 needs a one-off override within the `describe('App tab behavior', ...)` block: call `vi.spyOn(searchModule, 'loadIndex').mockReturnValueOnce(new Promise(() => {}))` at the start of that test (before mount) so the promise never resolves and `loading` stays `true` for the assertion window. The `afterEach` `vi.restoreAllMocks()` resets it cleanly for subsequent tests.
 
 ### Step 2: Update `EmptyState.test.tsx` (drop three favorites cases)
 
@@ -506,12 +519,14 @@ export function App() {
   const resultCount = useMemo(() => results.length, [results]);
 
   // Render-branch selection follows spec §Body rendering rules. Order matters:
-  //   1. ErrorState beats everything.
-  //   2. Favorites + zero stars → FavoritesEmpty (regardless of query).
-  //   3. Browse + empty query → EmptyState (+ optional loading line).
-  //   4. Loading window without empty query → loading line.
-  //   5. results.length === 0 → NoResults (covers Favorites+typed+no-match too).
-  //   6. Otherwise → result list.
+  //   1. error !== null → ErrorState (beats everything).
+  //   2. loading === true → loading message (covers "Either / corpus still loading" row,
+  //      applies to both tabs — tab buttons are inert so user can't switch during load,
+  //      but if activeTab='favorites' arrives via a code path, loading takes priority).
+  //   3. activeTab === 'favorites' && favoriteIds.length === 0 → FavoritesEmpty.
+  //   4. activeTab === 'favorites' → favorites pipeline body (NoResults if 0 filtered).
+  //   5. activeTab === 'browse' && query === '' → EmptyState (featured-artist landing).
+  //   6. activeTab === 'browse' → search-results pipeline body (existing flow).
   return (
     <main class="results">
       <SearchBox value={inputValue} onInput={handleInputChange} disabled={loading} />
@@ -528,20 +543,6 @@ export function App() {
       </span>
       {error !== null ? (
         <ErrorState message={error} />
-      ) : activeTab === 'favorites' && favoriteIds.length === 0 ? (
-        <FavoritesEmpty />
-      ) : activeTab === 'browse' && query === '' ? (
-        <>
-          <EmptyState onPickArtist={handlePickArtist} />
-          {loading && (
-            <p class="loading">
-              {SONG_COUNT_DISPLAY}곡 검색 인덱스 빌드 중 / Building {SONG_COUNT_DISPLAY}-song index
-              <span class="loading-dot" aria-hidden="true">.</span>
-              <span class="loading-dot" aria-hidden="true">.</span>
-              <span class="loading-dot" aria-hidden="true">.</span>
-            </p>
-          )}
-        </>
       ) : loading ? (
         <p class="loading">
           {SONG_COUNT_DISPLAY}곡 검색 인덱스 빌드 중 / Building {SONG_COUNT_DISPLAY}-song index
@@ -549,6 +550,26 @@ export function App() {
           <span class="loading-dot" aria-hidden="true">.</span>
           <span class="loading-dot" aria-hidden="true">.</span>
         </p>
+      ) : activeTab === 'favorites' && favoriteIds.length === 0 ? (
+        <FavoritesEmpty />
+      ) : activeTab === 'favorites' ? (
+        results.length === 0 ? (
+          <NoResults />
+        ) : (
+          <ul class="result-list">
+            {results.map((r) => (
+              <li key={r.id} class="result-list-item">
+                <ResultCard
+                  record={r}
+                  isFavorite={isFavorite(r.id)}
+                  onToggleFavorite={toggleFavorite}
+                />
+              </li>
+            ))}
+          </ul>
+        )
+      ) : activeTab === 'browse' && query === '' ? (
+        <EmptyState onPickArtist={handlePickArtist} />
       ) : results.length === 0 ? (
         <NoResults />
       ) : (
@@ -576,7 +597,7 @@ Diff highlights vs. HEAD:
 - `<EmptyState>` invocation drops four props (now only `onPickArtist`).
 - `<TabBar>` mounted between `<SearchBox>` and `<CategoryChips>`.
 - `results` memo: branch on `activeTab` to pick the candidate set; the chip+slice pipeline downstream is unchanged.
-- Render block: new `activeTab === 'favorites' && favoriteIds.length === 0` arm rendering `<FavoritesEmpty>` BEFORE the `query === ''` check.
+- Render block: precedence order is `error` → `loading` → `favorites+zero` → `favorites` → `browse+empty` → `browse`. The `loading` arm now covers both tabs per spec ("Either / corpus still loading → loading message"), and `FavoritesEmpty` fires only after the loading window has closed.
 
 ### Step 5: Verification (Phase 2)
 
@@ -602,8 +623,8 @@ Expected: zero hits.
 
 ### Risks & rollback (Phase 2)
 
-- **Risk:** `App.test.tsx`'s `vi.mock` interacts badly with the existing `App loading state` and `App loading-state mitigation` describes (they test the loading branch and assume `loadIndex` resolves to a full real bundle).
-  **Mitigation:** the new file-level mock returns a real-shaped bundle from a fixture map. The existing tests assert on `.loading` and `.empty-state` selectors — those branches still render off the fixture corpus, so they continue to pass. If a clash surfaces, scope the mock with `vi.mock(..., { ... })` inside specific `describe` blocks instead of file-level.
+- **Risk:** the existing `App loading state` and `App loading-state mitigation` tests will break IF a file-level mock is introduced; those tests rely on `loadIndex` remaining an unresolved async during the assertion window.
+  **Mitigation:** the per-describe `vi.spyOn` scope described in Step 1 prevents this. This mitigation is mandatory, not optional — a file-level `vi.mock` of `loadIndex` must not be used in `App.test.tsx`.
 - **Risk:** the new `matchesQuery` helper is allocated per `results` re-run.
   **Mitigation:** it's a pure function; the cost is negligible at ≤ dozens of records. No memoization required.
 - **Risk:** the render-branch order accidentally renders `FavoritesEmpty` instead of `NoResults` when the Favorites tab has favorites + a query that matches none.
@@ -883,13 +904,13 @@ Decisions taken in plan (collected for audit):
 5. Switching tabs preserves `inputValue` and `query` — no reset on tab switch. (Phase 2 Step 4.)
 6. `--header-height` custom property is declared on `:root` (not `header.site-header`) so it inherits down to the tab bar; a `5.25rem` fallback on `.tab-bar`'s `top:` covers the inheritance edge case. (Phase 3 Step 1.)
 7. Active-tab click in `TabBar.tsx` is a hard no-op (`if (id === activeTab) return;`) at the source — parents don't need to dedupe. (Phase 1 Step 4.)
-8. `App.test.tsx` uses Option A (file-level `vi.mock` of `loadIndex` returning a fixture-shaped bundle) over Option B (real MiniSearch fixture corpus). (Phase 2 Step 1.)
+8. `App.test.tsx` uses a per-describe `vi.spyOn` scope (not a file-level `vi.mock`) to avoid breaking the existing `App loading state` and `App loading-state mitigation` tests. The fixture bundle is defined above the `describe('App tab behavior', ...)` group and injected via `beforeEach`/`afterEach` with `vi.restoreAllMocks()`. (Phase 2 Step 1.)
 9. `EmptyState.test.tsx` is fully replaced (existing file at HEAD only contains the favorites describe block being dropped) with one featured-artist smoke test. (Phase 2 Step 2.)
 
 Ambiguity / open notes flagged for follow-up (none block this plan):
 
-- Spec is silent on whether the loading line should still render on the **Favorites** tab during the loading window. The plan keeps the existing render-branch behavior: while `loading === true`, the loading line renders on Browse (with `EmptyState`) and on Favorites (without `EmptyState`, falling through to the third loading arm). On Favorites with zero favorites, `<FavoritesEmpty>` takes priority over the loading line — debatable; the spec's edge-case table says tab buttons are inert during loading but doesn't dictate the body content. **Resolution: keep `<FavoritesEmpty>` priority; the user has already opened the favorites view and the placeholder is more meaningful than a corpus-loading message in that context.** Logged here for executor awareness.
 - Spec's `aria-label="결과 보기 모드"` (or equivalent) for the tab bar's `role="tablist"` is not specified. Plan picks `결과 보기 모드` ("result view mode") as a sensible default. If a copywriter wants a different label, change the literal in `TabBar.tsx`'s top-level `<div>` only — no test asserts on this string.
+- Previously flagged: "spec is silent on whether the loading line should render on the Favorites tab during the loading window." **Resolved:** the spec's body-rendering table row "Either / corpus still loading → existing loading message" covers both tabs. The render-branch order (error → loading → favorites+zero → …) now implements this correctly. FavoritesEmpty only fires after the loading window has closed. No ambiguity remains.
 
 Placeholder scan: searched the plan for "TBD", "TODO", "fill in details", "similar to Phase" — zero matches. Recount comment in Phase 4 Step 1 is an operational hint (the literal vitest total depends on what the test file count resolves to at landing), not a placeholder for content.
 
