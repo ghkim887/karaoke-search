@@ -125,7 +125,7 @@ export function App() {
         {resultCount}건 / {resultCount} results
       </span>
       {loading ? (
-        <p class="loading">검색 인덱스 로딩 중 / 検索インデックス読み込み中…</p>
+        <p class="loading">검색 인덱스 로딩 중 / Loading search index…</p>
       ) : error !== null ? (
         <ErrorState message={error} />
       ) : query === '' ? (

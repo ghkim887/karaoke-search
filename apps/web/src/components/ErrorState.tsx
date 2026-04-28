@@ -11,7 +11,8 @@ export function ErrorState({ message }: ErrorStateProps) {
   return (
     <div class="error-state" role="alert">
       <p class="error-state-headline">
-        데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. / データの読み込みに失敗しました。
+        데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. / Failed to load data. Please try
+        again shortly.
       </p>
       <p class="error-state-detail">{message}</p>
     </div>
