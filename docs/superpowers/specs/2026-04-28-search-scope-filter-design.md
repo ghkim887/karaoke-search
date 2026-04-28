@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-28
 **HEAD:** `26bc24c`
-**Status:** Approved for plan
+**Status:** Shipped 2026-04-28 — commits `b473cfc`, `0968ec4`, `cb97b6a`
 **Scope:** Single PR — add a three-way segmented-control filter that restricts search matching to one of {all four fields, title fields only, artist fields only}. Frontend-only; no schema, crawler, MiniSearch index, or storage changes.
 
 ---

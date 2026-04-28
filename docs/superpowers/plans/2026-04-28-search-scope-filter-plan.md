@@ -4,7 +4,7 @@
 
 **Goal:** Add a three-way scope filter (`전체` / `곡명` / `가수`) below the tab bar that restricts which fields the search query is matched against. Default `전체` (current 4-field behavior). `곡명` restricts to `title_primary` + `title_ko`; `가수` restricts to `artist_primary` + `artist_ko`. Applies to **both** the Browse-tab MiniSearch query and the Favorites-tab `matchesQuery` substring narrowing. Ephemeral state (resets to `전체` on reload). Frontend-only, no schema or crawler change.
 
-**Spec:** `docs/superpowers/specs/2026-04-28-search-scope-filter-design.md` (HEAD `26bc24c`, status: Approved for plan).
+**Spec:** `docs/superpowers/specs/2026-04-28-search-scope-filter-design.md` (HEAD `26bc24c`, status: Shipped 2026-04-28 — commits `b473cfc`, `0968ec4`, `cb97b6a`).
 
 **Architecture:** Pure additive Astro+Preact changes inside `apps/web`. One new presentational component (`ScopeFilter.tsx`). One state field added to `App.tsx`. The `results` memo's Browse branch grows a per-call `fields` argument to MiniSearch; the Favorites branch's `matchesQuery` helper grows a third `scope` parameter. CSS for the segmented-control filter is added to `apps/web/src/pages/index.astro`. No new dependencies. No changes to `useFavorites`, the MiniSearch index build, schema, crawler, or `songs.json`.
 
