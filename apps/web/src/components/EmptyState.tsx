@@ -1,13 +1,7 @@
-import type { SongRecord } from '@karaoke/schema';
 import { featured } from '../data/featured.js';
-import { ResultCard } from './ResultCard.js';
 
 interface EmptyStateProps {
   onPickArtist: (name: string) => void;
-  favoriteIds: string[];
-  byId: Map<string, SongRecord> | null;
-  isFavorite: (id: string) => boolean;
-  onToggleFavorite: (id: string) => void;
 }
 
 const SECTIONS: ReadonlyArray<{ key: keyof typeof featured; label: string }> = [
@@ -17,48 +11,13 @@ const SECTIONS: ReadonlyArray<{ key: keyof typeof featured; label: string }> = [
 ];
 
 /**
- * Default landing view shown when `query` is empty.
- *
- * If the user has any favorites, the favorites section renders FIRST. The id
- * list comes from `useFavorites().orderedIds` (already newest-first); ids that
- * no longer resolve in the loaded corpus (`byId`) are silently skipped.
+ * Default landing view shown on the Browse tab when `query` is empty.
+ * The favorites preview previously rendered here lives on the Favorites tab
+ * now (see TabBar + App.tsx). EmptyState is purely featured-artist content.
  */
-export function EmptyState({
-  onPickArtist,
-  favoriteIds,
-  byId,
-  isFavorite,
-  onToggleFavorite,
-}: EmptyStateProps) {
-  // Resolve favorite ids to records, dropping stale/unloaded ids silently.
-  const favoriteRecords: SongRecord[] = [];
-  if (byId !== null) {
-    for (const id of favoriteIds) {
-      const rec = byId.get(id);
-      if (rec !== undefined) favoriteRecords.push(rec);
-    }
-  }
-
+export function EmptyState({ onPickArtist }: EmptyStateProps) {
   return (
     <div class="empty-state">
-      {favoriteRecords.length > 0 && (
-        <section class="empty-section empty-favorites-section">
-          <h2 class="empty-section-title empty-favorites-title">
-            ★ 즐겨찾기 ({favoriteRecords.length}) / Favorites
-          </h2>
-          <ul class="result-list">
-            {favoriteRecords.map((r) => (
-              <li key={r.id} class="result-list-item">
-                <ResultCard
-                  record={r}
-                  isFavorite={isFavorite(r.id)}
-                  onToggleFavorite={onToggleFavorite}
-                />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
       {SECTIONS.map((section) => {
         const artists = featured[section.key];
         return (
