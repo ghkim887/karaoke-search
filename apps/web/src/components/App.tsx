@@ -10,8 +10,6 @@ import { ErrorState } from './ErrorState.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';
 import { NoResults } from './NoResults.js';
 import { ResultCard } from './ResultCard.js';
-import type { Scope } from './ScopeFilter.js';
-import { ScopeFilter } from './ScopeFilter.js';
 import { SearchBox } from './SearchBox.js';
 import type { TabId } from './TabBar.js';
 import { TabBar } from './TabBar.js';
@@ -26,41 +24,18 @@ const DEBOUNCE_MS = 150;
 // merger's final record count (currently 26,401 records).
 const SONG_COUNT_DISPLAY = '26,401';
 
-/** Scope → list of MiniSearch fields to consult. `'all'` is `null` (the
- *  explicit sentinel that drives the Browse call site to omit the `fields`
- *  option entirely, preserving the literal pre-Phase-2 call shape). */
-const SCOPE_FIELDS: Readonly<Record<Scope, readonly string[] | null>> = {
-  all: null,
-  title: ['title_primary', 'title_ko'],
-  artist: ['artist_primary', 'artist_ko'],
-};
-
-/** Case-insensitive substring match against the MiniSearch fields selected
- *  by `scope`. Used ONLY by the Favorites tab — Browse uses the real
- *  MiniSearch index. The favorites set is bounded by the user (in the
- *  dozens), so a linear pass is sub-millisecond and avoids building a
- *  second index. */
-function matchesQuery(record: SongRecord, query: string, scope: Scope): boolean {
+/** Case-insensitive substring match against the four MiniSearch fields. Used
+ *  ONLY by the Favorites tab — Browse uses the real MiniSearch index. The
+ *  favorites set is bounded by the user (in the dozens), so a linear pass is
+ *  sub-millisecond and avoids building a second index. */
+function matchesQuery(record: SongRecord, query: string): boolean {
   const q = query.toLowerCase();
-  switch (scope) {
-    case 'title':
-      return (
-        record.title_primary.toLowerCase().includes(q) ||
-        (record.title_ko?.toLowerCase().includes(q) ?? false)
-      );
-    case 'artist':
-      return (
-        record.artist_primary.toLowerCase().includes(q) ||
-        (record.artist_ko?.toLowerCase().includes(q) ?? false)
-      );
-    default:
-      return (
-        record.title_primary.toLowerCase().includes(q) ||
-        (record.title_ko?.toLowerCase().includes(q) ?? false) ||
-        record.artist_primary.toLowerCase().includes(q) ||
-        (record.artist_ko?.toLowerCase().includes(q) ?? false)
-      );
-  }
+  return (
+    record.title_primary.toLowerCase().includes(q) ||
+    (record.title_ko?.toLowerCase().includes(q) ?? false) ||
+    record.artist_primary.toLowerCase().includes(q) ||
+    (record.artist_ko?.toLowerCase().includes(q) ?? false)
+  );
 }
 
 /**
@@ -84,7 +59,6 @@ export function App() {
     () => new Set(),
   );
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
-  const [scope, setScope] = useState<Scope>('all');
   const [activeTab, setActiveTab] = useState<TabId>('browse');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
@@ -133,9 +107,9 @@ export function App() {
     setQuery(name);
   };
 
-  /** Pick the candidate set per (activeTab, query, scope), then run the
-   *  existing chip + slice pipeline. Browse uses MiniSearch; Favorites does
-   *  a linear substring pass over the user-bounded favorites set. */
+  /** Pick the candidate set per (activeTab, query), then run the existing
+   *  chip + slice pipeline. Browse uses MiniSearch; Favorites does a linear
+   *  substring pass over the user-bounded favorites set. */
   const results: SongRecord[] = useMemo(() => {
     if (bundle === null) return [];
     let candidates: SongRecord[];
@@ -146,16 +120,11 @@ export function App() {
         const rec = bundle.byId.get(id);
         if (rec !== undefined) favRecords.push(rec);
       }
-      candidates =
-        query === '' ? favRecords : favRecords.filter((r) => matchesQuery(r, query, scope));
+      candidates = query === '' ? favRecords : favRecords.filter((r) => matchesQuery(r, query));
     } else {
       // Browse candidate set: full-corpus MiniSearch on a non-empty query.
       if (query === '') return [];
-      const scopeFields = SCOPE_FIELDS[scope];
-      const hits =
-        scopeFields === null
-          ? bundle.index.search(query)
-          : bundle.index.search(query, { fields: [...scopeFields] });
+      const hits = bundle.index.search(query);
       const records: SongRecord[] = [];
       for (const hit of hits) {
         const rec = bundle.byId.get(String(hit.id));
@@ -165,7 +134,7 @@ export function App() {
     }
     const byCategory = filterByCategories(candidates, selectedCategories);
     return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
-  }, [bundle, query, activeTab, favoriteIds, selectedCategories, selectedVendors, scope]);
+  }, [bundle, query, activeTab, favoriteIds, selectedCategories, selectedVendors]);
 
   const toggleCategory = (c: Category) => {
     setSelectedCategories((prev) => {
@@ -224,7 +193,6 @@ export function App() {
         favoriteCount={favoriteIds.length}
         disabled={loading}
       />
-      <ScopeFilter scope={scope} onChange={setScope} disabled={loading} />
       <CategoryChips selected={selectedCategories} onToggle={toggleCategory} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">

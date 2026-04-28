@@ -16,7 +16,6 @@ Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese o
 - **Mobile-first dark mode** — Optimized for phone screens; works offline after first load
 - **~26,400 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced
 - **Device-local favorites** — star songs and find them instantly on a dedicated `즐겨찾기` tab (`검색` / `즐겨찾기`); stored in your browser, no account needed
-- **Search scope filter** — narrow queries to title-only (`곡명`) or artist-only (`가수`), or keep the default all-fields (`전체`) mode; three-button segmented control, resets on reload
 
 ## Data Sources & Attribution
 
@@ -72,7 +71,7 @@ The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub 
 
 ## Roadmap
 
-- **v2 in progress** — Schema migration to 3 categories ✓ • Two-tier merger ✓ • TJ Media direct adapter ✓ • Frontend polish + favorites + mobile-first pass ✓ • Search scope filter (`전체` / `곡명` / `가수`) ✓ • NamuWiki adapter (Vocaloid + Hololive/Nijisanji) remains
+- **v2 in progress** — Schema migration to 3 categories ✓ • Two-tier merger ✓ • TJ Media direct adapter ✓ • Frontend polish + favorites + mobile-first pass ✓ • NamuWiki adapter (Vocaloid + Hololive/Nijisanji) remains
 - **v3+** — Native crawlers for 금영 (KY) and JOYSOUND
 - **Future** — Optional serverless live-fallback for queries that miss the static index (deferred indefinitely)
 
