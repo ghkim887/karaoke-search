@@ -44,8 +44,8 @@ The favorites store itself (`useFavorites` hook, `localStorage` key `karaoke-fav
 1. Page title (sticky header, unchanged).
 2. Search box (sticky header, unchanged).
 3. **NEW: Tab bar** — two buttons:
-   - **Browse** (default).
-   - **Favorites ★ (N)** — the count `N` updates live as the user stars/unstars cards.
+   - **검색** (default).
+   - **즐겨찾기**.
 4. Category filter chips (J-POP / Vocaloid / Anime) — unchanged; applies on both tabs.
 5. Vendor filter chips (TJ / KY / JOY) — unchanged; applies on both tabs.
 6. Body — driven by `(activeTab, query, favoriteIds)`; see "Body rendering rules" below.
@@ -82,7 +82,7 @@ A single string in component state, one of `'browse' | 'favorites'`. Default `'b
   - Wrapper element with `role="tablist"`.
   - Each button uses `role="tab"` + `aria-selected={isActive}` (instead of `aria-pressed`).
   - Arrow-Left / Arrow-Right cycle focus between the two buttons; Tab moves focus into and out of the group.
-  - The Favorites button label includes the live count: `★ 즐겨찾기 ({count}) / Favorites` — star-first, matching the existing empty-state heading precedent so users see the same affordance ordering across the page. Browse label: `둘러보기 / Browse`.
+  - Browse label: `검색`. Favorites label: `즐겨찾기` — plain Korean only, no star prefix, no count badge, no English half. (Deliberate decision per user feedback: labels are Korean-only with no transliteration, no bilingual slash format, and no inline count in the tab strip itself.)
   - Both buttons disabled (`disabled` attribute and reduced visual contrast) while `loading === true`.
 - **`apps/web/src/components/FavoritesEmpty.tsx`** — pure presentational placeholder. Bilingual text: `즐겨찾기가 아직 없어요 — 결과 카드의 ★ 버튼으로 추가하세요. / No favorites yet — tap ★ on a result to add one.` Single short paragraph; no buttons or actions.
 
@@ -141,7 +141,7 @@ Stale favorite IDs (favorited then later removed from the corpus) are silently d
 | Keystroke in search box | debounced 150 ms → `query` updates | yes |
 | Click a tab button | `activeTab` flips | yes |
 | Click a category or vendor chip | selected set updates | yes |
-| Click ★ on a card | favorites store updates (memory + disk); count badge in tab label updates | yes if `activeTab === 'favorites'`; otherwise body unchanged |
+| Click ★ on a card | favorites store updates (memory + disk) | yes if `activeTab === 'favorites'`; otherwise body unchanged |
 | `loadIndex()` resolves | `loading` flips to false; `bundle` populated | yes |
 
 Switching tabs **preserves** the search box value and the chip selections — they apply the same way against whichever candidate set the new tab provides.
@@ -151,7 +151,7 @@ Switching tabs **preserves** the search box value and the chip selections — th
 ## Edge cases
 
 - **User unfavorites the last star while on the Favorites tab.** Pipeline returns 0 records; renderer falls back to `<FavoritesEmpty>`. Tab stays Favorites — no auto-bounce.
-- **User stars a card while on Browse.** Tab does not switch. The Favorites tab label count increments live. Body unchanged (Browse pipeline doesn't depend on favorites).
+- **User stars a card while on Browse.** Tab does not switch. Body unchanged (Browse pipeline doesn't depend on favorites).
 - **User types a query that matches no favorites.** Pipeline returns 0 records on the Favorites tab. Renderer falls back to `<NoResults>` (existing component) — *not* `<FavoritesEmpty>`. (Distinguishes "you have favorites, none match" from "you have no favorites at all".)
 - **Mid-load click on Favorites tab.** Tab buttons are inert during loading; the click is ignored.
 - **Stale favorite (id no longer in corpus).** Dropped at the `byId.get(id)` step. Hook value (`favoriteIds`) is *not* mutated by render — pruning is a manual concern out of scope here.
@@ -162,7 +162,7 @@ Switching tabs **preserves** the search box value and the chip selections — th
 
 - **Tab bar:** segmented-control look. Container is the existing `--bg-elev` color with `border: 1px solid var(--border)` and `border-radius: 8px`. Each button fills 50% width, has `padding: 0.6rem 0.9rem`, ≥44 px tall on mobile. Active button gets `background: var(--accent); color: var(--accent-fg); font-weight: 650`. Inactive button is `color: var(--fg-muted)` with hover lift via `color: var(--fg)`. Disabled state reduces opacity to `0.55` and removes hover.
 - **Sticky placement:** the tab bar is `position: sticky; top: <header height>`. The existing header already uses `position: sticky; top: 0`, so the tab bar offset matches the header's resolved height. CSS uses a small calc against the header padding/font sizes (no JS measurement).
-- **Mobile:** at `(max-width: 719px)`, the tab bar spans the full viewport width with `border-radius: 0` (flush edges). Star count stays inline with the label.
+- **Mobile:** at `(max-width: 719px)`, the tab bar spans the full viewport width with `border-radius: 0` (flush edges).
 - **No new color tokens.** Reuses the existing custom-property palette.
 
 ---
@@ -172,12 +172,11 @@ Switching tabs **preserves** the search box value and the chip selections — th
 ### New unit tests
 
 **`TabBar.test.tsx`**
-1. Renders both buttons with the correct labels.
-2. Favorites label updates when `count` prop changes (0 → 1 → 0).
-3. Active tab has `aria-selected="true"`; inactive has `aria-selected="false"`.
-4. Clicking the inactive tab fires the change handler with the right id; clicking the already-active tab is a no-op.
-5. Arrow-Left / Arrow-Right move focus between the two buttons.
-6. While `disabled` (loading), buttons are inert and don't fire on click.
+1. Browse button label is exactly `검색`; Favorites button label is exactly `즐겨찾기` — no star, no count, regardless of favorites count.
+2. Active tab has `aria-selected="true"`; inactive has `aria-selected="false"`.
+3. Clicking the inactive tab fires the change handler with the right id; clicking the already-active tab is a no-op.
+4. Arrow-Left / Arrow-Right move focus between the two buttons.
+5. While `disabled` (loading), buttons are inert and don't fire on click.
 
 **`FavoritesEmpty.test.tsx`**
 1. Renders the bilingual placeholder text (Korean + English).
@@ -191,7 +190,7 @@ Switching tabs **preserves** the search box value and the chip selections — th
 4. With Favorites active, typing a query narrows the body to favorites whose title or artist contains the query (case-insensitive).
 5. With Favorites active and zero favorites, the placeholder renders — not the search-results path.
 6. Toggling off the last favorite while on the Favorites tab → placeholder appears; tab stays Favorites.
-7. Toggling on a favorite while on **Browse** → tab does not switch; favorites count visible in the tab label updates.
+7. Toggling on a favorite while on **Browse** → tab does not switch; body unchanged.
 8. Switching Favorites → Browse with a query in the box preserves the query; Browse re-runs full-corpus search.
 9. With Favorites active, typing a query that matches no favorites → renders `NoResults` (not `FavoritesEmpty`).
 10. Tab buttons inert during the loading window; clicks are ignored until the corpus resolves.
@@ -213,7 +212,7 @@ Switching tabs **preserves** the search box value and the chip selections — th
   - Tab strip is sticky under the search header.
   - Both tabs reachable by mouse + keyboard (arrow keys cycle focus).
   - Mobile viewport keeps tap targets ≥44 px.
-  - Favorites count badge updates live as cards are starred/unstarred.
+  - Starring/unstarring cards updates the Favorites body correctly when on the Favorites tab.
   - Reload restores Browse as the active tab.
 
 ---
@@ -225,7 +224,7 @@ Switching tabs **preserves** the search box value and the chip selections — th
 - **Risk:** the substring matcher inside Favorites diverges from MiniSearch behavior (Korean/Latin tokenization differences).
   **Mitigation:** explicit, documented behavior — Favorites uses substring, Browse uses MiniSearch. Documented in the table above and in inline comments at the call site. Kept simple precisely because the favorites set is small.
 - **Risk:** the empty-state regression — favorites users land on Browse and don't see their starred items at all.
-  **Mitigation:** the Favorites tab label always shows the count (`★ (N)`) regardless of which tab is active, so users see at a glance that they have favorites. Mitigated further by Browse remaining the default (most common entry point is "I want to search").
+  **Mitigation:** the Favorites tab (`즐겨찾기`) is always visible in the tab strip regardless of which tab is active, so users can discover it easily. Browse remains the default (most common entry point is "I want to search").
 - **Risk:** `App.tsx` LOC growth past readable.
   **Mitigation:** measured at ~220 LOC after this change vs. ~190 today. Acceptable. If a follow-up pushes it past ~280, revisit splitting into per-tab views.
 
@@ -239,7 +238,7 @@ None. All decisions taken during brainstorming:
 - **Persistence:** ephemeral, resets to Browse on reload (option A).
 - **Empty-favorites behavior:** sticky placeholder, no auto-bounce (option B).
 - **Tab placement:** in the App island, sticky beneath the existing search header.
-- **Tab affordance:** segmented-control look, two buttons, count in label.
+- **Tab affordance:** segmented-control look, two buttons, Korean-only labels (`검색` / `즐겨찾기`), no count badge in tab strip.
 - **Favorites preview in empty-state:** removed entirely.
 
 ---
