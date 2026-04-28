@@ -43,7 +43,7 @@ export function App() {
   );
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
 
   useEffect(() => {
     let cancelled = false;
@@ -147,7 +147,13 @@ export function App() {
       ) : error !== null ? (
         <ErrorState message={error} />
       ) : query === '' ? (
-        <EmptyState onPickArtist={handlePickArtist} />
+        <EmptyState
+          onPickArtist={handlePickArtist}
+          favoriteIds={favoriteIds}
+          byId={bundle?.byId ?? null}
+          isFavorite={isFavorite}
+          onToggleFavorite={toggleFavorite}
+        />
       ) : results.length === 0 ? (
         <NoResults />
       ) : (
