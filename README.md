@@ -4,7 +4,7 @@ A bilingual web app for discovering Japanese and Vocaloid karaoke songs availabl
 
 ## What is this?
 
-Karaoke Search lets you find ~21,000 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, dark mode, no sign-up required. (v2 adds a TJ Media adapter; combined corpus of ~25,675 records ships in Phase 5.)
+Karaoke Search lets you find ~25,675 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, dark mode, no sign-up required.
 
 **Live:** https://ghkim887.github.io/karaoke-search/
 
@@ -14,8 +14,8 @@ Karaoke Search lets you find ~21,000 Japanese karaoke songs by title (Japanese o
 - **Multi-system support** — TJ Media (TJ), 금영 (KY), JOYSOUND karaoke numbers in one place
 - **Click-to-copy** — Copy karaoke numbers with a single tap
 - **Mobile-first dark mode** — Optimized for phone screens; works offline after first load
-- **~21,000 songs live** — 250+ artists indexed and cross-referenced (blog source); combined corpus ~25,675 records ships in Phase 5
-- **Attributions** — Every result links back to its source post
+- **~25,675 songs live** — blog + TJ Media combined corpus; 250+ artists indexed and cross-referenced
+- **Device-local favorites** — star songs and find them instantly; stored in your browser, no account needed
 
 ## Data Sources & Attribution
 
@@ -71,7 +71,7 @@ The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub 
 
 ## Roadmap
 
-- **v2 in progress** — Schema migration to 3 categories ✓ • Two-tier merger ✓ • TJ Media direct adapter ✓ • NamuWiki adapter (Vocaloid + Hololive/Nijisanji) and frontend chip refinement remain
+- **v2 in progress** — Schema migration to 3 categories ✓ • Two-tier merger ✓ • TJ Media direct adapter ✓ • Frontend polish + favorites + mobile-first pass ✓ • NamuWiki adapter (Vocaloid + Hololive/Nijisanji) remains
 - **v3+** — Native crawlers for 금영 (KY) and JOYSOUND
 - **Future** — Optional serverless live-fallback for queries that miss the static index (deferred indefinitely)
 
