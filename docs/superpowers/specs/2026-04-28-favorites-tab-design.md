@@ -220,7 +220,7 @@ Switching tabs **preserves** the search box value and the chip selections — th
 ## Risks & mitigations
 
 - **Risk:** sticky offset for the tab bar drifts if the header padding/font changes later.
-  **Mitigation:** use a CSS custom property (`--header-height`) defined on the header and consumed by the tab bar's `top:`. Single source of truth.
+  **Mitigation:** declare a CSS custom property `--header-height` on `:root` (so it inherits to both `<header>` and `<main>`'s descendants), and consume it as the tab bar's `top:` value. Single source of truth. The header itself does not need to assert on this — it sets its own height via padding/typography rules — but the value must match. A small fallback like `top: var(--header-height, 5.25rem)` covers any inheritance edge case.
 - **Risk:** the substring matcher inside Favorites diverges from MiniSearch behavior (Korean/Latin tokenization differences).
   **Mitigation:** explicit, documented behavior — Favorites uses substring, Browse uses MiniSearch. Documented in the table above and in inline comments at the call site. Kept simple precisely because the favorites set is small.
 - **Risk:** the empty-state regression — favorites users land on Browse and don't see their starred items at all.
