@@ -10,6 +10,8 @@ import { ErrorState } from './ErrorState.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';
 import { NoResults } from './NoResults.js';
 import { ResultCard } from './ResultCard.js';
+import type { Scope } from './ScopeFilter.js';
+import { ScopeFilter } from './ScopeFilter.js';
 import { SearchBox } from './SearchBox.js';
 import type { TabId } from './TabBar.js';
 import { TabBar } from './TabBar.js';
@@ -59,6 +61,7 @@ export function App() {
     () => new Set(),
   );
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
+  const [scope, setScope] = useState<Scope>('all');
   const [activeTab, setActiveTab] = useState<TabId>('browse');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
@@ -110,6 +113,7 @@ export function App() {
   /** Pick the candidate set per (activeTab, query), then run the existing
    *  chip + slice pipeline. Browse uses MiniSearch; Favorites does a linear
    *  substring pass over the user-bounded favorites set. */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scope is forward-compat for Phase 2 (it will be consumed in the memo body when the search call honors scope); listing it now keeps the deps array stable across the phase boundary.
   const results: SongRecord[] = useMemo(() => {
     if (bundle === null) return [];
     let candidates: SongRecord[];
@@ -134,7 +138,8 @@ export function App() {
     }
     const byCategory = filterByCategories(candidates, selectedCategories);
     return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
-  }, [bundle, query, activeTab, favoriteIds, selectedCategories, selectedVendors]);
+    // `scope` listed for forward-compat — Phase 2 will read it inside the memo body.
+  }, [bundle, query, activeTab, favoriteIds, selectedCategories, selectedVendors, scope]);
 
   const toggleCategory = (c: Category) => {
     setSelectedCategories((prev) => {
@@ -193,6 +198,7 @@ export function App() {
         favoriteCount={favoriteIds.length}
         disabled={loading}
       />
+      <ScopeFilter scope={scope} onChange={setScope} disabled={loading} />
       <CategoryChips selected={selectedCategories} onToggle={toggleCategory} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
