@@ -22,6 +22,13 @@ const title = '노래방 검색기';
         --accent-fg: #0b0d10;
         --border: #232831;
         --border-strong: #353c47;
+        /* Resolved height of header.site-header (1rem pad-top + 1.4rem * 1.5
+           h1 line-height + 0.75rem h1 margin-bottom + 1rem pad-bottom ≈
+           4.85rem). Rounded to 5.25rem for a small safety margin so the
+           sticky `.tab-bar` sits cleanly beneath the header on every
+           viewport. Declared on :root so it inherits down into <main>,
+           which is a sibling (not a descendant) of <header>. */
+        --header-height: 5.25rem;
       }
 
       * {
@@ -59,6 +66,70 @@ const title = '노래방 검색기';
         font-size: 1.4rem;
         font-weight: 650;
         letter-spacing: -0.01em;
+      }
+
+      .tab-bar {
+        position: sticky;
+        top: var(--header-height, 5.25rem);
+        z-index: 9;
+        display: flex;
+        gap: 4px;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 0 0.75rem;
+        padding: 4px;
+        background: var(--bg-elev);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+
+      .tab-button {
+        flex: 1 1 0;
+        font: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        min-height: 44px;
+        padding: 0.6rem 0.9rem;
+        background: transparent;
+        color: var(--fg-muted);
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        outline: none;
+        transition:
+          background 120ms ease,
+          color 120ms ease,
+          box-shadow 120ms ease;
+      }
+
+      .tab-button:hover:not(:disabled):not(.tab-button-active) {
+        color: var(--fg);
+      }
+
+      .tab-button:focus-visible {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+      }
+
+      .tab-button-active {
+        background: var(--accent);
+        color: var(--accent-fg);
+        font-weight: 650;
+      }
+
+      .tab-button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 719px) {
+        .tab-bar {
+          max-width: none;
+          width: calc(100% + 2.5rem);
+          margin-left: -1.25rem;
+          border-radius: 0;
+          border-left: 0;
+          border-right: 0;
+        }
       }
 
       .search-input-wrap {
