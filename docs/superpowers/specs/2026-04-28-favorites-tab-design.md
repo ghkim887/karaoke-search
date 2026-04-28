@@ -249,7 +249,7 @@ All decisions taken during brainstorming:
 
 ## Out of scope (deferred)
 
-- Title-only / artist-only search-scope filter — separate MEDIUM-priority follow-up tracked in `CLAUDE.md`.
+- Title-only / artist-only search-scope filter — attempted and reverted (`a1ee604`); segmented-control UX rejected. Not an active follow-up.
 - NamuWiki adapter — postponed by user.
 - Drag-to-reorder favorites, manual sort, folders, export/import, cross-device sync — never in scope; no plan to add.
 - Per-tab URL routing, deep-linking, back-button support — explicitly rejected (option A persistence).
