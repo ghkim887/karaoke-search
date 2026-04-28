@@ -34,3 +34,7 @@ desktop.ini
 
 # Playwright MCP tooling artifact
 .playwright-mcp/
+
+# Playwright MCP screenshots from local verification runs
+apps/web/.playwright-mcp/
+phase4-*.png

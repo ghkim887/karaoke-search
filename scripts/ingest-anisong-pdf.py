@@ -1,4 +1,18 @@
-"""One-shot enrichment: ingest TJ Media official anime songbook PDF into songs.json.
+"""WARNING: KNOWN BUGGY — DO NOT RE-RUN AS-IS.
+
+The PDF parser in this script has a column-handling bug rooted in `is_pure_hangul_line()`
+(it accepts Latin characters in mixed-column lines), causing cross-row column-spillover
+into title/artist/transliteration fields. The data this script ingested into
+apps/web/public/data/songs.json (commit f849ce7) is partially corrupted:
+~30% of `tjpdf-*` records have visible damage. See CLAUDE.md "Known Issues" section.
+
+Fix is DEFERRED. Re-running this script as-is would re-introduce the same corruption.
+If you need to re-ingest from .omc/anisong_utf8.txt, fix `is_pure_hangul_line()` and
+the column-split logic first, AND drop the existing `tjpdf-*` rows from songs.json.
+
+---
+
+One-shot enrichment: ingest TJ Media official anime songbook PDF into songs.json.
 
 Behavior:
   1. Parses /tmp/anisong_utf8.txt (pdftotext -layout output) and extracts (tj_code, title, artist).
