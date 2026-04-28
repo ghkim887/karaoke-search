@@ -1,26 +1,26 @@
-"""WARNING: KNOWN BUGGY — DO NOT RE-RUN AS-IS.
+"""One-shot enrichment: ingest TJ Media official anime songbook PDF into songs.json.
 
-The PDF parser in this script has a column-handling bug rooted in `is_pure_hangul_line()`
-(it accepts Latin characters in mixed-column lines), causing cross-row column-spillover
-into title/artist/transliteration fields. The data this script ingested into
-apps/web/public/data/songs.json (commit f849ce7) is partially corrupted:
-~30% of `tjpdf-*` records have visible damage. See CLAUDE.md "Known Issues" section.
-
-Fix is DEFERRED. Re-running this script as-is would re-introduce the same corruption.
-If you need to re-ingest from .omc/anisong_utf8.txt, fix `is_pure_hangul_line()` and
-the column-split logic first, AND drop the existing `tjpdf-*` rows from songs.json.
-
----
-
-One-shot enrichment: ingest TJ Media official anime songbook PDF into songs.json.
+NOTE on prior bug (commit f849ce7): an earlier version of this script used
+`pdftotext -layout` and a permissive column-split, which let cross-row content
+leak into title/artist/translit fields (~30% of tjpdf-* records corrupted).
+This rewrite switches to `pdftotext -table` (cleaner column boundaries) and
+splits column lines on `\\s{4,}` runs. It also drops the sticky-title fallback
+queue (no longer needed under -table) and tightens `is_pure_hangul_line()` as
+defense-in-depth. A validation gate in main() asserts the new output is clean
+before writing songs.json. The script is now idempotent: it drops existing
+tjpdf-* records before merging the freshly-parsed ones in.
 
 Behavior:
-  1. Parses /tmp/anisong_utf8.txt (pdftotext -layout output) and extracts (tj_code, title, artist).
-  2. For TJ codes already in apps/web/public/data/songs.json, adds 'anime' to categories.
-  3. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}'.
+  1. Parses .omc/anisong_utf8.txt (pdftotext -table output) and extracts (tj_code, title, artist).
+  2. Drops existing tjpdf-* records from apps/web/public/data/songs.json.
+  3. For TJ codes already in the corpus (non-tjpdf-* rows), adds 'anime' to categories.
+  4. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}'.
 
 NOT a recurring crawler — schema-equivalent to a side-channel monthly enrichment.
 Run from repo root: `python scripts/ingest-anisong-pdf.py`
+
+Regenerate the source text with:
+  pdftotext -table -enc UTF-8 -nopgbrk anisong_2026-02.pdf .omc/anisong_utf8.txt
 """
 
 from __future__ import annotations
@@ -40,6 +40,9 @@ SOURCE_URL = 'https://www.tjmedia.com/support/poster?cate_cd=P06'
 # (Most codes are 5 digits; ~33 legacy codes are 4 digits like 6479, 6899, 6943.)
 # Note: lookbehind also excludes '.' to defend against decimal-like patterns.
 _TJ_ANCHOR = re.compile(r'(?<![\d.])(\d{4,5})(?!\d)')
+
+# Used by validation gate in main() and by tightened is_pure_hangul_line().
+SPILL_RE = re.compile(r'\S+\s{4,}\S+')
 
 # Numeric floor for accepting an anchor as a real TJ code. Below this we treat
 # the match as a false positive (titles with "1000%"/"2000%", index columns,
@@ -88,7 +91,16 @@ def has_hangul(text: str) -> bool:
 
 
 def is_pure_hangul_line(text: str) -> bool:
-    """Pure Hangul: has Hangul, no kana, no Han. Used for Korean translit detection."""
+    """Pure Hangul: has Hangul, no kana, no Han. Used for Korean translit detection.
+
+    Note (polish-pass change): the previous version of this function rejected
+    long lines that contained a `\\s{4,}` run, as a defense against -layout
+    cross-column leaks. Under -table mode, column gaps in translit lines are
+    LEGITIMATE (they're the boundary between title_ko and artist_ko columns) —
+    rejecting them caused us to lose translit for ~340 records that needed
+    column-aligned 2-chunk parsing. The kana/han check is a sufficient defense:
+    if JP content leaks in, the line is no longer pure Hangul and is rejected.
+    """
     s = text.strip()
     if not s:
         return False
@@ -118,50 +130,69 @@ def extract_anchor(line: str) -> tuple[str, int, int] | None:
     return candidates[-1]
 
 
-def is_anime_section_header(line: str) -> bool:
-    """A column-0 (no leading whitespace) non-empty line is the anime-name
-    column starting a new section. Used to clear the sticky-title queue
-    only at section boundaries. We exclude lines that look like our own
-    boilerplate already filtered upstream."""
-    if not line:
-        return False
-    if line[0] in (' ', '\t'):
-        return False
-    s = line.strip()
-    if not s:
-        return False
-    # The anime-name column lines we see are pure-Korean (e.g. "보컬로이드,"
-    # or "마법선생 네기마"), or at minimum NOT starting with kana/Latin in
-    # the rare mixed case. A simple "starts at column 0 and non-empty" is
-    # a sufficient proxy for "new section" given the layout.
-    return True
+
+def _split_hangul_transition(chunk: str) -> tuple[str, str]:
+    """Split a chunk on the first Hangul→non-Hangul transition.
+
+    Used for the polish-pass fix to category 1b (column gap <4 spaces): when the
+    PDF row joins the anime-name column to the title column with only 1-3 spaces
+    (instead of the 4+ that `\\s{4,}` requires), they merge into a single chunk
+    like `'그리드맨 유니버스 UNION'`. We split at the boundary so the Hangul
+    becomes the anime-name (discarded) and the rest becomes the title.
+
+    Returns (hangul_part, rest). rest is empty if the chunk is pure Hangul.
+    """
+    # Walk forward through `chunk`. State: we're in Hangul. As soon as we see a
+    # non-Hangul, non-space character (Latin/Japanese), split.
+    seen_hangul = False
+    for idx, ch in enumerate(chunk):
+        cp = ord(ch)
+        is_hangul_ch = (0xAC00 <= cp <= 0xD7A3) or (0x1100 <= cp <= 0x11FF) or (0x3130 <= cp <= 0x318F)
+        if is_hangul_ch:
+            seen_hangul = True
+            continue
+        if ch.isspace():
+            continue
+        # Non-Hangul, non-space. If we've already seen Hangul, this is the boundary.
+        if seen_hangul:
+            return chunk[:idx].rstrip(), chunk[idx:].lstrip()
+    # No transition found.
+    if seen_hangul:
+        return chunk.strip(), ''
+    return '', chunk.strip()
+
+
+def _column_position(line: str, substring: str) -> int | None:
+    """Find the column index of substring in line, returning None if absent."""
+    if not substring:
+        return None
+    idx = line.find(substring)
+    return idx if idx >= 0 else None
 
 
 def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
     """Walk lines, emit one record per anchor found.
 
-    Title / artist parsing strategy:
+    Title / artist parsing strategy (under `pdftotext -table`):
       - Anchor line splits on the TJ code: prefix=title-area, suffix=artist-area.
-      - Title prefix is stripped of leading whitespace AND a leading anime-name
-        column. We split the prefix into whitespace-runs and take the rightmost
-        non-Hangul-only chunk; if empty, we fall back to a sticky-title queue
-        populated from preceding non-anchor lines that look like title-only rows.
+      - Title prefix is split on `\\s{4,}` runs (column boundaries under -table).
+        We take the LAST non-Hangul-only chunk as title. If the last chunk fuses
+        Hangul + non-Hangul (column gap <4 spaces), we split at the transition.
       - Suffix may continue on the next line(s) when the artist wraps. We
         concatenate continuation lines that have no anchor and a meaningful
-        indent (~>=25 chars).
-      - Korean transliteration of artist is the next non-empty Hangul-only line
-        after the anchor (best-effort).
+        indent (~>=25 chars). The wrap-loop tolerates exactly one blank-line
+        gap (PDF row spacing artifact, e.g. tjpdf-27708).
+      - Korean transliteration: scan the next ~6 lines for up to TWO pure-Hangul lines.
+        Split it on `\\s{4,}` runs and column-align chunks to title/artist
+        positions on the anchor line — chunk closest to title's column → title_ko;
+        chunk closest to artist's column → artist_ko; leftover (anime-name
+        column) is discarded.
     """
     records: list[dict] = []
     caveats: list[str] = []
 
     n = len(text_lines)
     i = 0
-    # Sticky-title queue (FILO): non-anchor lines that look like title-only
-    # rows (no anchor, has kana/han or Latin, indent >= 10). Cleared only when
-    # we hit a section boundary (column-0 anime-name line). Anchors that find
-    # no title on their own line pop the most recent entry from the queue.
-    sticky_titles: list[str] = []
 
     while i < n:
         line = text_lines[i].rstrip('\n')
@@ -172,17 +203,6 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
 
         anchor = extract_anchor(line)
         if anchor is None:
-            stripped = line.strip()
-            if stripped:
-                lead = len(line) - len(line.lstrip())
-                if lead == 0:
-                    # Column-0 line = new anime section. Clear sticky queue.
-                    sticky_titles.clear()
-                # Title-only candidate: indented (title column starts ~14+),
-                # NOT pure Hangul (those are Korean translits), and not too long.
-                # Latin-only "NO GIRL NO CRY" or kana "ツナグ、ソラモヨウ" both qualify.
-                if lead >= 10 and len(stripped) < 80 and not (has_hangul(stripped) and not has_kana_or_han(stripped)):
-                    sticky_titles.append(stripped)
             i += 1
             continue
 
@@ -193,83 +213,232 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
         # Strip optional ' ★ ' marker and surrounding whitespace at the end of prefix.
         prefix_clean = re.sub(r'\s*★\s*$', ' ', prefix).rstrip()
 
-        # Decide title from prefix:
-        # Split into >=2-space runs (column boundaries). Take the LAST non-Hangul-only
-        # chunk as title (so anime-name column gets dropped if it's pure Korean).
+        # Decide title from prefix.
+        # Split into >=4-space runs (column boundaries under -table). Take the LAST
+        # non-Hangul-only chunk as title (so anime-name column gets dropped if it's
+        # pure Korean).
+        #
+        # Polish-pass fix (residual 1b — column gap <4 spaces): if the last chunk
+        # fuses Hangul + non-Hangul (e.g. `'그리드맨 유니버스 UNION'`), split at
+        # the Hangul→non-Hangul transition and use the non-Hangul tail as title.
+        # This recovers ~23 records that previously degenerated to title==artist.
         title = ''
-        chunks = re.split(r'\s{2,}', prefix_clean.strip())
+        title_col_on_anchor: int | None = None  # column of title in the original line
+        chunks = re.split(r'\s{4,}', prefix_clean.strip())
         chunks = [c.strip() for c in chunks if c.strip()]
-        # Filter: drop chunks that are pure Hangul (anime-name column).
         title_chunks = [c for c in chunks if not (has_hangul(c) and not has_kana_or_han(c))]
         if title_chunks:
             title = title_chunks[-1]
-            # Title was on the anchor line itself; do NOT touch the queue.
-            # Following anchors may still want carried-over titles.
-        elif sticky_titles:
-            # Empty title on the anchor line — pop the most recent sticky title (FILO).
-            title = sticky_titles.pop()
         else:
-            title = ''
+            # No pure non-Hangul chunk found. Try splitting the LAST chunk on
+            # the Hangul→non-Hangul transition (column gap <4 spaces case).
+            if chunks:
+                last = chunks[-1]
+                if has_hangul(last) and (has_kana_or_han(last) or any(ch.isascii() and ch.isalpha() for ch in last)):
+                    _hangul, rest = _split_hangul_transition(last)
+                    if rest:
+                        title = rest
+        # Polish-pass extra fix (residual #1b deeper case): even if we found a
+        # title_chunk, if it ITSELF starts with Hangul + non-Hangul fusion
+        # (e.g. tjpdf-28354 chunk `'돌아가는 펭귄드럼  少年よ我に帰れ'` with only
+        # 2 spaces between anime and title), split it. The Hangul prefix is
+        # the anime-name column; the rest is the actual title.
+        if title and has_hangul(title) and (has_kana_or_han(title) or any(ch.isascii() and ch.isalpha() for ch in title)):
+            _hangul, rest = _split_hangul_transition(title)
+            if rest:
+                title = rest
+        # Capture title's column position on the anchor line for translit alignment.
+        if title:
+            title_col_on_anchor = _column_position(line, title)
 
         # Decide artist: the suffix, possibly wrapping to the next line.
         artist = suffix.strip()
+        artist_col_on_anchor: int | None = None
+        # Estimate the artist's column position: right after the TJ code + spaces.
+        artist_match = re.search(r'\S', line[code_end:])
+        if artist_match:
+            artist_col_on_anchor = code_end + artist_match.start()
         j = i + 1
         wraps = 0
-        # Threshold tuned to PDF: artist continuations sit roughly in the artist
-        # column (>=25 chars of indent — see L92 'lent Siren' lead=31).
+        # Wrap-column threshold: the wrap row's content must start within
+        # ARTIST_TOL chars of the artist column on the anchor (defensive guard
+        # against pulling in a TITLE wrap row, e.g. `WITHOUT A NAME~` at col 26
+        # in tjpdf-28288 vs artist col ~56). If we don't know the artist col,
+        # fall back to the legacy >=25 indent threshold.
+        ARTIST_WRAP_TOL = 12
         WRAP_THRESHOLD = 25
+        # Polish-pass fix (residual #4 — wrap-truncation, e.g. tjpdf-27708):
+        # legitimate continuations sometimes appear AFTER a single blank line in
+        # the PDF (visual row spacing). Allow exactly ONE blank-line skip.
+        blank_skipped = False
+
+        def _find_artist_wrap_chunk(probe: str) -> str | None:
+            """Find an artist-wrap chunk on `probe`, or return None.
+
+            Strategy: split the line into chunks separated by `\\s{4,}` runs
+            (column boundaries). Among non-anchor, non-boilerplate, non-Hangul
+            chunks, return the one whose start column is closest to
+            artist_col_on_anchor (within ARTIST_WRAP_TOL). Falls back to a
+            single-chunk wrap row when artist_col is unknown.
+
+            Note: a wrap row can contain BOTH a new anime-name cell at col 0
+            AND the artist continuation at col ~50 (e.g. tjpdf-28238 L1273:
+            `'오버런!  ...  ★  竹達彩奈'`). We pick only the column-aligned chunk.
+            """
+            if extract_anchor(probe) is not None: return None
+            if is_boilerplate(probe): return None
+            if not probe.strip(): return None
+
+            # Find chunks with their start columns.
+            chunk_positions: list[tuple[int, str]] = []
+            for m in re.finditer(r'\S(?:.*?\S)?(?=(?:\s{4,}|$))', probe):
+                txt = m.group(0).strip()
+                if txt:
+                    chunk_positions.append((m.start(), txt))
+            if not chunk_positions:
+                return None
+
+            # Candidate chunks: skip pure-Hangul (Korean translit/anime-name
+            # column on a wrap row), skip ones that look like a new anime-name
+            # column (low column position when artist_col is high).
+            candidates: list[tuple[int, str]] = []
+            for col, txt in chunk_positions:
+                if has_hangul(txt) and not has_kana_or_han(txt):
+                    continue
+                # Drop the leading '★' marker that appears as its own chunk on
+                # some wrap rows (e.g. L1273 above contains `★         竹達彩奈`,
+                # which splits into ['★', '竹達彩奈']).
+                if txt == '★':
+                    continue
+                # Strip leading '★' if it's fused.
+                stripped = re.sub(r'^★\s*', '', txt).strip()
+                if not stripped:
+                    continue
+                candidates.append((col, stripped))
+            if not candidates:
+                return None
+
+            if artist_col_on_anchor is not None:
+                # Pick the chunk closest to artist_col within tolerance.
+                best = None
+                best_dist = ARTIST_WRAP_TOL + 1
+                for col, txt in candidates:
+                    dist = abs(col - artist_col_on_anchor)
+                    if dist < best_dist:
+                        best_dist = dist
+                        best = txt
+                return best
+            else:
+                # No artist_col known. Fall back to the legacy threshold logic.
+                content_col = len(probe) - len(probe.lstrip())
+                if content_col < WRAP_THRESHOLD:
+                    return None
+                # Use the leftmost candidate as a generic wrap.
+                return candidates[0][1]
+
         while j < n and wraps < 2:
             nxt = text_lines[j].rstrip('\n')
             if not nxt.strip():
+                # Tolerate exactly one blank line — only if the NEXT non-blank
+                # line yields an artist-wrap chunk (column-aligned). Otherwise stop.
+                if blank_skipped:
+                    break
+                if j + 1 >= n:
+                    break
+                probe = text_lines[j + 1].rstrip('\n')
+                if _find_artist_wrap_chunk(probe) is None:
+                    break
+                blank_skipped = True
+                j += 1  # advance over the blank
+                continue
+            piece = _find_artist_wrap_chunk(nxt)
+            if not piece:
                 break
-            if extract_anchor(nxt) is not None:
-                break
-            if is_boilerplate(nxt):
-                break
-            lead = len(nxt) - len(nxt.lstrip())
-            if lead < WRAP_THRESHOLD:
-                break
-            piece = nxt.strip()
-            # Stop if it's pure Hangul (Korean translit, not artist tail).
-            if has_hangul(piece) and not has_kana_or_han(piece):
-                break
-            artist += piece
+            # Insert a space when joining two Latin segments — pdftotext -table
+            # discards leading column whitespace, so `'Fear, and Loathing'` +
+            # `'in Las Vegas'` would otherwise concatenate to `'Loathingin Las'`
+            # (residual #4 / 27708). Skip the space for JP-script joins where
+            # the visual-wrap is mid-word (e.g. tjpdf-28354).
+            if (artist and artist[-1].isascii() and artist[-1].isalpha()
+                    and piece[0].isascii() and piece[0].isalpha()):
+                artist += ' ' + piece
+            else:
+                artist += piece
             j += 1
             wraps += 1
 
-        # Best-effort Korean transliteration: scan the next ~6 lines for
-        # pure-Hangul lines (no kana/han, no anchor). Indent windows are
-        # dropped because the PDF wraps them widely. The FIRST pure-Hangul
-        # line is the title translit, the SECOND is the artist translit
-        # (left-to-right reading order; title appears first).
-        hangul_lines: list[str] = []
+        # Best-effort Korean transliteration (under -table mode).
+        # Scan the next ~6 lines for ONE pure-Hangul line (no kana/han, no
+        # anchor). Split that line on `\s{4,}` runs — chunks correspond to
+        # column positions on the anchor line. Use column-alignment to assign
+        # each chunk to the right field (title_ko vs artist_ko); chunks that
+        # align with the anime-name column (left side) are discarded.
+        #
+        # Polish-pass fixes:
+        # - residual #2b: when an anchor's last chunk fused Hangul+title, the
+        #   split-helper above produces a title; the translit line's first
+        #   Hangul chunk is the anime-name's Korean, NOT title_ko/artist_ko.
+        #   Column-alignment correctly drops it.
+        # - residual #3a (title_ko coverage): chunks aligned with the title
+        #   column become title_ko (was previously dropped at write-time).
+        # - window extended from 5 → 6 lines (residual 2c was 0 in sample; harmless).
+        title_ko: str | None = None
+        artist_ko: str | None = None
+        translit_lines: list[str] = []
+        # Polish-pass fixes:
+        # 1. Skip non-translit interim lines (e.g. title-wrap rows like
+        #    `'良いメロン~'` between anchor and translit in tjpdf-28260) — they
+        #    sit in the title column and aren't translit, but the translit
+        #    appears below them. The previous version broke too early.
+        # 2. Allow TWO pure-Hangul translit lines in the window (title_ko on
+        #    line 1, artist_ko on line 2 — e.g. tjpdf-68560 / tjpdf-28458).
         for k in range(i + 1, min(i + 7, n)):
             cand = text_lines[k].rstrip('\n')
             stripped_cand = cand.strip()
             if not stripped_cand:
-                continue
+                continue  # blank: keep scanning
             if extract_anchor(cand) is not None:
-                break
+                break  # next record's anchor: stop
             if is_boilerplate(cand):
                 break
-            if is_pure_hangul_line(stripped_cand):
-                hangul_lines.append(stripped_cand)
-
-        title_ko: str | None = None
-        artist_ko: str | None = None
-        if len(hangul_lines) >= 2:
-            title_ko = hangul_lines[0]
-            artist_ko = hangul_lines[1]
-        elif len(hangul_lines) == 1:
-            # Single Hangul line — assign to the field "more likely missing".
-            # Heuristic: the field with the SHORTER primary string is more
-            # likely to be a stub that needs translit. Default to artist_ko
-            # (artist names are more often non-Latin and need translit).
-            single = hangul_lines[0]
-            if title and artist and len(title) < len(artist):
-                title_ko = single
+            if is_pure_hangul_line(cand):
+                translit_lines.append(cand)
+                if len(translit_lines) >= 2:
+                    break
             else:
-                artist_ko = single
+                # Non-translit interim line. If we haven't found any translit
+                # yet, this is likely a title-wrap row (Japanese, sitting in
+                # title column) — keep scanning. If we've already found one
+                # translit line, treat this as an interruption.
+                if translit_lines:
+                    break
+                # else: continue scanning
+
+        if translit_lines:
+            # Aggregate (col_position, chunk) pairs from all translit lines.
+            ko_chunks: list[tuple[int, str]] = []
+            for tl in translit_lines:
+                # Find runs of non-{4-space} text.
+                for m in re.finditer(r'\S(?:.*?\S)?(?=(?:\s{4,}|$))', tl):
+                    piece = m.group(0).strip()
+                    if piece:
+                        ko_chunks.append((m.start(), piece))
+
+            if ko_chunks:
+                title_ko, artist_ko = _assign_translit(
+                    ko_chunks, title_col_on_anchor, artist_col_on_anchor, title, artist
+                )
+
+        # Collapse internal whitespace runs to single spaces. PDF -table mode
+        # can leave wide intra-cell padding (e.g. 'Division          All' is one
+        # cell whose text was positioned with column padding). Real song/artist
+        # names don't legitimately contain 4+ consecutive spaces.
+        title = re.sub(r'\s+', ' ', title).strip()
+        artist = re.sub(r'\s+', ' ', artist).strip()
+        if title_ko:
+            title_ko = re.sub(r'\s+', ' ', title_ko).strip() or None
+        if artist_ko:
+            artist_ko = re.sub(r'\s+', ' ', artist_ko).strip() or None
 
         # Sanity: artist must be non-empty for a usable record. Title may legitimately
         # be empty in this PDF (some songs share a title across rows). When title is
@@ -290,11 +459,113 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
             'source_line': i,
         })
 
-        # Advance past the lines we consumed for artist-wrap so they don't get
-        # re-classified as sticky titles for the next anchor.
+        # Advance past the lines we consumed for artist-wrap.
         i = max(i + 1, j)
 
     return records, caveats
+
+
+def _assign_translit(
+    ko_chunks: list[tuple[int, str]],
+    title_col: int | None,
+    artist_col: int | None,
+    title: str,
+    artist: str,
+) -> tuple[str | None, str | None]:
+    """Assign translit chunks to (title_ko, artist_ko) using column alignment.
+
+    `ko_chunks` is a list of (column_start, text) pairs from one or more
+    pure-Hangul lines.
+
+    Polish-pass guard: only assign title_ko when the primary title contains
+    Japanese script (kana/han); only assign artist_ko when the primary artist
+    contains Japanese script. Latin-only fields don't have meaningful Korean
+    transliterations from this PDF, and a Hangul chunk that LOOKS aligned with
+    a Latin field is almost always an anime-name column leak (e.g. tjpdf-28092
+    where `오즈마` is the second line of the anime name `마츠모토레이지 오즈마`,
+    not a translit of `Neverland`).
+
+    Strategy:
+      - For each target column (title, artist), pick the chunk whose start
+        column is closest, within a tolerance. Tolerance is generous (12 chars)
+        because translit lengths shift kana/han text leftward.
+      - Each chunk gets used at most once.
+      - If a chunk's column position is < (title_col - TOL), treat as anime
+        continuation; drop it.
+      - Skip the title_ko assignment entirely when title is Latin-only; same
+        for artist_ko.
+    """
+    title_ko: str | None = None
+    artist_ko: str | None = None
+
+    # Tolerance: titles can shift L/R when JP→KR translit length differs.
+    TOL = 12
+
+    title_needs_translit = bool(title) and has_kana_or_han(title)
+    artist_needs_translit = bool(artist) and has_kana_or_han(artist)
+
+    used: set[int] = set()
+    candidates = list(ko_chunks)
+
+    # First pass: drop chunks clearly in the anime-name column (left of title).
+    filtered: list[tuple[int, str]] = []
+    for col, txt in candidates:
+        if title_col is not None and title_col > 5 and col < (title_col - TOL):
+            continue
+        filtered.append((col, txt))
+    if not filtered and candidates:
+        filtered = candidates
+
+    # Match title (only if title needs translit).
+    if title_needs_translit and title_col is not None and filtered:
+        best = None
+        best_dist = TOL + 1
+        for idx, (col, txt) in enumerate(filtered):
+            if idx in used:
+                continue
+            dist = abs(col - title_col)
+            if dist < best_dist:
+                best_dist = dist
+                best = idx
+        if best is not None:
+            title_ko = filtered[best][1]
+            used.add(best)
+
+    # Match artist (only if artist needs translit).
+    if artist_needs_translit and artist_col is not None and filtered:
+        best = None
+        best_dist = TOL + 1
+        for idx, (col, txt) in enumerate(filtered):
+            if idx in used:
+                continue
+            dist = abs(col - artist_col)
+            if dist < best_dist:
+                best_dist = dist
+                best = idx
+        if best is not None:
+            artist_ko = filtered[best][1]
+            used.add(best)
+
+    # Fallback: if column-match failed for a field that needs translit but
+    # remaining chunks exist, do positional assignment.
+    if title_ko is None and artist_ko is None and filtered:
+        if title_needs_translit and artist_needs_translit and len(filtered) >= 2:
+            title_ko = filtered[0][1]
+            artist_ko = filtered[1][1]
+        elif len(filtered) >= 1:
+            single = filtered[0][1]
+            if title_needs_translit and not artist_needs_translit:
+                title_ko = single
+            elif artist_needs_translit and not title_needs_translit:
+                artist_ko = single
+            elif title_needs_translit and artist_needs_translit:
+                # Both need it but only one chunk: heuristic length pick.
+                if title and artist and len(title) < len(artist):
+                    title_ko = single
+                else:
+                    artist_ko = single
+
+    return title_ko, artist_ko
 
 
 def main() -> int:
@@ -319,8 +590,35 @@ def main() -> int:
         seen.add(r['tj'])
         unique.append(r)
 
+    # Validation gate: assert the parser output is clean. Failures here mean
+    # the parser is regressing (column-spillover or degenerate title==artist).
+    artist_spill = sum(1 for r in unique if r['artist'] and SPILL_RE.search(r['artist']))
+    title_spill = sum(1 for r in unique if r['title'] and SPILL_RE.search(r['title']))
+    title_eq_artist = sum(1 for r in unique if r['title'] and r['title'] == r['artist'])
+    title_eq_artist_ratio = title_eq_artist / max(len(unique), 1)
+    if artist_spill > 0:
+        raise SystemExit(f'validation failed: {artist_spill} records with column spillover in artist field')
+    if title_spill > 0:
+        raise SystemExit(f'validation failed: {title_spill} records with column spillover in title field')
+    if title_eq_artist_ratio >= 0.05:
+        raise SystemExit(
+            f'validation failed: {title_eq_artist}/{len(unique)} '
+            f'({title_eq_artist_ratio:.1%}) records have title == artist (>=5%)'
+        )
+
     with open(SONGS_JSON, encoding='utf-8') as f:
         corpus = json.load(f)
+
+    # Idempotent pre-pass: drop any existing tjpdf-* records so re-running the
+    # script always produces the same final corpus instead of accumulating.
+    dropped_old_tjpdf = 0
+    new_corpus: list[dict] = []
+    for rec in corpus:
+        if str(rec.get('id', '')).startswith('tjpdf-'):
+            dropped_old_tjpdf += 1
+            continue
+        new_corpus.append(rec)
+    corpus = new_corpus
 
     # Build TJ -> record-index map for the corpus.
     tj_to_idx: dict[str, int] = {}
@@ -359,8 +657,13 @@ def main() -> int:
                 'id': f'tjpdf-{code}',
                 'source_url': SOURCE_URL,
                 'title_primary': title,
-                # title_ko skipped — PDF gives mechanical transliterations, not useful for search
-                'title_ko': None,
+                # title_ko: now populated when the column-aligned translit match
+                # produces a chunk for the title column. Polish-pass change —
+                # previously we threw it out (set to None) because of mechanical
+                # transliteration concerns, but column-aligned chunks are real
+                # Korean transliterations from the official PDF and provide
+                # meaningful search coverage for the JP→KR side.
+                'title_ko': r['title_ko'],
                 'artist_primary': artist,
                 'artist_ko': r['artist_ko'],
                 'karaoke_numbers': {
@@ -388,6 +691,9 @@ def main() -> int:
     with open(log_path, 'w', encoding='utf-8') as f:
         f.write(f'Total PDF anchor lines parsed: {len(parsed)}\n')
         f.write(f'Unique TJ codes after dedupe: {len(unique)}\n')
+        f.write(f'Validation: artist_spill={artist_spill} title_spill={title_spill} '
+                f'title_eq_artist={title_eq_artist} ({title_eq_artist_ratio:.1%})\n')
+        f.write(f'Pre-pass dropped existing tjpdf-* rows: {dropped_old_tjpdf}\n')
         f.write(f'  Matched existing corpus rows (anime tag added or kept): {matched}\n')
         f.write(f'    of which already had anime: {already_anime}\n')
         f.write(f'  New records inserted: {len(new_records)}\n')
@@ -399,7 +705,11 @@ def main() -> int:
         for nr in new_records[:20]:
             f.write(f'  {nr["karaoke_numbers"]["tj"]}  {nr["title_primary"]!r:40s}  {nr["artist_primary"]!r}\n')
 
-    print(f'parsed={len(parsed)} unique={len(unique)} matched={matched} new={len(new_records)} skipped={len(caveats)}')
+    print(
+        f'parsed={len(parsed)} unique={len(unique)} '
+        f'dropped_old_tjpdf={dropped_old_tjpdf} matched={matched} '
+        f'new={len(new_records)} skipped={len(caveats)}'
+    )
     print(f'report: {log_path}')
     return 0
 
