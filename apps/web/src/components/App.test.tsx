@@ -15,10 +15,13 @@ describe('App loading state', () => {
   it('renders the build-time record count and a 3-dot animation slot', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
-    render(<App />, host);
+    render(<App songCount={26401} />, host);
     const loading = host.querySelector('.loading');
     expect(loading).not.toBeNull();
-    // The literal record count (currently 26,401) appears in the text.
+    // Format-shape assertion — a comma-grouped count in the build-time label.
+    // Catches future regressions in the toLocaleString formatting without
+    // pinning a literal that drifts as the corpus grows.
+    expect(loading?.textContent).toMatch(/Building \d{1,3}(,\d{3})*-song index/);
     expect(loading?.textContent).toMatch(/26,401곡 검색 인덱스 빌드 중/);
     expect(loading?.textContent).toMatch(/Building 26,401-song index/);
     // Three loading-dot spans inside the loading paragraph.
@@ -35,7 +38,7 @@ describe('App loading-state mitigation', () => {
   it('renders the empty state immediately on mount, alongside the loading indicator', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
-    render(<App />, host);
+    render(<App songCount={26401} />, host);
     // EmptyState root is present.
     expect(host.querySelector('.empty-state')).not.toBeNull();
     // Loading indicator is present (inside the result-list slot).
@@ -134,7 +137,7 @@ describe('App tab behavior', () => {
   async function mount(): Promise<HTMLElement> {
     host = document.createElement('div');
     document.body.appendChild(host);
-    render(<App />, host);
+    render(<App songCount={26401} />, host);
     // Wait for the loadIndex promise to resolve and Preact to flush — the
     // search input losing its `disabled` attribute is the proxy for "loaded".
     await waitFor(() => {
@@ -286,7 +289,7 @@ describe('App tab behavior', () => {
     vi.spyOn(searchModule, 'loadIndex').mockReturnValueOnce(new Promise(() => {}));
     host = document.createElement('div');
     document.body.appendChild(host);
-    render(<App />, host);
+    render(<App songCount={26401} />, host);
     // No flushPromises that would let the resolved promise propagate — the
     // loadIndex promise never resolves; loading stays true.
     await flushMicrotasks();

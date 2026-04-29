@@ -1,7 +1,16 @@
 ---
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { App } from '../components/App';
 import Footer from '../components/Footer.astro';
+import '../styles/tokens.css';
+// Read the corpus at build time so the loading-state label tracks the live
+// record count automatically. Build-time only — the JSON is not bundled into
+// the client.
+const songsPath = fileURLToPath(new URL('../../public/data/songs.json', import.meta.url));
+const songCount = (JSON.parse(readFileSync(songsPath, 'utf8')) as unknown[]).length;
 const title = '일본 노래 검색기';
+const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.css`;
 ---
 
 <!doctype html>
@@ -11,133 +20,8 @@ const title = '일본 노래 검색기';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <title>{title}</title>
+    <link rel="stylesheet" href={fontsHref} />
     <style is:global>
-      /* Self-hosted webfonts. Geist (display) + Inter (body) — both OFL/MIT.
-         Files live at /fonts/ relative to the site root. font-display: swap so
-         CJK fallback text never blocks paint while the woff2 loads.
-
-         Vite emits a warning per @font-face url at build time
-         ("/karaoke-search/fonts/<name>.woff2 didn't resolve at build time, it
-         will remain unchanged to be resolved at runtime"). The warning is
-         benign — these are absolute public-asset paths served at runtime via
-         Astro's `base: '/karaoke-search/'`, and `dist/fonts/` contains every
-         referenced file. See review H1. */
-      @font-face {
-        font-family: 'Geist';
-        src: url('/karaoke-search/fonts/geist-500.woff2') format('woff2');
-        font-weight: 500;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Inter';
-        src: url('/karaoke-search/fonts/inter-400.woff2') format('woff2');
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Inter';
-        src: url('/karaoke-search/fonts/inter-500.woff2') format('woff2');
-        font-weight: 500;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Inter';
-        src: url('/karaoke-search/fonts/inter-600.woff2') format('woff2');
-        font-weight: 600;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Pretendard';
-        src: url('/karaoke-search/fonts/pretendard-400.woff2') format('woff2');
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Pretendard';
-        src: url('/karaoke-search/fonts/pretendard-500.woff2') format('woff2');
-        font-weight: 500;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Pretendard';
-        src: url('/karaoke-search/fonts/pretendard-600.woff2') format('woff2');
-        font-weight: 600;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Pretendard';
-        src: url('/karaoke-search/fonts/pretendard-700.woff2') format('woff2');
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
-      }
-      :root {
-        /* Revolut-strict surface tokens (dark default).
-           Every value is either directly from DESIGN.md §2 or derived
-           from DESIGN.md's Ghost-on-Dark §4 Buttons pattern (the only place
-           DESIGN.md defines dark elevated treatment). No invented colors. */
-        --rui-bg: #191c1f;                                /* Revolut Dark §2 Primary */
-        --rui-surface: rgba(244, 244, 244, 0.06);         /* Ghost-on-Dark style overlay */
-        --rui-surface-hover: rgba(244, 244, 244, 0.10);   /* Ghost-on-Dark BG §4 */
-        --rui-fg: #f4f4f4;                                /* Ghost-on-Dark text §4 */
-        --rui-fg-muted: #8d969e;                          /* Cool Gray §2 Neutral */
-        --rui-fg-subtle: #505a63;                         /* Mid Slate §2 Neutral */
-        --rui-border: rgba(244, 244, 244, 0.16);          /* derived from grey-tone-20 luminance */
-        --rui-border-strong: #f4f4f4;                     /* Ghost-on-Dark border §4 */
-        --rui-pill-primary-bg: #f4f4f4;                   /* Light Surface §2, inverted for dark */
-        --rui-pill-primary-fg: #191c1f;                   /* Revolut Dark */
-        --rui-pill-secondary-bg: rgba(244, 244, 244, 0.10); /* Ghost-on-Dark BG */
-        --rui-pill-secondary-fg: #f4f4f4;
-        --rui-pill-ghost-bg: transparent;
-        --rui-radius-pill: 9999px;                        /* §4 / §5 */
-        --rui-radius-card: 20px;                          /* §4 Cards & Containers */
-        --rui-radius-small: 12px;                         /* §4 Cards & Containers */
-        --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg);   /* §6 Focus */
-
-        /* Typography stacks */
-        --rui-font-display: 'Geist', 'Pretendard', system-ui, sans-serif;
-        --rui-font-body: "Inter", "Pretendard", system-ui, "Noto Sans KR", "Noto Sans JP", sans-serif;
-
-        /* DESIGN.md §3 Typography hierarchy — adopted verbatim. */
-        --rui-text-card-title: 32px;     /* §3 Card Title — used for page H1 in Restrained Revolut */
-        --rui-text-feature-title: 24px;  /* §3 Feature Title — mobile fallback for page H1 */
-        --rui-text-nav: 20px;            /* §3 Nav / UI */
-        --rui-text-body-large: 18px;     /* §3 Body Large */
-        --rui-text-body: 16px;           /* §3 Body — STANDARD reading text */
-
-        /* Resolved height of header.site-header. Declared on :root so it
-           inherits down into <main>, which is a sibling (not a descendant)
-           of <header>. Mobile baseline; the desktop breakpoint below bumps
-           it for the larger H1. */
-        --header-height: 6rem;  /* ~96px mobile — site-title 24px×1.33 + subtitle 16px×1.5 + 18px×2 padding */
-      }
-
-      @media (prefers-color-scheme: light) {
-        :root {
-          --rui-bg: #ffffff;                              /* Pure White §2 Primary */
-          --rui-surface: #f4f4f4;                         /* Light Surface §2 Primary */
-          --rui-surface-hover: #ececef;                   /* derived darker tint */
-          --rui-fg: #191c1f;                              /* Revolut Dark §2 Primary */
-          --rui-fg-muted: #505a63;                        /* Mid Slate §2 Neutral */
-          --rui-fg-subtle: #8d969e;                       /* Cool Gray §2 Neutral */
-          --rui-border: #c9c9cd;                          /* Gray Tone §2 Neutral (rui-color-grey-tone-20) */
-          --rui-border-strong: #191c1f;                   /* Outlined Pill border §4 */
-          --rui-pill-primary-bg: #191c1f;                 /* Primary Dark Pill BG §4 */
-          --rui-pill-primary-fg: #ffffff;                 /* Primary Dark Pill TX §4 */
-          --rui-pill-secondary-bg: #f4f4f4;               /* Secondary Light Pill BG §4 */
-          --rui-pill-secondary-fg: #000000;               /* Secondary Light Pill TX §4 — yes #000 per DESIGN.md */
-          --rui-pill-ghost-bg: transparent;               /* Outlined Pill BG §4 */
-          --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg);
-        }
-      }
-
       * {
         box-sizing: border-box;
       }
@@ -176,10 +60,6 @@ const title = '일본 노래 검색기';
       }
 
       @media (min-width: 720px) {
-        :root {
-          --header-height: 6.5rem;  /* ~104px desktop — site-title 32px×1.19 + subtitle 16px×1.5 + 18px×2 padding */
-        }
-
         .site-title {
           font-size: var(--rui-text-card-title);
           line-height: 1.19;
@@ -1035,7 +915,7 @@ const title = '일본 노래 검색기';
       <h1 class="site-title">{title}</h1>
       <p class="site-subtitle">Karaoke Search</p>
     </header>
-    <App client:load />
+    <App client:load songCount={songCount} />
     <Footer />
   </body>
 </html>

@@ -1,0 +1,71 @@
+/* Design tokens — extracted from index.astro to reduce that file's gravity.
+   Imported as a global stylesheet via index.astro's frontmatter so it lands
+   in the same cascade slot as the prior inline `:root` block. The two media
+   overrides below preserve the prior light-theme + desktop-header behavior;
+   all other component-level @media blocks stay in index.astro. */
+
+:root {
+  /* Revolut-strict surface tokens (dark default).
+     Every value is either directly from DESIGN.md §2 or derived
+     from DESIGN.md's Ghost-on-Dark §4 Buttons pattern (the only place
+     DESIGN.md defines dark elevated treatment). No invented colors. */
+  --rui-bg: #191c1f; /* Revolut Dark §2 Primary */
+  --rui-surface: rgba(244, 244, 244, 0.06); /* Ghost-on-Dark style overlay */
+  --rui-surface-hover: rgba(244, 244, 244, 0.1); /* Ghost-on-Dark BG §4 */
+  --rui-fg: #f4f4f4; /* Ghost-on-Dark text §4 */
+  --rui-fg-muted: #8d969e; /* Cool Gray §2 Neutral */
+  --rui-fg-subtle: #505a63; /* Mid Slate §2 Neutral */
+  --rui-border: rgba(244, 244, 244, 0.16); /* derived from grey-tone-20 luminance */
+  --rui-border-strong: #f4f4f4; /* Ghost-on-Dark border §4 */
+  --rui-pill-primary-bg: #f4f4f4; /* Light Surface §2, inverted for dark */
+  --rui-pill-primary-fg: #191c1f; /* Revolut Dark */
+  --rui-pill-secondary-bg: rgba(244, 244, 244, 0.1); /* Ghost-on-Dark BG */
+  --rui-pill-secondary-fg: #f4f4f4;
+  --rui-pill-ghost-bg: transparent;
+  --rui-radius-pill: 9999px; /* §4 / §5 */
+  --rui-radius-card: 20px; /* §4 Cards & Containers */
+  --rui-radius-small: 12px; /* §4 Cards & Containers */
+  --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg); /* §6 Focus */
+
+  /* Typography stacks */
+  --rui-font-display: "Geist", "Pretendard", system-ui, sans-serif;
+  --rui-font-body: "Inter", "Pretendard", system-ui, "Noto Sans KR", "Noto Sans JP", sans-serif;
+
+  /* DESIGN.md §3 Typography hierarchy — adopted verbatim. */
+  --rui-text-card-title: 32px; /* §3 Card Title — used for page H1 in Restrained Revolut */
+  --rui-text-feature-title: 24px; /* §3 Feature Title — mobile fallback for page H1 */
+  --rui-text-nav: 20px; /* §3 Nav / UI */
+  --rui-text-body-large: 18px; /* §3 Body Large */
+  --rui-text-body: 16px; /* §3 Body — STANDARD reading text */
+
+  /* Resolved height of header.site-header. Declared on :root so it
+     inherits down into <main>, which is a sibling (not a descendant)
+     of <header>. Mobile baseline; the desktop breakpoint below bumps
+     it for the larger H1. */
+  --header-height: 6rem; /* ~96px mobile — site-title 24px×1.33 + subtitle 16px×1.5 + 18px×2 padding */
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --rui-bg: #ffffff; /* Pure White §2 Primary */
+    --rui-surface: #f4f4f4; /* Light Surface §2 Primary */
+    --rui-surface-hover: #ececef; /* derived darker tint */
+    --rui-fg: #191c1f; /* Revolut Dark §2 Primary */
+    --rui-fg-muted: #505a63; /* Mid Slate §2 Neutral */
+    --rui-fg-subtle: #8d969e; /* Cool Gray §2 Neutral */
+    --rui-border: #c9c9cd; /* Gray Tone §2 Neutral (rui-color-grey-tone-20) */
+    --rui-border-strong: #191c1f; /* Outlined Pill border §4 */
+    --rui-pill-primary-bg: #191c1f; /* Primary Dark Pill BG §4 */
+    --rui-pill-primary-fg: #ffffff; /* Primary Dark Pill TX §4 */
+    --rui-pill-secondary-bg: #f4f4f4; /* Secondary Light Pill BG §4 */
+    --rui-pill-secondary-fg: #000000; /* Secondary Light Pill TX §4 — yes #000 per DESIGN.md */
+    --rui-pill-ghost-bg: transparent; /* Outlined Pill BG §4 */
+    --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg);
+  }
+}
+
+@media (min-width: 720px) {
+  :root {
+    --header-height: 6.5rem; /* ~104px desktop — site-title 32px×1.19 + subtitle 16px×1.5 + 18px×2 padding */
+  }
+}

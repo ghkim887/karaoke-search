@@ -15,8 +15,16 @@ try {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'],
   });
-} catch {
+} catch (err) {
   // git unavailable, shallow checkout, or path not in history — fall through.
+  // In CI an empty result is a build-time signal: surface it as a warning so
+  // the deploy log captures the regression. Locally, swallow silently.
+  if (process.env.CI === 'true') {
+    console.warn(
+      '[Footer] git log failed for songs.json — date will render empty:',
+      err instanceof Error ? err.message : err,
+    );
+  }
 }
 
 const dbDate = formatDbDate(gitOutput, process.env.SOURCE_DATE_EPOCH);
