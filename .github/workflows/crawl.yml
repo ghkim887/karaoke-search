@@ -55,6 +55,14 @@ jobs:
       - name: Atomic rename output
         run: node -e "require('node:fs').renameSync('apps/web/public/data/songs.json.tmp','apps/web/public/data/songs.json')"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply TJ anisong PDF section tags
+        run: python scripts/ingest-anisong-pdf.py
+
       - name: Compose PR body with merge-conflict summary
         id: pr_body
         run: |
