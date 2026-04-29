@@ -8,6 +8,7 @@ import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
 import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
 import { enrichArtistMap } from './enrichArtistMap.js';
 import { enrichWithTranslit } from './enrichTranslit.js';
+import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { parseCatalogResponse } from './parser.js';
 
@@ -329,8 +330,87 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 /**
+ * Minimal record shape consumed by `buildBlogWhitelist`. The default source
+ * reads `apps/web/public/data/songs.json` whose entries match `SongRecord`,
+ * but the builder only needs `karaoke_numbers.tj` and `artist_primary` —
+ * accepting a narrower interface keeps the unit tests trivial to set up.
+ */
+export interface BlogWhitelistRecord {
+  artist_primary: string | null | undefined;
+  karaoke_numbers: { tj?: string | null };
+}
+
+/**
+ * Decide whether a blog-corpus record's `artist_primary` carries enough script
+ * signal to admit its TJ# into the rescue whitelist.
+ *
+ * Audit motivation (PR-3): the blog corpus contains ~1,029 Mandopop /
+ * Cantopop / K-pop records mistakenly tagged `jpop`. Their `artist_primary`
+ * is pure Han (Chinese) or pure Hangul (Korean). Admitting them on the rescue
+ * path defeats the parser's nationality filter for those TJ#s, so we trim
+ * them out at whitelist-construction time.
+ *
+ * Rules:
+ *   - Artist contains hiragana OR katakana   -> admit (genuine JP signal).
+ *   - Artist contains Han AND no kana        -> skip (pure Chinese).
+ *   - Artist contains Hangul AND no kana     -> skip (pure Korean).
+ *   - Artist is pure Latin (no kana, no Han, no Hangul) -> admit
+ *     (could be a genuine JP-Latin act like L'Arc~en~Ciel; the rescue's
+ *     safety-net role still applies for these).
+ *   - Empty / missing artist                 -> skip (no signal to evaluate).
+ *
+ * Mixed Hangul + kana: kana takes precedence and admits — kana is the
+ * strongest JP signal, and these collab strings (e.g. `에반스 & ヨネ`) are
+ * almost always genuine JP collaborations carrying a Korean billing.
+ *
+ * Note: pure-kanji JP acts (e.g. 米津玄師) are intentionally skipped here and
+ * rely on path-1 (per-artist `searchSong` scan) or path-2 (per-record JPN
+ * `nationalcode`) for admission. The rescue path is a safety net for
+ * kana-bearing and Latin-named acts, not an exhaustive JP oracle.
+ */
+export function shouldAdmitArtistToWhitelist(artist: string | null | undefined): boolean {
+  if (!artist) return false;
+  if (RE_HIRAGANA.test(artist) || RE_KATAKANA.test(artist)) return true;
+  if (RE_HAN.test(artist)) return false;
+  if (RE_HANGUL.test(artist)) return false;
+  return true;
+}
+
+/**
+ * Build the rescue-path TJ# whitelist from an in-memory blog-corpus record
+ * array. Extracted from `defaultBlogWhitelistSource` so unit tests can
+ * exercise the trim logic without touching the on-disk JSON.
+ *
+ * Logs a one-line warn-level summary of how many records the script-signal
+ * trim skipped vs admitted; the production crawler surfaces this alongside
+ * the per-path admit counters for post-trim auditability.
+ */
+export function buildBlogWhitelist(
+  records: ReadonlyArray<BlogWhitelistRecord>,
+): ReadonlySet<string> {
+  const tjs = new Set<string>();
+  let kept = 0;
+  let skipped = 0;
+  for (const rec of records) {
+    const tj = rec.karaoke_numbers?.tj;
+    if (typeof tj !== 'string' || tj === '') continue;
+    if (!shouldAdmitArtistToWhitelist(rec.artist_primary)) {
+      skipped++;
+      continue;
+    }
+    tjs.add(tj);
+    kept++;
+  }
+  console.log(
+    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped} records (skipped ${skipped} with Han-only / Hangul artist names)`,
+  );
+  return tjs;
+}
+
+/**
  * Default blog whitelist source: read `apps/web/public/data/songs.json` from
- * the working directory and extract every record's `karaoke_numbers.tj`.
+ * the working directory and extract `karaoke_numbers.tj` for every record
+ * whose `artist_primary` passes the script-signal trim.
  *
  * If the file is missing or unreadable, log a single warning and return an
  * empty set — the adapter degrades to "no rescue", not a hard failure.
@@ -340,15 +420,19 @@ function defaultBlogWhitelistSource(): ReadonlySet<string> {
     const text = readFileSync(BLOG_CORPUS_PATH_DEFAULT, 'utf8');
     const parsed: unknown = JSON.parse(text);
     if (!Array.isArray(parsed)) return new Set();
-    const tjs = new Set<string>();
+    const records: BlogWhitelistRecord[] = [];
     for (const rec of parsed) {
       if (!rec || typeof rec !== 'object') continue;
-      const numbers = (rec as { karaoke_numbers?: unknown }).karaoke_numbers;
-      if (!numbers || typeof numbers !== 'object') continue;
-      const tj = (numbers as { tj?: unknown }).tj;
-      if (typeof tj === 'string' && tj !== '') tjs.add(tj);
+      const numbersRaw = (rec as { karaoke_numbers?: unknown }).karaoke_numbers;
+      if (!numbersRaw || typeof numbersRaw !== 'object') continue;
+      const tjRaw = (numbersRaw as { tj?: unknown }).tj;
+      const artistRaw = (rec as { artist_primary?: unknown }).artist_primary;
+      records.push({
+        artist_primary: typeof artistRaw === 'string' ? artistRaw : null,
+        karaoke_numbers: { tj: typeof tjRaw === 'string' ? tjRaw : null },
+      });
     }
-    return tjs;
+    return buildBlogWhitelist(records);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn(

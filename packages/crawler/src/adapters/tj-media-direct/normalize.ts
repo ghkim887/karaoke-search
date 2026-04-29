@@ -16,6 +16,26 @@ export function normalizeForMatch(s: string): string {
 }
 
 /**
+ * Script-detection regexes used by the blog-whitelist trim (PR-3).
+ *
+ * The blog-rescue path (`defaultBlogWhitelistSource`) historically admitted
+ * every TJ# present in the blog corpus. An audit found that ~88% of the
+ * rescued records were Mandopop / Cantopop / K-pop entries mistakenly carried
+ * with `categories: ['jpop']`. The signal that exposes them is artist-name
+ * script: pure-Han (Chinese) or pure-Hangul (Korean) artist strings with no
+ * kana are almost never genuine JP acts.
+ *
+ * Ranges match the BMP blocks for Hiragana, Katakana, Han ideographs (CJK
+ * Unified Ideographs main block), and Hangul syllables. They are intentionally
+ * narrow — the blog-whitelist filter only needs a yes/no script signal, not a
+ * full Unicode character classification.
+ */
+export const RE_HIRAGANA = /[぀-ゟ]/;
+export const RE_KATAKANA = /[゠-ヿ]/;
+export const RE_HAN = /[一-鿿]/;
+export const RE_HANGUL = /[가-힣]/;
+
+/**
  * Sanitize a `searchTxt` value before sending it to `/legacy/api/searchSong`.
  *
  * The TJ server's search endpoint has a parser bug on titles or artist names
