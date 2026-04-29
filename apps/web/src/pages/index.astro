@@ -1,34 +1,141 @@
 ---
 import { App } from '../components/App';
 import Footer from '../components/Footer.astro';
-const title = '노래방 검색기';
+const title = '일본 노래 검색기';
 ---
 
 <!doctype html>
-<html lang="ko" data-theme="dark">
+<html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light dark" />
     <title>{title}</title>
     <style is:global>
+      /* Self-hosted webfonts. Geist (display) + Inter (body) — both OFL/MIT.
+         Files live at /fonts/ relative to the site root. font-display: swap so
+         CJK fallback text never blocks paint while the woff2 loads.
+
+         Vite emits a warning per @font-face url at build time
+         ("/karaoke-search/fonts/<name>.woff2 didn't resolve at build time, it
+         will remain unchanged to be resolved at runtime"). The warning is
+         benign — these are absolute public-asset paths served at runtime via
+         Astro's `base: '/karaoke-search/'`, and `dist/fonts/` contains every
+         referenced file. See review H1. */
+      @font-face {
+        font-family: 'Geist';
+        src: url('/karaoke-search/fonts/geist-500.woff2') format('woff2');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Inter';
+        src: url('/karaoke-search/fonts/inter-400.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Inter';
+        src: url('/karaoke-search/fonts/inter-500.woff2') format('woff2');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Inter';
+        src: url('/karaoke-search/fonts/inter-600.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Pretendard';
+        src: url('/karaoke-search/fonts/pretendard-400.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Pretendard';
+        src: url('/karaoke-search/fonts/pretendard-500.woff2') format('woff2');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Pretendard';
+        src: url('/karaoke-search/fonts/pretendard-600.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Pretendard';
+        src: url('/karaoke-search/fonts/pretendard-700.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
       :root {
-        --bg: #0b0d10;
-        --bg-elev: #14171c;
-        --bg-card: #161a20;
-        --fg: #e6e8eb;
-        --fg-muted: #8a93a0;
-        --accent: #8ab4ff;
-        --accent-fg: #0b0d10;
-        --border: #232831;
-        --border-strong: #353c47;
-        /* Resolved height of header.site-header (1rem pad-top + 1.4rem * 1.5
-           h1 line-height + 0.75rem h1 margin-bottom + 1rem pad-bottom ≈
-           4.85rem). Rounded to 5.25rem for a small safety margin so the
-           sticky `.tab-bar` sits cleanly beneath the header on every
-           viewport. Declared on :root so it inherits down into <main>,
-           which is a sibling (not a descendant) of <header>. */
-        --header-height: 5.25rem;
+        /* Revolut-strict surface tokens (dark default).
+           Every value is either directly from DESIGN.md §2 or derived
+           from DESIGN.md's Ghost-on-Dark §4 Buttons pattern (the only place
+           DESIGN.md defines dark elevated treatment). No invented colors. */
+        --rui-bg: #191c1f;                                /* Revolut Dark §2 Primary */
+        --rui-surface: rgba(244, 244, 244, 0.06);         /* Ghost-on-Dark style overlay */
+        --rui-surface-hover: rgba(244, 244, 244, 0.10);   /* Ghost-on-Dark BG §4 */
+        --rui-fg: #f4f4f4;                                /* Ghost-on-Dark text §4 */
+        --rui-fg-muted: #8d969e;                          /* Cool Gray §2 Neutral */
+        --rui-fg-subtle: #505a63;                         /* Mid Slate §2 Neutral */
+        --rui-border: rgba(244, 244, 244, 0.16);          /* derived from grey-tone-20 luminance */
+        --rui-border-strong: #f4f4f4;                     /* Ghost-on-Dark border §4 */
+        --rui-pill-primary-bg: #f4f4f4;                   /* Light Surface §2, inverted for dark */
+        --rui-pill-primary-fg: #191c1f;                   /* Revolut Dark */
+        --rui-pill-secondary-bg: rgba(244, 244, 244, 0.10); /* Ghost-on-Dark BG */
+        --rui-pill-secondary-fg: #f4f4f4;
+        --rui-pill-ghost-bg: transparent;
+        --rui-radius-pill: 9999px;                        /* §4 / §5 */
+        --rui-radius-card: 20px;                          /* §4 Cards & Containers */
+        --rui-radius-small: 12px;                         /* §4 Cards & Containers */
+        --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg);   /* §6 Focus */
+
+        /* Typography stacks */
+        --rui-font-display: 'Geist', 'Pretendard', system-ui, sans-serif;
+        --rui-font-body: "Inter", "Pretendard", system-ui, "Noto Sans KR", "Noto Sans JP", sans-serif;
+
+        /* DESIGN.md §3 Typography hierarchy — adopted verbatim. */
+        --rui-text-card-title: 32px;     /* §3 Card Title — used for page H1 in Restrained Revolut */
+        --rui-text-feature-title: 24px;  /* §3 Feature Title — mobile fallback for page H1 */
+        --rui-text-nav: 20px;            /* §3 Nav / UI */
+        --rui-text-body-large: 18px;     /* §3 Body Large */
+        --rui-text-body: 16px;           /* §3 Body — STANDARD reading text */
+
+        /* Resolved height of header.site-header. Declared on :root so it
+           inherits down into <main>, which is a sibling (not a descendant)
+           of <header>. Mobile baseline; the desktop breakpoint below bumps
+           it for the larger H1. */
+        --header-height: 6rem;  /* ~96px mobile — site-title 24px×1.33 + subtitle 16px×1.5 + 18px×2 padding */
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --rui-bg: #ffffff;                              /* Pure White §2 Primary */
+          --rui-surface: #f4f4f4;                         /* Light Surface §2 Primary */
+          --rui-surface-hover: #ececef;                   /* derived darker tint */
+          --rui-fg: #191c1f;                              /* Revolut Dark §2 Primary */
+          --rui-fg-muted: #505a63;                        /* Mid Slate §2 Neutral */
+          --rui-fg-subtle: #8d969e;                       /* Cool Gray §2 Neutral */
+          --rui-border: #c9c9cd;                          /* Gray Tone §2 Neutral (rui-color-grey-tone-20) */
+          --rui-border-strong: #191c1f;                   /* Outlined Pill border §4 */
+          --rui-pill-primary-bg: #191c1f;                 /* Primary Dark Pill BG §4 */
+          --rui-pill-primary-fg: #ffffff;                 /* Primary Dark Pill TX §4 */
+          --rui-pill-secondary-bg: #f4f4f4;               /* Secondary Light Pill BG §4 */
+          --rui-pill-secondary-fg: #000000;               /* Secondary Light Pill TX §4 — yes #000 per DESIGN.md */
+          --rui-pill-ghost-bg: transparent;               /* Outlined Pill BG §4 */
+          --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg);
+        }
       }
 
       * {
@@ -39,97 +146,112 @@ const title = '노래방 검색기';
       body {
         margin: 0;
         padding: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font-family:
-          system-ui,
-          -apple-system,
-          'Segoe UI',
-          'Noto Sans KR',
-          'Noto Sans JP',
-          sans-serif;
-        font-size: 16px;
+        background: var(--rui-bg);
+        color: var(--rui-fg);
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body — 16px / 1.5 / 0.24px */
+        font-size: var(--rui-text-body);
         line-height: 1.5;
+        letter-spacing: 0.24px;
       }
 
       header.site-header {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: var(--bg-elev);
-        border-bottom: 1px solid var(--border);
-        padding: 1rem 1.25rem;
+        background: var(--rui-bg);
+        padding: 1.125rem 1.25rem;
       }
 
-      header.site-header h1 {
-        margin: 0 0 0.75rem;
-        font-size: 1.4rem;
-        font-weight: 650;
-        letter-spacing: -0.01em;
+      .site-title {
+        margin: 0;
+        font-family: var(--rui-font-display);
+        /* DESIGN.md §3 Card Title — 32px / 500 / 1.19 / -0.32px (desktop)
+           Mobile fallback: §3 Feature Title — 24px / 500 / 1.33 / 0px. */
+        font-size: var(--rui-text-feature-title);
+        font-weight: 500;
+        line-height: 1.33;
+        letter-spacing: 0px;
+        color: var(--rui-fg);
+      }
+
+      @media (min-width: 720px) {
+        :root {
+          --header-height: 6.5rem;  /* ~104px desktop — site-title 32px×1.19 + subtitle 16px×1.5 + 18px×2 padding */
+        }
+
+        .site-title {
+          font-size: var(--rui-text-card-title);
+          line-height: 1.19;
+          letter-spacing: -0.32px;
+        }
+      }
+
+      .site-subtitle {
+        margin: 4px 0 0 0;
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body — 16px / 400 / 1.5 / 0.24px */
+        font-size: var(--rui-text-body);
+        font-weight: 400;
+        line-height: 1.5;
+        letter-spacing: 0.24px;
+        color: var(--rui-fg-muted);
       }
 
       .tab-bar {
         position: sticky;
-        top: var(--header-height, 5.25rem);
+        top: var(--header-height, 6rem);
         z-index: 9;
         display: flex;
-        gap: 4px;
+        gap: 24px;
         width: 100%;
-        max-width: 640px;
-        margin: 0 0 0.75rem;
-        padding: 4px;
-        background: var(--bg-elev);
-        border: 1px solid var(--border);
-        border-radius: 8px;
+        margin: 0 0 1rem;
+        padding: 0;
+        background: var(--rui-bg);
+        border-bottom: 1px solid var(--rui-border);
       }
 
       .tab-button {
-        flex: 1 1 0;
-        font: inherit;
-        font-size: 0.95rem;
-        font-weight: 600;
-        min-height: 44px;
-        padding: 0.6rem 0.9rem;
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body — 16px. Inactive uses weight 500 (between Body 400
+           and Body Semibold 600) so the active/inactive contrast reads. */
+        font-size: var(--rui-text-body);
+        font-weight: 500;
+        padding: 10px 4px;
         background: transparent;
-        color: var(--fg-muted);
+        color: var(--rui-fg-muted);
         border: 0;
-        border-radius: 6px;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        border-radius: 0;
         cursor: pointer;
         outline: none;
+        letter-spacing: 0.24px;
         transition:
-          background 120ms ease,
           color 120ms ease,
-          box-shadow 120ms ease;
+          border-color 120ms ease;
       }
 
-      .tab-button:hover:not(:disabled):not(.tab-button-active) {
-        color: var(--fg);
+      .tab-button:hover:not(:disabled) {
+        color: var(--rui-fg);
       }
 
       .tab-button:focus-visible {
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
       }
 
-      .tab-button-active {
-        background: var(--accent);
-        color: var(--accent-fg);
-        font-weight: 650;
+      .tab-button-active,
+      .tab-button[aria-selected='true'] {
+        color: var(--rui-fg);
+        /* DESIGN.md §3 Body Semibold — 600 */
+        font-weight: 600;
+        border-bottom-color: var(--rui-fg);
       }
 
       .tab-button:disabled {
-        opacity: 0.55;
+        opacity: 0.5;
         cursor: not-allowed;
-      }
-
-      @media (max-width: 719px) {
-        .tab-bar {
-          max-width: none;
-          width: calc(100% + 2.5rem);
-          margin-left: -1.25rem;
-          border-radius: 0;
-          border-left: 0;
-          border-right: 0;
-        }
       }
 
       .search-input-wrap {
@@ -140,27 +262,40 @@ const title = '노래방 검색기';
       .search-input-icon {
         position: absolute;
         top: 50%;
-        left: 0.9rem;
+        left: 1.1rem;
         transform: translateY(-50%);
-        color: var(--fg-muted);
+        color: var(--rui-fg-subtle);
         pointer-events: none;
       }
 
       input.search-input {
         width: 100%;
         max-width: 640px;
-        padding: 0.7rem 1rem 0.7rem 2.4rem;
-        font-size: 1.05rem;
-        color: var(--fg);
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 6px;
+        height: 48px;
+        padding: 0 1.25rem 0 2.75rem;
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body — 16px / 400 / 0.24px */
+        font-size: var(--rui-text-body);
+        font-weight: 400;
+        letter-spacing: 0.24px;
+        color: var(--rui-fg);
+        background: var(--rui-surface);
+        border: 1px solid var(--rui-border);
+        border-radius: var(--rui-radius-pill);
         outline: none;
+        transition:
+          border-color 120ms ease,
+          background 120ms ease;
       }
 
-      input.search-input:focus {
-        border: 2px solid var(--accent);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+      input.search-input::placeholder {
+        color: var(--rui-fg-subtle);
+      }
+
+      input.search-input:focus-visible {
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
+        border-color: var(--rui-border-strong);
       }
 
       main.results {
@@ -171,12 +306,13 @@ const title = '노래방 검색기';
 
       main.results .loading,
       main.results .error {
-        color: var(--fg-muted);
-        font-size: 0.95rem;
+        color: var(--rui-fg-muted);
+        /* DESIGN.md §3 Body — 16px */
+        font-size: var(--rui-text-body);
       }
 
       main.results .error {
-        color: #ff8a8a;
+        color: var(--rui-fg);
       }
 
       @keyframes karaoke-dot-cycle {
@@ -192,7 +328,7 @@ const title = '노래방 검색기';
       .loading-dot {
         display: inline-block;
         animation: karaoke-dot-cycle 1.2s infinite ease-in-out;
-        font-weight: 700;
+        font-weight: 600;
       }
 
       .loading-dot:nth-child(1) {
@@ -225,101 +361,158 @@ const title = '노래방 검색기';
         border: 0;
       }
 
+      /* DESIGN.md §4 Secondary Light Pill — 14px 32px padding, 9999px radius.
+         All `.chip` instances render as Secondary pills by default; the vendor
+         chip group (`.chip-group-vendor`) overrides with the §4 Outlined Pill
+         treatment to differentiate visual rank from category chips. */
       .chip {
-        font: inherit;
-        padding: 0.35rem 0.75rem;
-        border-radius: 999px;
-        border: 1px solid var(--border-strong);
-        background: var(--bg-elev);
-        color: var(--fg-muted);
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body Semibold — 16px / 600 / 1.5 / 0.16px */
+        font-size: var(--rui-text-body);
+        font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: 0.16px;
+        padding: 14px 32px;
+        border-radius: var(--rui-radius-pill);
+        border: 2px solid transparent;
+        background: var(--rui-pill-secondary-bg);
+        color: var(--rui-pill-secondary-fg);
         cursor: pointer;
+        transition: opacity 120ms ease;
       }
 
       .chip:hover {
-        color: var(--fg);
+        /* DESIGN.md §4 — pill hover is opacity 0.85 */
+        opacity: 0.85;
       }
 
-      .chip-selected {
-        background: var(--accent);
-        color: var(--accent-fg);
-        border-color: var(--accent);
+      .chip:focus-visible {
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
+      }
+
+      .chip-selected,
+      .chip-selected:hover {
+        background: var(--rui-pill-primary-bg);
+        color: var(--rui-pill-primary-fg);
+      }
+
+      /* DESIGN.md §4 Outlined Pill — transparent BG, 2px solid border-strong. */
+      .chip-group-vendor .chip {
+        background: var(--rui-pill-ghost-bg);
+        color: var(--rui-fg);
+        border-color: var(--rui-border-strong);
+      }
+
+      .chip-group-vendor .chip-selected,
+      .chip-group-vendor .chip-selected:hover {
+        background: var(--rui-pill-primary-bg);
+        color: var(--rui-pill-primary-fg);
+        border-color: var(--rui-pill-primary-bg);
       }
 
       .empty-state {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.75rem;
       }
 
+      /* Off-table small uppercase label — DESIGN.md §3 has no caption scale.
+         Documented deviation: 12px Inter 500 uppercase with 0.6px tracking. */
       .empty-section-title {
-        margin: 0 0 0.5rem;
-        font-size: 1rem;
-        color: var(--fg-muted);
-        font-weight: 650;
-        letter-spacing: -0.005em;
-        border-left: 3px solid var(--border-strong);
-        padding-left: 0.6rem;
+        margin: 16px 0 12px;
+        font-family: var(--rui-font-body);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.4;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--rui-fg-muted);
       }
 
-      .empty-section-title-jpop {
-        color: #8ab4ff;
-        border-left-color: #8ab4ff;
-      }
-
-      .empty-section-title-vocaloid {
-        color: #c89bff;
-        border-left-color: #c89bff;
-      }
-
-      .empty-section-title-anime {
-        color: #ffb37a;
-        border-left-color: #ffb37a;
-      }
-
+      .empty-section-title-jpop,
+      .empty-section-title-vocaloid,
+      .empty-section-title-anime,
       .empty-favorites-title {
-        color: #ffc857;
-        border-left-color: #ffc857;
+        color: var(--rui-fg-muted);
       }
 
+      /* DESIGN.md §5 — base 8px spacing scale. Pills wrap rather than scroll. */
       .empty-section-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: 8px;
       }
 
       .empty-section-placeholder {
         margin: 0;
-        color: var(--fg-muted);
-        font-size: 0.9rem;
+        color: var(--rui-fg-muted);
+        /* DESIGN.md §3 Body — 16px */
+        font-size: var(--rui-text-body);
       }
 
+      /* DESIGN.md §4 Secondary Light Pill (light) / Ghost-on-Dark (dark) —
+         the secondary pill tokens already invert by theme. */
       .featured-chip {
-        font: inherit;
-        padding: 0.35rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-        background: var(--bg-elev);
-        color: var(--fg);
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body Semibold — 16px / 600 / 1.5 / 0.16px */
+        font-size: var(--rui-text-body);
+        font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: 0.16px;
+        padding: 14px 32px;
+        border-radius: var(--rui-radius-pill);
+        border: 2px solid transparent;
+        background: var(--rui-pill-secondary-bg);
+        color: var(--rui-pill-secondary-fg);
         cursor: pointer;
+        transition: opacity 120ms ease;
       }
 
       .featured-chip:hover {
-        border-color: var(--accent);
+        /* DESIGN.md §4 — pill hover is opacity 0.85 */
+        opacity: 0.85;
+      }
+
+      .featured-chip:focus-visible {
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
       }
 
       .no-results {
-        color: var(--fg-muted);
+        text-align: center;
+        color: var(--rui-fg-muted);
+        padding: 2rem 1rem;
       }
 
       .no-results-title {
         margin: 0 0 0.5rem;
-        font-size: 1.05rem;
-        color: var(--fg);
+        font-family: var(--rui-font-display);
+        /* DESIGN.md §3 Feature Title — 24px / 500 / 1.33 / 0px */
+        font-size: var(--rui-text-feature-title);
+        font-weight: 500;
+        line-height: 1.33;
+        letter-spacing: 0px;
+        color: var(--rui-fg);
       }
 
       .no-results-hint {
         margin: 0;
-        font-size: 0.9rem;
+        /* DESIGN.md §3 Body — 16px / 400 / 1.5 / 0.24px */
+        font-size: var(--rui-text-body);
+        line-height: 1.5;
+        letter-spacing: 0.24px;
+        color: var(--rui-fg-muted);
+      }
+
+      .favorites-empty {
+        text-align: center;
+        color: var(--rui-fg-muted);
+        padding: 2rem 1rem;
+        /* DESIGN.md §3 Body — 16px */
+        font-size: var(--rui-text-body);
+        line-height: 1.5;
+        letter-spacing: 0.24px;
       }
 
       .result-list {
@@ -329,6 +522,12 @@ const title = '노래방 검색기';
         list-style: none;
         margin: 0;
         padding: 0;
+        /* Path A — stretch all cards in a row to the tallest card's height so
+           variable-height titles do not break the grid. The vendor-numbers row
+           inside `.result-card` then uses `margin-top: auto` to flush to the
+           card's bottom edge. Result: the bottom edge of every card in a row
+           aligns. */
+        align-items: stretch;
       }
 
       @media (min-width: 720px) {
@@ -337,31 +536,28 @@ const title = '노래방 검색기';
         }
       }
 
+      /* Stretch the <li> wrapper to fill the grid track so the inner card can
+         claim full row height. Without this, `align-items: stretch` on the
+         grid stretches the <li> but `.result-card` would still hug its content
+         inside that <li> unless the <li> propagates height. */
+      .result-list-item {
+        display: flex;
+      }
+
+      .result-list-item .result-card {
+        flex: 1;
+      }
+
       @media (max-width: 719px) {
-        .chip {
-          min-height: 44px;
-          padding: 0.55rem 1rem;
-        }
-
-        .featured-chip {
-          min-height: 44px;
-          padding: 0.55rem 1rem;
-        }
-
+        /* Per the strict-DESIGN brief: do not silently shrink chip padding on
+           mobile. Chips stay 14px 32px on every breakpoint so the user can see
+           the strict-DESIGN result and decide whether to scale. */
         .chip-group {
           gap: 0.6rem;
         }
 
         .badge-number {
           min-height: 44px;
-          padding: 0.6rem 0.8rem;
-          font-size: 0.95rem;
-          font-weight: 500;
-          border-width: 1.5px;
-        }
-
-        .badge-toast {
-          font-size: 0.85rem;
         }
 
         .result-numbers {
@@ -375,66 +571,88 @@ const title = '노래방 검색기';
         }
       }
 
-      .result-list-item {
-        display: block;
-      }
-
       .result-card {
         position: relative;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 1rem 1.1rem;
+        background: var(--rui-surface);
+        border-radius: var(--rui-radius-card);
+        /* DESIGN.md §5 spacing scale — 16px (was 14px 16px which is off-scale
+           on the vertical axis). 16px on both axes matches the Revolut card
+           rhythm. */
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        gap: 0.55rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-        transition:
-          transform 120ms ease,
-          box-shadow 120ms ease,
-          border-color 120ms ease;
+        gap: 0.5rem;
+        /* Path A — fill the grid track height so all cards in a row align at
+           the bottom edge. */
+        height: 100%;
+        transition: background 120ms ease;
       }
 
       .result-card:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
-        border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
+        background: var(--rui-surface-hover);
       }
 
       .favorite-star {
         position: absolute;
         top: 0.75rem;
         right: 0.85rem;
-        font: inherit;
-        font-size: 1.2rem;
+        font-family: var(--rui-font-body);
+        font-size: 1.125rem;
         line-height: 1;
         background: transparent;
         border: 0;
         padding: 0.25rem 0.4rem;
         cursor: pointer;
-        color: var(--fg-muted);
-        transition: color 120ms ease;
+        /* Inactive: visibly present but de-emphasized — DESIGN.md §2 Mid Slate
+           via --rui-fg-subtle. */
+        color: var(--rui-fg-subtle);
+        transition:
+          color 120ms ease,
+          opacity 120ms ease;
       }
 
       .favorite-star:hover {
-        color: color-mix(in srgb, #ffc857 50%, transparent);
+        /* DESIGN.md §4 — interactive hover is opacity 0.85. */
+        opacity: 0.85;
       }
 
-      .favorite-star-on,
+      .favorite-star:focus-visible {
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
+        border-radius: var(--rui-radius-small);
+      }
+
+      /* Active: full --rui-fg foreground per brief. */
+      .favorite-star-on {
+        color: var(--rui-fg);
+      }
+
       .favorite-star-on:hover {
-        color: #ffc857;
+        color: var(--rui-fg);
+        opacity: 0.85;
       }
 
       .result-title {
         margin: 0;
-        font-size: 1.05rem;
-        font-weight: 650;
-        line-height: 1.35;
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body Semibold — 16px / 600 / 1.5 / 0.16px */
+        font-size: var(--rui-text-body);
+        font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: 0.16px;
+        color: var(--rui-fg);
+        padding-right: 2.25rem;
       }
 
       .result-artist {
-        color: var(--fg-muted);
-        font-size: 0.9rem;
+        color: var(--rui-fg-muted);
+        /* DESIGN.md §3 Body — 16px / 400 / 1.5 / 0.24px. Strict scale; if the
+           list density looks too dense, the brief calls for flagging — do not
+           silently shrink. */
+        font-size: var(--rui-text-body);
+        font-weight: 400;
+        line-height: 1.5;
+        letter-spacing: 0.24px;
       }
 
       .result-tags {
@@ -447,82 +665,144 @@ const title = '노래방 검색기';
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.18rem 0.5rem;
-        border-radius: 4px;
-        border: 1px solid var(--border);
-        background: var(--bg-elev);
-        font-size: 0.78rem;
-        color: var(--fg-muted);
+        padding: 4px 10px;
+        border-radius: var(--rui-radius-small);
+        background: var(--rui-surface);
+        font-family: var(--rui-font-body);
+        /* Off-table small uppercase label — DESIGN.md §3 has no caption scale.
+           Documented deviation: 12px Inter 500 uppercase with 0.6px tracking. */
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--rui-fg-muted);
       }
 
+      /* DESIGN.md §4 Secondary Pill treatment — scaled down for inline content
+         tag use. Deviations from §4 baseline (documented):
+           - Padding: 6px 14px (vs §4's 14px 32px) — this is an inline tag
+             inside a card, NOT a primary CTA. Generous CTA padding would
+             dominate the card row.
+           - Typography: 12px / 500 / 0.6px tracking, uppercase (vs §3 Body
+             Semibold 16px / 600 / 0.16px) — picks the small uppercase caption
+             treatment used elsewhere on small inline labels (`.badge-label`,
+             `.empty-section-title`). 16px would overflow the card row at 3
+             tags + a category chip.
+           - No border (per brief — Secondary Pill has no border in either
+             theme).
+           - No opacity hover — this is a non-interactive `<span>`. */
       .badge-category {
-        text-transform: lowercase;
+        background: var(--rui-pill-secondary-bg);
+        color: var(--rui-pill-secondary-fg);
+        border-radius: var(--rui-radius-pill);
+        padding: 6px 14px;
+        text-transform: uppercase;
       }
 
-      .badge-category-jpop {
-        color: #8ab4ff;
-        border-color: color-mix(in srgb, #8ab4ff 40%, var(--border));
-      }
-
-      .badge-category-vocaloid {
-        color: #c89bff;
-        border-color: color-mix(in srgb, #c89bff 40%, var(--border));
-      }
-
-      .badge-category-anime {
-        color: #ffb37a;
-        border-color: color-mix(in srgb, #ffb37a 40%, var(--border));
-      }
+      /* Category-modifier classes (`.badge-category-jpop`, etc.) previously
+         dimmed the foreground to --rui-fg-muted to match the legacy washed-out
+         look. The brief now requires Secondary Pill foreground contrast, so
+         the modifiers intentionally inherit `.badge-category`'s color
+         (--rui-pill-secondary-fg). They remain in the DOM as future hooks for
+         per-category tinting if it's ever wanted, but no longer dim. */
 
       .result-numbers {
         display: flex;
         flex-wrap: wrap;
         gap: 0.4rem;
-        margin-top: 0.15rem;
+        /* Path A — push vendor-tags row to the bottom of the flex column so
+           cards in the same row share an aligned tags baseline regardless of
+           title length. */
+        margin-top: auto;
+        padding-top: 0.4rem;
       }
 
+      /* Vendor-number tags in ResultCard. Per the brief these are decorative
+         tags (radius-small, NOT pill) with a CLEAR contrast against the card
+         surface. They sit on --rui-pill-secondary-bg so they read as a
+         distinct surface from the card itself (--rui-surface). Number value is
+         full-contrast --rui-fg; prefix label stays muted.
+
+         Deviations from DESIGN.md §3 Body (documented):
+           - Number value: 14px / 500 (vs §3 Body 16px / 400). At 16px three
+             tags overflow the card row; 14px keeps a single-line layout while
+             remaining readable. Weight 500 compensates for the smaller size.
+           - Prefix label: 12px / 500 / 0.6px tracking, uppercase — same
+             off-table caption treatment used elsewhere on small inline
+             labels.
+         These are clickable copy-to-clipboard buttons, so DESIGN.md §4 hover
+         (opacity 0.85 + --rui-surface-hover background swap) applies. */
       .badge-number {
         position: relative;
-        font: inherit;
-        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-        font-size: 0.86rem;
-        padding: 0.3rem 0.6rem;
-        border-radius: 4px;
-        border: 1px solid var(--border-strong);
-        background: var(--bg-elev);
-        color: var(--fg);
+        font-family: var(--rui-font-body);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.5;
+        letter-spacing: 0.16px;
+        padding: 4px 10px;
+        border-radius: var(--rui-radius-small);
+        border: 0;
+        background: var(--rui-pill-secondary-bg);
+        color: var(--rui-fg);
         cursor: pointer;
+        text-transform: none;
+        transition:
+          opacity 120ms ease,
+          background 120ms ease;
       }
 
       .badge-number:hover:not(:disabled) {
-        border-color: var(--accent);
+        /* DESIGN.md §4 — interactive hover is opacity 0.85 + surface-hover
+           background swap. */
+        opacity: 0.85;
+        background: var(--rui-surface-hover);
+      }
+
+      .badge-number:focus-visible {
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
       }
 
       .badge-number .badge-label {
-        font-weight: 600;
-        color: var(--fg-muted);
-        margin-right: 0.25rem;
+        font-family: var(--rui-font-body);
+        /* Off-table small uppercase label — see .empty-section-title note. */
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--rui-fg-muted);
+        margin-right: 0.4rem;
+      }
+
+      .badge-number .badge-value {
+        /* Full --rui-fg contrast on the number value per the brief. */
+        color: var(--rui-fg);
       }
 
       .badge-disabled {
-        opacity: 0.5;
+        opacity: 0.45;
         cursor: not-allowed;
       }
 
       .badge-disabled .badge-value {
-        color: var(--fg-muted);
+        color: var(--rui-fg-muted);
       }
 
       .badge-toast {
         position: absolute;
-        top: -1.6rem;
+        top: -1.75rem;
         left: 50%;
         transform: translateX(-50%);
-        padding: 0.15rem 0.5rem;
-        border-radius: 4px;
-        background: var(--accent);
-        color: var(--accent-fg);
-        font-size: 0.72rem;
+        padding: 4px 10px;
+        border-radius: var(--rui-radius-pill);
+        background: var(--rui-pill-primary-bg);
+        color: var(--rui-pill-primary-fg);
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body — 16px / 0.24px (toast is small but still legible) */
+        font-size: var(--rui-text-body);
+        font-weight: 500;
+        letter-spacing: 0.24px;
+        text-transform: none;
         white-space: nowrap;
         pointer-events: none;
       }
@@ -542,31 +822,47 @@ const title = '노래방 검색기';
 
       .error-state {
         margin-top: 1rem;
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid var(--accent);
-        background: color-mix(in srgb, var(--accent) 8%, transparent);
+        padding: 1rem 1.25rem;
+        border-radius: var(--rui-radius-card);
+        background: var(--rui-surface);
       }
 
       .error-state-headline {
         margin: 0 0 0.5rem 0;
+        font-family: var(--rui-font-body);
+        /* DESIGN.md §3 Body Semibold — 16px / 600 / 1.5 / 0.16px */
+        font-size: var(--rui-text-body);
         font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: 0.16px;
+        color: var(--rui-fg);
       }
 
       .error-state-detail {
         margin: 0;
-        font-size: 0.85rem;
-        opacity: 0.8;
+        /* DESIGN.md §3 Body — 16px / 400 / 1.5 / 0.24px */
+        font-size: var(--rui-text-body);
+        line-height: 1.5;
+        letter-spacing: 0.24px;
+        color: var(--rui-fg-muted);
       }
 
+      /* DESIGN.md §3 Body — 16px / 400 / 1.5 / 0.24px. The previous all-uppercase
+         caption styling is dropped; the DOM has no hook to scope just the
+         "DB 업데이트" label, so the whole footer renders as Body. Documented
+         deviation from the brief's "DB-update label uppercase" instruction. */
       footer.site-footer {
         max-width: 960px;
         margin: 0 auto;
         padding: 1.5rem 1.25rem;
-        border-top: 1px solid var(--border);
-        font-size: 0.8rem;
-        color: var(--fg-muted);
-        line-height: 1.6;
+        border-top: 1px solid var(--rui-border);
+        background: var(--rui-surface);
+        font-family: var(--rui-font-body);
+        font-size: var(--rui-text-body);
+        font-weight: 400;
+        letter-spacing: 0.24px;
+        color: var(--rui-fg-muted);
+        line-height: 1.5;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -577,7 +873,7 @@ const title = '노래방 검색기';
       }
 
       .site-footer-link {
-        color: var(--accent);
+        color: var(--rui-fg);
         text-decoration: none;
       }
 
@@ -588,7 +884,8 @@ const title = '노래방 검색기';
   </head>
   <body>
     <header class="site-header">
-      <h1>{title}</h1>
+      <h1 class="site-title">{title}</h1>
+      <p class="site-subtitle">Karaoke Search</p>
     </header>
     <App client:load />
     <Footer />

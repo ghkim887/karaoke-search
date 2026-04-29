@@ -15,7 +15,7 @@ interface VendorChipsProps {
  * Three machine-vendor toggle chips. Mirrors `CategoryChips` (fieldset/legend,
  * arrow-key keyboard nav, `aria-pressed`). When any chips are selected, the OR
  * filter in `filterByVendors` keeps records that have a number on AT LEAST ONE
- * selected vendor. Composes with `filterByCategories` as AND in `App.tsx`.
+ * selected vendor. Composes with `filterByCategory` (single-select) and the search query as AND in `App.tsx`.
  */
 const CHIPS: ReadonlyArray<{ value: Vendor; label: string }> = [
   { value: 'tj', label: 'TJ' },
@@ -35,7 +35,7 @@ export function VendorChips({ selected, onToggle }: VendorChipsProps) {
   };
 
   return (
-    <fieldset class="chip-group">
+    <fieldset class="chip-group chip-group-vendor">
       <legend class="chip-group-legend">머신 필터</legend>
       {CHIPS.map((chip, idx) => {
         const isSelected = selected.has(chip.value);
