@@ -10,10 +10,10 @@ Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese o
 
 ## Features
 
-- **Bilingual search** — Korean and Japanese UI; search by Japanese title, Korean title, or artist name (Japanese/Korean/Latin romanization)
+- **Bilingual search** — Korean primary UI with English subtitles + a footer data-accuracy disclaimer; search by Japanese title, Korean title, or artist name (Japanese/Korean/Latin romanization)
 - **Multi-system support** — TJ Media (TJ), 금영 (KY), JOYSOUND karaoke numbers in one place
 - **Click-to-copy** — Copy karaoke numbers with a single tap
-- **Mobile-first, light + dark themes** — Optimized for phone screens; auto-switches via OS preference (`prefers-color-scheme`); works offline after first load. Self-hosted Geist + Inter + Pretendard fonts.
+- **Mobile-first, light + dark themes** — Optimized for phone screens with single-line horizontal-scroll chip rows; auto-switches via OS preference (`prefers-color-scheme`); works offline after first load. Self-hosted Geist + Inter + Pretendard fonts.
 - **~26,400 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced
 - **Device-local favorites** — star songs and find them instantly on a dedicated `즐겨찾기` tab (`검색` / `즐겨찾기`); stored in your browser, no account needed
 

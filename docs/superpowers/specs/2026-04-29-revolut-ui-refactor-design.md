@@ -162,3 +162,23 @@ Documented after shipping (2026-04-29):
 - **Page title changed** to `일본 노래 검색기` from `노래방 검색기` per user request.
 - **Single-select category filter with `전체` default added as a follow-up.** Originally not in design scope; added during the visual sign-off pass. Type `CategoryFilter = Category | 'all'`. Radio-group semantics with arrow-key keyboard nav and focus-follows-selection. Vendor chips kept multi-select.
 - **Featured-artist chips reverted to text-only** Secondary pill buttons. Avatar+caption iteration was tried (per option-C mockup) then reverted at user request.
+
+### 14.1 — Mobile responsive chip sizing (post-ship iteration)
+
+After the initial Revolut UI ship, slim-phone testing revealed DESIGN.md's
+generous chip padding (14px × 32px) was overweight for the search-utility
+viewport. Mobile (<720px) chips were scaled to `6px 14px / 14px / 500`
+weight; tablet+ keeps the strict DESIGN.md spec. Category, vendor, and
+featured-artist chip rows all became single-line **horizontal-scroll**
+containers on mobile with edge-bleed margins and a fully hidden scrollbar
+(`scrollbar-width: none` + `::-webkit-scrollbar { display: none }`).
+Touch-swipe + edge-bleed serve as the affordance; the visible scrollbar
+read as visual noise.
+
+Each chip uses `white-space: nowrap` + `flex-shrink: 0` so artist names
+like `米津玄師`, `back number`, and `40mP | 40meterP` stay on a single
+line regardless of viewport width.
+
+Search-input focus-ring (DESIGN.md §6 `0 0 0 0.125rem` shadow) needed
+0.5rem padding-bottom on the input wrap to clear the sticky tab bar's
+opaque background.
