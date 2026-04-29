@@ -541,11 +541,48 @@ const title = '일본 노래 검색기';
       }
 
       @media (max-width: 719px) {
-        /* Per the strict-DESIGN brief: do not silently shrink chip padding on
-           mobile. Chips stay 14px 32px on every breakpoint so the user can see
-           the strict-DESIGN result and decide whether to scale. */
+        /* Mobile compact sizing — surgical scale-down from DESIGN.md tablet+ spec.
+           Tablet+ (≥720px) retains the generous DESIGN.md 14px 32px / 16px 600 spec.
+           Mobile chip sizing: 6px 14px / 14px 500. */
+
+        /* Category + vendor chips */
+        .chip {
+          padding: 6px 14px;
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.16px;
+        }
+
+        /* In-row gap between chips (category row and vendor row each) */
         .chip-group {
-          gap: 0.6rem;
+          gap: 6px;
+        }
+
+        /* Inter-row gap between category chip row and vendor chip row */
+        .chip-group + .chip-group {
+          margin-top: 8px;
+        }
+
+        /* Featured-artist strip — one-row horizontal scroll, no wrap */
+        .empty-section-chips {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          gap: 6px;
+          padding-bottom: 4px;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Compact featured-chip */
+        .featured-chip {
+          padding: 6px 14px;
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.16px;
+        }
+
+        /* Tighten the gap between chip block and the first featured-strip section */
+        .chip-group ~ .empty-state {
+          margin-top: 12px;
         }
 
         .badge-number {
