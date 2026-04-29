@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
-import { type SearchSongCache, loadCache, saveCache } from './cache.js';
+import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
+import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
+import { enrichArtistMap } from './enrichArtistMap.js';
 import { enrichWithTranslit } from './enrichTranslit.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { parseCatalogResponse } from './parser.js';
@@ -26,7 +28,7 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const BLOG_CORPUS_PATH_DEFAULT = resolve(HERE, '../../../../../apps/web/public/data/songs.json');
 
 /**
- * Default on-disk location of the TJ-search translit cache. Tracked in git
+ * Default on-disk location of the TJ-search cache. Tracked in git
  * (NOT gitignored) — CI must NOT pay the first-run enrichment cost. See
  * `apps/web/public/data/tj-search-cache.json` and the cache module's
  * docblock for the file schema.
@@ -37,9 +39,9 @@ const TRANSLIT_CACHE_PATH_DEFAULT = resolve(
 );
 
 /**
- * Provider for the set of TJ catalog numbers that should bypass the
- * loose-JP filter and Chinese denylist. Defaults to the on-disk blog
- * corpus (`apps/web/public/data/songs.json`).
+ * Provider for the set of TJ catalog numbers that should bypass the per-record
+ * + per-artist cache filter (defense-in-depth rescue). Defaults to the on-disk
+ * blog corpus (`apps/web/public/data/songs.json`).
  *
  * Pragmatic dependency: the rescue path reads the deployed blog data so the
  * adapter retains all-Latin-named Japanese acts the blog already knows about
@@ -54,9 +56,18 @@ export type BlogWhitelistSource = () => ReadonlySet<string>;
  * disabled-enrichment flag; production uses the defaults.
  */
 export interface TJDirectCrawlerOptions {
-  /** Override the on-disk path of the translit cache. */
+  /** Override the on-disk path of the search cache. */
   cachePath?: string;
-  /** When true, skip the enrichment pass entirely (legacy path). */
+  /**
+   * When true, skip ALL enrichment passes (bootstrap + per-artist scan +
+   * per-record translit) and run the parser with the cache as-loaded from
+   * disk. Used by tests to exercise the parser/filter without HTTP.
+   *
+   * Note: this does NOT skip cache loading — the parser still needs the
+   * cache for its filter chain. Passing `disableEnrichment: true` with a
+   * cold (empty) cache + an empty whitelist will drop every record because
+   * no path can confirm JPN.
+   */
   disableEnrichment?: boolean;
 }
 
@@ -71,30 +82,36 @@ export interface TJDirectCrawlerOptions {
  *
  * No authentication, no UA gating (the legacy API is open even when the
  * public HTML site requires a Chrome UA), no per-page loop. The single
- * response yields ~67k catalog items; the parser's loose-JP filter narrows
- * that to ~7k JP-relevant records, the Chinese-artist denylist drops well-
- * known Cantopop / Mandopop acts, and the blog-whitelist rescue re-includes
- * Japanese acts whose TJ# is already in the blog corpus regardless of
- * script content.
+ * response yields ~67k catalog items.
  *
- * Translit enrichment (PR-1, 2026-04-29): after the parser/filter chain runs,
- * each surviving record is enriched with Korean transliterations
- * (`sortTitleKo`/`sortSongKo`) sourced from `/legacy/api/searchSong`. Results
- * are cached in `apps/web/public/data/tj-search-cache.json` (tracked in git
- * so CI never pays the first-run cost). On HTTP error or `pro` mismatch the
- * record's `title_ko`/`artist_ko` stay `null` — same as the pre-enrichment
- * behavior, no regression.
+ * --- PR-2 enrichment chain (replaces the legacy JP-regex + Chinese denylist) ---
+ *
+ *   1. **Bulk fetch.** One POST to `newSongOfMonth?searchYm=200001`.
+ *   2. **Cache load.** Read `apps/web/public/data/tj-search-cache.json`.
+ *   3. **Bootstrap (Option C).** If the cache's bootstrap is stale (>7 days
+ *      old, or `artistNationalityMap` is empty), sweep the JPOP charts via
+ *      `topAndHot100` for the past 2 years to seed confident-JPN artists.
+ *      ~2 minutes; cheap-but-not-free, hence the 7-day cadence.
+ *   4. **Per-artist scan.** For every distinct artist in the catalog, call
+ *      `searchSong?strType=2` and tally `nationalcode` votes from exact-match
+ *      results. Cache hits skip; misses fetch. ~1.4-2h cold-start, near-zero
+ *      on warm cache.
+ *   5. **Filter via parser.** The parser's 3-path chain (per-record JPN /
+ *      per-artist JPN / blog rescue) keeps a record iff any path confirms.
+ *   6. **Translit pass (PR-1).** For each surviving record, populate
+ *      `title_ko`/`artist_ko` from `searchSong?strType=1` exact-`pro` match.
+ *   7. **Cache save.** Atomic rewrite if anything was fetched.
+ *   8. **Yield.** Normalize each kept record into a `SongRecord`.
  *
  * Failure semantics:
- *  - Any HTTP error (non-2xx, network failure, robots-disallow) on the
- *    catalog fetch throws and aborts the pipeline.
- *  - The parser also throws on a malformed response shape; that propagates.
- *  - `searchSong` enrichment errors are LOGGED and SKIPPED — they do not
- *    abort the pipeline. The record is emitted with null Korean fields.
- *  - No dedup-by-tj logic is needed: the API returns each `pro` exactly once.
+ *  - HTTP error on the catalog fetch: throws and aborts the pipeline.
+ *  - Parser throws on a malformed response shape: propagates.
+ *  - Bootstrap / per-artist / translit errors: LOGGED and SKIPPED. Records
+ *    where the artist scan errored stay UNKNOWN -> dropped, except for blog
+ *    whitelist rescues.
  *
  * Limit semantics: `options.limit` caps the number of records yielded
- * (post JP-filter). Useful for smoke tests. `0`/undefined means no cap.
+ * (post-filter). `0`/undefined means no cap.
  */
 export class TJDirectCrawler implements Crawler {
   readonly name = 'tj-media-direct';
@@ -124,6 +141,7 @@ export class TJDirectCrawler implements Crawler {
     }
     const forceIncludeTjNumbers = this.cachedWhitelist;
 
+    // Step 1: bulk catalog fetch.
     const res = await this.http.postForm(CATALOG_URL, { searchYm: SEARCH_YM });
     if (res === null) {
       throw new Error(`[tj-media-direct] catalog fetch blocked by robots.txt: ${CATALOG_URL}`);
@@ -142,27 +160,52 @@ export class TJDirectCrawler implements Crawler {
       throw new Error(`[tj-media-direct] catalog response is not valid JSON: ${msg}`);
     }
 
-    const raw = parseCatalogResponse(json, CATALOG_URL, { forceIncludeTjNumbers });
-
-    // Run the translit enrichment pass over the surviving records BEFORE
-    // we start yielding. This buys us a complete progress log + a single
-    // atomic cache save at the end, at the cost of holding ~6k records in
-    // memory between phases. The pre-enrichment record list is already in
-    // memory above (`raw`), so this isn't a peak-memory regression.
-    let cache: SearchSongCache | null = null;
-    let enrichmentByPro: Map<string, TranslitEnrichment> | null = null;
+    // Step 2: load cache (always; the parser filter needs it).
+    const cache = await loadCache(this.cachePath);
     let cacheMutated = false;
+
+    // Build the unfiltered raw record list once: it's the input to the
+    // per-artist scanner (we want to scan every distinct artist in the
+    // catalog, not just the ones already cached as JPN) AND the input to
+    // the parser filter. Re-using the records as a flat list avoids a
+    // second JSON walk; the in-memory cost is the same as before.
+    const allItems = extractCatalogItems(json);
+
+    // Step 3: bootstrap (Option C) if stale.
+    // Step 4: per-artist scan.
     if (!this.disableEnrichment) {
-      cache = await loadCache(this.cachePath);
+      if (!isBootstrapFresh(cache)) {
+        try {
+          await bootstrapArtistMapFromCharts(this.http, cache);
+          cacheMutated = true;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`[tj-bootstrap] bootstrap pass failed: ${msg}`);
+        }
+      } else {
+        console.log('[tj-bootstrap] skipped — cache bootstrap is fresh (<7 days)');
+      }
+
+      // The artist scanner takes pseudo-RawSongRecord input — we pass shells
+      // with just `artist_primary` populated since that's all the scanner
+      // reads. Importing `RawSongRecord` here is a slight schema lean-in but
+      // keeps the scanner reusable for the post-filter case too.
+      const artistShells = allItems.map(asArtistShell).filter((s) => s !== null);
+      const stats = await enrichArtistMap(this.http, artistShells, cache);
+      if (stats.fetches > 0) cacheMutated = true;
+    }
+
+    // Step 5: parse + filter.
+    const { records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+      cache,
+      forceIncludeTjNumbers,
+    });
+
+    // Step 6: translit pass (PR-1).
+    let enrichmentByPro: Map<string, TranslitEnrichment> | null = null;
+    if (!this.disableEnrichment) {
       const { byPro, stats } = await enrichWithTranslit(this.http, raw, cache);
-      // Cache mutated iff we actually fetched anything new from TJ — if every
-      // record was a cache hit (warm-start happy path), nothing in
-      // `proEnrichmentMap` changed and we can skip the file rewrite. Avoids
-      // a needless `mtime` bump on `tj-search-cache.json` in the tracked git
-      // tree on no-op runs.
-      cacheMutated = stats.fetches > 0;
-      // Project to the slimmed `TranslitEnrichment` shape the normalizer
-      // accepts — we don't need the rest of the cache fields downstream.
+      if (stats.fetches > 0) cacheMutated = true;
       enrichmentByPro = new Map();
       for (const [pro, entry] of byPro) {
         enrichmentByPro.set(pro, {
@@ -172,6 +215,33 @@ export class TJDirectCrawler implements Crawler {
       }
     }
 
+    // Surface per-path admit counters so post-pre-seed we can see how often
+    // each filter path is the first admitter. A high `by-rescue` value means
+    // the searchSong index is missing real JPN records and the blog-whitelist
+    // rescue is hiding gaps; a low value means the rescue is doing minimal
+    // safety-net work as designed.
+    const keptTotal =
+      keepStats.admittedByArtist + keepStats.admittedByPro + keepStats.admittedByRescue;
+    console.log(
+      `[tj-direct] kept ${keptTotal}: by-artist ${keepStats.admittedByArtist}, by-pro ${keepStats.admittedByPro}, by-rescue ${keepStats.admittedByRescue}; dropped ${keepStats.dropped}`,
+    );
+
+    // Step 7: persist enrichment work BEFORE yielding so a downstream
+    // consumer's exception (during `yield`) cannot discard hours of bootstrap
+    // + artist-scan + translit fetches. The `finally` block remains as a
+    // safety net for any further mutations during yield (currently none).
+    if (cacheMutated) {
+      try {
+        await saveCache(this.cachePath, cache);
+        cacheMutated = false; // saved successfully; finally won't re-save.
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[tj-search] cache save failed at ${this.cachePath}: ${msg}`);
+      }
+    }
+
+    // Step 8: yield. No further cache mutations happen here today; the
+    // `finally` save below covers the future case where one is added.
     let yielded = 0;
     let errored = false;
     try {
@@ -185,7 +255,7 @@ export class TJDirectCrawler implements Crawler {
       errored = true;
       throw err;
     } finally {
-      if (cache !== null && !errored && cacheMutated) {
+      if (!errored && cacheMutated) {
         try {
           await saveCache(this.cachePath, cache);
         } catch (err) {
@@ -195,6 +265,67 @@ export class TJDirectCrawler implements Crawler {
       }
     }
   }
+}
+
+/**
+ * Pull the items array out of the catalog JSON envelope. Mirrors
+ * `parseCatalogResponse`'s extraction but returns the raw item objects so the
+ * artist-scanner step can iterate them without parser-level filtering.
+ *
+ * Throws on malformed envelope shapes — same failure semantics as
+ * `parseCatalogResponse`.
+ */
+function extractCatalogItems(json: unknown): ReadonlyArray<Record<string, unknown>> {
+  if (!isPlainObject(json)) {
+    throw new Error('tj-media-direct: response is not a JSON object');
+  }
+  const data = json.resultData;
+  if (!isPlainObject(data)) {
+    throw new Error('tj-media-direct: response.resultData missing or not an object');
+  }
+  const items = data.items;
+  if (!Array.isArray(items)) {
+    throw new Error('tj-media-direct: response.resultData.items is not an array');
+  }
+  return items.filter(isPlainObject);
+}
+
+/**
+ * Build a minimal `RawSongRecord`-shaped shell from a catalog item — only
+ * `artist_primary` is meaningful; the rest is filled with placeholder values
+ * so the type-check passes. The artist scanner only reads `artist_primary`.
+ *
+ * Returns `null` for items missing pro/title/artist (skipped upstream too).
+ */
+function asArtistShell(item: Record<string, unknown>): {
+  source_url: string;
+  title_primary: string;
+  title_ko: null;
+  artist_primary: string;
+  artist_ko: null;
+  karaoke_numbers: { tj: string | null; ky: null; joysound: null };
+  categories: ['jpop'];
+} | null {
+  const proRaw = item.pro;
+  const title = typeof item.indexTitle === 'string' ? item.indexTitle.trim() : '';
+  const artist = typeof item.indexSong === 'string' ? item.indexSong.trim() : '';
+  let tj: string | null = null;
+  if (typeof proRaw === 'number' && Number.isFinite(proRaw)) tj = String(proRaw);
+  else if (typeof proRaw === 'string' && proRaw.trim() !== '') tj = proRaw.trim();
+  if (!tj || !title || !artist) return null;
+  return {
+    source_url: CATALOG_URL,
+    title_primary: title,
+    title_ko: null,
+    artist_primary: artist,
+    artist_ko: null,
+    karaoke_numbers: { tj, ky: null, joysound: null },
+    categories: ['jpop'],
+  };
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 /**

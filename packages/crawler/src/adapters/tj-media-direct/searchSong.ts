@@ -1,4 +1,5 @@
 import type { HttpClient } from '../../http.js';
+import { sanitizeSearchTxt } from './normalize.js';
 
 /**
  * `/legacy/api/searchSong` HTTP helper.
@@ -84,6 +85,11 @@ export interface SearchSongItem {
  * The wrapper accepts any `strType` (0/1/2) and any `nationType` for
  * future-proofing, but the primary call site passes `strType=1` (title) +
  * `nationType=JPN` to filter to Japanese titles only.
+ *
+ * Apostrophe handling: ASCII single quotes (`'`) are stripped from
+ * `searchTxt` before sending — the TJ server's search endpoint has a parser
+ * bug that returns `resultCode=04` on values containing them. See
+ * `sanitizeSearchTxt` in `./normalize.ts`.
  */
 export async function searchSongByTitle(
   http: Pick<HttpClient, 'postForm'>,
@@ -91,14 +97,51 @@ export async function searchSongByTitle(
   nationType: SearchSongNationType = 'JPN',
   strType: SearchSongStrType = 1,
 ): Promise<SearchSongItem[]> {
-  if (typeof searchTxt !== 'string' || searchTxt === '') {
+  return searchSong(http, searchTxt, strType, nationType);
+}
+
+/**
+ * Issue a single artist-search call (`strType=2`) and return the parsed item
+ * list. Used by the per-artist nationality scanner (PR-2) to vote on each
+ * artist's `nationalcode` across the catalog.
+ *
+ * Defaults to `nationType=''` (all nationalities) so we can collect votes
+ * across JPN/KOR/ENG and classify the artist from the distribution.
+ *
+ * Apostrophe handling: same as `searchSongByTitle` — stripped before send.
+ */
+export async function searchSongByArtist(
+  http: Pick<HttpClient, 'postForm'>,
+  searchTxt: string,
+  nationType: SearchSongNationType = '',
+): Promise<SearchSongItem[]> {
+  return searchSong(http, searchTxt, 2, nationType);
+}
+
+/**
+ * Internal: shared transport for both title and artist searches. All inbound
+ * `searchTxt` values pass through `sanitizeSearchTxt` first (apostrophe
+ * strip) — the only call sites are the two helpers above, so centralizing
+ * the sanitization here is the simplest "one rule, one place" surface.
+ */
+async function searchSong(
+  http: Pick<HttpClient, 'postForm'>,
+  searchTxt: string,
+  strType: SearchSongStrType,
+  nationType: SearchSongNationType,
+): Promise<SearchSongItem[]> {
+  if (typeof searchTxt !== 'string') return [];
+  const cleaned = sanitizeSearchTxt(searchTxt);
+  if (cleaned === '') {
     // Server returns code 98 on empty searchTxt; short-circuit to avoid the
-    // round-trip and return the same empty-list semantics.
+    // round-trip and return the same empty-list semantics. Also covers the
+    // edge case where the input was a single apostrophe that sanitization
+    // stripped to ''.
     return [];
   }
 
   const res = await http.postForm(SEARCH_SONG_URL, {
-    searchTxt,
+    searchTxt: cleaned,
     strType: String(strType),
     nationType,
   });
@@ -154,6 +197,17 @@ export function parseSearchSongResponse(json: unknown): SearchSongItem[] {
 /**
  * Pull the per-item objects out of a `resultData` payload, tolerating both
  * the flat `{ itemsTotalCount, items }` shape and the 6-bucket array shape.
+ *
+ * Failure-mode contract: this helper THROWS on an unrecognized response shape.
+ * That intentionally diverges from `bootstrapCharts.ts:parseChartResponse`,
+ * which TOLERATES weird shapes and returns `[]`. The rationale is that the
+ * `searchSong` endpoint is the authoritative source for nationalcode + translit
+ * — every caller depends on the result, so failing loud is correct (a silent
+ * `[]` would let a per-artist scan classify a real Japanese act as UNKNOWN
+ * just because TJ briefly served a malformed envelope, which would persist in
+ * the cache for 90 days). The chart endpoint is best-effort signal only;
+ * skipping a borked window costs us a few JPN votes and self-heals next sweep.
+ * Do not unify these two helpers without preserving the divergent semantics.
  */
 function collectItems(data: unknown): unknown[] {
   if (data === null || data === undefined) return [];

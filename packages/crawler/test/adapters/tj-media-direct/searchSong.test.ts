@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseSearchSongResponse,
+  searchSongByArtist,
   searchSongByTitle,
 } from '../../../src/adapters/tj-media-direct/searchSong.js';
 import type { FetchResult, HttpClient } from '../../../src/http.js';
@@ -271,5 +272,106 @@ describe('searchSongByTitle', () => {
     expect(items[0]?.pro).toBe('68781');
     expect(items[0]?.sortTitleKo).toBe('아이도루');
     expect(items[0]?.sortSongKo).toBeNull();
+  });
+
+  it('strips ASCII apostrophes from searchTxt before sending (TJ server bug)', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      body: JSON.stringify({ resultCode: '99', resultData: { items: [] } }),
+    });
+    await searchSongByTitle(http, "Don't Say Goodbye");
+    expect(captured).toHaveLength(1);
+    // The apostrophe was stripped, not escaped.
+    expect(captured[0]?.body.searchTxt).toBe('Dont Say Goodbye');
+  });
+
+  it('short-circuits when sanitization reduces searchTxt to empty', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({ captured });
+    // A single apostrophe sanitizes to '', which short-circuits.
+    expect(await searchSongByTitle(http, "'")).toEqual([]);
+    expect(captured).toHaveLength(0);
+  });
+});
+
+describe('searchSongByArtist', () => {
+  it('issues a single POST with strType=2 + nationType="" by default', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      body: JSON.stringify({ resultCode: '99', resultData: { items: [] } }),
+    });
+    const items = await searchSongByArtist(http, 'YOASOBI');
+    expect(items).toEqual([]);
+    expect(captured).toHaveLength(1);
+    expect(captured[0]?.url).toBe(SEARCH_SONG_URL);
+    expect(captured[0]?.body).toEqual({
+      searchTxt: 'YOASOBI',
+      strType: '2',
+      nationType: '',
+    });
+  });
+
+  it('accepts an explicit nationType override', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      body: JSON.stringify({ resultCode: '99', resultData: { items: [] } }),
+    });
+    await searchSongByArtist(http, 'YOASOBI', 'JPN');
+    expect(captured[0]?.body).toEqual({
+      searchTxt: 'YOASOBI',
+      strType: '2',
+      nationType: 'JPN',
+    });
+  });
+
+  it('strips ASCII apostrophes (apostrophe sanitization applies to artist search too)', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      body: JSON.stringify({ resultCode: '99', resultData: { items: [] } }),
+    });
+    await searchSongByArtist(http, "Guns N' Roses");
+    expect(captured[0]?.body.searchTxt).toBe('Guns N Roses');
+  });
+
+  it('parses the response shape (mixed-nationality results, exact-match downstream)', async () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 1,
+            indexTitle: 't1',
+            indexSong: 'YOASOBI',
+            nationalcode: 'JPN',
+          },
+          {
+            pro: 2,
+            indexTitle: 't2',
+            indexSong: 'YOASOBI',
+            nationalcode: 'JPN',
+          },
+        ],
+      },
+    };
+    const http = buildHttp({ status: 200, body: JSON.stringify(json) });
+    const items = await searchSongByArtist(http, 'YOASOBI');
+    expect(items).toHaveLength(2);
+    expect(items.every((i) => i.nationalcode === 'JPN')).toBe(true);
+  });
+
+  it('short-circuits on empty searchTxt', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({ captured });
+    expect(await searchSongByArtist(http, '')).toEqual([]);
+    expect(captured).toHaveLength(0);
+  });
+
+  it('throws on non-2xx (same transport semantics as title search)', async () => {
+    const http = buildHttp({ status: 503, body: '<html>oops</html>' });
+    await expect(searchSongByArtist(http, 'Q')).rejects.toThrow(/HTTP 503/);
   });
 });

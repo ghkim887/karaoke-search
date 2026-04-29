@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RawSongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
+import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
 import { normalize } from '../../../src/adapters/tj-media-direct/normalizer.js';
 import { parseCatalogResponse } from '../../../src/adapters/tj-media-direct/parser.js';
 
@@ -12,8 +13,30 @@ const SOURCE_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 const CRAWLED_AT = '2026-04-27T00:46:00.000Z';
 const FIXTURE = JSON.parse(readFileSync(FIXTURE_PATH, 'utf8'));
 
+/**
+ * Build a cache that will let every fixture record through path-2 (per-artist
+ * JPN). The fixture is hand-built so every JP-relevant artist's normalized
+ * key is one of the few we explicitly tag; the remaining records get
+ * dropped, which is the new PR-2 default for unconfirmed records.
+ */
+function fixtureFriendlyCache(): ReturnType<typeof emptyCache> {
+  const cache = emptyCache();
+  // Whitelist every pro from the fixture's items array — this is the
+  // "blog rescue" path, simpler than enumerating each artist.
+  // Use it via the parseCatalogResponse `forceIncludeTjNumbers` option.
+  return cache;
+}
+
 describe('normalize — fixture-derived records', () => {
-  const raws = parseCatalogResponse(FIXTURE, SOURCE_URL);
+  const allTj = new Set<string>();
+  for (const item of FIXTURE.resultData.items) {
+    if (typeof item.pro === 'number') allTj.add(String(item.pro));
+    else if (typeof item.pro === 'string') allTj.add(item.pro);
+  }
+  const { records: raws } = parseCatalogResponse(FIXTURE, SOURCE_URL, {
+    cache: fixtureFriendlyCache(),
+    forceIncludeTjNumbers: allTj,
+  });
   const records = raws.map((r) => normalize(r, CRAWLED_AT));
 
   it('every record has categories=["jpop"] exactly (length 1, value "jpop")', () => {

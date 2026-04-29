@@ -2,10 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import {
-  CHINESE_ARTIST_DENYLIST,
-  parseCatalogResponse,
-} from '../../../src/adapters/tj-media-direct/parser.js';
+import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
+import { parseCatalogResponse, shouldKeep } from '../../../src/adapters/tj-media-direct/parser.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const FIXTURE_PATH = resolve(HERE, '../../fixtures/tj-media-direct/catalog-sample.json');
@@ -13,167 +11,116 @@ const SOURCE_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 
 const FIXTURE = JSON.parse(readFileSync(FIXTURE_PATH, 'utf8'));
 
-describe('parseCatalogResponse — catalog-sample.json fixture', () => {
-  const records = parseCatalogResponse(FIXTURE, SOURCE_URL);
+/**
+ * Helper: build a freshly-tagged JPN cache entry for an artist.
+ */
+function jpnArtist(): {
+  code: 'JPN';
+  votes: { JPN: number; KOR: number; ENG: number };
+  lastSeen: string;
+} {
+  return { code: 'JPN', votes: { JPN: 1, KOR: 0, ENG: 0 }, lastSeen: '2026-04-29T00:00:00.000Z' };
+}
 
-  it('extracts JP-relevant records and excludes Korean / Latin-only / denylist items', () => {
-    // Hand-built fixture: 31 JP-relevant + 10 Korean + 10 English-only.
-    // One of the Han-only records (pro=90015, 海来阿木) is now in the
-    // Chinese-artist denylist, so the JP-relevant subset drops to 30.
-    expect(records.length).toBe(30);
+describe('parseCatalogResponse — empty cache + empty whitelist (everything drops)', () => {
+  it('drops every record when no path can confirm JPN', () => {
+    const { records, stats } = parseCatalogResponse(FIXTURE, SOURCE_URL, { cache: emptyCache() });
+    expect(records).toEqual([]);
+    expect(stats.admittedByArtist).toBe(0);
+    expect(stats.admittedByPro).toBe(0);
+    expect(stats.admittedByRescue).toBe(0);
+    expect(stats.dropped).toBeGreaterThan(0);
   });
+});
 
-  it('maps the YOASOBI アイドル record (pro=68781) per the field-map contract', () => {
+describe('parseCatalogResponse — per-record nationalcode confirmation (path 1)', () => {
+  it('keeps a record when its pro is JPN-tagged in proEnrichmentMap', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['68781'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: '아이도루',
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: '2023-05-24',
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records } = parseCatalogResponse(FIXTURE, SOURCE_URL, { cache });
     const idol = records.find((r) => r.karaoke_numbers.tj === '68781');
     expect(idol).toBeDefined();
     expect(idol?.title_primary).toBe('アイドル(推しの子 OP)');
     expect(idol?.artist_primary).toBe('YOASOBI');
     expect(idol?.title_ko).toBeNull();
     expect(idol?.artist_ko).toBeNull();
-    expect(idol?.karaoke_numbers.ky).toBeNull();
-    expect(idol?.karaoke_numbers.joysound).toBeNull();
     expect(idol?.categories).toEqual(['jpop']);
-    expect(idol?.source_url).toBe(SOURCE_URL);
   });
 
-  it('every parsed tj is digits-only', () => {
-    for (const r of records) {
-      const tj = r.karaoke_numbers.tj;
-      expect(tj).not.toBeNull();
-      expect(tj).toMatch(/^\d+$/);
-    }
-  });
-
-  it('every record carries the source_url passed in', () => {
-    for (const r of records) {
-      expect(r.source_url).toBe(SOURCE_URL);
-    }
-  });
-
-  it('every record has Korean fields null and categories=["jpop"]', () => {
-    for (const r of records) {
-      expect(r.title_ko).toBeNull();
-      expect(r.artist_ko).toBeNull();
-      expect(r.karaoke_numbers.ky).toBeNull();
-      expect(r.karaoke_numbers.joysound).toBeNull();
-      expect(r.categories).toEqual(['jpop']);
-    }
-  });
-
-  it('excludes Hangul-containing records (Korean leak control)', () => {
-    // The fixture includes 10 Korean items; none should appear in the output.
-    for (const r of records) {
-      expect(r.title_primary + r.artist_primary).not.toMatch(/[가-힯]/);
-    }
-  });
-
-  it('excludes Latin-only records (English leak control)', () => {
-    // No record should be both Latin-only in title AND Latin-only in artist.
-    for (const r of records) {
-      const t = r.title_primary;
-      const a = r.artist_primary;
-      const titleHasJp = /[぀-ゟ゠-ヿ一-鿿]/.test(t);
-      const artistHasJp = /[぀-ゟ゠-ヿ一-鿿]/.test(a);
-      expect(titleHasJp || artistHasJp).toBe(true);
-    }
-  });
-
-  it('excludes a denylisted Chinese artist (pro=90015 海来阿木)', () => {
-    // Pre-refinement this was the documented Chinese-leak case. With the
-    // denylist, this record must be dropped.
-    const denied = records.find((r) => r.karaoke_numbers.tj === '90015');
-    expect(denied).toBeUndefined();
-  });
-
-  it('still includes Han-only records by artists NOT in the denylist (e.g. pro=90014 洋澜一)', () => {
-    // The denylist is targeted, not blanket — long-tail Han-only artists not
-    // in the seed list still pass through. Documents accepted scope.
-    const leak = records.find((r) => r.karaoke_numbers.tj === '90014');
-    expect(leak).toBeDefined();
-    expect(leak?.artist_primary).toBe('洋澜一');
+  it('drops a record when its pro is KOR-tagged (only JPN passes)', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['68781'] = {
+      nationalcode: 'KOR',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records } = parseCatalogResponse(FIXTURE, SOURCE_URL, { cache });
+    expect(records.find((r) => r.karaoke_numbers.tj === '68781')).toBeUndefined();
   });
 });
 
-describe('parseCatalogResponse — Chinese-artist denylist (refinement 1)', () => {
-  it('drops a record whose artist is on the denylist even if the title contains kana', () => {
-    const json = {
-      resultCode: '00',
-      resultData: {
-        itemsTotalCount: 1,
-        items: [
-          // 张学友 with a kana-bearing fake title — kana presence in title
-          // does not override the artist denylist.
-          { pro: 1, indexTitle: 'カラオケのうた', indexSong: '张学友', publishdate: '1998-01-01' },
-        ],
-      },
-    };
-    const records = parseCatalogResponse(json, SOURCE_URL);
-    expect(records).toEqual([]);
+describe('parseCatalogResponse — per-artist nationality confirmation (path 2)', () => {
+  it('keeps records whose normalized artist is JPN-tagged in artistNationalityMap', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const { records } = parseCatalogResponse(FIXTURE, SOURCE_URL, { cache });
+    const idol = records.find((r) => r.karaoke_numbers.tj === '68781');
+    expect(idol).toBeDefined();
+    expect(idol?.artist_primary).toBe('YOASOBI');
   });
 
-  it('keeps records by Japanese pure-Han artists not in the denylist (e.g. 米津玄師, 嵐)', () => {
-    const json = {
-      resultCode: '00',
-      resultData: {
-        itemsTotalCount: 2,
-        items: [
-          { pro: 1, indexTitle: '感電', indexSong: '米津玄師', publishdate: '2020-07-22' },
-          { pro: 2, indexTitle: 'Happiness', indexSong: '嵐', publishdate: '2007-09-05' },
-        ],
-      },
+  it('drops records whose artist is KOR-tagged', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = {
+      code: 'KOR',
+      votes: { JPN: 0, KOR: 3, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
     };
-    const records = parseCatalogResponse(json, SOURCE_URL);
-    expect(records.length).toBe(2);
-    expect(records[0]?.artist_primary).toBe('米津玄師');
-    expect(records[1]?.artist_primary).toBe('嵐');
+    const { records } = parseCatalogResponse(FIXTURE, SOURCE_URL, { cache });
+    expect(records.find((r) => r.karaoke_numbers.tj === '68781')).toBeUndefined();
   });
 
-  it('matches denylist entries irrespective of internal whitespace (王 菲 == 王菲)', () => {
+  it('drops records whose artist is AMBIGUOUS-tagged (only JPN passes)', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = {
+      code: 'AMBIGUOUS',
+      votes: { JPN: 1, KOR: 1, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records } = parseCatalogResponse(FIXTURE, SOURCE_URL, { cache });
+    expect(records.find((r) => r.karaoke_numbers.tj === '68781')).toBeUndefined();
+  });
+
+  it('matches normalized artist (whitespace-collapse + lowercase + NFKC)', () => {
     const json = {
       resultCode: '00',
       resultData: {
         itemsTotalCount: 3,
         items: [
-          { pro: 1, indexTitle: '紅日', indexSong: '王 菲', publishdate: '1995-01-01' },
-          { pro: 2, indexTitle: '容易受傷的女人', indexSong: '王  菲', publishdate: '1992-01-01' },
-          { pro: 3, indexTitle: '我願意', indexSong: '王菲', publishdate: '1994-01-01' },
+          { pro: 1, indexTitle: 't1', indexSong: 'YOASOBI', publishdate: '2020-01-01' },
+          { pro: 2, indexTitle: 't2', indexSong: 'yoasobi', publishdate: '2020-01-01' },
+          { pro: 3, indexTitle: 't3', indexSong: 'Yo asobi', publishdate: '2020-01-01' },
         ],
       },
     };
-    const records = parseCatalogResponse(json, SOURCE_URL);
-    expect(records).toEqual([]);
-  });
-
-  it('CHINESE_ARTIST_DENYLIST has unique normalized entries', () => {
-    const seen = new Set<string>();
-    for (const name of CHINESE_ARTIST_DENYLIST) {
-      const key = name.replace(/\s+/g, '').toLowerCase().normalize('NFKC');
-      expect(seen.has(key)).toBe(false);
-      seen.add(key);
-    }
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(3);
   });
 });
 
-describe('parseCatalogResponse — blog-whitelist rescue (refinement 2)', () => {
-  it('normally drops an all-Latin Japanese act (e.g. GRANRODEO)', () => {
-    const json = {
-      resultCode: '00',
-      resultData: {
-        itemsTotalCount: 1,
-        items: [
-          {
-            pro: 12345,
-            indexTitle: 'Trash Candy',
-            indexSong: 'GRANRODEO',
-            publishdate: '2016-01-27',
-          },
-        ],
-      },
-    };
-    const records = parseCatalogResponse(json, SOURCE_URL);
-    expect(records).toEqual([]);
-  });
-
+describe('parseCatalogResponse — blog-whitelist rescue (path 3)', () => {
   it('rescues an all-Latin Japanese act when forceIncludeTjNumbers contains its pro', () => {
     const json = {
       resultCode: '00',
@@ -189,30 +136,38 @@ describe('parseCatalogResponse — blog-whitelist rescue (refinement 2)', () => 
         ],
       },
     };
-    const records = parseCatalogResponse(json, SOURCE_URL, {
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, {
+      cache: emptyCache(),
       forceIncludeTjNumbers: new Set(['12345']),
     });
     expect(records.length).toBe(1);
     expect(records[0]?.artist_primary).toBe('GRANRODEO');
     expect(records[0]?.karaoke_numbers.tj).toBe('12345');
+    expect(stats.admittedByRescue).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+    expect(stats.admittedByPro).toBe(0);
   });
 
-  it('rescue overrides the Chinese denylist when the blog already knows the TJ#', () => {
-    // Decision: if the blog corpus has a record at this TJ#, the blog is
-    // canonical — trust it over the denylist. A misclassified blog record
-    // would land here, but the blog adapter is hand-curated for Japanese acts.
+  it('drops the same record when its pro is NOT in the whitelist and cache is empty', () => {
     const json = {
       resultCode: '00',
       resultData: {
         itemsTotalCount: 1,
-        items: [{ pro: 99999, indexTitle: '吻別', indexSong: '张学友', publishdate: '1993-03-08' }],
+        items: [
+          {
+            pro: 12345,
+            indexTitle: 'Trash Candy',
+            indexSong: 'GRANRODEO',
+            publishdate: '2016-01-27',
+          },
+        ],
       },
     };
-    const records = parseCatalogResponse(json, SOURCE_URL, {
-      forceIncludeTjNumbers: new Set(['99999']),
+    const { records } = parseCatalogResponse(json, SOURCE_URL, {
+      cache: emptyCache(),
+      forceIncludeTjNumbers: new Set<string>(),
     });
-    expect(records.length).toBe(1);
-    expect(records[0]?.artist_primary).toBe('张学友');
+    expect(records).toEqual([]);
   });
 
   it('rescue still requires non-empty pro / indexTitle / indexSong', () => {
@@ -226,10 +181,45 @@ describe('parseCatalogResponse — blog-whitelist rescue (refinement 2)', () => 
         ],
       },
     };
-    const records = parseCatalogResponse(json, SOURCE_URL, {
+    const { records } = parseCatalogResponse(json, SOURCE_URL, {
+      cache: emptyCache(),
       forceIncludeTjNumbers: new Set(['1', '2']),
     });
     expect(records).toEqual([]);
+  });
+});
+
+describe('parseCatalogResponse — false-negative recovery (PR-2 promise)', () => {
+  it('keeps a Latin-only-titled Japanese act via per-artist tagging when blog whitelist is empty', () => {
+    // PR-2 promise: a Latin-titled Japanese act not in the blog corpus must
+    // still survive the filter when the per-artist scan has tagged the
+    // artist as JPN. Pre-PR-2 this was a silent drop (regex matched nothing,
+    // denylist didn't fire, blog rescue empty -> dropped).
+    const json = {
+      resultCode: '00',
+      resultData: {
+        itemsTotalCount: 1,
+        items: [
+          {
+            pro: 12345,
+            indexTitle: 'Trash Candy',
+            indexSong: 'GRANRODEO',
+            publishdate: '2016-01-27',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.granrodeo = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, {
+      cache,
+      forceIncludeTjNumbers: new Set<string>(),
+    });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.artist_primary).toBe('GRANRODEO');
+    // Path-2 (per-artist) admitted, NOT path-3 — confirms reading order.
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.admittedByRescue).toBe(0);
   });
 });
 
@@ -240,7 +230,7 @@ describe('parseCatalogResponse — direct unit cases', () => {
       resultData: { itemsTotalCount: 0, items: [] },
       resultMsg: 'ok',
     };
-    expect(parseCatalogResponse(empty, SOURCE_URL)).toEqual([]);
+    expect(parseCatalogResponse(empty, SOURCE_URL, { cache: emptyCache() }).records).toEqual([]);
   });
 
   it('skips items with missing/empty pro, indexTitle, or indexSong', () => {
@@ -249,39 +239,191 @@ describe('parseCatalogResponse — direct unit cases', () => {
       resultData: {
         itemsTotalCount: 4,
         items: [
-          // valid JP record
           { pro: 1, indexTitle: 'アイドル', indexSong: 'YOASOBI', publishdate: '2023-05-24' },
-          // missing pro
           { pro: null, indexTitle: 'アイドル2', indexSong: 'YOASOBI', publishdate: '2023-05-24' },
-          // empty title
           { pro: 2, indexTitle: '', indexSong: 'YOASOBI', publishdate: '2023-05-24' },
-          // empty artist
           { pro: 3, indexTitle: 'アイドル3', indexSong: '', publishdate: '2023-05-24' },
         ],
       },
     };
-    const records = parseCatalogResponse(json, SOURCE_URL);
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
     expect(records.length).toBe(1);
     expect(records[0]?.karaoke_numbers.tj).toBe('1');
   });
 
   it('throws when response is not an object', () => {
-    expect(() => parseCatalogResponse(null, SOURCE_URL)).toThrow(/not a JSON object/);
-    expect(() => parseCatalogResponse('a string', SOURCE_URL)).toThrow(/not a JSON object/);
-    expect(() => parseCatalogResponse(42, SOURCE_URL)).toThrow(/not a JSON object/);
+    expect(() => parseCatalogResponse(null, SOURCE_URL, { cache: emptyCache() })).toThrow(
+      /not a JSON object/,
+    );
+    expect(() => parseCatalogResponse('a string', SOURCE_URL, { cache: emptyCache() })).toThrow(
+      /not a JSON object/,
+    );
+    expect(() => parseCatalogResponse(42, SOURCE_URL, { cache: emptyCache() })).toThrow(
+      /not a JSON object/,
+    );
   });
 
   it('throws when resultData is missing or wrong shape', () => {
-    expect(() => parseCatalogResponse({}, SOURCE_URL)).toThrow(/resultData/);
-    expect(() => parseCatalogResponse({ resultData: 'oops' }, SOURCE_URL)).toThrow(/resultData/);
+    expect(() => parseCatalogResponse({}, SOURCE_URL, { cache: emptyCache() })).toThrow(
+      /resultData/,
+    );
+    expect(() =>
+      parseCatalogResponse({ resultData: 'oops' }, SOURCE_URL, { cache: emptyCache() }),
+    ).toThrow(/resultData/);
   });
 
   it('throws when items is not an array', () => {
     expect(() =>
-      parseCatalogResponse({ resultData: { items: 'not an array' } }, SOURCE_URL),
+      parseCatalogResponse({ resultData: { items: 'not an array' } }, SOURCE_URL, {
+        cache: emptyCache(),
+      }),
     ).toThrow(/items is not an array/);
-    expect(() => parseCatalogResponse({ resultData: { items: null } }, SOURCE_URL)).toThrow(
-      /items is not an array/,
-    );
+    expect(() =>
+      parseCatalogResponse({ resultData: { items: null } }, SOURCE_URL, { cache: emptyCache() }),
+    ).toThrow(/items is not an array/);
+  });
+
+  it('every kept record has Korean fields null and categories=["jpop"]', () => {
+    const cache = emptyCache();
+    // Tag every artist in the fixture so the filter passes everything.
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const fixture = {
+      resultCode: '99',
+      resultData: {
+        itemsTotalCount: 1,
+        items: [
+          { pro: 99, indexTitle: 'アイドル', indexSong: 'YOASOBI', publishdate: '2023-05-24' },
+        ],
+      },
+    };
+    const { records } = parseCatalogResponse(fixture, SOURCE_URL, { cache });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.title_ko).toBeNull();
+    expect(records[0]?.artist_ko).toBeNull();
+    expect(records[0]?.categories).toEqual(['jpop']);
+    expect(records[0]?.karaoke_numbers.ky).toBeNull();
+    expect(records[0]?.karaoke_numbers.joysound).toBeNull();
+  });
+});
+
+describe('shouldKeep — direct unit', () => {
+  it('returns true on path-1 hit (per-record JPN)', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['1'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    expect(shouldKeep('1', 'whatever', cache)).toBe(true);
+  });
+
+  it('returns true on path-2 hit (per-artist JPN) even without path-1 entry', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    expect(shouldKeep('1', 'YOASOBI', cache)).toBe(true);
+  });
+
+  it('returns true on path-3 hit (whitelist) even without path-1/2', () => {
+    const cache = emptyCache();
+    expect(shouldKeep('1', 'whatever', cache, new Set(['1']))).toBe(true);
+  });
+
+  it('returns false when all three paths miss', () => {
+    expect(shouldKeep('1', 'whatever', emptyCache())).toBe(false);
+  });
+});
+
+describe('parseCatalogResponse — KeepStats per-path admit counters', () => {
+  /**
+   * Reading order: per-artist (1) → per-record (2) → blog whitelist (3).
+   * "First to fire wins" — these tests verify that ordering shows up in the
+   * counters, not that "any-admit" semantics changed.
+   */
+  it('counts each kept record under exactly one path (first-to-fire)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          // by-artist only:
+          { pro: 1, indexTitle: 't1', indexSong: 'YOASOBI', publishdate: '2020-01-01' },
+          // by-pro only (artist not tagged):
+          { pro: 2, indexTitle: 't2', indexSong: 'UnknownActA', publishdate: '2020-01-01' },
+          // by-rescue only (no artist or pro tags):
+          { pro: 3, indexTitle: 't3', indexSong: 'UnknownActB', publishdate: '2020-01-01' },
+          // dropped (no path):
+          { pro: 4, indexTitle: 't4', indexSong: 'UnknownActC', publishdate: '2020-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    cache.proEnrichmentMap['2'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, {
+      cache,
+      forceIncludeTjNumbers: new Set(['3']),
+    });
+    expect(records).toHaveLength(3);
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.admittedByPro).toBe(1);
+    expect(stats.admittedByRescue).toBe(1);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('per-artist beats per-record when both tags say JPN (reading-order check)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 99, indexTitle: 't', indexSong: 'YOASOBI', publishdate: '2020-01-01' }],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    cache.proEnrichmentMap['99'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.admittedByPro).toBe(0);
+  });
+
+  it('per-record beats blog rescue when both would admit (reading-order check)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 99, indexTitle: 't', indexSong: 'UnknownAct', publishdate: '2020-01-01' }],
+      },
+    };
+    const cache = emptyCache();
+    cache.proEnrichmentMap['99'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { stats } = parseCatalogResponse(json, SOURCE_URL, {
+      cache,
+      forceIncludeTjNumbers: new Set(['99']),
+    });
+    expect(stats.admittedByPro).toBe(1);
+    expect(stats.admittedByRescue).toBe(0);
   });
 });

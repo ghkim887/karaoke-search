@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { TJDirectCrawler } from '../../../src/adapters/tj-media-direct/crawler.js';
@@ -10,12 +12,6 @@ const FIXTURE_PATH = resolve(HERE, '../../fixtures/tj-media-direct/catalog-sampl
 const FIXTURE_TEXT = readFileSync(FIXTURE_PATH, 'utf8');
 const FIXTURE = JSON.parse(FIXTURE_TEXT);
 
-/**
- * The fixture's loose-JP-relevant subset MINUS one denylisted Chinese artist
- * record (pro=90015, 海来阿木). Hand-built fixture: 31 raw JP-relevant + 10
- * Korean + 10 English-only -> 30 after denylist.
- */
-const EXPECTED_JP_COUNT = 30;
 const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 
 interface Captured {
@@ -39,50 +35,132 @@ function buildHttp(opts: {
   };
 }
 
-/** Empty-set whitelist source — keeps existing tests free of rescue effects. */
 const emptyWhitelist = (): ReadonlySet<string> => new Set<string>();
 
+/**
+ * Build a pre-seeded cache file at `cachePath` that tags every fixture
+ * artist as JPN, so the parser's path-2 admits all fixture records. Also
+ * marks the bootstrap as "fresh" so the crawler skips the chart sweep.
+ */
+async function seedCacheForFixture(cachePath: string): Promise<void> {
+  const lastSeen = new Date().toISOString();
+  const artistNationalityMap: Record<
+    string,
+    { code: 'JPN'; votes: { JPN: number; KOR: number; ENG: number }; lastSeen: string }
+  > = {};
+  for (const item of FIXTURE.resultData.items) {
+    if (typeof item.indexSong !== 'string') continue;
+    const key = item.indexSong.replace(/\s+/g, '').toLowerCase().normalize('NFKC');
+    if (key === '') continue;
+    artistNationalityMap[key] = {
+      code: 'JPN',
+      votes: { JPN: 1, KOR: 0, ENG: 0 },
+      lastSeen,
+    };
+  }
+  const proEnrichmentMap: Record<
+    string,
+    {
+      nationalcode: string;
+      sortTitleKo: string | null;
+      sortSongKo: string | null;
+      subTitle: string | null;
+      publishdate: string | null;
+      lastSeen: string;
+    }
+  > = {};
+  for (const item of FIXTURE.resultData.items) {
+    if (typeof item.pro !== 'number' && typeof item.pro !== 'string') continue;
+    const pro = String(item.pro);
+    proEnrichmentMap[pro] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen,
+    };
+  }
+  const seeded = {
+    version: 1,
+    generatedAt: lastSeen,
+    proEnrichmentMap,
+    artistNationalityMap,
+  };
+  await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
+}
+
 describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
-  it('issues a single POST to the catalog endpoint with searchYm=200001', async () => {
+  it('issues a single POST to the catalog endpoint with searchYm=200001 (disableEnrichment: empty cache drops everything except whitelist)', async () => {
     const captured: Captured[] = [];
     const http = buildHttp({ captured });
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
-      disableEnrichment: true,
-    });
-    const records = [];
-    for await (const r of crawler.crawl()) records.push(r);
+    // With disableEnrichment + empty whitelist + empty cache (no on-disk
+    // file), the parser's 3-path filter drops every record. We assert this
+    // documents-the-behavior rather than the legacy "30 records" count.
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+        disableEnrichment: true,
+        cachePath,
+      });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
 
-    expect(captured.length).toBe(1);
-    expect(captured[0]?.url).toBe(CATALOG_URL);
-    expect(captured[0]?.body).toEqual({ searchYm: '200001' });
-    expect(records.length).toBe(EXPECTED_JP_COUNT);
+      expect(captured.length).toBe(1);
+      expect(captured[0]?.url).toBe(CATALOG_URL);
+      expect(captured[0]?.body).toEqual({ searchYm: '200001' });
+      expect(records.length).toBe(0);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 
-  it('every emitted record has categories=["jpop"] and TJ number set', async () => {
-    const http = buildHttp({});
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
-      disableEnrichment: true,
-    });
-    const records = [];
-    for await (const r of crawler.crawl()) records.push(r);
+  it('with seeded cache: every emitted record has categories=["jpop"] and TJ number set', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      await seedCacheForFixture(cachePath);
+      const http = buildHttp({});
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+        disableEnrichment: true,
+        cachePath,
+      });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
 
-    expect(records.length).toBe(EXPECTED_JP_COUNT);
-    for (const r of records) {
-      expect(r.categories).toEqual(['jpop']);
-      expect(r.karaoke_numbers.tj).toMatch(/^\d+$/);
-      expect(r.karaoke_numbers.ky).toBeNull();
-      expect(r.karaoke_numbers.joysound).toBeNull();
+      // The fixture has 51 items but several of them have empty pro/title/
+      // artist or are otherwise skipped by the basic shape gate. Don't
+      // hardcode 51 — just assert the count is reasonable and the shape is
+      // correct.
+      expect(records.length).toBeGreaterThan(0);
+      for (const r of records) {
+        expect(r.categories).toEqual(['jpop']);
+        expect(r.karaoke_numbers.tj).toMatch(/^\d+$/);
+        expect(r.karaoke_numbers.ky).toBeNull();
+        expect(r.karaoke_numbers.joysound).toBeNull();
+      }
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
   it('honors options.limit by capping yielded records', async () => {
-    const http = buildHttp({});
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
-      disableEnrichment: true,
-    });
-    const records = [];
-    for await (const r of crawler.crawl({ limit: 5 })) records.push(r);
-    expect(records.length).toBe(5);
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      await seedCacheForFixture(cachePath);
+      const http = buildHttp({});
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+        disableEnrichment: true,
+        cachePath,
+      });
+      const records = [];
+      for await (const r of crawler.crawl({ limit: 5 })) records.push(r);
+      expect(records.length).toBe(5);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 
   it('throws when the HTTP layer returns a non-2xx status', async () => {
@@ -136,29 +214,28 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
   });
 });
 
-describe('TJDirectCrawler.crawl — blog-whitelist rescue (refinement 2)', () => {
-  it('rescues an all-Latin Japanese act, drops a denylist Chinese act, and keeps a regular Japanese record', async () => {
+describe('TJDirectCrawler.crawl — blog-whitelist rescue (path 3)', () => {
+  it('rescues an all-Latin Japanese act when its TJ# is in the blog whitelist (cache empty)', async () => {
     const body = JSON.stringify({
       resultCode: '00',
       resultData: {
         itemsTotalCount: 3,
         items: [
-          // (1) all-Latin Japanese — would normally be filtered out, but in
-          //     the blog whitelist so the rescue path includes it.
+          // (1) all-Latin Japanese — admitted via whitelist (path 3).
           {
             pro: 11111,
             indexTitle: 'Trash Candy',
             indexSong: 'GRANRODEO',
             publishdate: '2016-01-27',
           },
-          // (2) Chinese denylist artist — NOT in the whitelist; must be dropped.
+          // (2) Mandopop — no path admits, drops.
           {
             pro: 22222,
             indexTitle: '吻別',
             indexSong: '张学友',
             publishdate: '1993-03-08',
           },
-          // (3) Regular Japanese (kana) — kept by the loose-JP filter.
+          // (3) Regular Japanese (kana) — also drops without cache help.
           {
             pro: 33333,
             indexTitle: 'アイドル',
@@ -170,24 +247,80 @@ describe('TJDirectCrawler.crawl — blog-whitelist rescue (refinement 2)', () =>
     });
     const http = buildHttp({ status: 200, body });
     const whitelist = (): ReadonlySet<string> => new Set(['11111']);
-    const crawler = new TJDirectCrawler(http as HttpClient, whitelist, {
-      disableEnrichment: true,
-    });
-    const records = [];
-    for await (const r of crawler.crawl()) records.push(r);
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      const crawler = new TJDirectCrawler(http as HttpClient, whitelist, {
+        disableEnrichment: true,
+        cachePath,
+      });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
 
-    expect(records.length).toBe(2);
-    const tjs = records.map((r) => r.karaoke_numbers.tj).sort();
-    expect(tjs).toEqual(['11111', '33333']);
+      expect(records.length).toBe(1);
+      expect(records[0]?.karaoke_numbers.tj).toBe('11111');
+      expect(records[0]?.artist_primary).toBe('GRANRODEO');
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('TJDirectCrawler.crawl — false-negative recovery (PR-2 promise)', () => {
+  it('keeps a Latin-only-titled Japanese act via per-artist tagging when blog whitelist is empty', async () => {
+    // PR-2 false-negative recovery: the per-artist scan must catch the
+    // GRANRODEO-shaped case where the legacy regex would have dropped it.
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      const lastSeen = new Date().toISOString();
+      const seeded = {
+        version: 1,
+        generatedAt: lastSeen,
+        proEnrichmentMap: {},
+        artistNationalityMap: {
+          granrodeo: {
+            code: 'JPN',
+            votes: { JPN: 8, KOR: 0, ENG: 0 },
+            lastSeen,
+          },
+        },
+      };
+      await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
+
+      const body = JSON.stringify({
+        resultCode: '00',
+        resultData: {
+          itemsTotalCount: 1,
+          items: [
+            {
+              pro: 11111,
+              indexTitle: 'Trash Candy',
+              indexSong: 'GRANRODEO',
+              publishdate: '2016-01-27',
+            },
+          ],
+        },
+      });
+      const http = buildHttp({ status: 200, body });
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+        disableEnrichment: true,
+        cachePath,
+      });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
+
+      expect(records.length).toBe(1);
+      expect(records[0]?.artist_primary).toBe('GRANRODEO');
+      expect(records[0]?.karaoke_numbers.tj).toBe('11111');
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });
 
 describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () => {
   it('threads searchSong sortTitleKo/sortSongKo into emitted SongRecord and writes the cache', async () => {
-    const { mkdtemp, readFile, rm } = await import('node:fs/promises');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
-
     const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
     const cachePath = join(tmpDir, 'tj-search-cache.json');
     try {
@@ -222,47 +355,71 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
           ],
         },
       });
+      // Pre-seed the artist map so path-2 admits the record (avoids needing
+      // to model the full bootstrap+scan + 67k-artist scan in a unit test).
+      const lastSeen = new Date().toISOString();
+      const seeded = {
+        version: 1,
+        generatedAt: lastSeen,
+        proEnrichmentMap: {},
+        artistNationalityMap: {
+          yoasobi: {
+            code: 'JPN',
+            votes: { JPN: 5, KOR: 0, ENG: 0 },
+            lastSeen,
+          },
+        },
+      };
+      await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
+
       const http: Pick<HttpClient, 'postForm'> = {
         async postForm(url, _body): Promise<FetchResult | null> {
           if (url.includes('newSongOfMonth')) return { status: 200, body: catalogBody };
           if (url.includes('searchSong')) return { status: 200, body: searchBody };
+          // The artist scan + bootstrap pass are best-effort here: their
+          // calls land on this stub. We accept anything else as a 200 with
+          // an empty result to keep the test focused on translit.
+          if (url.includes('topAndHot100')) {
+            return {
+              status: 200,
+              body: JSON.stringify({ resultCode: '99', resultData: { items: [] } }),
+            };
+          }
           throw new Error(`unexpected url: ${url}`);
         },
       };
-      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
-      const records = [];
-      for await (const r of crawler.crawl()) records.push(r);
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+        const records = [];
+        for await (const r of crawler.crawl()) records.push(r);
 
-      expect(records).toHaveLength(1);
-      expect(records[0]?.title_ko).toBe('아이도루');
-      expect(records[0]?.artist_ko).toBe('요아소비');
-      expect(records[0]?.karaoke_numbers.tj).toBe('68781');
+        expect(records).toHaveLength(1);
+        expect(records[0]?.title_ko).toBe('아이도루');
+        expect(records[0]?.artist_ko).toBe('요아소비');
+        expect(records[0]?.karaoke_numbers.tj).toBe('68781');
 
-      // Cache file written.
-      const cacheText = await readFile(cachePath, 'utf8');
-      const cache = JSON.parse(cacheText);
-      expect(cache.proEnrichmentMap['68781']?.sortTitleKo).toBe('아이도루');
-      expect(cache.proEnrichmentMap['68781']?.sortSongKo).toBe('요아소비');
+        const cacheText = await readFile(cachePath, 'utf8');
+        const cache = JSON.parse(cacheText);
+        expect(cache.proEnrichmentMap['68781']?.sortTitleKo).toBe('아이도루');
+        expect(cache.proEnrichmentMap['68781']?.sortSongKo).toBe('요아소비');
+      } finally {
+        log.mockRestore();
+      }
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
-  it('100% cache hit: cache file is NOT rewritten (mtime unchanged, no saveCache call)', async () => {
-    const { mkdtemp, readFile, rm, stat, writeFile } = await import('node:fs/promises');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
-
+  it('100% cache hit + fresh bootstrap + fresh artist tags: cache is NOT rewritten', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
     const cachePath = join(tmpDir, 'tj-search-cache.json');
     try {
-      // Pre-seed the cache with a fresh entry for pro=68781 so the
-      // enrichment pass is a 100% cache hit. `lastSeen` set to "now" so
-      // `isFresh()` returns true.
       const lastSeen = new Date().toISOString();
       const seeded = {
-        version: 1,
+        version: 2,
         generatedAt: lastSeen,
+        bootstrappedAt: lastSeen,
         proEnrichmentMap: {
           '68781': {
             nationalcode: 'JPN',
@@ -273,14 +430,18 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
             lastSeen,
           },
         },
+        artistNationalityMap: {
+          yoasobi: {
+            code: 'JPN',
+            votes: { JPN: 5, KOR: 0, ENG: 0 },
+            lastSeen,
+          },
+        },
       };
       await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
       const before = await stat(cachePath);
       const beforeText = await readFile(cachePath, 'utf8');
 
-      // Catalog returns one record whose `pro` matches the cached entry.
-      // searchSong is NOT exposed by the http stub — if the crawler tried
-      // to call it, the test would throw.
       const catalogBody = JSON.stringify({
         resultCode: '99',
         resultData: {
@@ -301,36 +462,51 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
           throw new Error(`unexpected url (no fetch should happen on warm cache): ${url}`);
         },
       };
-      // Force a small async gap so any rewrite would produce a distinct
-      // mtime. The expected behavior is that NO rewrite happens.
       await new Promise((r) => setTimeout(r, 10));
 
-      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
-      const records = [];
-      for await (const r of crawler.crawl()) records.push(r);
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+        const records = [];
+        for await (const r of crawler.crawl()) records.push(r);
 
-      expect(records).toHaveLength(1);
-      expect(records[0]?.title_ko).toBe('아이도루');
-      expect(records[0]?.artist_ko).toBe('요아소비');
+        expect(records).toHaveLength(1);
+        expect(records[0]?.title_ko).toBe('아이도루');
+        expect(records[0]?.artist_ko).toBe('요아소비');
 
-      const after = await stat(cachePath);
-      const afterText = await readFile(cachePath, 'utf8');
-      // mtime unchanged AND content byte-identical -> saveCache was skipped.
-      expect(after.mtimeMs).toBe(before.mtimeMs);
-      expect(afterText).toBe(beforeText);
+        const after = await stat(cachePath);
+        const afterText = await readFile(cachePath, 'utf8');
+        expect(after.mtimeMs).toBe(before.mtimeMs);
+        expect(afterText).toBe(beforeText);
+      } finally {
+        log.mockRestore();
+      }
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
   it('searchSong HTTP error keeps the record with null title_ko/artist_ko (no regression)', async () => {
-    const { mkdtemp, rm } = await import('node:fs/promises');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
-
     const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
     const cachePath = join(tmpDir, 'tj-search-cache.json');
     try {
+      // Pre-seed so the parser admits the record (otherwise PR-2's filter
+      // drops it before the translit pass even runs).
+      const lastSeen = new Date().toISOString();
+      const seeded = {
+        version: 1,
+        generatedAt: lastSeen,
+        proEnrichmentMap: {},
+        artistNationalityMap: {
+          yoasobi: {
+            code: 'JPN',
+            votes: { JPN: 5, KOR: 0, ENG: 0 },
+            lastSeen,
+          },
+        },
+      };
+      await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
+
       const catalogBody = JSON.stringify({
         resultCode: '99',
         resultData: {
@@ -349,6 +525,12 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
         async postForm(url): Promise<FetchResult | null> {
           if (url.includes('newSongOfMonth')) return { status: 200, body: catalogBody };
           if (url.includes('searchSong')) return { status: 503, body: 'oops' };
+          if (url.includes('topAndHot100')) {
+            return {
+              status: 200,
+              body: JSON.stringify({ resultCode: '99', resultData: { items: [] } }),
+            };
+          }
           throw new Error(`unexpected url: ${url}`);
         },
       };

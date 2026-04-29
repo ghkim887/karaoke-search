@@ -4,6 +4,26 @@
 **Owner:** TJ-direct adapter (`packages/crawler/src/adapters/tj-media-direct/`)
 **Depends on:** `docs/research/2026-04-29-tj-media-api-surface.md`
 
+## Status
+
+- **PR-1 (translit-only enrichment) — SHIPPED 2026-04-29.** Commits: `4b3ad55` (research + plan), `23f1a95` (code), `12bf4fc` (4,011-record cache pre-seed).
+- **PR-2 (Option D + Option C bootstrap — full filter replacement) — SHIPPED 2026-04-29.** Commits TBD by orchestrator post-merge. Code-level changes:
+  - `searchSong.ts`: added `searchSongByArtist(http, searchTxt, nationType='')` for `strType=2` artist queries; centralized `sanitizeSearchTxt` apostrophe-strip across both helpers.
+  - `cache.ts`: lifted `artistNationalityMap` out of the forward-compat `extras` bag into a typed top-level field with `ArtistNationalityEntry`; added `isArtistNationalityFresh` (90-day TTL) and `isBootstrapFresh` (7-day TTL) helpers.
+  - `bootstrapCharts.ts` (new): Option-C `topAndHot100?strType=3` sweep over rolling 2-year weekly windows, deduped by `pro`, ≥3-distinct-pro confidence threshold for JPN tagging. Idempotent: existing mixed-vote (`searchSong`-derived) entries are not overwritten by chart evidence.
+  - `enrichArtistMap.ts` (new): per-distinct-artist `searchSong?strType=2` scan with exact-`indexSong`-match vote tally; classifies as `JPN`/`KOR`/`ENG`/`AMBIGUOUS`/`UNKNOWN`. Cache-hit short-circuit; transport errors leave the cache untouched so the next crawl retries.
+  - `parser.ts`: replaced JP-regex + `CHINESE_ARTIST_DENYLIST` (gone) + rescue with the 3-path `shouldKeep` chain — per-record JPN OR per-artist JPN OR blog-whitelist rescue. `ParseOptions.cache` now required.
+  - `crawler.ts`: orchestrates bulk fetch → cache load → bootstrap (if stale) → per-artist scan → parse/filter → translit pass → save. `disableEnrichment: true` skips enrichment passes for tests; the parser still consumes the on-disk cache.
+  - `normalize.ts` (new shared): `normalizeForMatch` (whitespace-collapse + lowercase + NFKC, single source of truth for cache keys) + `sanitizeSearchTxt` (apostrophe-strip).
+- **Pre-seed (artist scan + chart bootstrap + per-record fallback) — PENDING.** Run live with the new code, commit the resulting cache + crawl output for CI smoke.
+
+## Post-mortem (PR-1 lessons that informed PR-2)
+
+- **Per-record title-search miss rate: 33%** (1,950 of 5,961 fetches found no `pro` match). Plan estimated ≤20%. Lesson: title-search alone is not reliable enough to be the sole confirmation path. PR-2 elevates the **per-artist** scan to primary; per-record translit is the fallback for translit-only enrichment, not the filter authority.
+- **TJ server apostrophe bug.** ≥2 records observed during the PR-1 pre-seed (`pro=68988`, `pro=68992`, IDOLiSH7 OST) trigger `resultCode=04 / 알수 없는 에러` because their titles contain ASCII apostrophes. Mitigation: strip `'` from `searchTxt` before sending. PR-2 centralizes the strip into a single `sanitizeSearchTxt` helper applied to both title and artist queries.
+- **Per-artist primacy lesson.** Latin-titled Japanese acts (e.g. GRANRODEO) that title-search would miss are now caught by the artist-scan vote tally — the false-negative recovery promise of the plan. The blog rescue stays as defense-in-depth, not a primary path.
+
+
 ---
 
 ## Goal
