@@ -24,19 +24,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320  # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
       - name: Restore HTTP cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: .cache/http.json
           key: "crawl-http-${{ github.run_id }}"
@@ -56,12 +56,15 @@ jobs:
         run: node -e "require('node:fs').renameSync('apps/web/public/data/songs.json.tmp','apps/web/public/data/songs.json')"
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.11'
 
       - name: Apply TJ anisong PDF section tags
         run: python scripts/ingest-anisong-pdf.py
+
+      - name: Validate post-ingest songs.json against schema
+        run: node scripts/validate-songs-json.mjs apps/web/public/data/songs.json
 
       - name: Compose PR body with merge-conflict summary
         id: pr_body
@@ -95,7 +98,7 @@ jobs:
           gh pr list --label crawl-output --state open --json number -q '.[].number' | xargs -r -n1 gh pr close
 
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c  # v6.1.0
         with:
           branch: "crawl/${{ github.run_id }}"
           commit-message: "data: weekly crawl ${{ github.run_id }}"
