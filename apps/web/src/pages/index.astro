@@ -380,6 +380,8 @@ const title = '일본 노래 검색기';
         color: var(--rui-pill-secondary-fg);
         cursor: pointer;
         transition: opacity 120ms ease;
+        white-space: nowrap;     /* never wrap chip text */
+        flex-shrink: 0;          /* preserve natural width in flex/scroll containers */
       }
 
       .chip:hover {
@@ -555,9 +557,21 @@ const title = '일본 노래 검색기';
           letter-spacing: 0.16px;
         }
 
-        /* In-row gap between chips (category row and vendor row each) */
+        /* In-row gap between chips (category row and vendor row each).
+           Horizontal-scroll affordance mirrors .empty-section-chips mobile
+           rule — edge-bleed to screen edge, thin scrollbar, no wrap. */
         .chip-group {
           gap: 6px;
+          flex-wrap: nowrap;       /* don't break to a second row */
+          overflow-x: auto;        /* allow horizontal scroll if needed */
+          margin-left: -1.25rem;
+          margin-right: -1.25rem;
+          padding-left: 1.25rem;
+          padding-right: 1.25rem;
+          padding-bottom: 6px;     /* breathing room for the thin scrollbar */
+          scrollbar-width: thin;
+          scrollbar-color: var(--rui-border) transparent;
+          -webkit-overflow-scrolling: touch;
         }
 
         /* Inter-row gap between category chip row and vendor chip row */
