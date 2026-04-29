@@ -65,9 +65,19 @@ pnpm --filter @karaoke/crawler start --source jpop-playlist-blog --limit 5
 pnpm test
 ```
 
+Additional test suites:
+
+```bash
+# Python regression tests for the anisong PDF ingest (13 unittest cases)
+python -m unittest scripts/test_ingest_anisong_pdf.py
+
+# Validate the songs corpus against the @karaoke/schema type (CI gate)
+node scripts/validate-songs-json.mjs apps/web/public/data/songs.json
+```
+
 ## Deployment
 
-The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub Actions crawls fetch fresh data and open a pull request labeled `crawl-output` for review and merge.
+The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub Actions crawls fetch fresh data and open a pull request labeled `crawl-output` for review and merge. The deploy workflow also runs Playwright E2E tests as a parallel job against an in-CI `astro preview` server (using the build artifact) so regressions surface before the Pages deployment completes.
 
 ## Roadmap
 

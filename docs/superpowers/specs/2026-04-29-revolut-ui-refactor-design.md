@@ -182,3 +182,12 @@ line regardless of viewport width.
 Search-input focus-ring (DESIGN.md §6 `0 0 0 0.125rem` shadow) needed
 0.5rem padding-bottom on the input wrap to clear the sticky tab bar's
 opaque background.
+
+### 14.2 — Audit follow-up: songCount + ResultList + CSS extraction (post-ship iteration)
+
+A multi-agent code audit at HEAD `d1d3201` flagged three frontend cleanup items that landed in commit `6b8763d`:
+
+- **`SONG_COUNT_DISPLAY` literal replaced** with a build-time-derived prop. `apps/web/src/pages/index.astro` frontmatter reads `apps/web/public/data/songs.json` length and passes it as `songCount` to `<App client:load songCount={count}/>`. The next weekly crawl that bumps record count now ships an accurate label without manual editing.
+- **App.tsx render refactor** — the deeply-nested 6-branch ternary became a typed `RenderMode` discriminator (`'error' | 'loading' | 'favorites-empty' | 'favorites' | 'browse-empty' | 'browse'`) + `renderBody()` switch. The favorites/browse list-render duplication extracted into a new `<ResultList>` component. Behavior unchanged — all 12 App.test.tsx cases pass without rewrite, including the cd54633 loading-mitigation that co-renders `<EmptyState>` on Browse+empty+loading.
+- **CSS extraction** — `@font-face` declarations moved to `apps/web/public/fonts/fonts.css` (linked via `<head>`), `:root` token block + light-mode media + desktop `--header-height` override moved to `apps/web/src/styles/tokens.css` (imported via Astro frontmatter). `index.astro` dropped 120 lines (1041 → 921). Free bonus: silenced the prior 8 Vite "@font-face didn't resolve at build time" warnings since Vite no longer parses those URLs.
+- **Footer.astro CI observability** — the empty git-log catch now `console.warn`s when `process.env.CI === 'true'` so deploy logs surface the regression instead of silently rendering an empty date.
