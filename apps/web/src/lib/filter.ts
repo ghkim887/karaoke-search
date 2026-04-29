@@ -1,23 +1,18 @@
-import type { Category, SongRecord } from '@karaoke/schema';
+import type { SongRecord } from '@karaoke/schema';
+import type { CategoryFilter } from '../components/CategoryChips.js';
 import type { Vendor } from '../components/VendorChips.js';
 
 /**
- * AND filter: a record passes only when every selected category is present in
- * its `categories` array. An empty `selected` set is a no-op (returns input).
+ * Single-select category filter. `'all'` is a no-op (returns input unchanged).
+ * Otherwise keeps records whose `categories` array contains the selected
+ * category. Per the schema's mutual-exclusivity rule, `anime` and `vocaloid`
+ * records are not also `jpop`, so the single-category check is unambiguous.
  *
  * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-design.md, UI section.
  */
-export function filterByCategories(
-  records: SongRecord[],
-  selected: ReadonlySet<Category>,
-): SongRecord[] {
-  if (selected.size === 0) return records;
-  return records.filter((r) => {
-    for (const c of selected) {
-      if (!r.categories.includes(c)) return false;
-    }
-    return true;
-  });
+export function filterByCategory(records: SongRecord[], selected: CategoryFilter): SongRecord[] {
+  if (selected === 'all') return records;
+  return records.filter((r) => r.categories.includes(selected));
 }
 
 /**

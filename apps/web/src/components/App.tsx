@@ -1,9 +1,10 @@
-import type { Category, SongRecord } from '@karaoke/schema';
+import type { SongRecord } from '@karaoke/schema';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useFavorites } from '../lib/favorites.js';
-import { filterByCategories, filterByVendors } from '../lib/filter.js';
+import { filterByCategory, filterByVendors } from '../lib/filter.js';
 import type { IndexBundle } from '../lib/search.js';
 import { loadIndex } from '../lib/search.js';
+import type { CategoryFilter } from './CategoryChips.js';
 import { CategoryChips } from './CategoryChips.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
@@ -41,7 +42,7 @@ function matchesQuery(record: SongRecord, query: string): boolean {
 /**
  * Single root island. Fetches `/data/songs.json` once on mount, builds the
  * MiniSearch index, then re-runs queries reactively on `query` /
- * `selectedCategories` changes. Results are capped at 50 (spec §UI).
+ * `categoryFilter` changes. Results are capped at 50 (spec §UI).
  *
  * `inputValue` is the controlled value shown in the `<input>` — it updates
  * immediately on every keystroke (or when a featured-chip is clicked).
@@ -55,9 +56,7 @@ export function App() {
   const [inputValue, setInputValue] = useState('');
   // Debounced search query — only updated after 150 ms of quiet.
   const [query, setQuery] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<ReadonlySet<Category>>(
-    () => new Set(),
-  );
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const [activeTab, setActiveTab] = useState<TabId>('browse');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,18 +131,9 @@ export function App() {
       }
       candidates = records;
     }
-    const byCategory = filterByCategories(candidates, selectedCategories);
+    const byCategory = filterByCategory(candidates, categoryFilter);
     return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
-  }, [bundle, query, activeTab, favoriteIds, selectedCategories, selectedVendors]);
-
-  const toggleCategory = (c: Category) => {
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(c)) next.delete(c);
-      else next.add(c);
-      return next;
-    });
-  };
+  }, [bundle, query, activeTab, favoriteIds, categoryFilter, selectedVendors]);
 
   const toggleVendor = (v: Vendor) => {
     setSelectedVendors((prev) => {
@@ -193,7 +183,7 @@ export function App() {
         favoriteCount={favoriteIds.length}
         disabled={loading}
       />
-      <CategoryChips selected={selectedCategories} onToggle={toggleCategory} />
+      <CategoryChips selected={categoryFilter} onChange={setCategoryFilter} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
         {resultCount}건 / {resultCount} results
