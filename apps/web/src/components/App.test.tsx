@@ -63,6 +63,7 @@ const fixtureRecords: SongRecord[] = [
     categories: ['jpop'],
     karaoke_numbers: { tj: '12345', ky: null, joysound: null },
     source_url: 'https://example.invalid/1',
+    crawled_at: '2026-04-29T00:00:00.000Z',
   },
   {
     id: 'r2',
@@ -73,6 +74,7 @@ const fixtureRecords: SongRecord[] = [
     categories: ['anime'],
     karaoke_numbers: { tj: '67890', ky: null, joysound: null },
     source_url: 'https://example.invalid/2',
+    crawled_at: '2026-04-29T00:00:00.000Z',
   },
   {
     id: 'r3',
@@ -83,6 +85,7 @@ const fixtureRecords: SongRecord[] = [
     categories: ['vocaloid'],
     karaoke_numbers: { tj: null, ky: '11111', joysound: null },
     source_url: 'https://example.invalid/3',
+    crawled_at: '2026-04-29T00:00:00.000Z',
   },
 ];
 

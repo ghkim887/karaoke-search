@@ -13,6 +13,7 @@ const sample: SongRecord = {
   categories: ['jpop'],
   karaoke_numbers: { tj: '12345', ky: null, joysound: null },
   source_url: 'https://example.invalid/yoasobi',
+  crawled_at: '2026-04-29T00:00:00.000Z',
 };
 
 describe('ResultCard favorite-star', () => {
