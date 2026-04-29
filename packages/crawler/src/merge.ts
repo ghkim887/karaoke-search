@@ -1,4 +1,9 @@
-import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
+import {
+  type Category,
+  type KaraokeNumbers,
+  type SongRecord,
+  applyCategoryExclusivity as applyCategoryExclusivitySet,
+} from '@karaoke/schema';
 import { normalize } from './normalize.js';
 
 /**
@@ -200,25 +205,23 @@ function mergeKaraokeNumbers(
 }
 
 /**
- * Apply the category mutual-exclusivity rule: if `cats` contains either
- * `anime` or `vocaloid` (or both), `jpop` is dropped. The rule never
- * empties the array — it only triggers when at least one of `anime` /
- * `vocaloid` is present, so the surviving array always has a member.
- * (Note: the schema's `categories.minItems: 1` makes an empty input
- * unreachable in production — defensive but unreachable.)
+ * Array-flavored adapter over `applyCategoryExclusivitySet` (priority:
+ * vocaloid > anime > jpop). Used by the merger's `mergeCategories` and by
+ * `merge.test.ts`. The rationale for the priority is that PDF-section signal
+ * (vocaloid) is more specific than blog-adapter keyword matching (anime),
+ * which in turn is more specific than the catch-all `jpop`.
  *
  * Examples:
- *   ['jpop']                       -> ['jpop']            (unchanged)
+ *   ['jpop']                       -> ['jpop']      (unchanged)
  *   ['jpop', 'anime']              -> ['anime']
  *   ['jpop', 'vocaloid']           -> ['vocaloid']
- *   ['jpop', 'anime', 'vocaloid']  -> ['anime', 'vocaloid']
- *   ['anime', 'vocaloid']          -> ['anime', 'vocaloid'] (unchanged)
+ *   ['anime', 'vocaloid']          -> ['vocaloid']  (vocaloid wins)
+ *   ['jpop', 'anime', 'vocaloid']  -> ['vocaloid']
  */
 export function applyCategoryExclusivity(cats: Category[]): Category[] {
-  if (cats.includes('anime') || cats.includes('vocaloid')) {
-    return cats.filter((c) => c !== 'jpop');
-  }
-  return cats;
+  const set = new Set(cats);
+  applyCategoryExclusivitySet(set);
+  return [...set].sort();
 }
 
 function mergeCategories(cluster: SongRecord[]): Category[] {
@@ -226,7 +229,8 @@ function mergeCategories(cluster: SongRecord[]): Category[] {
   for (const r of cluster) {
     for (const c of r.categories) set.add(c);
   }
-  return applyCategoryExclusivity([...set].sort());
+  applyCategoryExclusivitySet(set);
+  return [...set].sort();
 }
 
 function mergeCluster(

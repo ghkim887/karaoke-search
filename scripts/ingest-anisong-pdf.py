@@ -15,8 +15,9 @@ Behavior:
      (tj_code, title, artist, section).
   2. Drops existing tjpdf-* records from apps/web/public/data/songs.json.
   3. For TJ codes already in the corpus (non-tjpdf-* rows), adds the section
-     ('anime' or 'vocaloid') to categories. Mutual-exclusivity rule from
-     CLAUDE.md: anime/vocaloid + jpop drops jpop.
+     ('anime' or 'vocaloid') to categories. Mutual-exclusivity rule (priority
+     vocaloid > anime > jpop): every record ends with at most one of
+     {jpop, vocaloid, anime}. See `_apply_category_exclusivity()` below.
   4. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}' and
      categories=[section].
 
@@ -635,6 +636,30 @@ def _assign_translit(
     return title_ko, artist_ko
 
 
+def _apply_category_exclusivity(cats: list[str]) -> list[str]:
+    """Apply the v2 category mutual-exclusivity rule: at most one of
+    {jpop, vocaloid, anime} per record. Priority: vocaloid > anime > jpop.
+
+    Mirrors `applyCategoryExclusivity` in `packages/schema/src/index.ts` and
+    `packages/crawler/src/merge.ts` so this script's output matches what the
+    JS pipeline would produce. Returns a new sorted list (does not mutate).
+
+    Examples:
+      ['jpop']                       -> ['jpop']      (unchanged)
+      ['jpop', 'anime']              -> ['anime']
+      ['jpop', 'vocaloid']           -> ['vocaloid']
+      ['anime', 'vocaloid']          -> ['vocaloid']  (vocaloid wins)
+      ['jpop', 'anime', 'vocaloid']  -> ['vocaloid']
+    """
+    s = set(cats)
+    if 'vocaloid' in s:
+        s.discard('anime')
+        s.discard('jpop')
+    elif 'anime' in s:
+        s.discard('jpop')
+    return sorted(s)
+
+
 def main() -> int:
     if not PDF_TEXT.exists():
         print(f'ERROR: missing {PDF_TEXT}', file=sys.stderr)
@@ -730,14 +755,10 @@ def main() -> int:
                 already_tagged += 1
             else:
                 cats.append(section)
-            # Apply CLAUDE.md mutual-exclusivity rule: records tagged 'anime' or
-            # 'vocaloid' cannot also be 'jpop'. Drop 'jpop' if present alongside
-            # the new tag.
-            if section in ('anime', 'vocaloid') and 'jpop' in cats:
-                cats = [c for c in cats if c != 'jpop']
-            # Deterministic sort.
-            cats = sorted(set(cats))
-            rec['categories'] = cats
+            # Apply v2 mutual-exclusivity rule (priority vocaloid > anime > jpop):
+            # records tagged 'vocaloid' lose 'anime' and 'jpop'; records tagged
+            # 'anime' lose 'jpop'. See `_apply_category_exclusivity()`.
+            rec['categories'] = _apply_category_exclusivity(cats)
             matched += 1
         else:
             # New record. Need non-empty title_primary; fall back to artist if title missing.

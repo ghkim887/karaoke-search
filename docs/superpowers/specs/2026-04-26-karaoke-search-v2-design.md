@@ -142,6 +142,9 @@ The flat v1 priority `blog > namuwiki > tj` is replaced by a per-field table. Di
 | `title_ko`, `artist_ko` | blog → namuwiki |
 | `karaoke_numbers.tj`, `.ky`, `.joysound` | union of all non-null values across the cluster; if multiple sources disagree on the SAME vendor's value, highest-priority source wins (priority order: blog > namuwiki > TJ-direct, kept from v1 for tiebreaking only) |
 | `categories` | set-union of all contributing sources, then mutual-exclusivity rule applied: if the union contains `anime` or `vocaloid`, `jpop` is dropped (final array sorted). The same rule is also encoded directly in the JSON Schema (`if/then` with `contains`), so `validateSongRecord` rejects non-conformant records up front; the merger's `applyCategoryExclusivity` is defense-in-depth for cluster-time set-unions. |
+
+> **v2.1 update (2026-04-29):** the rule was tightened to **3-way mutual exclusivity** with priority `vocaloid > anime > jpop`. The schema now enforces `maxItems: 1` on `categories`, and `applyCategoryExclusivity` (canonical helper exported from `@karaoke/schema`) drops the lower-priority tag when multiple are present. See CLAUDE.md gotcha for the current shape.
+
 | `id` | highest-priority contributing source's local ID (priority order: blog > namuwiki > TJ-direct), formed as `{source_slug}-{source_local_id}` |
 | `source_url` | highest-priority contributing source's URL (priority order: blog > namuwiki > TJ-direct) |
 | `crawled_at` | latest of contributing sources |

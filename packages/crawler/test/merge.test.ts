@@ -283,25 +283,25 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
   });
 });
 
-describe('applyCategoryExclusivity — jpop drops when anime/vocaloid present', () => {
+describe('applyCategoryExclusivity — priority vocaloid > anime > jpop', () => {
   it('leaves [jpop] unchanged', () => {
     expect(applyCategoryExclusivity(['jpop'])).toEqual(['jpop']);
   });
 
-  it('drops jpop from [jpop, anime]', () => {
+  it('drops jpop from [jpop, anime] -> [anime]', () => {
     expect(applyCategoryExclusivity(['anime', 'jpop'])).toEqual(['anime']);
   });
 
-  it('drops jpop from [jpop, vocaloid]', () => {
+  it('drops jpop from [jpop, vocaloid] -> [vocaloid]', () => {
     expect(applyCategoryExclusivity(['jpop', 'vocaloid'])).toEqual(['vocaloid']);
   });
 
-  it('drops jpop from [jpop, anime, vocaloid]', () => {
-    expect(applyCategoryExclusivity(['anime', 'jpop', 'vocaloid'])).toEqual(['anime', 'vocaloid']);
+  it('collapses [jpop, anime, vocaloid] -> [vocaloid]', () => {
+    expect(applyCategoryExclusivity(['anime', 'jpop', 'vocaloid'])).toEqual(['vocaloid']);
   });
 
-  it('leaves [anime, vocaloid] unchanged', () => {
-    expect(applyCategoryExclusivity(['anime', 'vocaloid'])).toEqual(['anime', 'vocaloid']);
+  it('drops anime from [anime, vocaloid] -> [vocaloid] (vocaloid wins)', () => {
+    expect(applyCategoryExclusivity(['anime', 'vocaloid'])).toEqual(['vocaloid']);
   });
 
   it('leaves [anime] unchanged', () => {
@@ -313,7 +313,7 @@ describe('applyCategoryExclusivity — jpop drops when anime/vocaloid present', 
   });
 });
 
-describe('mergeRecords — category exclusivity (set-union then jpop drop)', () => {
+describe('mergeRecords — category exclusivity (priority vocaloid > anime > jpop)', () => {
   it('strips jpop when a Tier A cluster set-unions to jpop+anime', () => {
     const tj = record({
       id: 'tj-50000',
@@ -337,7 +337,7 @@ describe('mergeRecords — category exclusivity (set-union then jpop drop)', () 
     expect(records[0]?.categories).toEqual(['anime']);
   });
 
-  it('strips jpop when a Tier A cluster set-unions to jpop+anime+vocaloid', () => {
+  it('collapses [jpop, anime, vocaloid] -> [vocaloid] when a Tier A cluster set-unions across all three', () => {
     const tj = record({
       id: 'tj-50001',
       source_url: 'https://tj.test/50001',
@@ -365,21 +365,52 @@ describe('mergeRecords — category exclusivity (set-union then jpop drop)', () 
 
     const { records } = mergeRecords([tj, blog, namu]);
     expect(records).toHaveLength(1);
-    expect(records[0]?.categories).toEqual(['anime', 'vocaloid']);
+    expect(records[0]?.categories).toEqual(['vocaloid']);
   });
 
-  it('preserves [anime, vocaloid] (the Black-Rock-Shooter case) untouched', () => {
-    const blog = record({
-      id: 'blog-202-0',
-      source_url: 'https://blog.test/202',
-      title_primary: 'ブラック★ロックシューター',
-      artist_primary: 'supercell',
-      karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['anime', 'vocaloid'],
+  it('two single-tag inputs anime + vocaloid collapse to [vocaloid] (vocaloid wins)', () => {
+    const a = record({
+      id: 'tj-50100',
+      source_url: 'https://tj.test/50100',
+      title_primary: 'Sample',
+      artist_primary: 'Artist',
+      karaoke_numbers: { tj: '50100', ky: null, joysound: null },
+      categories: ['anime'],
+    });
+    const b = record({
+      id: 'blog-300-0',
+      source_url: 'https://blog.test/300',
+      title_primary: 'Sample',
+      artist_primary: 'Artist',
+      karaoke_numbers: { tj: '50100', ky: null, joysound: null },
+      categories: ['vocaloid'],
     });
 
-    const { records } = mergeRecords([blog]);
+    const { records } = mergeRecords([a, b]);
     expect(records).toHaveLength(1);
-    expect(records[0]?.categories).toEqual(['anime', 'vocaloid']);
+    expect(records[0]?.categories).toEqual(['vocaloid']);
+  });
+
+  it('two anime inputs stay [anime] under set-union', () => {
+    const a = record({
+      id: 'tj-50200',
+      source_url: 'https://tj.test/50200',
+      title_primary: 'Anime A',
+      artist_primary: 'X',
+      karaoke_numbers: { tj: '50200', ky: null, joysound: null },
+      categories: ['anime'],
+    });
+    const b = record({
+      id: 'blog-301-0',
+      source_url: 'https://blog.test/301',
+      title_primary: 'Anime A',
+      artist_primary: 'X',
+      karaoke_numbers: { tj: '50200', ky: null, joysound: null },
+      categories: ['anime'],
+    });
+
+    const { records } = mergeRecords([a, b]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.categories).toEqual(['anime']);
   });
 });

@@ -61,6 +61,33 @@ export interface RawSongRecord {
 const CATEGORY_VALUES: readonly Category[] = ['jpop', 'vocaloid', 'anime'];
 
 /**
+ * Category mutual-exclusivity rule (priority: vocaloid > anime > jpop).
+ *
+ * After this rule is applied, every record has AT MOST one of
+ * `{jpop, vocaloid, anime}`. The priority encodes specificity: PDF section
+ * signal (vocaloid) is the most specific, blog index keyword (anime) is next,
+ * and jpop is the catch-all. Mutates `cats` in-place.
+ *
+ *   ['jpop']                       -> ['jpop']      (unchanged)
+ *   ['jpop', 'anime']              -> ['anime']
+ *   ['jpop', 'vocaloid']           -> ['vocaloid']
+ *   ['anime', 'vocaloid']          -> ['vocaloid']  (vocaloid wins)
+ *   ['jpop', 'anime', 'vocaloid']  -> ['vocaloid']
+ *
+ * Defense-in-depth alongside the JSON Schema's `categories` constraint, which
+ * also rejects any combination of two-or-more values from the live enum.
+ */
+export function applyCategoryExclusivity(cats: Set<Category>): void {
+  if (cats.has('vocaloid')) {
+    cats.delete('anime');
+    cats.delete('jpop');
+  } else if (cats.has('anime')) {
+    cats.delete('jpop');
+  }
+  // jpop alone is fine.
+}
+
+/**
  * Ajv-compatible JSON Schema for `SongRecord`.
  *
  * The `id` pattern `^[a-z0-9-]+-\d+$` permits multi-segment hyphens in the
@@ -108,22 +135,17 @@ export const songRecordSchema = {
     categories: {
       type: 'array',
       minItems: 1,
+      maxItems: 1,
       uniqueItems: true,
       items: {
         type: 'string',
         enum: CATEGORY_VALUES,
       },
-      // Mutual-exclusivity: if `anime` or `vocaloid` is present, `jpop`
-      // must NOT also be. `anime` + `vocaloid` together is allowed (e.g.,
-      // Black Rock Shooter). Defense-in-depth alongside the merger's
-      // `applyCategoryExclusivity` runtime safeguard.
-      if: {
-        anyOf: [{ contains: { const: 'anime' } }, { contains: { const: 'vocaloid' } }],
-      },
-      // biome-ignore lint/suspicious/noThenProperty: JSON Schema if/then keyword, not a Promise
-      then: {
-        not: { contains: { const: 'jpop' } },
-      },
+      // Three-way mutual-exclusivity: at most one of
+      // `{jpop, vocaloid, anime}` per record. Enforced via `maxItems: 1`
+      // (the live enum currently has exactly these three values, so the
+      // constraint reduces to "exactly one tag"). Defense-in-depth alongside
+      // the runtime `applyCategoryExclusivity` helper.
     },
     crawled_at: {
       type: 'string',
