@@ -187,7 +187,8 @@ describe('App tab behavior', () => {
     localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r3', 'r1', 'r2']));
     await mount();
     await clickFavoritesTab(host);
-    // Find the Vocaloid chip in the category-chip group (it's a fieldset).
+    // Find the Vocaloid chip in the category-chip group (rendered as a
+    // <div role="radiogroup">, not a <fieldset>).
     const chips = Array.from(host.querySelectorAll<HTMLButtonElement>('.chip-group .chip'));
     const vocaloidChip = chips.find((c) => c.textContent?.trim() === 'Vocaloid');
     expect(vocaloidChip).toBeDefined();

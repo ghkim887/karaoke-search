@@ -1,12 +1,37 @@
 ---
 import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatDbDate } from '../lib/footer-date.js';
 
-// Resolve the repo root so `git log` finds the tracked path regardless of the
-// build cwd. Footer.astro lives at apps/web/src/components/, so four ".." steps
-// land at the monorepo root.
-const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url));
+// Resolve the repo root by walking up for a `.git` marker. Audit found the
+// prior `../../../..` from `import.meta.url` was brittle: any future relocation
+// of this file (or change in Astro's build layout) silently lands in the wrong
+// directory. The `.git` walk is layout-independent.
+function findRepoRoot(start: string): string | null {
+  let dir = resolve(start);
+  const root = parse(dir).root;
+  while (dir !== root) {
+    if (existsSync(join(dir, '.git'))) return dir;
+    dir = dirname(dir);
+  }
+  return null;
+}
+
+const repoRoot =
+  findRepoRoot(fileURLToPath(import.meta.url)) ?? findRepoRoot(process.cwd()) ?? process.cwd();
+
+// Surface a build-config bug: if neither the source-tree walk nor the cwd walk
+// finds a `.git` marker, the git command below will run from `process.cwd()`
+// and likely return empty. Warn unconditionally — this is not environment-
+// dependent the way the missing-git-output case is.
+if (findRepoRoot(fileURLToPath(import.meta.url)) === null && findRepoRoot(process.cwd()) === null) {
+  console.warn(
+    '[Footer] could not resolve repo root via .git walk from import.meta.url or process.cwd();',
+    `falling back to process.cwd()=${process.cwd()}`,
+  );
+}
 
 let gitOutput = '';
 try {

@@ -5,14 +5,6 @@ export type TabId = 'browse' | 'favorites';
 interface TabBarProps {
   activeTab: TabId;
   onChange: (tab: TabId) => void;
-  /**
-   * Currently unused in render — kept on the prop surface for forward
-   * compatibility (e.g. a future count badge). The spec explicitly forbids
-   * surfacing the count in the label string itself, so this prop is
-   * intentionally not consumed. Renamed `_favoriteCount` in the destructure
-   * to silence Biome's `noUnusedVariables` rule.
-   */
-  favoriteCount: number;
   disabled: boolean;
 }
 
@@ -28,12 +20,7 @@ const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
  * `role="tablist"` is semantically incompatible with form-control children.
  * Active-tab click is a hard no-op at the source — parents don't dedupe.
  */
-export function TabBar({
-  activeTab,
-  onChange,
-  favoriteCount: _favoriteCount,
-  disabled,
-}: TabBarProps) {
+export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
   const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
   const handleKeyDown = (e: KeyboardEvent, idx: number) => {

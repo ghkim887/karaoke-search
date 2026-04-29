@@ -226,32 +226,28 @@ export function App({ songCount }: AppProps) {
         return loadingNode;
       case 'favorites-empty':
         return <FavoritesEmpty />;
-      case 'favorites':
-        return results.length === 0 ? (
-          <NoResults />
-        ) : (
-          <ResultList records={results} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
-        );
       case 'browse-empty':
         return <EmptyState onPickArtist={handlePickArtist} />;
+      case 'favorites':
       case 'browse':
+        // Identical render output post-`results` computation; the candidate-
+        // set divergence happens upstream in the useMemo above.
         return results.length === 0 ? (
           <NoResults />
         ) : (
           <ResultList records={results} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
         );
+      default: {
+        const _exhaustive: never = mode;
+        throw new Error(`Unhandled RenderMode: ${_exhaustive}`);
+      }
     }
   };
 
   return (
     <main class="results">
       <SearchBox value={inputValue} onInput={handleInputChange} disabled={loading} />
-      <TabBar
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        favoriteCount={favoriteIds.length}
-        disabled={loading}
-      />
+      <TabBar activeTab={activeTab} onChange={setActiveTab} disabled={loading} />
       <CategoryChips selected={categoryFilter} onChange={setCategoryFilter} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">

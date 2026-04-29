@@ -40,13 +40,11 @@ jobs:
   e2e:
     # Re-uses the `dist/` artifact from the `build` job — exercises the exact
     # bytes that `deploy-pages` ships, skipping the slow rebuild step.
-    #
-    # `continue-on-error: true` is intentional for the initial roll-out —
-    # the existing specs may flake against in-CI Linux Chromium in ways
-    # they don't on the developer's macOS/Windows. Flip to hard-fail (remove
-    # this line) once the job has been observed clean for a couple of runs.
     needs: build
     runs-on: ubuntu-latest
+    # AUDIT 2026-04-29: continue-on-error masks E2E regressions. Review by
+    # 2026-05-29: if the last 4 weekly runs are green, remove this flag and
+    # treat E2E as required; otherwise extend with a new review date.
     continue-on-error: true
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1

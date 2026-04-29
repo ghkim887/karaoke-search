@@ -9,25 +9,18 @@ describe('TabBar', () => {
     if (host?.parentNode) host.parentNode.removeChild(host);
   });
 
-  it('renders Browse label exactly "검색" and Favorites label exactly "즐겨찾기" regardless of favoriteCount', () => {
+  it('renders Browse label exactly "검색" and Favorites label exactly "즐겨찾기"', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
 
-    // First render: favoriteCount = 0.
-    render(
-      <TabBar activeTab="browse" onChange={() => {}} favoriteCount={0} disabled={false} />,
-      host,
-    );
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
     let tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     expect(tabs.length).toBe(2);
     expect(tabs[0]?.textContent?.trim()).toBe('검색');
     expect(tabs[1]?.textContent?.trim()).toBe('즐겨찾기');
 
-    // Re-render: favoriteCount = 42 — labels must NOT change.
-    render(
-      <TabBar activeTab="browse" onChange={() => {}} favoriteCount={42} disabled={false} />,
-      host,
-    );
+    // Re-render — labels must remain stable across re-renders.
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
     tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     expect(tabs[0]?.textContent?.trim()).toBe('검색');
     expect(tabs[1]?.textContent?.trim()).toBe('즐겨찾기');
@@ -37,18 +30,12 @@ describe('TabBar', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
 
-    render(
-      <TabBar activeTab="browse" onChange={() => {}} favoriteCount={0} disabled={false} />,
-      host,
-    );
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
     let tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
 
-    render(
-      <TabBar activeTab="favorites" onChange={() => {}} favoriteCount={0} disabled={false} />,
-      host,
-    );
+    render(<TabBar activeTab="favorites" onChange={() => {}} disabled={false} />, host);
     tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('false');
     expect(tabs[1]?.getAttribute('aria-selected')).toBe('true');
@@ -59,10 +46,7 @@ describe('TabBar', () => {
     document.body.appendChild(host);
     const onChange = vi.fn();
 
-    render(
-      <TabBar activeTab="browse" onChange={onChange} favoriteCount={0} disabled={false} />,
-      host,
-    );
+    render(<TabBar activeTab="browse" onChange={onChange} disabled={false} />, host);
     const tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
 
     // Click inactive (Favorites) → fires once with 'favorites'.
@@ -79,10 +63,7 @@ describe('TabBar', () => {
   it('cycles focus between the two buttons with ArrowLeft / ArrowRight', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
-    render(
-      <TabBar activeTab="browse" onChange={() => {}} favoriteCount={0} disabled={false} />,
-      host,
-    );
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
     const tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     expect(tabs.length).toBe(2);
 
@@ -100,10 +81,7 @@ describe('TabBar', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     const onChange = vi.fn();
-    render(
-      <TabBar activeTab="browse" onChange={onChange} favoriteCount={0} disabled={true} />,
-      host,
-    );
+    render(<TabBar activeTab="browse" onChange={onChange} disabled={true} />, host);
     const tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     expect(tabs[0]?.disabled).toBe(true);
     expect(tabs[1]?.disabled).toBe(true);
@@ -116,10 +94,7 @@ describe('TabBar', () => {
   it('renders the wrapper as div role="tablist" with an aria-label', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
-    render(
-      <TabBar activeTab="browse" onChange={() => {}} favoriteCount={0} disabled={false} />,
-      host,
-    );
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
     const list = host.querySelector('[role="tablist"]');
     expect(list).not.toBeNull();
     expect(list?.tagName).toBe('DIV');
