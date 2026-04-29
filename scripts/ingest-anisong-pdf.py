@@ -11,10 +11,20 @@ before writing songs.json. The script is now idempotent: it drops existing
 tjpdf-* records before merging the freshly-parsed ones in.
 
 Behavior:
-  1. Parses .omc/anisong_utf8.txt (pdftotext -table output) and extracts (tj_code, title, artist).
+  1. Parses .omc/anisong_utf8.txt (pdftotext -table output) and extracts
+     (tj_code, title, artist, section).
   2. Drops existing tjpdf-* records from apps/web/public/data/songs.json.
-  3. For TJ codes already in the corpus (non-tjpdf-* rows), adds 'anime' to categories.
-  4. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}'.
+  3. For TJ codes already in the corpus (non-tjpdf-* rows), adds the section
+     ('anime' or 'vocaloid') to categories. Mutual-exclusivity rule from
+     CLAUDE.md: anime/vocaloid + jpop drops jpop.
+  4. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}' and
+     categories=[section].
+
+Section detection: the PDF has an in-flow left-column divider that flips the
+active section. Pages 1-83 + 96-97 are tagged 'anime' (the latter is tokusatsu,
+which the schema collapses into anime). Pages 84-95 (starting at the '1925'
+row at L8281 of the cached text, marked by a left-column `보컬로이드,` cell)
+are tagged 'vocaloid'. See `_SECTION_DIVIDERS` for the full map.
 
 NOT a recurring crawler — schema-equivalent to a side-channel monthly enrichment.
 Run from repo root: `python scripts/ingest-anisong-pdf.py`
@@ -57,6 +67,49 @@ _BOILERPLATE_PATTERNS = [
     re.compile(r'반주기에 탑재'),                          # disclaimer
     re.compile(r'^일본 애니메이션 곡'),                    # page header
 ]
+
+# Section-divider tokens that appear as the LEFT-MOST cell of a record row, marking
+# the start of a new categorical section. Map from divider keyword (matched as the
+# first non-space token, with optional trailing comma) to the SongRecord category.
+#
+# Anchors observed in .omc/anisong_utf8.txt (TJ Anisong 2026-02 PDF):
+#   - L8281: `보컬로이드,       1925   28000  冨田悠斗(とみー/T-POCKET)`
+#       → first vocaloid track. The `보컬로이드,` (vocaloid) cell on the same line
+#         as `1925` is the in-flow divider — pages 84-95 (vocaloid/utaite/nicodō).
+#   - L9732: `특촬물  Alive A Life     28526  松本梨화`
+#       → first tokusatsu track (page 96). Tokusatsu / sentai is anime-adjacent
+#         live-action — per CLAUDE.md the schema only has jpop/vocaloid/anime, so
+#         it maps back to 'anime'.
+#
+# IMPORTANT: we do NOT use the page-header line `일본 애니메이션 곡 ... 보컬로이드,...`
+# as the divider, because page 84's page-header appears at L8178 but page 84's
+# initial records (L8180-L8279, Hypnosis Mic) are still anime — only the in-flow
+# left-column divider at L8281 is authoritative.
+_SECTION_DIVIDERS: dict[str, str] = {
+    '보컬로이드': 'vocaloid',
+    '특촬물': 'anime',
+}
+
+# Regex: leftmost token of a line == one of the divider keywords (with optional
+# trailing comma), followed by ≥2 spaces (column gap to title cell). Anchored at
+# the start of the original line; the divider must occupy column 0.
+_SECTION_DIVIDER_RE = re.compile(
+    r'^(보컬로이드|특촬물),?\s{2,}\S'
+)
+
+
+def detect_section_divider(line: str) -> str | None:
+    """If `line` starts with a known section divider, return the new category.
+
+    Returns None for non-divider lines. The caller is responsible for using this
+    BEFORE record emission so the divider's own row gets tagged with the new
+    category (e.g. '1925' itself is the first vocaloid track).
+    """
+    m = _SECTION_DIVIDER_RE.match(line)
+    if not m:
+        return None
+    keyword = m.group(1)
+    return _SECTION_DIVIDERS.get(keyword)
 
 
 def is_boilerplate(line: str) -> bool:
@@ -187,12 +240,19 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
         positions on the anchor line — chunk closest to title's column → title_ko;
         chunk closest to artist's column → artist_ko; leftover (anime-name
         column) is discarded.
+
+    Section tracking: we maintain a `current_section` (default 'anime') that flips
+    when we encounter an in-flow left-column divider row (see `_SECTION_DIVIDERS`).
+    Each emitted record carries its section, used downstream as `categories[0]`.
     """
     records: list[dict] = []
     caveats: list[str] = []
 
     n = len(text_lines)
     i = 0
+    # Default section: anime. Flips to 'vocaloid' at line 8281 (`보컬로이드,...1925`)
+    # and back to 'anime' at line 9732 (`특촬물  Alive A Life`).
+    current_section: str = 'anime'
 
     while i < n:
         line = text_lines[i].rstrip('\n')
@@ -200,6 +260,12 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
         if is_boilerplate(line):
             i += 1
             continue
+
+        # Section divider detection BEFORE record emission: the divider row IS
+        # the first record of the new section (e.g. '1925' for vocaloid).
+        new_section = detect_section_divider(line)
+        if new_section is not None:
+            current_section = new_section
 
         anchor = extract_anchor(line)
         if anchor is None:
@@ -457,6 +523,7 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
             'title_ko': title_ko,
             'artist_ko': artist_ko,
             'source_line': i,
+            'section': current_section,
         })
 
         # Advance past the lines we consumed for artist-wrap.
@@ -628,20 +695,34 @@ def main() -> int:
             tj_to_idx[tj] = idx
 
     matched = 0
-    already_anime = 0
+    already_tagged = 0  # corpus rows that already had the section's tag
+    section_counts: dict[str, int] = {'anime': 0, 'vocaloid': 0}
     new_records: list[dict] = []
     title_fallbacks: list[str] = []  # codes where title_primary fell back to artist
     crawled_at = _dt.datetime.now(_dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.') + f'{_dt.datetime.now(_dt.timezone.utc).microsecond // 1000:03d}Z'
 
     for r in unique:
         code = r['tj']
+        section = r.get('section', 'anime')
+        if section not in section_counts:
+            print(
+                f'WARN: unknown section {section!r} for tj={code} — defaulting to anime',
+                file=sys.stderr,
+            )
+            section = 'anime'
+        section_counts[section] = section_counts.get(section, 0) + 1
         if code in tj_to_idx:
             rec = corpus[tj_to_idx[code]]
             cats = list(rec.get('categories', []))
-            if 'anime' in cats:
-                already_anime += 1
+            if section in cats:
+                already_tagged += 1
             else:
-                cats.append('anime')
+                cats.append(section)
+            # Apply CLAUDE.md mutual-exclusivity rule: records tagged 'anime' or
+            # 'vocaloid' cannot also be 'jpop'. Drop 'jpop' if present alongside
+            # the new tag.
+            if section in ('anime', 'vocaloid') and 'jpop' in cats:
+                cats = [c for c in cats if c != 'jpop']
             # Deterministic sort.
             cats = sorted(set(cats))
             rec['categories'] = cats
@@ -671,7 +752,7 @@ def main() -> int:
                     'ky': None,
                     'joysound': None,
                 },
-                'categories': ['anime'],
+                'categories': [section],
                 'crawled_at': crawled_at,
             }
             new_records.append(new_record)
@@ -694,8 +775,11 @@ def main() -> int:
         f.write(f'Validation: artist_spill={artist_spill} title_spill={title_spill} '
                 f'title_eq_artist={title_eq_artist} ({title_eq_artist_ratio:.1%})\n')
         f.write(f'Pre-pass dropped existing tjpdf-* rows: {dropped_old_tjpdf}\n')
-        f.write(f'  Matched existing corpus rows (anime tag added or kept): {matched}\n')
-        f.write(f'    of which already had anime: {already_anime}\n')
+        f.write(f'Section breakdown (parsed records by category):\n')
+        for sect_name in sorted(section_counts.keys()):
+            f.write(f'    {sect_name}: {section_counts[sect_name]}\n')
+        f.write(f'  Matched existing corpus rows (section tag added or kept): {matched}\n')
+        f.write(f'    of which already had the section tag: {already_tagged}\n')
         f.write(f'  New records inserted: {len(new_records)}\n')
         f.write(f'    of which had to fall back title_primary->artist: {len(title_fallbacks)}\n')
         f.write(f'Caveats / skipped: {len(caveats)}\n')
