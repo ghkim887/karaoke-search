@@ -468,6 +468,8 @@ const title = '일본 노래 검색기';
         color: var(--rui-pill-secondary-fg);
         cursor: pointer;
         transition: opacity 120ms ease;
+        white-space: nowrap;     /* never wrap the artist name */
+        flex-shrink: 0;          /* preserve natural text width in flex/scroll containers */
       }
 
       .featured-chip:hover {
@@ -563,13 +565,22 @@ const title = '일본 노래 검색기';
           margin-top: 8px;
         }
 
-        /* Featured-artist strip — one-row horizontal scroll, no wrap */
+        /* Featured-artist strip — one-row horizontal scroll, no wrap.
+           Edge-bleed: margin pulls the scroll track to the screen edge;
+           padding-left restores the content alignment so the first chip
+           aligns with the rest of the page content. */
         .empty-section-chips {
           flex-wrap: nowrap;
           overflow-x: auto;
           gap: 6px;
-          padding-bottom: 4px;
+          padding-bottom: 6px;
           -webkit-overflow-scrolling: touch;
+          margin-left: -1.25rem;
+          margin-right: -1.25rem;
+          padding-left: 1.25rem;
+          padding-right: 1.25rem;
+          scrollbar-width: thin;
+          scrollbar-color: var(--rui-border) transparent;
         }
 
         /* Compact featured-chip */
