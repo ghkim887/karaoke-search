@@ -68,7 +68,7 @@ pnpm test
 Additional test suites:
 
 ```bash
-# Python regression tests for the anisong PDF ingest (13 unittest cases)
+# Python regression tests for the anisong PDF ingest (17 unittest cases)
 python -m unittest scripts/test_ingest_anisong_pdf.py
 
 # Validate the songs corpus against the @karaoke/schema type (CI gate)
