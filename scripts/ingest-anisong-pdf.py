@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -798,11 +799,16 @@ def main() -> int:
 
     # Write back. Match the existing file's encoding/format: UTF-8, no BOM, no
     # ensure_ascii, indent=2 to match the existing pretty-printed file.
-    # Probe the existing file for indent style.
-    SONGS_JSON.write_text(
+    # Atomic publish: write to a sibling .tmp first, then os.replace() onto the
+    # final path. Mirrors the TS pipeline's `songs.json.tmp` + rename in
+    # `.github/workflows/crawl.yml` so a crash mid-write can never leave a
+    # truncated/corrupt songs.json on disk.
+    tmp_path = SONGS_JSON.with_suffix(SONGS_JSON.suffix + '.tmp')
+    tmp_path.write_text(
         json.dumps(corpus, ensure_ascii=False, indent=2) + '\n',
         encoding='utf-8',
     )
+    os.replace(tmp_path, SONGS_JSON)
 
     # Report.
     log_path = REPO_ROOT / '.omc' / 'anisong_ingest_report.txt'
