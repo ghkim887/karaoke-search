@@ -676,6 +676,19 @@ def main() -> int:
     with open(SONGS_JSON, encoding='utf-8') as f:
         corpus = json.load(f)
 
+    # Harvest crawled_at timestamps from existing tjpdf-* rows BEFORE the
+    # pre-pass drops them. This preserves byte-idempotency: re-running the
+    # script on an unchanged PDF produces a byte-identical songs.json because
+    # each record gets back its original ingest timestamp rather than a fresh
+    # datetime.now() value.
+    tj_to_old_crawled_at: dict[str, str] = {
+        r['karaoke_numbers']['tj']: r['crawled_at']
+        for r in corpus
+        if str(r.get('id', '')).startswith('tjpdf-')
+        and r.get('karaoke_numbers', {}).get('tj')
+        and r.get('crawled_at')
+    }
+
     # Idempotent pre-pass: drop any existing tjpdf-* records so re-running the
     # script always produces the same final corpus instead of accumulating.
     dropped_old_tjpdf = 0
@@ -699,7 +712,6 @@ def main() -> int:
     section_counts: dict[str, int] = {'anime': 0, 'vocaloid': 0}
     new_records: list[dict] = []
     title_fallbacks: list[str] = []  # codes where title_primary fell back to artist
-    crawled_at = _dt.datetime.now(_dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.') + f'{_dt.datetime.now(_dt.timezone.utc).microsecond // 1000:03d}Z'
 
     for r in unique:
         code = r['tj']
@@ -734,6 +746,10 @@ def main() -> int:
                 title_fallbacks.append(code)
             title = r['title'] or r['artist']
             artist = r['artist']
+            # Preserve the original crawled_at for codes already in the corpus
+            # (byte-idempotency: unchanged inputs produce an identical file).
+            # Fall back to a fresh timestamp only for genuinely new tj codes.
+            crawled_at_for_record = tj_to_old_crawled_at.get(code) or _dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds')
             new_record = {
                 'id': f'tjpdf-{code}',
                 'source_url': SOURCE_URL,
@@ -753,7 +769,7 @@ def main() -> int:
                     'joysound': None,
                 },
                 'categories': [section],
-                'crawled_at': crawled_at,
+                'crawled_at': crawled_at_for_record,
             }
             new_records.append(new_record)
 
