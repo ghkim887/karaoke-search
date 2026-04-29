@@ -4,6 +4,10 @@ Stdlib-only (`unittest`, no extra deps). Covers the three helpers most prone to
 silent regression: category exclusivity, anchor extraction (false-positive
 floor + rightmost-pick), and Hangul→non-Hangul transition splitting.
 
+Also includes fixture-based end-to-end tests for `parse_pdf()` against synthetic
+PDF-text snippets (TestParsePdfFixtures) and an idempotency round-trip test
+(TestIngestIdempotent).
+
 The script's filename contains a hyphen, so it is loaded via `importlib`
 rather than a normal `import` statement.
 
@@ -14,8 +18,14 @@ Run:
 from __future__ import annotations
 
 import importlib.util
+import io
+import json
+import os
+import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 _SCRIPT_PATH = Path(__file__).resolve().parent / 'ingest-anisong-pdf.py'
 _spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _SCRIPT_PATH)
@@ -122,6 +132,278 @@ class TestSplitHangulTransition(unittest.TestCase):
         hangul, rest = ingest._split_hangul_transition('UNION')
         self.assertEqual(hangul, '')
         self.assertEqual(rest, 'UNION')
+
+
+class TestParsePdfFixtures(unittest.TestCase):
+    """Fixture-based end-to-end tests for `parse_pdf()`.
+
+    Synthetic snippets are Python strings that mimic the column-aligned output
+    produced by `pdftotext -table`. Each test is self-contained with no shared
+    state.
+
+    `parse_pdf()` returns (records, caveats) where each record dict contains:
+      'tj', 'title', 'artist', 'title_ko', 'artist_ko', 'source_line', 'section'
+
+    The 'section' field is the category string ('anime' or 'vocaloid') that
+    main() later writes into `categories`.
+    """
+
+    def test_parse_pdf_anime_row(self) -> None:
+        """A single anime section header followed by one anime data row.
+
+        Expected: exactly one record with section=='anime', the correct TJ
+        number, title_primary candidate (title field), and artist_primary
+        candidate (artist field).
+
+        The snippet mimics pdftotext -table column layout:
+          col 0-19:   anime-name (Hangul)
+          col 20-55:  Japanese title
+          col 56-62:  TJ code
+          col 63+:    artist
+        """
+        # Real-world column widths observed in .omc/anisong_utf8.txt:
+        # anime-name ~col 0, title ~col 18-20, TJ code ~col 52-58, artist ~col 59+
+        lines = [
+            '일본 애니메이션 곡                                 0~9, 영문                    1\n',
+            '\n',
+            '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon\n',
+            '                   홍련의 궁시                          링크드 호라이즌\n',
+        ]
+        records, caveats = ingest.parse_pdf(lines)
+        self.assertEqual(len(records), 1, f'expected 1 record, got {len(records)}: {records}')
+        rec = records[0]
+        self.assertEqual(rec['section'], 'anime')
+        self.assertEqual(rec['tj'], '68001')
+        self.assertIn('紅蓮の弓矢', rec['title'], f"title should contain the JP title, got {rec['title']!r}")
+        self.assertIn('Linked Horizon', rec['artist'], f"artist should contain artist name, got {rec['artist']!r}")
+
+    def test_parse_pdf_vocaloid_section_transition(self) -> None:
+        """Anime header → 1 anime row → 보컬로이드, divider → 1 vocaloid row.
+
+        Expected: 2 records. First has section=='anime', second has
+        section=='vocaloid'. This exercises the _SECTION_DIVIDERS state-machine
+        transition: the divider line is recognised BEFORE the anchor on the same
+        line, so the divider row itself belongs to the new section.
+        """
+        # The vocaloid divider line from the real PDF (line 8280):
+        #   보컬로이드,       1925                                    28000  冨田悠斗(とみー/T-POCKET)
+        # Note: 1925 is below _MIN_TJ_CODE (5000) and is ignored; 28000 is the
+        # real TJ code on the same line, so the divider row DOES emit a record.
+        lines = [
+            '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon\n',
+            '                   홍련의 궁시                          링크드 호라이즌\n',
+            '\n',
+            '보컬로이드,         千本桜                       28500  黒うさP\n',
+            '                   센본자쿠라                           쿠로우사P\n',
+        ]
+        records, caveats = ingest.parse_pdf(lines)
+        self.assertEqual(len(records), 2, f'expected 2 records, got {len(records)}: {records}')
+        self.assertEqual(records[0]['section'], 'anime',
+                         f"first record should be anime, got {records[0]['section']!r}")
+        self.assertEqual(records[1]['section'], 'vocaloid',
+                         f"second record should be vocaloid, got {records[1]['section']!r}")
+        # Also verify the TJ codes are correct.
+        self.assertEqual(records[0]['tj'], '68001')
+        self.assertEqual(records[1]['tj'], '28500')
+
+    def test_parse_pdf_unknown_section_defaults_to_anime(self) -> None:
+        """Unknown section name defaults to 'anime' with a stderr warning.
+
+        `parse_pdf()` itself only tracks section via `_SECTION_DIVIDERS`; it
+        cannot produce an unknown section string from its own parsing. The
+        warning for unknown sections lives in `main()`, which processes the
+        parsed output. We verify both sides:
+
+        1. `detect_section_divider()` returns None for an unknown keyword, so
+           `parse_pdf()` stays at the default 'anime' section — confirming the
+           parse layer never produces an unknown section string.
+
+        2. The `main()` warning path: we construct a parsed record dict with
+           section='tokusatsu' (unknown) and exercise the warning branch by
+           patching ingest module paths and calling main() with a minimal
+           synthetic corpus. The warning must appear on stderr and the record
+           must be written with categories=['anime'].
+        """
+        # Part 1: detect_section_divider with an unknown keyword returns None.
+        unknown_line = '토쿠사츠,    千本桜                       28500  黒うさP'
+        result = ingest.detect_section_divider(unknown_line)
+        self.assertIsNone(result,
+            'detect_section_divider should return None for unknown keyword')
+
+        # Part 2: parse_pdf never produces an unknown section — all lines that
+        # don't match a known divider keep the current_section (defaults to anime).
+        lines = [
+            '토쿠사츠,    千本桜                       28500  黒うさP\n',
+        ]
+        records, _caveats = ingest.parse_pdf(lines)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]['section'], 'anime',
+            f"unknown-keyword line should keep section='anime', got {records[0]['section']!r}")
+
+        # Part 3: exercise the main() warning branch by patching SONGS_JSON and
+        # PDF_TEXT to point at synthetic temp files. We inject a record with an
+        # unknown section via a synthetic PDF text file, then confirm the stderr
+        # warning is emitted and the resulting record gets categories=['anime'].
+        #
+        # The only way to get an unknown section into main()'s loop is to inject
+        # it into the `unique` list that parse_pdf() produces. Since parse_pdf()
+        # can't produce an unknown section (Part 2 above), we patch parse_pdf
+        # itself to return a synthetic record with section='tokusatsu'.
+        synthetic_song = {
+            'id': 'blog-99999',
+            'source_url': 'https://example.com',
+            'title_primary': '千本桜',
+            'title_ko': '센본자쿠라',
+            'artist_primary': '黒うさP',
+            'artist_ko': '쿠로우사P',
+            'karaoke_numbers': {'tj': '28500', 'ky': None, 'joysound': None},
+            'categories': ['jpop'],
+            'crawled_at': '2026-01-01T00:00:00+00:00',
+        }
+        fake_parse_result = ([{
+            'tj': '99901',
+            'title': '千本桜',
+            'artist': '黒うさP',
+            'title_ko': None,
+            'artist_ko': None,
+            'source_line': 0,
+            'section': 'tokusatsu',  # unknown section
+        }], [])
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            # Minimal PDF text (content doesn't matter — parse_pdf is patched).
+            pdf_path.write_text('dummy\n', encoding='utf-8')
+            songs_path.write_text(
+                json.dumps([synthetic_song], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            stderr_buf = io.StringIO()
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
+                patch('sys.stderr', stderr_buf),
+            ):
+                exit_code = ingest.main()
+
+            self.assertEqual(exit_code, 0, 'main() should succeed')
+            stderr_output = stderr_buf.getvalue()
+            self.assertIn('tokusatsu', stderr_output,
+                f'expected stderr warning mentioning unknown section, got: {stderr_output!r}')
+
+            # The new record with the unknown section must default to anime.
+            result_corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            new_recs = [r for r in result_corpus if r.get('id', '').startswith('tjpdf-')]
+            self.assertEqual(len(new_recs), 1, f'expected 1 new tjpdf- record, got {new_recs}')
+            self.assertEqual(new_recs[0]['categories'], ['anime'],
+                f"unknown section should default to anime, got {new_recs[0]['categories']!r}")
+
+
+class TestIngestIdempotent(unittest.TestCase):
+    """Round-trip idempotency: running the ingest twice on the same synthetic
+    corpus + PDF text produces a byte-identical output on the second run.
+
+    Uses tempfile.TemporaryDirectory so no real files are mutated. Patches
+    the module-level SONGS_JSON and PDF_TEXT constants so main() operates on
+    the temp files rather than the real repo paths.
+
+    Synthetic corpus has 3 records:
+      - 1 TJ-numbered record (TJ 68001) — will get its category updated.
+      - 1 record without a TJ number — untouched by the ingest.
+      - 1 existing tjpdf-* record — will be dropped and re-inserted.
+    """
+
+    # Minimal synthetic PDF text with two anime records (TJ 68001 and TJ 28500)
+    # using realistic pdftotext -table column spacing.
+    _SYNTHETIC_PDF = (
+        '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon\n'
+        '                   홍련의 궁시                          링크드 호라이즌\n'
+        '\n'
+        '마법소녀          千本桜                       28500  黒うさP\n'
+        '                  센본자쿠라                           쿠로우사P\n'
+    )
+
+    def _make_corpus(self) -> list[dict]:
+        return [
+            {
+                'id': 'blog-68001',
+                'source_url': 'https://example.com/1',
+                'title_primary': '紅蓮の弓矢',
+                'title_ko': '홍련의 궁시',
+                'artist_primary': 'Linked Horizon',
+                'artist_ko': '링크드 호라이즌',
+                'karaoke_numbers': {'tj': '68001', 'ky': None, 'joysound': None},
+                'categories': ['jpop'],
+                'crawled_at': '2026-01-01T00:00:00+00:00',
+            },
+            {
+                'id': 'blog-no-tj',
+                'source_url': 'https://example.com/2',
+                'title_primary': 'Some Song',
+                'title_ko': None,
+                'artist_primary': 'Some Artist',
+                'artist_ko': None,
+                'karaoke_numbers': {'tj': None, 'ky': None, 'joysound': None},
+                'categories': ['jpop'],
+                'crawled_at': '2026-01-01T00:00:00+00:00',
+            },
+            {
+                'id': 'tjpdf-28500',
+                'source_url': 'https://www.tjmedia.com/support/poster?cate_cd=P06',
+                'title_primary': '千本桜',
+                'title_ko': '센본자쿠라',
+                'artist_primary': '黒うさP',
+                'artist_ko': '쿠로우사P',
+                'karaoke_numbers': {'tj': '28500', 'ky': None, 'joysound': None},
+                'categories': ['anime'],
+                'crawled_at': '2026-03-01T00:00:00+00:00',
+            },
+        ]
+
+    def test_apply_categories_to_existing_records_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+
+            pdf_path.write_text(self._SYNTHETIC_PDF, encoding='utf-8')
+            songs_path.write_text(
+                json.dumps(self._make_corpus(), ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            # First run.
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+            ):
+                exit_code_1 = ingest.main()
+            self.assertEqual(exit_code_1, 0, 'first run should succeed')
+            output_1 = songs_path.read_bytes()
+
+            # Second run on the output of the first run.
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+            ):
+                exit_code_2 = ingest.main()
+            self.assertEqual(exit_code_2, 0, 'second run should succeed')
+            output_2 = songs_path.read_bytes()
+
+            self.assertEqual(
+                output_1, output_2,
+                'second ingest run must produce byte-identical output (idempotency)'
+            )
+
+            # Sanity-check the first run's output: the blog-68001 record should
+            # have been updated to categories=['anime'] (anime wins over jpop).
+            corpus = json.loads(output_1.decode('utf-8'))
+            blog_rec = next((r for r in corpus if r['id'] == 'blog-68001'), None)
+            self.assertIsNotNone(blog_rec, 'blog-68001 should still be present')
+            self.assertEqual(blog_rec['categories'], ['anime'],  # type: ignore[index]
+                f"blog-68001 categories should be ['anime'], got {blog_rec['categories']!r}")  # type: ignore[index]
 
 
 if __name__ == '__main__':
