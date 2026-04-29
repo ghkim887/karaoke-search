@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
-import { normalize } from './normalizer.js';
+import { type SearchSongCache, loadCache, saveCache } from './cache.js';
+import { enrichWithTranslit } from './enrichTranslit.js';
+import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { parseCatalogResponse } from './parser.js';
 
 const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
@@ -24,6 +26,17 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const BLOG_CORPUS_PATH_DEFAULT = resolve(HERE, '../../../../../apps/web/public/data/songs.json');
 
 /**
+ * Default on-disk location of the TJ-search translit cache. Tracked in git
+ * (NOT gitignored) — CI must NOT pay the first-run enrichment cost. See
+ * `apps/web/public/data/tj-search-cache.json` and the cache module's
+ * docblock for the file schema.
+ */
+const TRANSLIT_CACHE_PATH_DEFAULT = resolve(
+  HERE,
+  '../../../../../apps/web/public/data/tj-search-cache.json',
+);
+
+/**
  * Provider for the set of TJ catalog numbers that should bypass the
  * loose-JP filter and Chinese denylist. Defaults to the on-disk blog
  * corpus (`apps/web/public/data/songs.json`).
@@ -35,6 +48,17 @@ const BLOG_CORPUS_PATH_DEFAULT = resolve(HERE, '../../../../../apps/web/public/d
  * which is also tied to the blog corpus.
  */
 export type BlogWhitelistSource = () => ReadonlySet<string>;
+
+/**
+ * Optional per-instance overrides. Tests inject a fixture cache path and a
+ * disabled-enrichment flag; production uses the defaults.
+ */
+export interface TJDirectCrawlerOptions {
+  /** Override the on-disk path of the translit cache. */
+  cachePath?: string;
+  /** When true, skip the enrichment pass entirely (legacy path). */
+  disableEnrichment?: boolean;
+}
 
 /**
  * `TJDirectCrawler` fetches TJ Media's full historical catalog via a single
@@ -53,11 +77,20 @@ export type BlogWhitelistSource = () => ReadonlySet<string>;
  * Japanese acts whose TJ# is already in the blog corpus regardless of
  * script content.
  *
+ * Translit enrichment (PR-1, 2026-04-29): after the parser/filter chain runs,
+ * each surviving record is enriched with Korean transliterations
+ * (`sortTitleKo`/`sortSongKo`) sourced from `/legacy/api/searchSong`. Results
+ * are cached in `apps/web/public/data/tj-search-cache.json` (tracked in git
+ * so CI never pays the first-run cost). On HTTP error or `pro` mismatch the
+ * record's `title_ko`/`artist_ko` stay `null` — same as the pre-enrichment
+ * behavior, no regression.
+ *
  * Failure semantics:
- *  - Any HTTP error (non-2xx, network failure, robots-disallow) throws and
- *    aborts the pipeline. Single-request crawl — there is no retry path and
- *    no success-ratio gate. Either it works or it doesn't.
+ *  - Any HTTP error (non-2xx, network failure, robots-disallow) on the
+ *    catalog fetch throws and aborts the pipeline.
  *  - The parser also throws on a malformed response shape; that propagates.
+ *  - `searchSong` enrichment errors are LOGGED and SKIPPED — they do not
+ *    abort the pipeline. The record is emitted with null Korean fields.
  *  - No dedup-by-tj logic is needed: the API returns each `pro` exactly once.
  *
  * Limit semantics: `options.limit` caps the number of records yielded
@@ -66,11 +99,17 @@ export type BlogWhitelistSource = () => ReadonlySet<string>;
 export class TJDirectCrawler implements Crawler {
   readonly name = 'tj-media-direct';
   private cachedWhitelist: ReadonlySet<string> | null = null;
+  private readonly cachePath: string;
+  private readonly disableEnrichment: boolean;
 
   constructor(
     private http: HttpClient,
     private blogWhitelistSource: BlogWhitelistSource = defaultBlogWhitelistSource,
-  ) {}
+    options: TJDirectCrawlerOptions = {},
+  ) {
+    this.cachePath = options.cachePath ?? TRANSLIT_CACHE_PATH_DEFAULT;
+    this.disableEnrichment = options.disableEnrichment ?? false;
+  }
 
   async *crawl(options?: CrawlOptions): AsyncIterable<SongRecord> {
     const limit =
@@ -105,11 +144,55 @@ export class TJDirectCrawler implements Crawler {
 
     const raw = parseCatalogResponse(json, CATALOG_URL, { forceIncludeTjNumbers });
 
+    // Run the translit enrichment pass over the surviving records BEFORE
+    // we start yielding. This buys us a complete progress log + a single
+    // atomic cache save at the end, at the cost of holding ~6k records in
+    // memory between phases. The pre-enrichment record list is already in
+    // memory above (`raw`), so this isn't a peak-memory regression.
+    let cache: SearchSongCache | null = null;
+    let enrichmentByPro: Map<string, TranslitEnrichment> | null = null;
+    let cacheMutated = false;
+    if (!this.disableEnrichment) {
+      cache = await loadCache(this.cachePath);
+      const { byPro, stats } = await enrichWithTranslit(this.http, raw, cache);
+      // Cache mutated iff we actually fetched anything new from TJ — if every
+      // record was a cache hit (warm-start happy path), nothing in
+      // `proEnrichmentMap` changed and we can skip the file rewrite. Avoids
+      // a needless `mtime` bump on `tj-search-cache.json` in the tracked git
+      // tree on no-op runs.
+      cacheMutated = stats.fetches > 0;
+      // Project to the slimmed `TranslitEnrichment` shape the normalizer
+      // accepts — we don't need the rest of the cache fields downstream.
+      enrichmentByPro = new Map();
+      for (const [pro, entry] of byPro) {
+        enrichmentByPro.set(pro, {
+          sortTitleKo: entry.sortTitleKo,
+          sortSongKo: entry.sortSongKo,
+        });
+      }
+    }
+
     let yielded = 0;
-    for (const r of raw) {
-      if (yielded >= limit) break;
-      yield normalize(r, crawledAt);
-      yielded++;
+    let errored = false;
+    try {
+      for (const r of raw) {
+        if (yielded >= limit) break;
+        const enrichment = enrichmentByPro?.get(r.karaoke_numbers.tj ?? '');
+        yield normalize(r, crawledAt, enrichment);
+        yielded++;
+      }
+    } catch (err) {
+      errored = true;
+      throw err;
+    } finally {
+      if (cache !== null && !errored && cacheMutated) {
+        try {
+          await saveCache(this.cachePath, cache);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`[tj-search] cache save failed at ${this.cachePath}: ${msg}`);
+        }
+      }
     }
   }
 }

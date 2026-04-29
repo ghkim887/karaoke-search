@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TJDirectCrawler } from '../../../src/adapters/tj-media-direct/crawler.js';
 import type { FetchResult, HttpClient } from '../../../src/http.js';
 
@@ -46,7 +46,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
   it('issues a single POST to the catalog endpoint with searchYm=200001', async () => {
     const captured: Captured[] = [];
     const http = buildHttp({ captured });
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     const records = [];
     for await (const r of crawler.crawl()) records.push(r);
 
@@ -58,7 +60,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('every emitted record has categories=["jpop"] and TJ number set', async () => {
     const http = buildHttp({});
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     const records = [];
     for await (const r of crawler.crawl()) records.push(r);
 
@@ -73,7 +77,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('honors options.limit by capping yielded records', async () => {
     const http = buildHttp({});
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     const records = [];
     for await (const r of crawler.crawl({ limit: 5 })) records.push(r);
     expect(records.length).toBe(5);
@@ -81,7 +87,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('throws when the HTTP layer returns a non-2xx status', async () => {
     const http = buildHttp({ status: 503, body: '<html>Service Unavailable</html>' });
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -91,7 +99,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('throws when the body is not valid JSON', async () => {
     const http = buildHttp({ status: 200, body: 'not json {{{' });
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -101,7 +111,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
 
   it('throws when the response shape is unexpected (missing resultData)', async () => {
     const http = buildHttp({ status: 200, body: JSON.stringify({ resultCode: '00' }) });
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -113,7 +125,9 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
     const http = buildHttp({
       postFormImpl: async () => null,
     });
-    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, {
+      disableEnrichment: true,
+    });
     await expect(async () => {
       for await (const _ of crawler.crawl()) {
         /* unreachable */
@@ -156,12 +170,204 @@ describe('TJDirectCrawler.crawl — blog-whitelist rescue (refinement 2)', () =>
     });
     const http = buildHttp({ status: 200, body });
     const whitelist = (): ReadonlySet<string> => new Set(['11111']);
-    const crawler = new TJDirectCrawler(http as HttpClient, whitelist);
+    const crawler = new TJDirectCrawler(http as HttpClient, whitelist, {
+      disableEnrichment: true,
+    });
     const records = [];
     for await (const r of crawler.crawl()) records.push(r);
 
     expect(records.length).toBe(2);
     const tjs = records.map((r) => r.karaoke_numbers.tj).sort();
     expect(tjs).toEqual(['11111', '33333']);
+  });
+});
+
+describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () => {
+  it('threads searchSong sortTitleKo/sortSongKo into emitted SongRecord and writes the cache', async () => {
+    const { mkdtemp, readFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'tj-search-cache.json');
+    try {
+      const catalogBody = JSON.stringify({
+        resultCode: '99',
+        resultData: {
+          itemsTotalCount: 1,
+          items: [
+            {
+              pro: 68781,
+              indexTitle: 'アイドル',
+              indexSong: 'YOASOBI',
+              publishdate: '2023-05-24',
+            },
+          ],
+        },
+      });
+      const searchBody = JSON.stringify({
+        resultCode: '99',
+        resultData: {
+          itemsTotalCount: 1,
+          items: [
+            {
+              pro: 68781,
+              indexTitle: 'アイドル',
+              indexSong: 'YOASOBI',
+              sortTitleKo: '아이도루',
+              sortSongKo: '요아소비',
+              nationalcode: 'JPN',
+              publishdate: '2023-05-24',
+            },
+          ],
+        },
+      });
+      const http: Pick<HttpClient, 'postForm'> = {
+        async postForm(url, _body): Promise<FetchResult | null> {
+          if (url.includes('newSongOfMonth')) return { status: 200, body: catalogBody };
+          if (url.includes('searchSong')) return { status: 200, body: searchBody };
+          throw new Error(`unexpected url: ${url}`);
+        },
+      };
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.title_ko).toBe('아이도루');
+      expect(records[0]?.artist_ko).toBe('요아소비');
+      expect(records[0]?.karaoke_numbers.tj).toBe('68781');
+
+      // Cache file written.
+      const cacheText = await readFile(cachePath, 'utf8');
+      const cache = JSON.parse(cacheText);
+      expect(cache.proEnrichmentMap['68781']?.sortTitleKo).toBe('아이도루');
+      expect(cache.proEnrichmentMap['68781']?.sortSongKo).toBe('요아소비');
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('100% cache hit: cache file is NOT rewritten (mtime unchanged, no saveCache call)', async () => {
+    const { mkdtemp, readFile, rm, stat, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'tj-search-cache.json');
+    try {
+      // Pre-seed the cache with a fresh entry for pro=68781 so the
+      // enrichment pass is a 100% cache hit. `lastSeen` set to "now" so
+      // `isFresh()` returns true.
+      const lastSeen = new Date().toISOString();
+      const seeded = {
+        version: 1,
+        generatedAt: lastSeen,
+        proEnrichmentMap: {
+          '68781': {
+            nationalcode: 'JPN',
+            sortTitleKo: '아이도루',
+            sortSongKo: '요아소비',
+            subTitle: null,
+            publishdate: '2023-05-24',
+            lastSeen,
+          },
+        },
+      };
+      await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
+      const before = await stat(cachePath);
+      const beforeText = await readFile(cachePath, 'utf8');
+
+      // Catalog returns one record whose `pro` matches the cached entry.
+      // searchSong is NOT exposed by the http stub — if the crawler tried
+      // to call it, the test would throw.
+      const catalogBody = JSON.stringify({
+        resultCode: '99',
+        resultData: {
+          itemsTotalCount: 1,
+          items: [
+            {
+              pro: 68781,
+              indexTitle: 'アイドル',
+              indexSong: 'YOASOBI',
+              publishdate: '2023-05-24',
+            },
+          ],
+        },
+      });
+      const http: Pick<HttpClient, 'postForm'> = {
+        async postForm(url): Promise<FetchResult | null> {
+          if (url.includes('newSongOfMonth')) return { status: 200, body: catalogBody };
+          throw new Error(`unexpected url (no fetch should happen on warm cache): ${url}`);
+        },
+      };
+      // Force a small async gap so any rewrite would produce a distinct
+      // mtime. The expected behavior is that NO rewrite happens.
+      await new Promise((r) => setTimeout(r, 10));
+
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.title_ko).toBe('아이도루');
+      expect(records[0]?.artist_ko).toBe('요아소비');
+
+      const after = await stat(cachePath);
+      const afterText = await readFile(cachePath, 'utf8');
+      // mtime unchanged AND content byte-identical -> saveCache was skipped.
+      expect(after.mtimeMs).toBe(before.mtimeMs);
+      expect(afterText).toBe(beforeText);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('searchSong HTTP error keeps the record with null title_ko/artist_ko (no regression)', async () => {
+    const { mkdtemp, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'tj-search-cache.json');
+    try {
+      const catalogBody = JSON.stringify({
+        resultCode: '99',
+        resultData: {
+          itemsTotalCount: 1,
+          items: [
+            {
+              pro: 68781,
+              indexTitle: 'アイドル',
+              indexSong: 'YOASOBI',
+              publishdate: '2023-05-24',
+            },
+          ],
+        },
+      });
+      const http: Pick<HttpClient, 'postForm'> = {
+        async postForm(url): Promise<FetchResult | null> {
+          if (url.includes('newSongOfMonth')) return { status: 200, body: catalogBody };
+          if (url.includes('searchSong')) return { status: 503, body: 'oops' };
+          throw new Error(`unexpected url: ${url}`);
+        },
+      };
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+        const records = [];
+        for await (const r of crawler.crawl()) records.push(r);
+
+        expect(records).toHaveLength(1);
+        expect(records[0]?.title_ko).toBeNull();
+        expect(records[0]?.artist_ko).toBeNull();
+      } finally {
+        warn.mockRestore();
+        log.mockRestore();
+      }
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });

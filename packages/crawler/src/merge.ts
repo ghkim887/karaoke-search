@@ -241,7 +241,13 @@ function mergeCluster(
   if (cluster.length === 0) throw new Error('empty cluster');
 
   const titleArtistChain = ['tj', 'blog', 'namu'];
-  const koChain = ['blog', 'namu'];
+  // `tj` is an explicit member of the Korean-fields chain (lowest priority)
+  // because the TJ-direct adapter's `searchSong` translit pass (PR-1) writes
+  // `title_ko` / `artist_ko`. Pre-PR-1 the field fell through `pickByOwnership`'s
+  // unlisted-source fallback, which is order-dependent and silently
+  // ambiguous if a future source also writes Korean fields. Listing `tj`
+  // here makes the priority `blog > namu > tj` explicit.
+  const koChain = ['blog', 'namu', 'tj'];
 
   const tierBClusterKey = wasTierB ? tierBKey(cluster[0] as SongRecord) : null;
 
