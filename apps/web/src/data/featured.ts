@@ -14,5 +14,5 @@ export const featured: {
 } = {
   jpop: ['米津玄師', 'Ado', 'back number', 'King Gnu', 'ヨルシカ', 'YOASOBI'],
   vocaloid: ['DECO*27', '40mP｜40meterP', 'Orangestar', 'Neru', 'じん｜自然の敵P'],
-  anime: ['LISA', 'Linked Horizon', '鈴木このみ', 'fripSide', 'EGOIST', 'ClariS'],
+  anime: ['LiSA', 'Linked Horizon', '鈴木このみ', 'fripSide', 'EGOIST', 'ClariS'],
 };
