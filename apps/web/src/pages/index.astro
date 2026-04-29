@@ -907,29 +907,94 @@ const title = '일본 노래 검색기';
         color: var(--rui-fg-muted);
       }
 
-      /* DESIGN.md §3 Body — 16px / 400 / 1.5 / 0.24px. The previous all-uppercase
-         caption styling is dropped; the DOM has no hook to scope just the
-         "DB 업데이트" label, so the whole footer renders as Body. Documented
-         deviation from the brief's "DB-update label uppercase" instruction. */
+      /* Footer — three-row layout: brand label, bilingual disclaimer, metadata.
+         Mobile-first sizing with a tablet+ bump at the 720px breakpoint. Each
+         metadata item is `white-space: nowrap` so individual tokens never break
+         mid-word; the row wraps at bullet-separator boundaries via flex-wrap. */
       footer.site-footer {
         max-width: 960px;
         margin: 0 auto;
-        padding: 1.5rem 1.25rem;
+        padding: 24px 1.25rem 32px;
         border-top: 1px solid var(--rui-border);
         background: var(--rui-surface);
         font-family: var(--rui-font-body);
-        font-size: var(--rui-text-body);
-        font-weight: 400;
-        letter-spacing: 0.24px;
         color: var(--rui-fg-muted);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      @media (min-width: 720px) {
+        footer.site-footer {
+          padding: 32px 1.25rem 40px;
+        }
+      }
+
+      /* Row 1 — small uppercase brand label. */
+      .site-footer-brand {
+        font-family: var(--rui-font-body);
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1.4;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--rui-fg-muted);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* Row 2 — bilingual disclaimer. Korean line + English line stacked,
+         constrained to 60ch on wide screens so the line length stays readable. */
+      .site-footer-disclaimer {
+        margin: 12px 0 0;
+        max-width: 60ch;
+        font-family: var(--rui-font-body);
+        font-size: 13px;
+        font-weight: 400;
         line-height: 1.5;
+        color: var(--rui-fg-muted);
+      }
+
+      @media (min-width: 720px) {
+        .site-footer-disclaimer {
+          margin-top: 16px;
+        }
+      }
+
+      .site-footer-disclaimer-ko,
+      .site-footer-disclaimer-en {
+        display: block;
+      }
+
+      /* Row 3 — metadata bullets. flex-wrap allows narrow viewports to break
+         the row at bullet boundaries; each `.site-footer-meta-item` is
+         `white-space: nowrap` so individual tokens never break mid-word. */
+      .site-footer-meta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
+        gap: 4px 8px;
+        margin-top: 12px;
+        font-family: var(--rui-font-body);
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.5;
+        letter-spacing: 0.16px;
+        color: var(--rui-fg-subtle);
       }
 
-      .site-footer-sep {
-        padding: 0 0.5rem;
+      @media (min-width: 720px) {
+        .site-footer-meta {
+          margin-top: 16px;
+        }
+      }
+
+      .site-footer-meta-item {
+        white-space: nowrap;
+      }
+
+      .site-footer-meta-sep {
+        color: var(--rui-fg-subtle);
       }
 
       .site-footer-link {
@@ -939,6 +1004,29 @@ const title = '일본 노래 검색기';
 
       .site-footer-link:hover {
         text-decoration: underline;
+      }
+
+      .site-footer-link:focus-visible {
+        outline: none;
+        box-shadow: var(--rui-focus-ring);
+        border-radius: 2px;
+      }
+
+      /* Mobile (<720px) — drop one notch on each row's font-size; disclaimer
+         loses its 60ch constraint to fill the slim viewport. */
+      @media (max-width: 719px) {
+        .site-footer-brand {
+          font-size: 10px;
+        }
+
+        .site-footer-disclaimer {
+          max-width: 100%;
+          font-size: 12px;
+        }
+
+        .site-footer-meta {
+          font-size: 11px;
+        }
       }
     </style>
   </head>

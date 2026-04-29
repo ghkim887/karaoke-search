@@ -23,22 +23,36 @@ const dbDate = formatDbDate(gitOutput, process.env.SOURCE_DATE_EPOCH);
 ---
 
 <footer class="site-footer">
-  <span>노래방 검색기</span>
-  {dbDate !== '' && (
-    <>
-      <span aria-hidden="true" class="site-footer-sep">·</span>
-      <span>DB 업데이트 {dbDate}</span>
-    </>
-  )}
-  <span aria-hidden="true" class="site-footer-sep">·</span>
-  <span>MIT</span>
-  <span aria-hidden="true" class="site-footer-sep">·</span>
-  <a
-    class="site-footer-link"
-    href="https://github.com/ghkim887/karaoke-search"
-    target="_blank"
-    rel="noreferrer noopener"
-  >
-    GitHub ↗
-  </a>
+  <div class="site-footer-brand">KARAOKE SEARCH</div>
+  <p class="site-footer-disclaimer">
+    <span class="site-footer-disclaimer-ko">본 검색 결과는 참고용이며 실제 노래방 기기와 다를 수 있습니다.</span>
+    <span class="site-footer-disclaimer-en">Results are for reference; the actual karaoke machine may differ.</span>
+  </p>
+  <div class="site-footer-meta">
+    {dbDate !== '' && (
+      <>
+        <span class="site-footer-meta-item">DB 업데이트 {dbDate}</span>
+        <span class="site-footer-meta-sep" aria-hidden="true">·</span>
+      </>
+    )}
+    <span class="site-footer-meta-item">MIT</span>
+    <span class="site-footer-meta-sep" aria-hidden="true">·</span>
+    <a
+      class="site-footer-meta-item site-footer-link"
+      href="https://github.com/ghkim887/karaoke-search/issues"
+      target="_blank"
+      rel="noreferrer noopener"
+    >
+      문제 보고 ↗
+    </a>
+    <span class="site-footer-meta-sep" aria-hidden="true">·</span>
+    <a
+      class="site-footer-meta-item site-footer-link"
+      href="https://github.com/ghkim887/karaoke-search"
+      target="_blank"
+      rel="noreferrer noopener"
+    >
+      GitHub ↗
+    </a>
+  </div>
 </footer>
