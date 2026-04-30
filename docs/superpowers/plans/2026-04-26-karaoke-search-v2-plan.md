@@ -1,5 +1,7 @@
 # Karaoke Search — v2 Implementation Plan
 
+> **Phase 3 (NamuWiki adapter) — CANCELLED 2026-04-30 by user.** PR-1/PR-2 of the TJ-direct filter overhaul (`docs/superpowers/plans/2026-04-29-tj-searchsong-filter-plan.md`) populated `title_ko` / `artist_ko` for ~4,400 TJ records via TJ Media's `searchSong` API, eroding the primary value of NamuWiki (Korean-title enrichment). Don't restart this phase. The remaining phases below are kept for historical reference only.
+
 Source spec: `docs/superpowers/specs/2026-04-26-karaoke-search-v2-design.md` (locked).
 v1 spec referenced: `docs/superpowers/specs/2026-04-26-karaoke-search-design.md` (shared conventions: `Crawler` interface, `normalize()`, operational discipline). v1's merge algorithm is REPLACED in v2 — see Phase 0.5 below and spec Section "Dedup & Merge Algorithm (v2 redesign)".
 Repo: pnpm + TypeScript monorepo on `main` at HEAD `3b5a735`. v1 ships ~21,259 records across `jpop` + `vocaloid` from the j-pop-playlist Tistory blog.

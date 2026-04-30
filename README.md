@@ -4,7 +4,7 @@ A bilingual web app for discovering Japanese and Vocaloid karaoke songs availabl
 
 ## What is this?
 
-Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, light + dark themes (auto via OS preference), no sign-up required.
+Karaoke Search lets you find ~26,500 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, light + dark themes (auto via OS preference), no sign-up required.
 
 **Live:** https://ghkim887.github.io/karaoke-search/
 
@@ -14,7 +14,7 @@ Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese o
 - **Multi-system support** — TJ Media (TJ), 금영 (KY), JOYSOUND karaoke numbers in one place
 - **Click-to-copy** — Copy karaoke numbers with a single tap
 - **Mobile-first, light + dark themes** — Optimized for phone screens with single-line horizontal-scroll chip rows; auto-switches via OS preference (`prefers-color-scheme`); works offline after first load. Self-hosted Geist + Inter + Pretendard fonts.
-- **~26,400 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced
+- **~26,500 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced. Korean transliterations now populated for ~4,400 TJ-only records (titles and artist names) so Korean-keyboard searches find more matches
 - **Device-local favorites** — star songs and find them instantly on a dedicated `즐겨찾기` tab (`검색` / `즐겨찾기`); stored in your browser, no account needed
 
 ## Data Sources & Attribution
@@ -22,7 +22,7 @@ Karaoke Search lets you find ~26,400 Japanese karaoke songs by title (Japanese o
 This project pulls from two sources:
 
 - **[j-pop-playlist.tistory.com](https://j-pop-playlist.tistory.com/)** (primary, ~21k records) — a Korean blog that meticulously catalogs Japanese karaoke songs and maps them to TJ, 금영, and JOYSOUND karaoke numbers. Provides Korean translations of every title and artist.
-- **TJ Media catalog** (~5.9k additional records) — pulled directly via TJ Media's public-but-undocumented JSON API, anchored on TJ catalog numbers. Filtered to Japanese-relevance via a hiragana/katakana/Han heuristic plus a Chinese-artist denylist; titles already known to the blog are rescued back regardless.
+- **TJ Media catalog** (~6k additional records) — pulled directly via TJ Media's public-but-undocumented JSON API, anchored on TJ catalog numbers. Filtered to Japanese-relevance via a 3-path confirmation chain (per-record nationality tag, per-artist nationality tag, blog-whitelist rescue) backed by a tracked search cache. Korean transliterations from the same API populate `title_ko` / `artist_ko` for these records.
 
 We surface only metadata (titles, artists, numbers)—no lyrics, no fan content. Each result links back to its source, and all JSON records include `source_url` for full transparency. **A big thanks to the j-pop-playlist blog author for maintaining the original Korean-translation resource.**
 
@@ -81,7 +81,7 @@ The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub 
 
 ## Roadmap
 
-- **v2 in progress** — Schema migration to 3 categories ✓ • Two-tier merger ✓ • TJ Media direct adapter ✓ • Frontend polish + favorites + mobile-first pass ✓ • Revolut-inspired UI refactor + auto light/dark theme ✓ • NamuWiki adapter (Vocaloid + Hololive/Nijisanji) remains
+- **v2 shipped** — Schema migration to 3 categories ✓ • Two-tier merger ✓ • TJ Media direct adapter ✓ • Frontend polish + favorites + mobile-first pass ✓ • Revolut-inspired UI refactor + auto light/dark theme ✓ • TJ-direct nationality filter + Korean transliteration enrichment ✓ • NamuWiki adapter cancelled (TJ-direct enrichment now supplies the Korean fields it would have provided)
 - **v3+** — Native crawlers for 금영 (KY) and JOYSOUND
 - **Future** — Optional serverless live-fallback for queries that miss the static index (deferred indefinitely)
 

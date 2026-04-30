@@ -3,11 +3,12 @@
 **Date:** 2026-04-29
 **Owner:** TJ-direct adapter (`packages/crawler/src/adapters/tj-media-direct/`)
 **Depends on:** `docs/research/2026-04-29-tj-media-api-surface.md`
+**Status:** COMPLETE — all 4 PRs + cache expansion + manual crawl regen shipped 2026-04-29..30. HEAD `01994c4`.
 
 ## Status
 
 - **PR-1 (translit-only enrichment) — SHIPPED 2026-04-29.** Commits: `4b3ad55` (research + plan), `23f1a95` (code), `12bf4fc` (4,011-record cache pre-seed).
-- **PR-2 (Option D + Option C bootstrap — full filter replacement) — SHIPPED 2026-04-29.** Commits TBD by orchestrator post-merge. Code-level changes:
+- **PR-2 (Option D + Option C bootstrap — full filter replacement) — SHIPPED 2026-04-29.** Commits: `8889eb3` (code), `f316b92` (pre-seed: 21,073 artists + 4,444 pros). Code-level changes:
   - `searchSong.ts`: added `searchSongByArtist(http, searchTxt, nationType='')` for `strType=2` artist queries; centralized `sanitizeSearchTxt` apostrophe-strip across both helpers.
   - `cache.ts`: lifted `artistNationalityMap` out of the forward-compat `extras` bag into a typed top-level field with `ArtistNationalityEntry`; added `isArtistNationalityFresh` (90-day TTL) and `isBootstrapFresh` (7-day TTL) helpers.
   - `bootstrapCharts.ts` (new): Option-C `topAndHot100?strType=3` sweep over rolling 2-year weekly windows, deduped by `pro`, ≥3-distinct-pro confidence threshold for JPN tagging. Idempotent: existing mixed-vote (`searchSong`-derived) entries are not overwritten by chart evidence.
@@ -15,7 +16,10 @@
   - `parser.ts`: replaced JP-regex + `CHINESE_ARTIST_DENYLIST` (gone) + rescue with the 3-path `shouldKeep` chain — per-record JPN OR per-artist JPN OR blog-whitelist rescue. `ParseOptions.cache` now required.
   - `crawler.ts`: orchestrates bulk fetch → cache load → bootstrap (if stale) → per-artist scan → parse/filter → translit pass → save. `disableEnrichment: true` skips enrichment passes for tests; the parser still consumes the on-disk cache.
   - `normalize.ts` (new shared): `normalizeForMatch` (whitespace-collapse + lowercase + NFKC, single source of truth for cache keys) + `sanitizeSearchTxt` (apostrophe-strip).
-- **Pre-seed (artist scan + chart bootstrap + per-record fallback) — PENDING.** Run live with the new code, commit the resulting cache + crawl output for CI smoke.
+- **PR-3 (blog-rescue whitelist trim by artist-script signal) — SHIPPED 2026-04-30.** Commit: `6dce50c`. Trims the blog-whitelist rescue set down to records whose artist exhibits a JP-script signal (kana / Han-without-Hangul), gating the safety net to actual ambiguous-script JP cases. Rescue cardinality dropped from 1,165 → 141. Net effect: ~30-50 incidental real-JP losses accepted; substantial reduction in CN/KR false positives leaking through the rescue.
+- **PR-4 (multi-artist collab string splitter) — SHIPPED 2026-04-30.** Commit: `f991f07`. The per-artist scan + path-1 lookup now split combined-artist strings (`A & B`, `A feat. B`, `A,B`, etc.) into component artists before normalization, so each component receives its own `artistNationalityMap` lookup. Per-artist by-artist coverage rose from 5,350 → 5,522 (+172); total kept records rose from 5,953 → 6,022 (+69).
+- **Cache expansion chore — SHIPPED 2026-04-30.** Commit: `0418820`. Re-running PR-4's component-splitter as a backfill grew `artistNationalityMap` from 21,073 → 26,230 entries (+5,157 keys). The chart-bootstrap and per-artist-scan paths together added 266 newly-confirmed JPN tags (1,265 → 1,531).
+- **Manual crawl regen — SHIPPED 2026-04-30.** Commit: `f01f000`. Live crawl run with all PR-1..PR-4 changes + the expanded cache. Output: 26,480 records validated against `@karaoke/schema` via `scripts/validate-songs-json.mjs`. Regression delta vs. prior 26,401 corpus is +79 net (within noise band of weekly catalog mutation).
 
 ## Post-mortem (PR-1 lessons that informed PR-2)
 
