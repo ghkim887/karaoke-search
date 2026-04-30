@@ -91,6 +91,21 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
         border-bottom: 1px solid var(--rui-border);
       }
 
+      /* Mobile (<720px) — bleed the tab bar edge-to-edge so the bottom border
+         spans the full viewport width. Mirrors the chip-row pattern: negative
+         lateral margin pulls the bar to the screen edge, padding-left restores
+         tab-content alignment with the rest of the page content. Without this,
+         the border-bottom stops at the .results container's 1.25rem padding
+         and reads as "cut off" against the screen edges. */
+      @media (max-width: 719px) {
+        .tab-bar {
+          margin-left: -1.25rem;
+          margin-right: -1.25rem;
+          padding-left: 1.25rem;
+          padding-right: 1.25rem;
+        }
+      }
+
       .tab-button {
         font-family: var(--rui-font-body);
         /* DESIGN.md §3 Body — 16px. Inactive uses weight 500 (between Body 400
@@ -488,10 +503,6 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
           margin-top: 12px;
         }
 
-        .badge-number {
-          min-height: 44px;
-        }
-
         .result-numbers {
           gap: 0.5rem;
           padding: 0.4rem 0;
@@ -679,7 +690,13 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
         font-weight: 500;
         line-height: 1.5;
         letter-spacing: 0.16px;
-        padding: 4px 10px;
+        /* Match `.badge-category`'s slim 6px 14px profile so the TJ/KY/JOY
+           pills read at the same vertical height as the category tag inside
+           a result card. Mobile previously also applied `min-height: 44px`
+           for tap-target generosity but it forced the row to ~44px tall — out
+           of rhythm with the slim category tag. The 14px font + 6px×2 padding
+           gives ~33px which still meets generic touch-target heuristics. */
+        padding: 6px 14px;
         border-radius: var(--rui-radius-small);
         border: 0;
         background: var(--rui-pill-secondary-bg);
