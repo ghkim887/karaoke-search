@@ -1,13 +1,5 @@
-/* Self-hosted webfonts. Geist (display) + Inter (body) — both OFL/MIT.
-   Files live alongside this stylesheet at /karaoke-search/fonts/. font-display:
-   swap so CJK fallback text never blocks paint while the woff2 loads.
-
-   Vite emits a warning per @font-face url at build time
-   ("/karaoke-search/fonts/<name>.woff2 didn't resolve at build time, it
-   will remain unchanged to be resolved at runtime"). The warning is
-   benign — these are absolute public-asset paths served at runtime via
-   Astro's `base: '/karaoke-search/'`, and `dist/fonts/` contains every
-   referenced file. See review H1. */
+/* Self-hosted webfonts. Geist (display) + Inter (body) + Pretendard (Korean) — OFL/MIT.
+   Linked via <head> so Vite never parses the url() paths; files served from dist/fonts/. */
 @font-face {
   font-family: "Geist";
   src: url("/karaoke-search/fonts/geist-500.woff2") format("woff2");

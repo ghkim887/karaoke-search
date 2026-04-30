@@ -40,7 +40,7 @@ describe('useFavorites', () => {
 
   it('starts with an empty favorites set when localStorage is empty', () => {
     const { probe, host } = mountHook();
-    expect(probe.current?.favorites.size).toBe(0);
+    expect(probe.current?.orderedIds.length).toBe(0);
     expect(probe.current?.isFavorite('tj-100')).toBe(false);
     unmount(host);
   });
@@ -51,7 +51,7 @@ describe('useFavorites', () => {
     unmount(host);
     const { probe: probe2, host: host2 } = mountHook();
     expect(probe2.current?.isFavorite('tj-100')).toBe(true);
-    expect(probe2.current?.favorites.size).toBe(1);
+    expect(probe2.current?.orderedIds.length).toBe(1);
     unmount(host2);
   });
 

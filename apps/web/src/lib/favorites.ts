@@ -25,7 +25,6 @@ function writeToStorage(ids: string[]): void {
 }
 
 export interface UseFavoritesReturn {
-  favorites: Set<string>;
   toggle: (id: string) => void;
   isFavorite: (id: string) => boolean;
   orderedIds: string[];
@@ -33,8 +32,8 @@ export interface UseFavoritesReturn {
 
 /**
  * Device-local favorites backed by `localStorage` key `karaoke-favorites:v1`.
- * Returns both a `Set` (for O(1) `isFavorite`) and an ordered array
- * (newest-favorited first) so callers can render in order without re-sorting.
+ * Returns an ordered array (newest-favorited first) so callers can render in
+ * order without re-sorting, plus O(1) helpers backed by an internal Set.
  */
 export function useFavorites(): UseFavoritesReturn {
   const [orderedIds, setOrderedIds] = useState<string[]>(() => readFromStorage());
@@ -48,11 +47,11 @@ export function useFavorites(): UseFavoritesReturn {
     });
   }, []);
 
-  // Derive `favorites` directly from `orderedIds` so the Set is always in sync
-  // with the source of truth — no useEffect frame of latency.
+  // Internal Set derived from orderedIds — O(1) isFavorite without exposing
+  // the raw Set on the public interface (callers use isFavorite()).
   const favorites = useMemo(() => new Set(orderedIds), [orderedIds]);
 
   const isFavorite = useCallback((id: string) => favorites.has(id), [favorites]);
 
-  return { favorites, toggle, isFavorite, orderedIds };
+  return { toggle, isFavorite, orderedIds };
 }

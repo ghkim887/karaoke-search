@@ -68,6 +68,7 @@ export function CategoryChips({ selected, onChange }: CategoryChipsProps) {
             role="radio"
             class={`chip ${isActive ? 'chip-selected' : ''}`}
             aria-checked={isActive}
+            // tabIndex roving (not aria-activedescendant) is simpler and correct for a small fixed chip set where every item is a real focusable button.
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(chip.value)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
