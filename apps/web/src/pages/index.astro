@@ -92,13 +92,20 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
       }
 
       /* Mobile (<720px) — bleed the tab bar edge-to-edge so the bottom border
-         spans the full viewport width. Mirrors the chip-row pattern: negative
-         lateral margin pulls the bar to the screen edge, padding-left restores
-         tab-content alignment with the rest of the page content. Without this,
-         the border-bottom stops at the .results container's 1.25rem padding
-         and reads as "cut off" against the screen edges. */
+         spans the full viewport. Negative lateral margins alone are not
+         enough: `.tab-bar` declares `width: 100%`, which resolves against
+         the parent's CONTENT box and ignores the bled space, so the right
+         border still stops at the parent's padding edge. `100vw` is also
+         wrong because it includes the scrollbar gutter (documentElement
+         width does not), causing horizontal overflow when a scrollbar is
+         present. Solution: override `width` to `100% + 2.5rem` so the
+         element actually grows into the bled space — independent of
+         scrollbar presence. The 2.5rem matches the sum of the two
+         negative margins exactly. `padding-left/right: 1.25rem` keeps
+         tab-content aligned with the rest of the page column. */
       @media (max-width: 719px) {
         .tab-bar {
+          width: calc(100% + 2.5rem);
           margin-left: -1.25rem;
           margin-right: -1.25rem;
           padding-left: 1.25rem;
