@@ -85,10 +85,21 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
         display: flex;
         gap: 24px;
         width: 100%;
-        margin: 0 0 1rem;
+        margin: 0;
         padding: 0;
         background: var(--rui-bg);
         border-bottom: 1px solid var(--rui-border);
+      }
+
+      /* Push the first chip group (and any fieldset chip group immediately
+         after the tab bar) down 1rem so there is breathing room between the
+         tab bar's bottom border and the chip pills. Using a sibling selector
+         here rather than `padding-bottom` on `.tab-bar` keeps the bottom
+         border flush against the tab buttons — padding would move the border
+         downward, away from the buttons, which reads as wrong visually. */
+      .tab-bar + .chip-group,
+      .tab-bar + fieldset {
+        margin-top: 1rem;
       }
 
       /* Mobile (<720px) — bleed the tab bar edge-to-edge so the bottom border

@@ -38,11 +38,18 @@
   --rui-text-body-large: 18px; /* §3 Body Large */
   --rui-text-body: 16px; /* §3 Body — STANDARD reading text */
 
-  /* Resolved height of header.site-header. Declared on :root so it
-     inherits down into <main>, which is a sibling (not a descendant)
-     of <header>. Mobile baseline; the desktop breakpoint below bumps
-     it for the larger H1. */
-  --header-height: 6rem; /* ~96px mobile — site-title 24px×1.33 + subtitle 16px×1.5 + 18px×2 padding */
+  /* TODO: replace hand-derived value with a ResizeObserver that writes
+     --header-height to document.documentElement.style at runtime. */
+  /* Approximated by hand-derivation; see formula. Declared on :root so
+     it inherits down into <main>, which is a sibling (not a descendant)
+     of <header>. Mobile baseline; the desktop breakpoint below bumps it
+     for the larger H1. Re-derive whenever `.site-header` padding or
+     `.site-title` / `.site-subtitle` typography changes:
+       padding-top (pt) + title-size * title-lh + subtitle-mt
+         + subtitle-size * subtitle-lh + padding-bottom (pb)
+     Mobile: pt=18 + 24px*1.33 + mt=4 + 16px*1.5 + pb=18 ≈ 95.92px = 5.995rem
+     Sub-pixel delta vs 6rem (96px) is 0.08px — below rendering threshold. */
+  --header-height: 6rem; /* ~96px mobile */
 }
 
 @media (prefers-color-scheme: light) {
@@ -66,6 +73,6 @@
 
 @media (min-width: 720px) {
   :root {
-    --header-height: 6.5rem; /* ~104px desktop — site-title 32px×1.19 + subtitle 16px×1.5 + 18px×2 padding */
+    --header-height: 6.38rem; /* ~102.08px desktop — pt=18 + 32px*1.19 + mt=4 + 16px*1.5 + pb=18 = 102.08px */
   }
 }
