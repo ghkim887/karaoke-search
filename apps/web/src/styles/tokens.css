@@ -64,7 +64,14 @@
     --rui-border-strong: #191c1f; /* Outlined Pill border §4 */
     --rui-pill-primary-bg: #191c1f; /* Primary Dark Pill BG §4 */
     --rui-pill-primary-fg: #ffffff; /* Primary Dark Pill TX §4 */
-    --rui-pill-secondary-bg: #ececef; /* Secondary Light Pill BG §4 — stepped darker than --rui-surface (#f4f4f4) so pills are visually distinct on card backgrounds; #ececef = --rui-surface-hover, already in palette */
+    --rui-pill-secondary-bg: #dfdfe2; /* Secondary Light Pill BG §4 — derived
+       (NOT named in DESIGN.md §2). Must beat BOTH --rui-surface (#f4f4f4,
+       resting card) AND --rui-surface-hover (#ececef, hovered card) by enough
+       RGB delta to stay legible on hover; without this, pills merge into a
+       hovered card. The next named stop down is #c9c9cd (--rui-border / §2
+       Gray Tone), but that reads as an outlined-button luminance at this size.
+       #dfdfe2 sits ~13 units below #ececef and ~22 above #c9c9cd, preserving
+       the flat-pill silhouette. */
     --rui-pill-secondary-fg: #000000; /* Secondary Light Pill TX §4 — yes #000 per DESIGN.md */
     --rui-pill-ghost-bg: transparent; /* Outlined Pill BG §4 */
     --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg);
