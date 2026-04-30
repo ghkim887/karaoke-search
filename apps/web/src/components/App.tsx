@@ -116,6 +116,22 @@ export function App({ songCount }: AppProps) {
     setQuery(name);
   };
 
+  /** Called when the user clicks a tab. Resets all filter/search state to
+   *  defaults so the incoming tab always shows a clean view. No-ops if the
+   *  user clicks the already-active tab (preserves current state). */
+  const handleTabChange = (newTab: TabId) => {
+    if (newTab === activeTab) return;
+    if (debounceTimer.current !== null) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+    setInputValue('');
+    setQuery('');
+    setCategoryFilter('all');
+    setSelectedVendors(new Set());
+    setActiveTab(newTab);
+  };
+
   /** Pick the candidate set per (activeTab, query), then run the existing
    *  chip + slice pipeline. Browse uses MiniSearch; Favorites does a linear
    *  substring pass over the user-bounded favorites set. */
@@ -247,7 +263,7 @@ export function App({ songCount }: AppProps) {
   return (
     <main class="results">
       <SearchBox value={inputValue} onInput={handleInputChange} disabled={loading} />
-      <TabBar activeTab={activeTab} onChange={setActiveTab} disabled={loading} />
+      <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
       <CategoryChips selected={categoryFilter} onChange={setCategoryFilter} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">

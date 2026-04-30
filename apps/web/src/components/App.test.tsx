@@ -257,7 +257,7 @@ describe('App tab behavior', () => {
     expect(cards[0]?.textContent).toContain('Idol');
   });
 
-  it('switching Favorites → Browse with a query in the box preserves the query and re-runs full-corpus search', async () => {
+  it('switching Favorites → Browse resets filters and shows the empty-state (no query)', async () => {
     localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r1']));
     await mount();
     await clickFavoritesTab(host);
@@ -266,14 +266,93 @@ describe('App tab behavior', () => {
     vi.advanceTimersByTime(150);
     vi.useRealTimers();
     await flushPromises();
+    // Favorites tab: narrowed to 1 card.
     expect(host.querySelectorAll('[data-testid="result-card"]').length).toBe(1);
+    // Switch back to Browse — filters should reset.
     const tabs = getTabs(host);
     tabs[0]?.click();
     await flushPromises();
     const input = host.querySelector<HTMLInputElement>('.search-input');
-    expect(input?.value).toBe('idol');
-    expect(host.querySelector('.result-list')).not.toBeNull();
-    expect(host.querySelector('.empty-state')).toBeNull();
+    // Input cleared on tab switch.
+    expect(input?.value).toBe('');
+    // Browse with empty query shows the empty state, not a result list.
+    expect(host.querySelector('.empty-state')).not.toBeNull();
+    expect(host.querySelector('.result-list')).toBeNull();
+  });
+
+  it('switching tabs resets input, category chip, and vendor chip to defaults', async () => {
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r1', 'r2', 'r3']));
+    await mount();
+
+    // --- Browse tab: type a query, pick a category chip, pick a vendor chip ---
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'idol');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+    await flushPromises();
+
+    // Pick the Anime category chip.
+    const chips = Array.from(host.querySelectorAll<HTMLButtonElement>('.chip-group .chip'));
+    const animeChip = chips.find((c) => c.textContent?.trim() === 'Anime');
+    expect(animeChip).toBeDefined();
+    animeChip?.click();
+    await flushPromises();
+
+    // Pick the TJ vendor chip.
+    const vendorChips = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.chip-group-vendor .chip'),
+    );
+    const tjChip = vendorChips.find((c) => c.textContent?.trim() === 'TJ');
+    expect(tjChip).toBeDefined();
+    tjChip?.click();
+    await flushPromises();
+
+    // --- Switch to Favorites tab ---
+    await clickFavoritesTab(host);
+
+    // Input must be empty.
+    const inputAfter = host.querySelector<HTMLInputElement>('.search-input');
+    expect(inputAfter?.value).toBe('');
+
+    // 전체 (All) chip must be selected (aria-checked="true").
+    const allChip = Array.from(host.querySelectorAll<HTMLButtonElement>('.chip-group .chip')).find(
+      (c) => c.textContent?.trim() === '전체',
+    );
+    expect(allChip).toBeDefined();
+    expect(allChip?.getAttribute('aria-checked')).toBe('true');
+
+    // No vendor chip should be active.
+    const activeVendorChips = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.chip-group-vendor .chip'),
+    ).filter((c) => c.getAttribute('aria-pressed') === 'true');
+    expect(activeVendorChips.length).toBe(0);
+
+    // Favorites tab shows all 3 favorites (no filter narrowing).
+    const cards = host.querySelectorAll('[data-testid="result-card"]');
+    expect(cards.length).toBe(3);
+
+    // --- Switch back to Browse ---
+    const tabs = getTabs(host);
+    tabs[0]?.click();
+    await flushPromises();
+
+    // Still clean defaults: empty input, 전체 selected, no vendor active.
+    const inputAfterBrowse = host.querySelector<HTMLInputElement>('.search-input');
+    expect(inputAfterBrowse?.value).toBe('');
+
+    const allChipBrowse = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.chip-group .chip'),
+    ).find((c) => c.textContent?.trim() === '전체');
+    expect(allChipBrowse?.getAttribute('aria-checked')).toBe('true');
+
+    const activeVendorChipsBrowse = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.chip-group-vendor .chip'),
+    ).filter((c) => c.getAttribute('aria-pressed') === 'true');
+    expect(activeVendorChipsBrowse.length).toBe(0);
+
+    // Browse with empty query shows the empty state.
+    expect(host.querySelector('.empty-state')).not.toBeNull();
+    expect(host.querySelector('.result-list')).toBeNull();
   });
 
   it('with Favorites active, typing a query that matches no favorites → <NoResults> renders', async () => {
