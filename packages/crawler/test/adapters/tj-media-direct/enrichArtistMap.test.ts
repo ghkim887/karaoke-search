@@ -197,6 +197,76 @@ describe('enrichArtistMap', () => {
     expect(logger.warns.some((w) => /FlakeyArtist/.test(w))).toBe(true);
   });
 
+  it('PR-4: scans every component of a collab string + the whole string', async () => {
+    // Catalog has 2 records:
+    //   - whole-string scan (`imase`)
+    //   - collab string (`imase & なとり`) which must split into both
+    //     components AND the whole string.
+    //
+    // After the scan, ALL of `imase`, `なとり`, AND the whole `imase & なとり`
+    // key should be present in artistNationalityMap. `imase` already had its
+    // own row, so the splitter MUST NOT double-fetch it.
+    const records = [
+      rawFor({ tj: '1', artist: 'imase' }),
+      rawFor({ tj: '2', artist: 'imase & なとり' }),
+    ];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client, calls } = buildHttp(({ searchTxt }) => {
+      // TJ returns each artist as JPN when searched directly, and returns
+      // empty for the combined `imase & なとり` (which is how the live
+      // searchSong index typically behaves for collab strings).
+      if (searchTxt === 'imase') {
+        return searchResp([{ pro: 1, indexTitle: 't', indexSong: 'imase', nationalcode: 'JPN' }]);
+      }
+      if (searchTxt === 'なとり') {
+        return searchResp([{ pro: 2, indexTitle: 't', indexSong: 'なとり', nationalcode: 'JPN' }]);
+      }
+      // The combined string scan finds nothing exact-matching itself — the
+      // entry is still recorded, just as UNKNOWN.
+      return searchResp([]);
+    });
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+
+    // Both component artists got their own JPN entry.
+    expect(cache.artistNationalityMap.imase?.code).toBe('JPN');
+    expect(cache.artistNationalityMap.なとり?.code).toBe('JPN');
+    // The combined string is in the cache too — UNKNOWN because TJ search
+    // returned no exact-match results for the literal `imase & なとり` query.
+    const wholeKey = 'imase&なとり'; // normalizeForMatch strips spaces, lowercases.
+    expect(cache.artistNationalityMap[wholeKey]?.code).toBe('UNKNOWN');
+
+    // Three distinct components scanned — exactly 3 HTTP calls (no double-fetch
+    // of `imase` even though both records reference it).
+    expect(calls).toHaveLength(3);
+    const queried = new Set(calls.map((c) => c.body.searchTxt));
+    expect(queried).toEqual(new Set(['imase', 'なとり', 'imase & なとり']));
+  });
+
+  it('PR-4: dedupes components across collab strings (one fetch per distinct component)', async () => {
+    // `imase` appears as both a standalone artist and as a component of two
+    // different collabs — the scanner should fetch it exactly ONCE.
+    const records = [
+      rawFor({ tj: '1', artist: 'imase' }),
+      rawFor({ tj: '2', artist: 'imase & なとり' }),
+      rawFor({ tj: '3', artist: 'imase, ヨルシカ' }),
+    ];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client, calls } = buildHttp(() =>
+      searchResp([{ pro: 1, indexTitle: 't', indexSong: 'imase', nationalcode: 'JPN' }]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+
+    // `imase` count across all calls: exactly 1.
+    const imaseCalls = calls.filter((c) => c.body.searchTxt === 'imase');
+    expect(imaseCalls).toHaveLength(1);
+  });
+
   it('skips records with empty artist names', async () => {
     const baseRecord = rawFor({ tj: '1', artist: 'YOASOBI' });
     const blank: RawSongRecord = { ...baseRecord, artist_primary: '' };

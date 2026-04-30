@@ -1,6 +1,6 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import type { SearchSongCache } from './cache.js';
-import { normalizeForMatch } from './normalize.js';
+import { normalizeForMatch, splitArtistCollab } from './normalize.js';
 
 /**
  * Parse a TJ Media catalog JSON response into `RawSongRecord`s.
@@ -26,9 +26,12 @@ import { normalizeForMatch } from './normalize.js';
  * safety net; the behavior is "any-admit", so reordering does not change
  * which records are kept, only which path gets credit in `KeepStats`.
  *
- *   1. **Per-artist JPN tag (primary).** If
- *      `cache.artistNationalityMap[normalize(artist)].code === 'JPN'`, keep.
- *      This is the primary path because per-record title-search has
+ *   1. **Per-artist JPN tag (primary).** Split `artist` via
+ *      `splitArtistCollab` (whole-string scan PLUS per-component scan for
+ *      collab strings like `imase & なとり`, `IDOLiSH7,TRIGGER,Re:vale`,
+ *      `Charlie Puth(Feat.宇多田ヒカル)`, …). If ANY component has
+ *      `cache.artistNationalityMap[normalize(component)].code === 'JPN'`,
+ *      keep. This is the primary path because per-record title-search has
  *      empirically high miss rates (33% in PR-1's pre-seed: 1,950 / 5,961
  *      title-search calls returned no `pro` match). Per-artist scanning
  *      uses `searchSong?strType=2` (artist field) which side-steps that gap
@@ -193,10 +196,17 @@ export function classifyRecord(
   force?: ReadonlySet<string>,
 ): KeepVerdict {
   // Path 1 (primary): per-artist nationalcode confirmation. Catches
-  // Latin-titled Japanese acts that title-search misses.
-  const artistKey = normalizeForMatch(artist);
-  const artistEntry = cache.artistNationalityMap[artistKey];
-  if (artistEntry?.code === 'JPN') return 'artist';
+  // Latin-titled Japanese acts that title-search misses. PR-4: collab
+  // strings (`imase & なとり`, `Charlie Puth(Feat.宇多田ヒカル)`, …) are
+  // exploded into components — if ANY component is JPN-tagged, the whole
+  // record is admitted. The whole string is the first element of the split
+  // so single-artist names short-circuit on the first lookup.
+  for (const component of splitArtistCollab(artist)) {
+    const key = normalizeForMatch(component);
+    if (key === '') continue;
+    const entry = cache.artistNationalityMap[key];
+    if (entry?.code === 'JPN') return 'artist';
+  }
 
   // Path 2 (backup): per-record nationalcode confirmation. Catches the case
   // where the artist scan was AMBIGUOUS but a specific `pro` is JPN.

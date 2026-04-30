@@ -223,6 +223,129 @@ describe('parseCatalogResponse — false-negative recovery (PR-2 promise)', () =
   });
 });
 
+describe('parseCatalogResponse — PR-4 multi-artist collab admit (path 1)', () => {
+  /**
+   * PR-4: the per-artist scan now considers every collab component, so a
+   * record like `imase & なとり` must admit via path 1 even when ONLY one of
+   * the components is JPN-tagged in the cache. This recovers the ~102 Latin-
+   * collab admits identified in the audit (records like
+   * `MY FIRST STORY & HYDE`, `Charlie Puth(Feat.宇多田ヒカル)`).
+   */
+  it('admits a collab when ONE component is JPN-tagged (combined string is not in cache)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 1, indexTitle: 'glow', indexSong: 'imase & なとり', publishdate: '2024-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    // Only `imase` is tagged JPN — the combined `imase & なとり` key is
+    // NOT in the cache (matches the live-API behavior where the literal
+    // collab string returns no exact-match results from searchSong).
+    cache.artistNationalityMap.imase = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.artist_primary).toBe('imase & なとり');
+    // Path-1 (per-artist) admitted via component split.
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.admittedByPro).toBe(0);
+    expect(stats.admittedByRescue).toBe(0);
+    expect(stats.dropped).toBe(0);
+  });
+
+  it('admits a `feat.` parenthetical collab when the featured artist is JPN-tagged', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 2,
+            indexTitle: 'Light Switch',
+            indexSong: 'Charlie Puth(Feat.宇多田ヒカル)',
+            publishdate: '2022-01-20',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    // Only the featured artist is tagged JPN.
+    cache.artistNationalityMap.宇多田ヒカル = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(1);
+    expect(stats.admittedByArtist).toBe(1);
+  });
+
+  it('regression: whole-string JPN tag still admits unchanged (no collab)', () => {
+    // When the whole string itself is the JPN-tagged key (as the pre-PR-4
+    // path was the only way to admit), the same record still admits via
+    // path 1. The splitter's first element is the whole string, so this
+    // hits on the very first lookup.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 99, indexTitle: 'Idol', indexSong: 'YOASOBI', publishdate: '2023-05-24' }],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(1);
+    expect(stats.admittedByArtist).toBe(1);
+  });
+
+  it('drops a collab when NO component is JPN-tagged', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 3,
+            indexTitle: 'random',
+            indexSong: 'UnknownA & UnknownB',
+            publishdate: '2024-01-01',
+          },
+        ],
+      },
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+  });
+
+  it('drops a collab when a component is non-JPN (no JPN component anywhere)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 4,
+            indexTitle: 'random',
+            indexSong: 'KorActor & EngActor',
+            publishdate: '2024-01-01',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.koractor = {
+      code: 'KOR',
+      votes: { JPN: 0, KOR: 3, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    cache.artistNationalityMap.engactor = {
+      code: 'ENG',
+      votes: { JPN: 0, KOR: 0, ENG: 3 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+  });
+});
+
 describe('parseCatalogResponse — direct unit cases', () => {
   it('returns an empty array when items is empty', () => {
     const empty = {

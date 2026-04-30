@@ -6,19 +6,27 @@ import {
   type SearchSongCache,
   isArtistNationalityFresh,
 } from './cache.js';
-import { normalizeForMatch } from './normalize.js';
+import { normalizeForMatch, splitArtistCollab } from './normalize.js';
 import { type SearchSongItem, searchSongByArtist } from './searchSong.js';
 
 /**
  * Per-artist nationality scan.
  *
- * Iterates every distinct artist in the catalog (typically ~10-15k unique
- * `artist_primary` values across the 67k-record TJ catalog). For each artist:
+ * Iterates every distinct **component** name in the catalog. For each catalog
+ * row, the `artist_primary` is split via `splitArtistCollab` so collab strings
+ * like `imase & なとり`, `IDOLiSH7,TRIGGER,Re:vale`,
+ * `Charlie Puth(Feat.宇多田ヒカル)`, or `安室奈美恵 with スーパーモンキーズ`
+ * each yield independent component scans. Single-artist names round-trip
+ * through the splitter unchanged. Across the 67k-record TJ catalog this
+ * typically resolves to ~10-15k unique components.
+ *
+ * For each unique component (keyed by `normalizeForMatch` so we never
+ * double-fetch a canonicalised duplicate):
  *
  *  1. If the cache already has a fresh `artistNationalityMap` entry, reuse it.
  *  2. Else: call `/legacy/api/searchSong?strType=2` (artist field) with the
- *     artist name. Tally `nationalcode` votes from results that are an
- *     EXACT match on `normalize(item.indexSong) === normalize(artist)`.
+ *     component name. Tally `nationalcode` votes from results that are an
+ *     EXACT match on `normalize(item.indexSong) === normalize(component)`.
  *  3. Classify by the vote distribution:
  *       - all JPN votes (count ≥ 1)        -> JPN
  *       - all KOR votes                    -> KOR
@@ -33,8 +41,8 @@ import { type SearchSongItem, searchSongByArtist } from './searchSong.js';
  * AMBIGUOUS as "drop unless rescued" — same as a hard KOR/ENG. Better to
  * miss a record (blog rescue catches it) than admit a Mandopop singer.
  *
- * Cost estimate: 10-15k artists × 500 ms ≈ 1.4-2 h fresh; near-zero on warm
- * cache. Logs progress every 500 artists with running counts.
+ * Cost estimate: 10-15k components × 500 ms ≈ 1.4-2 h fresh; near-zero on
+ * warm cache. Logs progress every 500 components with running counts.
  */
 
 export interface EnrichArtistMapOptions {
@@ -47,7 +55,11 @@ export interface EnrichArtistMapOptions {
 }
 
 export interface EnrichArtistMapStats {
-  /** Total distinct artists processed. */
+  /**
+   * Total distinct components processed. With the PR-4 collab splitter this
+   * counts component names — a single record like `imase & なとり`
+   * contributes 3 entries (whole + 2 splits) deduped against the rest.
+   */
   totalArtists: number;
   /** Cache hits (skipped HTTP). */
   cacheHits: number;
@@ -55,7 +67,7 @@ export interface EnrichArtistMapStats {
   fetches: number;
   /** Calls that threw (HTTP error, JSON, robots-disallow). */
   errors: number;
-  /** Artists classified by `code`. */
+  /** Components classified by `code`. */
   byCode: Record<ArtistNationalityCode, number>;
 }
 
@@ -72,17 +84,24 @@ export async function enrichArtistMap(
     warn: console.warn.bind(console),
   };
 
-  // Build the unique-artist set as a key->displayName Map. Keys are the
-  // canonical normalized form so the cache lookups line up with the parser
-  // filter's lookup. The displayName is the first occurrence we saw — used
-  // in error messages only.
+  // Build the unique-component set as a key->displayName Map. Each catalog
+  // row's `artist_primary` is run through `splitArtistCollab` so that collab
+  // strings (`imase & なとり`, `Charlie Puth(Feat.宇多田ヒカル)`, …) yield
+  // independent component scans alongside the whole-string scan. Keys are
+  // the canonical normalized form so the cache lookups line up with the
+  // parser filter's lookup AND we never double-fetch (e.g. two records that
+  // both contribute `imase` only fetch it once). The displayName is the
+  // first occurrence we saw — used as the actual `searchTxt` value plus in
+  // error messages.
   const artists = new Map<string, string>();
   for (const r of records) {
     const name = r.artist_primary;
     if (!name) continue;
-    const key = normalizeForMatch(name);
-    if (key === '') continue;
-    if (!artists.has(key)) artists.set(key, name);
+    for (const component of splitArtistCollab(name)) {
+      const key = normalizeForMatch(component);
+      if (key === '') continue;
+      if (!artists.has(key)) artists.set(key, component);
+    }
   }
 
   const stats: EnrichArtistMapStats = {
@@ -143,7 +162,7 @@ export async function enrichArtistMap(
 
   // Final summary line.
   logger.log(
-    `[tj-artist] scan complete — ${stats.totalArtists} artists: JPN=${stats.byCode.JPN} KOR=${stats.byCode.KOR} ENG=${stats.byCode.ENG} AMBIGUOUS=${stats.byCode.AMBIGUOUS} UNKNOWN=${stats.byCode.UNKNOWN} (cacheHits=${stats.cacheHits} fetches=${stats.fetches} errors=${stats.errors})`,
+    `[tj-artist] scan complete — ${stats.totalArtists} components: JPN=${stats.byCode.JPN} KOR=${stats.byCode.KOR} ENG=${stats.byCode.ENG} AMBIGUOUS=${stats.byCode.AMBIGUOUS} UNKNOWN=${stats.byCode.UNKNOWN} (cacheHits=${stats.cacheHits} fetches=${stats.fetches} errors=${stats.errors})`,
   );
 
   // Refresh `generatedAt` if we mutated anything.
@@ -196,6 +215,6 @@ function logProgress(
   stats: EnrichArtistMapStats,
 ): void {
   logger.log(
-    `[tj-artist] scanned ${processed}/${stats.totalArtists} — JPN=${stats.byCode.JPN} KOR=${stats.byCode.KOR} ENG=${stats.byCode.ENG} AMBIG=${stats.byCode.AMBIGUOUS} UNK=${stats.byCode.UNKNOWN} (hits=${stats.cacheHits} fetches=${stats.fetches} errors=${stats.errors})`,
+    `[tj-artist] scanned ${processed}/${stats.totalArtists} components — JPN=${stats.byCode.JPN} KOR=${stats.byCode.KOR} ENG=${stats.byCode.ENG} AMBIG=${stats.byCode.AMBIGUOUS} UNK=${stats.byCode.UNKNOWN} (hits=${stats.cacheHits} fetches=${stats.fetches} errors=${stats.errors})`,
   );
 }
