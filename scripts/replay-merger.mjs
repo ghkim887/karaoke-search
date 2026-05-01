@@ -152,14 +152,20 @@ if (disappeared.length > 0) {
 // --- Step 6: safety gate -------------------------------------------------
 if (delta < 0) {
   console.error('');
-  console.error(`[replay-merger] FATAL: delta is negative (${delta}). Merger produced more records than input. Aborting.`);
+  console.error(
+    `[replay-merger] FATAL: delta is negative (${delta}). Merger produced more records than input. Aborting.`,
+  );
   process.exit(2);
 }
 
 if (delta > 30) {
   console.error('');
-  console.error(`[replay-merger] SAFETY GATE: delta=${delta} exceeds threshold of 30. Refusing to write.`);
-  console.error('[replay-merger] Inspect the Tier C clusters above and the disappeared-record sample, then re-run if expected.');
+  console.error(
+    `[replay-merger] SAFETY GATE: delta=${delta} exceeds threshold of 30. Refusing to write.`,
+  );
+  console.error(
+    '[replay-merger] Inspect the Tier C clusters above and the disappeared-record sample, then re-run if expected.',
+  );
   process.exit(2);
 }
 

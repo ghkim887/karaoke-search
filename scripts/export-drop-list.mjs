@@ -24,9 +24,12 @@
  * Output schema (kept minimal — Python only needs the keys for membership):
  *   {
  *     "version": 1,
- *     "generatedAt": "<ISO 8601>",
  *     "keys": ["방탄소년단", "bts", "防弾少年団", ...]
  *   }
+ *
+ * `generatedAt` is intentionally omitted: including a timestamp made every
+ * build dirty the working tree even when the drop list hadn't changed. Git
+ * history is the timeline; the keys array is the payload.
  *
  * Run automatically as part of `corepack pnpm --filter @karaoke/crawler build`
  * (wired into the package's `build` script as a post-tsc step). Manual
@@ -70,7 +73,6 @@ async function main() {
   const keys = Array.from(dropKeySet).sort();
   const sidecar = {
     version: 1,
-    generatedAt: new Date().toISOString(),
     keys,
   };
 

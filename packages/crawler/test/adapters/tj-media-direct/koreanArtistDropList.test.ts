@@ -146,7 +146,6 @@ describe('koreanArtistDropList — sidecar JSON staleness check (Fix 2)', () => 
 
   interface SidecarShape {
     version: number;
-    generatedAt: string;
     keys: string[];
   }
 
