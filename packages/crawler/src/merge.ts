@@ -4,6 +4,7 @@ import {
   type SongRecord,
   applyCategoryExclusivity as applyCategoryExclusivitySet,
 } from '@karaoke/schema';
+import { getLeadComponent } from './adapters/tj-media-direct/normalize.js';
 import { normalize } from './normalize.js';
 
 /**
@@ -39,41 +40,22 @@ function tierBKey(r: SongRecord): string {
 }
 
 /**
- * Tier C primary-artist token splitter. Returns the lead chunk of an
- * `artist_primary` string with collab / featuring / collaborator suffixes
- * stripped, then run through `normalize()`. Used by `tierCKey` to cluster
- * records whose canonical artist agrees but whose feat./collab decoration
- * differs (e.g. `椎名もた(Feat.鏡音リン)` vs `椎名もた｜ぽわぽわP` — both
- * tokenize to `normalize('椎名もた')`).
- *
- * Split delimiters (first occurrence wins):
- *   `(Feat.` / `(feat.` / `(Prod.` / `(prod.` — opening paren + collab tag
- *   `｜` — full-width vertical bar (blog adapter convention for collab)
- *   ` & ` — ampersand with surrounding whitespace
- *   `, ` — comma + space
- *   ` with ` — whitespace-bounded
- *   ` feat. ` / ` Feat. ` — whitespace-bounded
- *
- * Non-goal: this is NOT a general artist-string parser. It targets the
- * specific decoration patterns observed in TJ-direct + blog-adapter output
- * for cross-source Tier C clustering only.
- */
-function primaryArtistToken(artist: string): string {
-  if (!artist) return '';
-  const splitRe = /\([Ff]eat\.|\([Pp]rod\.|｜|\s+&\s+|,\s|\s+with\s+|\s+[Ff]eat\.\s+/;
-  const m = splitRe.exec(artist);
-  const lead = m ? artist.slice(0, m.index) : artist;
-  return normalize(lead.trim());
-}
-
-/**
- * Tier C cluster key — `normalize(title_primary) | primaryArtistToken(artist_primary)`.
+ * Tier C cluster key — `normalize(title_primary) | getLeadComponent(artist_primary)`.
  * Returns `null` when either field is empty after normalization, in which
  * case the record is unkeyable for Tier C and stays a singleton.
+ *
+ * Fix A.2 (2026-05-01): the lead-component extraction is now sourced from
+ * the canonical `getLeadComponent` helper in the TJ-direct normalize module
+ * — the same helper the parser's lead-admit rule consumes. The previous
+ * inline `primaryArtistToken` had a SUBSET of `splitArtistCollab`'s delimiter
+ * regex (no `×` or `＆`), risking silent divergence: the same artist string
+ * could produce different lead tokens between the merger's clustering key and
+ * the parser's admit rule. Unifying through `getLeadComponent` eliminates
+ * that drift class.
  */
 function tierCKey(r: SongRecord): string | null {
   const t = normalize(r.title_primary);
-  const a = primaryArtistToken(r.artist_primary);
+  const a = getLeadComponent(r.artist_primary);
   if (t === '' || a === '') return null;
   return `${t}|${a}`;
 }
@@ -368,7 +350,7 @@ function mergeCluster(
  *   key and unioned. Records with no peer remain standalone.
  *
  *   Tier C (cross-source primary-token match): residual singletons after
- *   Tier B are grouped by `normalize(title) | primaryArtistToken(artist)`
+ *   Tier B are grouped by `normalize(title) | getLeadComponent(artist)`
  *   — the latter strips collab/feat. decoration so e.g. `椎名もた(Feat.鏡音リン)`
  *   matches `椎名もた｜ぽわぽわP`. A Tier C cluster fires ONLY when ≥ 2
  *   distinct source prefixes are represented (gate against same-source
@@ -381,11 +363,10 @@ function mergeCluster(
  *   See `mergeCluster` for the chains.
  *
  * Determinism: cluster output is sorted by
- *   1) `karaoke_numbers.tj ?? '￿'` ascending — TJ-less records go last.
+ *   1) `karaoke_numbers.tj` ascending — null TJ records sort last (explicit
+ *      null-handling, see Fix A.1 in the sort comparator below).
  *   2) `normalize(title_primary)` ascending — locale-stable string compare.
  *   3) `id` ascending.
- * The U+FFFF sentinel is the highest BMP code point, larger than any TJ#
- * (which are ASCII digits), so null-tj records reliably sort to the end.
  *
  * Conflict warnings (Tier B vendor-number disagreements + Tier C cluster
  * fires) are returned in `result.conflicts`. Console output is forbidden —
@@ -473,11 +454,18 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   }
 
   // --- Tier C: cross-source residual-singleton clustering ---
-  // After Tier B, recompute cluster sizes; records still in singletons go
+  // After Tier B, compute cluster sizes; records still in singletons go
   // through Tier C's `tierCKey` grouping. Gate on cross-source membership
   // (≥ 2 distinct source prefixes) — without the gate, two same-source
   // records like `tj-98374 IDOL/방탄소년단` and `tj-98392 IDOL/방탄소년단(Feat.Nicki Minaj)`
   // would wrongly merge.
+  //
+  // Fix A.5 (2026-05-01): size-after-B and tier-C grouping are computed in
+  // a single pass. The previous version iterated the corpus 3× (size, group,
+  // and a third pass during materialization); on a 26k-record corpus that
+  // was 3 × O(n) where one pass would suffice. This still does TWO passes
+  // because `sizeAfterB.get(root)` requires every root to be counted before
+  // any singleton is filtered — so we count, then group.
   const sizeAfterB = new Map<number, number>();
   for (let i = 0; i < n; i++) {
     const root = uf.find(i);
@@ -534,11 +522,27 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   }
 
   // Deterministic sort. See docblock above for the rule.
+  //
+  // Fix A.1 (2026-05-01): null-TJ tiebreak is now explicit — null records
+  // sort AFTER any non-null TJ regardless of codepoint. The previous version
+  // used `r.karaoke_numbers.tj ?? '￿'` (U+FFFF) as a "push to end" sentinel.
+  // That worked for ASCII-digit TJ codes (the only kind in production today)
+  // because no ASCII string compares larger than U+FFFF. But supplementary-
+  // plane chars (codepoint > U+FFFF, e.g. `'𠀀1'`) sort LOWER than `'￿'`
+  // in JS string comparison — their leading UTF-16 surrogate falls in
+  // U+D800–DBFF, which is below U+FFFF. A future TJ vendor change to non-
+  // ASCII codes (or a hostile fixture) would silently flip the sort. Explicit
+  // null-handling removes the tripwire.
   merged.sort((a, b) => {
-    const at = a.karaoke_numbers.tj ?? '￿';
-    const bt = b.karaoke_numbers.tj ?? '￿';
-    if (at < bt) return -1;
-    if (at > bt) return 1;
+    const at = a.karaoke_numbers.tj;
+    const bt = b.karaoke_numbers.tj;
+    // Null TJ records sort last regardless of the other side's codepoint.
+    if (at === null && bt !== null) return 1;
+    if (at !== null && bt === null) return -1;
+    if (at !== null && bt !== null) {
+      if (at < bt) return -1;
+      if (at > bt) return 1;
+    }
     const an = normalize(a.title_primary);
     const bn = normalize(b.title_primary);
     if (an < bn) return -1;

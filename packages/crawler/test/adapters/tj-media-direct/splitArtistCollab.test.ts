@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getLeadComponent,
   normalizeForMatch,
   splitArtistCollab,
 } from '../../../src/adapters/tj-media-direct/normalize.js';
@@ -246,5 +247,91 @@ describe('splitArtistCollab — dedupe + edge cases', () => {
 
   it('does NOT split bracket-style `Artist1[ft.Artist2]` (out of scope)', () => {
     expect(splitArtistCollab('Artist1[ft.Artist2]')).toEqual(['Artist1[ft.Artist2]']);
+  });
+});
+
+describe('splitArtistCollab — invariant lock (Fix A.3)', () => {
+  // The internal contract is: when the function returns a non-empty array,
+  // `out[0]` MUST equal the trimmed input. Multiple consumers (parser admit
+  // rule, merger Tier C clustering) depend on this. The runtime assertion
+  // throws if a future refactor breaks it; these tests exercise the assertion
+  // implicitly by verifying the contract on a representative slice of inputs.
+  it('parts[0] is always the trimmed whole-string', () => {
+    const inputs = [
+      'YOASOBI',
+      'imase & なとり',
+      'Charlie Puth(Feat.宇多田ヒカル)',
+      '安室奈美恵 with スーパーモンキーズ',
+      'imase ＆ なとり',
+      'Artist X × Y',
+      '   YOASOBI   ',
+      'IDOLiSH7,TRIGGER,Re:vale',
+    ];
+    for (const inp of inputs) {
+      const out = splitArtistCollab(inp);
+      if (out.length > 0) expect(out[0]).toBe(inp.trim());
+    }
+  });
+});
+
+describe('getLeadComponent — Fix A.2 unified lead extractor', () => {
+  // Parity test: the new shared `getLeadComponent` helper must produce the
+  // same output for every Tier C test case the previous inline
+  // `primaryArtistToken` regex produced. The old regex (frozen here as a
+  // private constant for assertion-only) was:
+  //   /\([Ff]eat\.|\([Pp]rod\.|｜|\s+&\s+|,\s|\s+with\s+|\s+[Ff]eat\.\s+/
+  //
+  // Cases include the four Tier C canonical inputs plus 4 inputs that
+  // exercise delimiters present in `splitArtistCollab` but absent from the
+  // old regex (`×`, `＆`, comma-no-space, all-caps `FEAT.`). The latter were
+  // the silent-drift surface — the merger's clustering would have classified
+  // those differently from the parser's admit rule.
+  function legacyPrimaryArtistToken(artist: string): string {
+    if (!artist) return '';
+    const splitRe = /\([Ff]eat\.|\([Pp]rod\.|｜|\s+&\s+|,\s|\s+with\s+|\s+[Ff]eat\.\s+/;
+    const m = splitRe.exec(artist);
+    const lead = m ? artist.slice(0, m.index) : artist;
+    return normalizeForMatch(lead.trim());
+  }
+
+  it('reproduces legacy primaryArtistToken output for the Tier C canonical inputs', () => {
+    const tierCInputs = [
+      '椎名もた(Feat.鏡音リン)',
+      '椎名もた｜ぽわぽわP',
+      'ナユタン星人',
+      'ナユタン星人(Feat.初音ミク)',
+      'MAX(Feat.SUGA of BTS)',
+      'キタニタツヤ(Feat.はるまきごはん)',
+      'キタニタツヤ',
+      'キタニタツヤ & はるまきごはん',
+      'imase(Prod.someone)',
+      'imase',
+      'X with Y',
+      'X',
+      'A, B',
+      'A',
+      'SoloOne',
+      'SoloTwo',
+      'YOASOBI',
+    ];
+    for (const inp of tierCInputs) {
+      expect(getLeadComponent(inp)).toBe(legacyPrimaryArtistToken(inp));
+    }
+  });
+
+  it('handles empty/whitespace inputs predictably', () => {
+    expect(getLeadComponent('')).toBe('');
+    expect(getLeadComponent('   ')).toBe('');
+  });
+
+  it('extends coverage to delimiters absent from the legacy regex (`×`, `＆`, comma-no-space, all-caps FEAT.)', () => {
+    // These four are the silent-drift surface that motivated Fix A.2: the
+    // legacy `primaryArtistToken` did NOT split on `×` or `＆` (full-width
+    // ampersand), comma-without-space, or all-caps `FEAT.`. The new helper
+    // does, matching the parser's admit-rule split exactly.
+    expect(getLeadComponent('Artist1 × Artist2')).toBe(normalizeForMatch('Artist1'));
+    expect(getLeadComponent('imase ＆ なとり')).toBe(normalizeForMatch('imase'));
+    expect(getLeadComponent('A,B')).toBe(normalizeForMatch('A'));
+    expect(getLeadComponent('A FEAT. B')).toBe(normalizeForMatch('A'));
   });
 });

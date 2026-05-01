@@ -60,8 +60,19 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
   await rename(tmp, outPath);
 
   if (conflictsOutPath) {
+    // Fix B.1 (2026-05-01): exclude `tier_c_merge` from the headline `total`.
+    // The PR body composition step in `.github/workflows/crawl.yml` reads
+    // `total` and surfaces it as "Merge conflicts during dedup", but Tier C
+    // merges are NOT disagreements — they're successful soft-merges flagged
+    // for visibility. Counting them in the headline number was misleading.
+    //
+    // Asymmetry (Fix 3, 2026-05-01): only the headline `total` is filtered.
+    // The `sample` (and the full conflicts list) remains UNFILTERED so Tier C
+    // cluster details stay visible for forensic inspection per spec §3.C —
+    // a reader of the JSON file can still see which Tier C clusters fired.
+    const headlineConflicts = conflicts.filter((c) => c.field !== 'tier_c_merge');
     const summary = {
-      total: conflicts.length,
+      total: headlineConflicts.length,
       sample: conflicts.slice(0, 10),
     };
     await mkdir(dirname(conflictsOutPath), { recursive: true });

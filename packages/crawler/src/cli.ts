@@ -24,6 +24,9 @@ Options:
                    Optional path for the Tier-B merge-conflict summary JSON
                    ({ total, sample }). When set, the file is written even
                    if total=0 (so the workflow can branch on its presence).
+                   Note: Tier C cross-source merges are excluded from the
+                   headline 'total' count, but they ARE included in the
+                   per-entry 'sample' list for forensic inspection.
   --help           Print this message and exit 0.
 `;
 
@@ -131,8 +134,13 @@ async function main(): Promise<void> {
   };
   const { written, conflicts } = await runPipeline(pipelineOpts);
   process.stdout.write(`wrote ${written} records to ${outPath}\n`);
-  if (conflicts.length > 0) {
-    process.stdout.write(`merge conflicts: ${conflicts.length}\n`);
+  // Fix B.1 (2026-05-01): the headline "merge conflicts" count excludes
+  // `tier_c_merge` entries — those are successful soft-merges flagged for
+  // visibility, not disagreements. Per-cluster Tier C detail still lives in
+  // the conflicts-out JSON for downstream readers.
+  const headlineConflicts = conflicts.filter((c) => c.field !== 'tier_c_merge');
+  if (headlineConflicts.length > 0) {
+    process.stdout.write(`merge conflicts: ${headlineConflicts.length}\n`);
   }
 }
 

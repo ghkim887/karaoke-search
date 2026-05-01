@@ -130,11 +130,20 @@ export function splitArtistCollab(artist: string): string[] {
   // Split the remaining string on the primary delimiters (case-insensitive
   // flag `i` covers FEAT. / With / WITH). The regex matches:
   //   - `&` / `＆` (U+FF06 full-width — split runs before NFKC normalisation)
-  //     / `,` / `×` with optional surrounding whitespace
+  //     / `,` / `×` / `｜` (U+FF5C full-width vertical bar) with optional
+  //     surrounding whitespace
   //   - ` with ` (whitespace-delimited so it never bites mid-word)
   //   - `feat.` (any case) with optional surrounding whitespace (catches the
   //     un-parenthesized form like `Artist1 FEAT. Artist2`)
-  const SPLIT_RE = /\s*[&＆,×]\s*|\s+with\s+|\s*feat\.\s*/i;
+  //
+  // Fix A.2 (2026-05-01): added `｜` (U+FF5C) to the delimiter set. The blog
+  // adapter convention for collab is `Artist1｜Artist2`; the legacy
+  // `primaryArtistToken` regex in `merge.ts` split on this character but
+  // `splitArtistCollab` did not, causing silent drift between the parser's
+  // admit rule and the merger's Tier C clustering. Required by Fix A.2's
+  // shared `getLeadComponent` helper to reproduce the canonical Tier C
+  // behavior (`椎名もた｜ぽわぽわP` → lead `椎名もた`).
+  const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s*feat\.\s*/i;
   if (main !== '') {
     const pieces = main.split(SPLIT_RE);
     for (const piece of pieces) {
@@ -185,5 +194,53 @@ export function splitArtistCollab(artist: string): string[] {
     seen.add(key);
     out.push(part);
   }
+  // Invariant lock (Fix A.3, 2026-05-01): `parts[0]` is always the trimmed
+  // input string. Multiple call sites (parser.ts lead-component admit rule,
+  // merge.ts `getLeadComponent`) rely on this contract. A future refactor
+  // that drops the whole-string from index 0 would silently flip semantics
+  // across every consumer; this assertion makes the contract enforced at
+  // runtime instead of implicit.
+  if (out.length > 0 && out[0] !== whole) {
+    throw new Error(
+      'splitArtistCollab invariant: out[0] must equal trimmed input — refactor broke the contract',
+    );
+  }
   return out;
+}
+
+/**
+ * Lead-component extractor used by both the TJ-direct parser's lead-component
+ * admit rule and the merger's Tier C clustering key (Fix A.2, 2026-05-01).
+ *
+ * Returns the first NON-WHOLE component from `splitArtistCollab(artist)` —
+ * i.e. the lead chunk after collab decoration is stripped — normalized via
+ * `normalizeForMatch`. When the input is a single artist (the splitter
+ * returns `[whole]` only), falls back to `normalize(whole)` so single-artist
+ * names round-trip predictably.
+ *
+ * Why this lives in the same module as `splitArtistCollab`: pre-Fix-A.2,
+ * `merge.ts` had its own `primaryArtistToken` helper with a SUBSET of
+ * `splitArtistCollab`'s delimiter set (no `×` or `＆`). Two functions, two
+ * delimiter regexes, silent drift risk: the same artist could produce
+ * different lead tokens across the two consumers. Unifying through this
+ * helper guarantees parser admit rule + merger clustering see the SAME
+ * lead-component decision for any input.
+ *
+ * Examples:
+ *   '椎名もた(Feat.鏡音リン)' -> normalize('椎名もた')
+ *   '椎名もた｜ぽわぽわP'    -> normalize('椎名もた')
+ *   'imase & なとり'         -> normalize('imase')
+ *   'Artist1 × Artist2'       -> normalize('Artist1')
+ *   'YOASOBI'                 -> normalize('YOASOBI')
+ *   ''                        -> ''
+ */
+export function getLeadComponent(artist: string): string {
+  const parts = splitArtistCollab(artist);
+  if (parts.length === 0) return '';
+  // parts[0] is always the whole-string per the invariant. parts[1] is the
+  // lead component when splits fired; otherwise the input is a single artist
+  // and parts[0] is itself the lead.
+  const lead = parts.length >= 2 ? parts[1] : parts[0];
+  if (lead === undefined) return '';
+  return normalizeForMatch(lead);
 }

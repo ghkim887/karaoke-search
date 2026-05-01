@@ -17,6 +17,61 @@ function record(over: Partial<SongRecord>): SongRecord {
   };
 }
 
+describe('mergeRecords — empty-input regression (Fix A.4)', () => {
+  it('handles empty input', () => {
+    const result = mergeRecords([]);
+    expect(result.records).toEqual([]);
+    expect(result.conflicts).toEqual([]);
+  });
+});
+
+describe('mergeRecords — sort with supplementary-plane TJ codes (Fix A.1)', () => {
+  it('null-TJ records sort last regardless of the non-null side codepoint (incl. supplementary-plane)', () => {
+    // The pre-Fix-A.1 sort used `'￿'` (U+FFFF) as a "push to end" sentinel.
+    // Supplementary-plane chars (codepoint > U+FFFF) start with a UTF-16
+    // surrogate in U+D800–DBFF, which sorts BELOW U+FFFF — so a record like
+    // `karaoke_numbers.tj === '𠀀1'` would have sorted BEFORE a null-TJ
+    // record under the old sentinel. Fix A.1 makes nulls always-last via
+    // explicit branches in the comparator.
+    //
+    // We exercise the path with three records:
+    //   A: tj='𠀀1' (supplementary plane, U+20000 + ASCII '1')
+    //   B: tj='99'  (ordinary ASCII)
+    //   C: tj=null
+    // Expected: A and B come first (in ascending compare order between
+    // themselves), C comes last.
+    const supp = record({
+      id: 'tj-99001',
+      source_url: 'https://tj.test/99001',
+      title_primary: 'SortA',
+      artist_primary: 'X',
+      karaoke_numbers: { tj: '𠀀1', ky: null, joysound: null },
+    });
+    const ascii = record({
+      id: 'tj-99002',
+      source_url: 'https://tj.test/99002',
+      title_primary: 'SortB',
+      artist_primary: 'Y',
+      karaoke_numbers: { tj: '99', ky: null, joysound: null },
+    });
+    const nullTj = record({
+      id: 'blog-9001-0',
+      source_url: 'https://blog.test/9001',
+      title_primary: 'SortC',
+      artist_primary: 'Z',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+
+    const { records: out } = mergeRecords([nullTj, supp, ascii]);
+    expect(out).toHaveLength(3);
+    // Null-TJ record is always at the end.
+    expect(out[out.length - 1]?.karaoke_numbers.tj).toBeNull();
+    // The two non-null TJs precede the null one.
+    expect(out[0]?.karaoke_numbers.tj).not.toBeNull();
+    expect(out[1]?.karaoke_numbers.tj).not.toBeNull();
+  });
+});
+
 describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
   // ---------------------------------------------------------------------
   // Case 1: Two-source merge by shared TJ#
@@ -664,9 +719,9 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
 });
 
 // ---------------------------------------------------------------------
-// primaryArtistToken — verified through Tier C clustering integration
+// getLeadComponent — verified through Tier C clustering integration
 // ---------------------------------------------------------------------
-describe('primaryArtistToken (via Tier C integration)', () => {
+describe('getLeadComponent (via Tier C integration)', () => {
   it('splits on (Prod. — LE SSERAFIM(Prod.imase) shares token with imase', () => {
     const tj = record({
       id: 'tj-90001',
