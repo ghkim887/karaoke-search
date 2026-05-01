@@ -82,10 +82,24 @@ export function sanitizeSearchTxt(s: string): string {
  *   'IDOLiSH7,TRIGGER,Re:vale' -> ['IDOLiSH7,TRIGGER,Re:vale', 'IDOLiSH7', 'TRIGGER', 'Re:vale']
  *   'Charlie Puth(Feat.宇多田ヒカル)' -> ['Charlie Puth(Feat.宇多田ヒカル)', 'Charlie Puth', '宇多田ヒカル']
  *   'Charlie Puth(Feat.宇多田ヒカル) & Adele' -> ['Charlie Puth(Feat.宇多田ヒカル) & Adele', 'Charlie Puth', 'Adele', '宇多田ヒカル']
+ *   'LE SSERAFIM(Prod.imase)' -> ['LE SSERAFIM(Prod.imase)', 'LE SSERAFIM', 'imase']
+ *   'MAX(Feat.Huh Yunjin of LE SSERAFIM)' -> ['MAX(Feat.Huh Yunjin of LE SSERAFIM)', 'MAX', 'Huh Yunjin of LE SSERAFIM', 'Huh Yunjin', 'LE SSERAFIM']
  *   '安室奈美恵 with スーパーモンキーズ' -> ['安室奈美恵 with スーパーモンキーズ', '安室奈美恵', 'スーパーモンキーズ']
  *   'Artist1 × Artist2' -> ['Artist1 × Artist2', 'Artist1', 'Artist2']
  *   'YOASOBI' -> ['YOASOBI']
+ *   'Bump of Chicken' -> ['Bump of Chicken']  (NOT split — bare ` of ` outside feat/prod)
+ *   'Out of the Blue' -> ['Out of the Blue']  (NOT split — bare ` of ` outside feat/prod)
+ *   'SUGA of BTS' -> ['SUGA of BTS']          (NOT split as bare input — only inside feat/prod parens)
  *   '' -> []
+ *
+ * Note on ` of ` scope (Fix 1, 2026-05-01): the ` of ` member-of-group
+ * sub-split fires ONLY on text captured INSIDE a `(Feat. X)` / `(Prod. X)`
+ * parenthetical. Splitting bare ` of ` at the top level was a footgun — it
+ * mangled legitimate names like `Bump of Chicken` (a major Japanese rock
+ * band) and `Out of the Blue` into useless head/tail fragments. The
+ * motivating cases are exclusively feat/prod parentheticals
+ * (`MAX(Feat.SUGA of BTS)` → MAX, SUGA, BTS), so the scope is restricted
+ * accordingly.
  */
 export function splitArtistCollab(artist: string): string[] {
   const whole = artist.trim();
@@ -96,13 +110,16 @@ export function splitArtistCollab(artist: string): string[] {
   // existing per-record cache path keeps hitting the same key.
   const parts: string[] = [whole];
 
-  // Global pre-pass: extract every `(Feat. X)` / `(FEAT. X)` parenthetical
-  // from anywhere in the string (not just trailing). Each matched block is
-  // replaced with a single space (collapsed by later trim) and its inner
-  // content is captured for appending after the primary split. This handles
-  // mid-string parentheticals like `Charlie Puth(Feat.宇多田ヒカル) & Adele`
-  // that the old anchored-at-$ approach missed.
-  const FEAT_PAREN_RE = /\s*\(\s*feat\.\s*([^()]+?)\s*\)\s*/gi;
+  // Global pre-pass: extract every `(Feat. X)` / `(FEAT. X)` / `(Prod. X)`
+  // parenthetical from anywhere in the string (not just trailing). Each matched
+  // block is replaced with a single space (collapsed by later trim) and its
+  // inner content is captured for appending after the primary split. This
+  // handles mid-string parentheticals like
+  // `Charlie Puth(Feat.宇多田ヒカル) & Adele` that the old anchored-at-$ approach
+  // missed, and `(Prod.X)` producer-credit syntax used by TJ
+  // (`LE SSERAFIM(Prod.imase)`) that's structurally identical to `(Feat.X)` —
+  // the producer is a collab component for nationality-tag purposes.
+  const FEAT_PAREN_RE = /\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*/gi;
   const featContents: string[] = [];
   let main = whole.replace(FEAT_PAREN_RE, (_, inner: string) => {
     featContents.push(inner);
@@ -119,16 +136,40 @@ export function splitArtistCollab(artist: string): string[] {
   //     un-parenthesized form like `Artist1 FEAT. Artist2`)
   const SPLIT_RE = /\s*[&＆,×]\s*|\s+with\s+|\s*feat\.\s*/i;
   if (main !== '') {
-    for (const piece of main.split(SPLIT_RE)) {
+    const pieces = main.split(SPLIT_RE);
+    for (const piece of pieces) {
       const trimmed = piece.trim();
       if (trimmed !== '') parts.push(trimmed);
     }
   }
 
-  // Append the featured-artist content AFTER the lead split so output reads
-  // lead-first, featured-last (matches the natural collab reading order).
+  // ` of ` member-of-group sub-split: applied ONLY to text captured INSIDE
+  // a `(Feat. X)` / `(Prod. X)` parenthetical (Fix 1, 2026-05-01).
+  //
+  // Why scoped: the ` of ` token semantically means "member-of-group" only
+  // inside an explicit feat/prod credit (`(Feat. SUGA of BTS)`). Outside
+  // that context, ` of ` is a common English word that appears in real
+  // artist names: `Bump of Chicken` (major Japanese rock band),
+  // `Out of the Blue`, etc. The previous version of this function fired
+  // an unscoped ` of ` split on any post-split part, which would mangle
+  // those names into head/tail fragments. Restricting the rule to
+  // feat/prod parenthetical content preserves the motivating
+  // `MAX(Feat.Huh Yunjin of LE SSERAFIM)` cases while making bare-string
+  // ` of ` round-trip unchanged.
+  //
+  // For each captured feat/prod inner string we:
+  //   1. Append the whole inner string (already done above).
+  //   2. Additionally split it on ` of ` and append each non-empty token.
+  // Dedupe afterward via `normalizeForMatch` collapses overlap.
+  const OF_RE = /\s+of\s+/i;
   for (const fc of featContents) {
     if (fc !== '') parts.push(fc);
+    if (fc !== '' && OF_RE.test(fc)) {
+      for (const piece of fc.split(OF_RE)) {
+        const trimmed = piece.trim();
+        if (trimmed !== '') parts.push(trimmed);
+      }
+    }
   }
 
   // Dedupe by `normalizeForMatch` while preserving first-seen order. The whole

@@ -406,5 +406,187 @@ class TestIngestIdempotent(unittest.TestCase):
                 f"blog-68001 categories should be ['anime'], got {blog_rec['categories']!r}")  # type: ignore[index]
 
 
+class TestDropListFilter(unittest.TestCase):
+    """Drop-list filter (post-Phase-2 Gap 3): a parsed PDF row whose artist
+    matches the Korean-artist drop set must NOT be inserted as a new record
+    OR be used to patch an existing record's categories.
+
+    Exercises `is_artist_in_drop_list` directly + the main()-level integration
+    against a synthetic drop-list sidecar.
+    """
+
+    def test_normalize_for_match_matches_ts_rule(self) -> None:
+        # Whitespace-strip, case-fold, NFKC. Mirrors the TS source's rule.
+        self.assertEqual(ingest._normalize_for_match('  BTS  '), 'bts')
+        self.assertEqual(ingest._normalize_for_match('Le Sserafim'), 'lesserafim')
+        # Full-width Latin should NFKC-collapse to ASCII.
+        self.assertEqual(ingest._normalize_for_match('ＴＶＸＱ'), 'tvxq')
+
+    def test_artist_components_for_drop_check_splits_collabs(self) -> None:
+        # Bare single artist: round-trips.
+        self.assertEqual(
+            ingest._artist_components_for_drop_check('YOASOBI'),
+            ['YOASOBI'],
+        )
+        # Feat parenthetical: emits whole + lead + featured.
+        comps = ingest._artist_components_for_drop_check('imase(Feat.IU)')
+        self.assertIn('imase', comps)
+        self.assertIn('IU', comps)
+        # `of` INSIDE a feat parenthetical: produces head + tail tokens
+        # (Fix 1, 2026-05-01 — `of` sub-split is scoped to feat/prod parens).
+        comps = ingest._artist_components_for_drop_check('MAX(Feat.SUGA of BTS)')
+        self.assertIn('SUGA', comps,
+            f'feat-paren `of` sub-split should yield SUGA, got {comps}')
+        self.assertIn('BTS', comps,
+            f'feat-paren `of` sub-split should yield BTS, got {comps}')
+
+    def test_artist_components_for_drop_check_does_not_split_bare_of(self) -> None:
+        # Fix 1 (2026-05-01): bare ` of ` outside feat/prod parens must NOT
+        # split. Cross-language parity with the TS `splitArtistCollab` rule —
+        # `Bump of Chicken` (real Japanese rock band) and similar names must
+        # round-trip unchanged so they don't get falsely flagged as collabs.
+        comps = ingest._artist_components_for_drop_check('Bump of Chicken')
+        # Only the whole string should appear.
+        self.assertEqual(comps, ['Bump of Chicken'],
+            f'bare `of` must not sub-split, got {comps}')
+        # Bare `SUGA of BTS` (no feat/prod paren) similarly does not split —
+        # the parser-side drop-list catches the whole string via the
+        # `SUGA of BTS` variant key directly.
+        comps = ingest._artist_components_for_drop_check('SUGA of BTS')
+        self.assertEqual(comps, ['SUGA of BTS'],
+            f'bare `SUGA of BTS` must not sub-split, got {comps}')
+
+    def test_is_artist_in_drop_list_positive_negative(self) -> None:
+        drop_keys = {'tvxq', 'bts', '東方神起', '방탄소년단', 'iu'}
+        self.assertTrue(ingest.is_artist_in_drop_list('TVXQ', drop_keys))
+        self.assertTrue(ingest.is_artist_in_drop_list('東方神起', drop_keys))
+        self.assertTrue(ingest.is_artist_in_drop_list('imase(Feat.IU)', drop_keys))
+        self.assertTrue(ingest.is_artist_in_drop_list('LiSA(Feat.SUGA of BTS)', drop_keys))
+        self.assertFalse(ingest.is_artist_in_drop_list('YOASOBI', drop_keys))
+        self.assertFalse(ingest.is_artist_in_drop_list('Linked Horizon', drop_keys))
+
+    def test_empty_drop_keys_disables_filter(self) -> None:
+        # Graceful-degradation case: missing sidecar => empty set => no-op.
+        self.assertFalse(ingest.is_artist_in_drop_list('TVXQ', set()))
+        self.assertFalse(ingest.is_artist_in_drop_list('imase(Feat.IU)', set()))
+
+    def test_main_skips_kpop_row_with_sidecar_present(self) -> None:
+        """End-to-end: a parsed PDF row for 東方神起 / TVXQ must not produce
+        a tjpdf-* record when the sidecar contains the act's keys, AND must
+        not patch an existing corpus row's categories.
+
+        We patch parse_pdf to return one drop-list-matching row + one normal
+        row (28500 / 黒うさP). Expected post-run state:
+          - tjpdf-26709 NOT inserted (drop-list match)
+          - tjpdf-28500 inserted (normal vocaloid row)
+          - dropped_kpop counter == 1
+        """
+        synthetic_sidecar = {
+            'version': 1,
+            'generatedAt': '2026-05-01T00:00:00Z',
+            'keys': ['tvxq', '동방신기', '東方神起'],
+        }
+        fake_parse_result = (
+            [
+                {
+                    'tj': '26709',
+                    'title': 'STEP BY STEP',
+                    'artist': '東方神起',
+                    'title_ko': None,
+                    'artist_ko': None,
+                    'source_line': 0,
+                    'section': 'anime',
+                },
+                {
+                    'tj': '28500',
+                    'title': '千本桜',
+                    'artist': '黒うさP',
+                    'title_ko': '센본자쿠라',
+                    'artist_ko': '쿠로우사P',
+                    'source_line': 1,
+                    'section': 'vocaloid',
+                },
+            ],
+            [],
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            sidecar_path = Path(tmpdir) / 'drop-list.json'
+
+            pdf_path.write_text('dummy\n', encoding='utf-8')
+            songs_path.write_text(
+                json.dumps([], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+            sidecar_path.write_text(
+                json.dumps(synthetic_sidecar, ensure_ascii=False, indent=2),
+                encoding='utf-8',
+            )
+
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+                patch.object(ingest, 'DROP_LIST_SIDECAR', sidecar_path),
+                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            ids = sorted(r['id'] for r in corpus)
+            # 東方神起 row must be absent; 黒うさP row must be present.
+            self.assertIn('tjpdf-28500', ids)
+            self.assertNotIn('tjpdf-26709', ids,
+                f'東方神起 row should be drop-list-filtered, got {ids}')
+
+    def test_main_warns_when_sidecar_missing(self) -> None:
+        """When the sidecar is absent, main() must log a warning to stderr and
+        proceed without the filter (graceful degradation).
+        """
+        fake_parse_result = (
+            [
+                {
+                    'tj': '26709',
+                    'title': 'STEP BY STEP',
+                    'artist': '東方神起',
+                    'title_ko': None,
+                    'artist_ko': None,
+                    'source_line': 0,
+                    'section': 'anime',
+                },
+            ],
+            [],
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            missing_sidecar = Path(tmpdir) / 'absent.json'  # never created
+
+            pdf_path.write_text('dummy\n', encoding='utf-8')
+            songs_path.write_text(
+                json.dumps([], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            stderr_buf = io.StringIO()
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+                patch.object(ingest, 'DROP_LIST_SIDECAR', missing_sidecar),
+                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
+                patch('sys.stderr', stderr_buf),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+            self.assertIn('drop-list sidecar not found', stderr_buf.getvalue())
+
+            # Without the filter, the 東方神起 row should still be inserted.
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            ids = [r['id'] for r in corpus]
+            self.assertIn('tjpdf-26709', ids)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -120,6 +120,83 @@ describe('splitArtistCollab — feat. parenthetical collabs', () => {
   });
 });
 
+describe('splitArtistCollab — `(Prod. X)` producer-credit collabs (post-Phase-2 Gap 2)', () => {
+  it('splits `LE SSERAFIM(Prod.imase)` — Korean lead with JP producer', () => {
+    expect(splitArtistCollab('LE SSERAFIM(Prod.imase)')).toEqual([
+      'LE SSERAFIM(Prod.imase)',
+      'LE SSERAFIM',
+      'imase',
+    ]);
+  });
+
+  it('splits `LE SSERAFIM(Prod.Gen Hoshino)` — multi-token producer name', () => {
+    expect(splitArtistCollab('LE SSERAFIM(Prod.Gen Hoshino)')).toEqual([
+      'LE SSERAFIM(Prod.Gen Hoshino)',
+      'LE SSERAFIM',
+      'Gen Hoshino',
+    ]);
+  });
+
+  it('splits all-caps `(PROD.X)` (case-insensitive)', () => {
+    expect(splitArtistCollab('Artist1(PROD.Artist2)')).toEqual([
+      'Artist1(PROD.Artist2)',
+      'Artist1',
+      'Artist2',
+    ]);
+  });
+});
+
+describe('splitArtistCollab — `X of Y` member-of-group sub-split (post-Phase-2 Gap 2)', () => {
+  // Fix 1 (2026-05-01): the ` of ` sub-split is SCOPED to feat/prod parenthetical
+  // content. Bare-string ` of ` (outside any feat/prod paren) does NOT trigger
+  // sub-split. This avoids mangling legitimate names like `Bump of Chicken`,
+  // `Out of the Blue`, etc.
+  it('splits `MAX(Feat.Huh Yunjin of LE SSERAFIM)` into MAX + Huh Yunjin + LE SSERAFIM (positive regression)', () => {
+    expect(splitArtistCollab('MAX(Feat.Huh Yunjin of LE SSERAFIM)')).toEqual([
+      'MAX(Feat.Huh Yunjin of LE SSERAFIM)',
+      'MAX',
+      'Huh Yunjin of LE SSERAFIM',
+      'Huh Yunjin',
+      'LE SSERAFIM',
+    ]);
+  });
+
+  it('splits `MAX(Feat.SUGA of BTS)` into MAX + SUGA + BTS (positive regression)', () => {
+    expect(splitArtistCollab('MAX(Feat.SUGA of BTS)')).toEqual([
+      'MAX(Feat.SUGA of BTS)',
+      'MAX',
+      'SUGA of BTS',
+      'SUGA',
+      'BTS',
+    ]);
+  });
+
+  it('does NOT split when `of` lacks whitespace boundaries (e.g. `Profession`)', () => {
+    expect(splitArtistCollab('Profession')).toEqual(['Profession']);
+  });
+
+  // Fix 1 negative cases — bare ` of ` outside feat/prod parens must NOT split.
+  it('does NOT split `Bump of Chicken` (real Japanese rock band — Fix 1)', () => {
+    expect(splitArtistCollab('Bump of Chicken')).toEqual(['Bump of Chicken']);
+  });
+
+  it('does NOT split `BUMP OF CHICKEN` (all-caps form — Fix 1)', () => {
+    expect(splitArtistCollab('BUMP OF CHICKEN')).toEqual(['BUMP OF CHICKEN']);
+  });
+
+  it('does NOT split `Out of the Blue` (bare-string ` of ` — Fix 1)', () => {
+    expect(splitArtistCollab('Out of the Blue')).toEqual(['Out of the Blue']);
+  });
+
+  it('does NOT split bare `SUGA of BTS` (no feat/prod scope — Fix 1)', () => {
+    // Pre-Fix-1 this would have split on bare ` of `. The bare-string `of`
+    // sub-split was a footgun (mangled `Bump of Chicken` etc.); the parser's
+    // drop-list `SUGA of BTS` variant catches the real case directly via
+    // normalized substring without needing a sub-split.
+    expect(splitArtistCollab('SUGA of BTS')).toEqual(['SUGA of BTS']);
+  });
+});
+
 describe('splitArtistCollab — full-width ampersand collabs (Fix 2)', () => {
   it('splits `imase ＆ なとり` on full-width ＆ (U+FF06)', () => {
     expect(splitArtistCollab('imase ＆ なとり')).toEqual(['imase ＆ なとり', 'imase', 'なとり']);

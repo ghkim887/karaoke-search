@@ -26,6 +26,11 @@ yarn-error.log*
 # it's the deterministic input for the weekly crawl's section-tag re-apply step.
 !.omc/anisong_utf8.txt
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # OS junk
 .DS_Store
 Thumbs.db

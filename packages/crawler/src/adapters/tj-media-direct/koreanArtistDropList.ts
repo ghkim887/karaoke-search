@@ -172,6 +172,26 @@ export const DROP_LIST: readonly DropListEntry[] = [
     canonical: 'KARA',
     variants: ['KARA', '카라'],
   },
+  {
+    canonical: 'J-Walk',
+    // Variants verified against tj-search-cache.json on 2026-05-01: only the
+    // Latin form `j-walk` appears (5 entries — including `j-walk(feat.지조)`
+    // / `j-walk(feat.팀버)` etc.). The Hangul (`제이워크`) and katakana
+    // (`ジェイウォーク`) variants had 0 cache entries — speculation removed
+    // per Fix 3 (don't bloat the drop set with unverified variants). Adding
+    // `JWALK` (no hyphen) defensively for the common spaceless form.
+    variants: ['J-Walk', 'JWALK'],
+    note: '`j-walk` JPN 1/0/0 in post-Phase-2 cache (false-positive) — 20 TJ records leaked. Cache has only Latin `j-walk` form (5 entries).',
+  },
+  {
+    canonical: 'PLAVE',
+    // Variants verified against tj-search-cache.json on 2026-05-01: only the
+    // Latin form `plave` appears (4 entries — including `plave(feat.쏠)`
+    // and `eunhoofplave`). The Hangul (`플레이브`) and katakana (`プレイヴ`)
+    // variants had 0 cache entries — speculation removed per Fix 3.
+    variants: ['PLAVE'],
+    note: '`plave` JPN 3/0/0 in post-Phase-2 cache (false-positive) — 30 TJ records leaked. Cache has only Latin `plave` form (4 entries).',
+  },
 ];
 
 /**

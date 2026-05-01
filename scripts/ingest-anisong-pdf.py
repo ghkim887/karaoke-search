@@ -41,12 +41,39 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from pathlib import Path
+
+# Force stdout/stderr to UTF-8 on Windows so emoji/Hangul/kana in log output
+# don't trip cp949. Safe on POSIX (already UTF-8). idempotent.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PDF_TEXT = REPO_ROOT / '.omc' / 'anisong_utf8.txt'
 SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
 SOURCE_URL = 'https://www.tjmedia.com/support/poster?cate_cd=P06'
+
+# Korean-artist drop-list JSON sidecar produced by `scripts/export-drop-list.mjs`
+# (which reads the built TS source). Lives alongside the TS source under
+# `packages/crawler/src/...` and is **tracked in git** (Fix 2, 2026-05-01) —
+# previously sat under `dist/` which is gitignored, allowing TS-edited-but-
+# sidecar-stale scenarios to slip past review. With the sidecar tracked,
+# editing the TS without regenerating shows up as a one-of-two-files diff.
+# Regeneration is wired into `corepack pnpm --filter @karaoke/crawler build`.
+# Treated as graceful-degradation when missing: log a warning, run without the
+# filter.
+DROP_LIST_SIDECAR = (
+    REPO_ROOT
+    / 'packages'
+    / 'crawler'
+    / 'src'
+    / 'adapters'
+    / 'tj-media-direct'
+    / 'korean-artist-drop-list.json'
+)
 
 # Anchor: a 4-or-5 digit number not adjacent to other digits or a decimal point.
 # (Most codes are 5 digits; ~33 legacy codes are 4 digits like 6479, 6899, 6943.)
@@ -637,6 +664,149 @@ def _assign_translit(
     return title_ko, artist_ko
 
 
+def _normalize_for_match(s: str) -> str:
+    """Mirror of `normalizeForMatch` in `packages/crawler/src/adapters/
+    tj-media-direct/normalize.ts`: strip every whitespace char, lowercase, NFKC.
+
+    Cache keys + drop-list keys are produced by the TS rule; matching by hand
+    in Python requires the exact same transform or membership tests miss.
+    """
+    return unicodedata.normalize('NFKC', re.sub(r'\s+', '', s).lower())
+
+
+# Mirrors the TS `splitArtistCollab` enough for the drop-list filter to spot
+# Korean-act components inside collab strings. Python-side we only need
+# membership lookup (no admit-path scoring), so a coarser splitter is fine.
+#
+# Splits on: ` & `, ` ＆ `, ` × `, ` with `, `,`, `(Feat. X)`,
+# `(FEAT. X)`, `(Prod. X)` parentheticals — same primary delimiters the TS
+# source is built around.
+#
+# Note on ` of ` scope (Fix 1, 2026-05-01): bare ` of ` is intentionally
+# EXCLUDED from this regex. The TS `splitArtistCollab` only sub-splits ` of `
+# inside captured `(Feat. X)` / `(Prod. X)` parenthetical content because the
+# bare token is a common English word in real artist names (`Bump of Chicken`,
+# `Out of the Blue`, etc.). Cross-language parity: if the TS rule wouldn't
+# split it, the Python rule mustn't either. The feat/prod paren capture below
+# returns the inner content, which `_artist_components_for_drop_check` then
+# re-splits on ` of ` via `_FEAT_INNER_OF_RE` — that's the only place ` of `
+# fires.
+_DROP_SPLIT_RE = re.compile(
+    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|\s*[&＆,×]\s*|\s+with\s+|\s*feat\.\s*',
+    re.IGNORECASE,
+)
+
+# Inside a captured `(Feat. X)` / `(Prod. X)` group ONLY, ` of ` reliably means
+# "member-of-group" (e.g. `(Feat. SUGA of BTS)` → SUGA + BTS). This regex is
+# applied to the captured inner string in `_artist_components_for_drop_check`
+# — never to the bare top-level artist text.
+_FEAT_INNER_OF_RE = re.compile(r'\s+of\s+', re.IGNORECASE)
+
+# Detect feat/prod parentheticals so we can identify which sub-pieces came from
+# inside one (only those should get the ` of ` sub-split). We use the same
+# pattern as `_DROP_SPLIT_RE` but as a finditer source (not a split source).
+_FEAT_PAREN_FINDALL_RE = re.compile(
+    r'\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)',
+    re.IGNORECASE,
+)
+
+
+def _artist_components_for_drop_check(artist: str) -> list[str]:
+    """Yield every component of `artist` that should be checked against the drop set.
+
+    Includes the original whole string plus every sub-token produced by the
+    coarse splitter above. ` of ` member-of-group sub-splitting is SCOPED
+    (Fix 1, 2026-05-01) to text captured inside a `(Feat. X)` / `(Prod. X)`
+    parenthetical — bare ` of ` outside any feat/prod paren does NOT split,
+    matching the TS `splitArtistCollab` contract so legitimate names like
+    `Bump of Chicken` round-trip unchanged.
+
+    Empty tokens are dropped; output is deduped while preserving first-seen
+    order.
+    """
+    whole = artist.strip()
+    if not whole:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def _add(piece: str) -> None:
+        norm = piece.strip()
+        if not norm:
+            return
+        if norm in seen:
+            return
+        seen.add(norm)
+        out.append(norm)
+
+    # 1. The whole input always rounds-trips as the first component.
+    _add(whole)
+
+    # 2. Capture every feat/prod parenthetical and emit (a) the inner string
+    #    and (b) the inner string sub-split on ` of `. Only inner content gets
+    #    the ` of ` sub-split — bare ` of ` at the top level is excluded.
+    for inner in _FEAT_PAREN_FINDALL_RE.findall(whole):
+        inner_trim = inner.strip()
+        if not inner_trim:
+            continue
+        _add(inner_trim)
+        if _FEAT_INNER_OF_RE.search(inner_trim):
+            for sub in _FEAT_INNER_OF_RE.split(inner_trim):
+                _add(sub)
+
+    # 3. Top-level split on the primary delimiters (no ` of ` here). The split
+    #    runs across the original string; feat/prod parens contribute their
+    #    captured inner content to the split output (same as the TS source).
+    for sub in _DROP_SPLIT_RE.split(whole):
+        if sub is None:
+            continue
+        _add(sub)
+
+    return out
+
+
+def load_drop_keys(sidecar_path: Path) -> set[str]:
+    """Load the drop-list JSON sidecar; return a set of normalized keys.
+
+    On any failure (missing file, malformed JSON, schema mismatch) returns an
+    empty set and logs a stderr warning — graceful degradation per spec.
+    """
+    if not sidecar_path.exists():
+        print(
+            f'WARN: drop-list sidecar not found at {sidecar_path} — '
+            'running without the KPOP filter (run `node scripts/export-drop-list.mjs` after building the crawler)',
+            file=sys.stderr,
+        )
+        return set()
+    try:
+        data = json.loads(sidecar_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f'WARN: failed to read drop-list sidecar {sidecar_path}: {exc}', file=sys.stderr)
+        return set()
+    keys = data.get('keys')
+    if not isinstance(keys, list):
+        print(f'WARN: drop-list sidecar at {sidecar_path} missing `keys` array', file=sys.stderr)
+        return set()
+    # Re-normalize defensively: the TS exporter already pre-normalizes, but a
+    # mismatch in normalization rules would silently miss everything.
+    return {_normalize_for_match(k) for k in keys if isinstance(k, str) and k}
+
+
+def is_artist_in_drop_list(artist: str, drop_keys: set[str]) -> bool:
+    """Return True if any component of `artist` matches the drop set.
+
+    `drop_keys` is the normalized set returned by `load_drop_keys()`. Empty set
+    (graceful-degradation case) always returns False — the filter is disabled.
+    """
+    if not drop_keys:
+        return False
+    for component in _artist_components_for_drop_check(artist):
+        key = _normalize_for_match(component)
+        if key and key in drop_keys:
+            return True
+    return False
+
+
 def _apply_category_exclusivity(cats: list[str]) -> list[str]:
     """Apply the v2 category mutual-exclusivity rule: at most one of
     {jpop, vocaloid, anime} per record. Priority: vocaloid > anime > jpop.
@@ -733,8 +903,12 @@ def main() -> int:
         if tj:
             tj_to_idx[tj] = idx
 
+    # Load the drop-list sidecar (graceful degradation if missing/malformed).
+    drop_keys = load_drop_keys(DROP_LIST_SIDECAR)
+
     matched = 0
     already_tagged = 0  # corpus rows that already had the section's tag
+    dropped_kpop = 0  # PDF rows skipped because the artist matched the drop list
     section_counts: dict[str, int] = {'anime': 0, 'vocaloid': 0}
     new_records: list[dict] = []
     title_fallbacks: list[str] = []  # codes where title_primary fell back to artist
@@ -749,6 +923,14 @@ def main() -> int:
             )
             section = 'anime'
         section_counts[section] = section_counts.get(section, 0) + 1
+        # Drop-list filter: Korean acts that leak through both the TS adapter's
+        # filter chain AND the PDF ingest must be refused at this gate too.
+        # Skips both the patch-existing path AND the new-record-insert path so
+        # a tjpdf-* never gets created for a known Korean act, AND a corpus
+        # row matching such an artist doesn't get re-tagged anime/vocaloid.
+        if is_artist_in_drop_list(r['artist'], drop_keys):
+            dropped_kpop += 1
+            continue
         if code in tj_to_idx:
             rec = corpus[tj_to_idx[code]]
             cats = list(rec.get('categories', []))
@@ -825,6 +1007,8 @@ def main() -> int:
         f.write(f'    of which already had the section tag: {already_tagged}\n')
         f.write(f'  New records inserted: {len(new_records)}\n')
         f.write(f'    of which had to fall back title_primary->artist: {len(title_fallbacks)}\n')
+        f.write(f'  Dropped (artist matched Korean-artist drop list): {dropped_kpop}\n')
+        f.write(f'  Drop-list keys loaded: {len(drop_keys)}\n')
         f.write(f'Caveats / skipped: {len(caveats)}\n')
         for c in caveats:
             f.write(f'  - {c}\n')
@@ -835,7 +1019,8 @@ def main() -> int:
     print(
         f'parsed={len(parsed)} unique={len(unique)} '
         f'dropped_old_tjpdf={dropped_old_tjpdf} matched={matched} '
-        f'new={len(new_records)} skipped={len(caveats)}'
+        f'new={len(new_records)} dropped_kpop={dropped_kpop} '
+        f'skipped={len(caveats)}'
     )
     print(f'report: {log_path}')
     return 0

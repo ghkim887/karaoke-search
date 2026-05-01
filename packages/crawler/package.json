@@ -8,7 +8,7 @@
     "karaoke-crawl": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node ../../scripts/export-drop-list.mjs",
     "prestart": "tsc -b",
     "start": "node ./dist/cli.js",
     "test": "vitest run",
