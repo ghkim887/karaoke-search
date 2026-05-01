@@ -1,36 +1,55 @@
 import type { HttpClient } from '../../http.js';
 import type { ArtistNationalityEntry, SearchSongCache } from './cache.js';
+import { DROP_LIST } from './koreanArtistDropList.js';
 import { normalizeForMatch } from './normalize.js';
+import { searchSongByArtist } from './searchSong.js';
 
 /**
- * Option-C bootstrap: sweep `/legacy/api/topAndHot100?strType=3` (JPOP genre)
- * over rolling 2-year weekly windows to seed the artist-nationality map.
+ * Option-C bootstrap: sweep `/legacy/api/topAndHot100` per-genre over rolling
+ * 2-year weekly windows to seed the artist-nationality map.
  *
  * Why this exists: PR-2's per-artist scan (`enrichArtistMap`) takes ~1.4-2 h
  * cold-start over 10-15k unique artists. Most of that time is spent on
  * Korean/English artists we'll classify as KOR/ENG and ignore. Bootstrapping
- * with the JPOP charts pre-tags ~hundreds of popular Japanese artists for
- * free (~2 min total) — saving roundtrips on the most-played artists where
- * the per-artist scan would have just confirmed JPN anyway.
+ * with the genre charts pre-tags ~hundreds of popular Japanese (and now
+ * Korean — see Phase 1 spec §2.F) artists for free (~3-4 min total) — saving
+ * roundtrips on the most-played artists.
  *
- * The chart endpoint does NOT return `nationalcode` per item, but `strType=3`
- * is the JPOP filter so every item returned counts as +1 JPN vote on its
- * artist. Items that chart in multiple weeks de-dupe by `pro` so a song
- * charting 50 weeks contributes one vote, not 50.
+ * The chart endpoint does NOT return `nationalcode` per item, but the
+ * `strType` filter implicitly tags everything in the genre. The genre map
+ * (verified via `docs/research/2026-04-29-tj-media-api-surface.md` §2):
+ *   - `strType=3` → JPOP (was the only genre swept pre-Phase-1).
+ *   - `strType=1` → 가요 (K-pop) — added in Phase 1 to source KOR votes.
  *
- * Confidence rule: an artist is tagged confidently `JPN` only when ≥3
- * distinct chart appearances are observed (different `pro` values).
- * Singletons stay UNKNOWN — a one-off chart entry isn't enough signal to
- * override an artist who turns out KOR-tagged in `searchSong`.
+ * Per-genre votes go into the matching `votes.JPN` / `votes.KOR` slot so the
+ * Phase 1 §2.A ratio rule has data on both sides — a Korean act that
+ * accidentally charts on the JPOP filter (or vice versa) ends up AMBIGUOUS
+ * via the threshold rule rather than wrongly JPN.
  *
- * Cost: 104 weeks × 2 chartTypes × 500ms ≈ 104s. Logs progress every 10
- * weekly windows.
+ * Items that chart in multiple weeks de-dupe by `pro` so a song charting 50
+ * weeks contributes one vote, not 50.
  *
- * Idempotent: existing `JPN` entries are not downgraded by a fresh sweep;
- * vote counts are accumulated into a per-bootstrap counter then merged in
- * via `applyBootstrapVotes` below. Existing AMBIGUOUS entries (set by the
+ * Confidence rule: an artist is tagged confidently with the genre's vote-as
+ * code only when ≥3 distinct chart appearances are observed in that genre.
+ * Singletons stay UNKNOWN.
+ *
+ * Cost: 104 weeks × 2 chartTypes × 2 genres × 500 ms ≈ 208 s. Logs progress
+ * every 10 weekly windows.
+ *
+ * Idempotent: existing `JPN`/`KOR` entries are not downgraded by a fresh
+ * sweep; vote counts are accumulated into a per-bootstrap counter then merged
+ * in via `applyBootstrapVotes` below. Existing AMBIGUOUS entries (set by the
  * per-artist scanner) are left alone — chart-evidence-only is weaker than
  * mixed-vote evidence from `searchSong`.
+ *
+ * Fallback path for the KOR sweep: if the KPOP chart sweep returns zero
+ * confident artists across the entire window (e.g. TJ's `strType=1` filter
+ * went unsupported), the bootstrap falls back to a `searchSong?strType=2&
+ * nationType=KOR` seed-list scan over the §2.E drop list canonical names.
+ * This is strictly weaker than the chart sweep (a smaller seed list, no
+ * fresh-discovery surface) but it guarantees we have non-zero KOR votes for
+ * the §2.A ratio rule. The fallback runs ONLY when the primary path emits
+ * zero KOR-tagged artists — a partial primary success skips the fallback.
  */
 
 const TOP_AND_HOT_URL = 'https://www.tjmedia.com/legacy/api/topAndHot100';
@@ -41,8 +60,29 @@ const SWEEP_WEEKS = 104;
 /** Both chart types yield different orderings; sweeping both ~doubles coverage. */
 const CHART_TYPES: ReadonlyArray<'TOP' | 'HOT'> = ['TOP', 'HOT'];
 
-/** Minimum distinct chart appearances before an artist is tagged confidently JPN. */
+/** Minimum distinct chart appearances before an artist is tagged confidently. */
 const CONFIDENT_THRESHOLD = 3;
+
+/**
+ * Chart genres swept on each bootstrap pass.
+ *
+ * `strType=1` is K-pop (가요) and `strType=3` is JPOP, per the genre table
+ * in `docs/research/2026-04-29-tj-media-api-surface.md` §2 (probed live by
+ * the API-surface research pass on 2026-04-29).
+ *
+ * `voteAs` selects which vote slot in the artist's `votes` tally a confident
+ * appearance contributes to — JPN votes on the JPOP sweep, KOR votes on the
+ * K-pop sweep. The `verdictFromVotes` rule (Phase 1 spec §2.A) reads both
+ * slots to compute a JPN/KOR/AMBIGUOUS verdict.
+ */
+export const CHART_GENRES: ReadonlyArray<{
+  strType: string;
+  voteAs: 'JPN' | 'KOR';
+  label: string;
+}> = [
+  { strType: '3', voteAs: 'JPN', label: 'JPOP' },
+  { strType: '1', voteAs: 'KOR', label: 'KPOP' },
+];
 
 export interface BootstrapOptions {
   /** Override the date used for staleness checks. Tests inject a frozen now. */
@@ -62,8 +102,21 @@ export interface BootstrapStats {
   callsFailed: number;
   /** Distinct artists tagged confidently JPN by the sweep. */
   artistsTaggedJpn: number;
+  /**
+   * Distinct artists tagged confidently KOR by the sweep (Phase 1 §2.F).
+   * Pre-Phase-1 callers may not read this field; default 0 is a safe no-op.
+   */
+  artistsTaggedKor: number;
   /** Distinct artists observed (any vote count, including singletons). */
   artistsSeen: number;
+  /**
+   * Whether the seed-list KOR fallback ran (spec §2.F primary→fallback).
+   * `true` ONLY when the primary KPOP-chart sweep tagged 0 KOR artists AND
+   * the fallback was attempted. Surfaced for observability — a stable run
+   * with `kpopFallbackUsed: true` for several crawls signals TJ's `strType=1`
+   * KPOP genre is broken and should be revisited.
+   */
+  kpopFallbackUsed: boolean;
 }
 
 /**
@@ -86,52 +139,89 @@ export async function bootstrapArtistMapFromCharts(
     warn: console.warn.bind(console),
   };
 
-  // Per-bootstrap accumulator: artist-key -> set of distinct `pro` values.
-  // Using a set dedupes the same song charting in multiple weeks.
-  const artistVotes = new Map<string, { displayName: string; pros: Set<string> }>();
-
   const stats: BootstrapStats = {
     callsOk: 0,
     callsFailed: 0,
     artistsTaggedJpn: 0,
+    artistsTaggedKor: 0,
     artistsSeen: 0,
+    kpopFallbackUsed: false,
   };
 
-  for (let weekIdx = 0; weekIdx < sweepWeeks; weekIdx++) {
-    const { start, end } = weekWindow(now, weekIdx);
-    for (const chartType of CHART_TYPES) {
-      try {
-        const items = await fetchChart(http, chartType, start, end);
-        stats.callsOk++;
-        for (const item of items) {
-          const key = normalizeForMatch(item.indexSong);
-          if (key === '') continue;
-          let bucket = artistVotes.get(key);
-          if (!bucket) {
-            bucket = { displayName: item.indexSong, pros: new Set<string>() };
-            artistVotes.set(key, bucket);
+  // Track distinct artists across ALL genres so the union-card stat is honest.
+  const seenArtistKeys = new Set<string>();
+
+  for (const genre of CHART_GENRES) {
+    // Per-genre accumulator: artist-key -> set of distinct `pro` values.
+    // Using a set dedupes the same song charting in multiple weeks.
+    const artistVotes = new Map<string, { displayName: string; pros: Set<string> }>();
+
+    for (let weekIdx = 0; weekIdx < sweepWeeks; weekIdx++) {
+      const { start, end } = weekWindow(now, weekIdx);
+      for (const chartType of CHART_TYPES) {
+        try {
+          const items = await fetchChart(http, chartType, start, end, genre.strType);
+          stats.callsOk++;
+          for (const item of items) {
+            const key = normalizeForMatch(item.indexSong);
+            if (key === '') continue;
+            let bucket = artistVotes.get(key);
+            if (!bucket) {
+              bucket = { displayName: item.indexSong, pros: new Set<string>() };
+              artistVotes.set(key, bucket);
+            }
+            bucket.pros.add(item.pro);
           }
-          bucket.pros.add(item.pro);
+        } catch (err) {
+          stats.callsFailed++;
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.warn(
+            `[tj-bootstrap] chart fetch failed (${genre.label} ${chartType} ${start}..${end}): ${msg}`,
+          );
         }
-      } catch (err) {
-        stats.callsFailed++;
-        const msg = err instanceof Error ? err.message : String(err);
-        logger.warn(`[tj-bootstrap] chart fetch failed (${chartType} ${start}..${end}): ${msg}`);
+      }
+      if (progressEveryN > 0 && (weekIdx + 1) % progressEveryN === 0) {
+        const callsSoFar = (weekIdx + 1) * CHART_TYPES.length;
+        logger.log(
+          `[tj-bootstrap] ${genre.label} swept ${weekIdx + 1}/${sweepWeeks} weekly windows (${callsSoFar} calls) — distinct ${genre.voteAs} artists tagged: ${countConfident(artistVotes)}`,
+        );
       }
     }
-    if (progressEveryN > 0 && (weekIdx + 1) % progressEveryN === 0) {
-      const callsSoFar = (weekIdx + 1) * CHART_TYPES.length;
-      logger.log(
-        `[tj-bootstrap] swept ${weekIdx + 1}/${sweepWeeks} weekly windows (${callsSoFar} calls) — distinct artists tagged: ${countConfident(artistVotes)}`,
-      );
+
+    for (const key of artistVotes.keys()) seenArtistKeys.add(key);
+    const tagged = applyBootstrapVotes(cache, artistVotes, now, genre.voteAs);
+    if (genre.voteAs === 'JPN') stats.artistsTaggedJpn += tagged;
+    else stats.artistsTaggedKor += tagged;
+
+    logger.log(
+      `[tj-bootstrap] ${genre.label} pass done — distinct artists tagged ${genre.voteAs}: ${tagged}`,
+    );
+  }
+
+  // Fallback: if the primary KPOP chart sweep produced 0 confident KOR
+  // artists, run the seed-list `searchSong?strType=2&nationType=KOR` scan
+  // over the §2.E drop list canonical names. Strictly weaker than the
+  // chart sweep (smaller seed list, no fresh-discovery surface) but it
+  // guarantees the §2.A ratio rule has non-zero KOR data on cold-start.
+  if (stats.artistsTaggedKor === 0) {
+    stats.kpopFallbackUsed = true;
+    logger.log(
+      '[tj-bootstrap] KPOP chart sweep produced 0 confident KOR artists — running seed-list fallback (searchSong?nationType=KOR over drop-list canonicals)',
+    );
+    try {
+      const fallbackTagged = await runKorFallback(http, cache, now, logger, stats);
+      stats.artistsTaggedKor += fallbackTagged;
+      logger.log(`[tj-bootstrap] KOR fallback tagged ${fallbackTagged} artists`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn(`[tj-bootstrap] KOR fallback aborted with error: ${msg}`);
     }
   }
 
-  stats.artistsSeen = artistVotes.size;
-  stats.artistsTaggedJpn = applyBootstrapVotes(cache, artistVotes, now);
+  stats.artistsSeen = seenArtistKeys.size;
 
   logger.log(
-    `[tj-bootstrap] done — calls ok ${stats.callsOk}, failed ${stats.callsFailed}, artists seen ${stats.artistsSeen}, tagged JPN ${stats.artistsTaggedJpn}`,
+    `[tj-bootstrap] done — calls ok ${stats.callsOk}, failed ${stats.callsFailed}, artists seen ${stats.artistsSeen}, tagged JPN ${stats.artistsTaggedJpn}, tagged KOR ${stats.artistsTaggedKor}${stats.kpopFallbackUsed ? ' (fallback used)' : ''}`,
   );
 
   // Stamp `bootstrappedAt` ONLY when at least one sweep call succeeded. A
@@ -149,16 +239,87 @@ export async function bootstrapArtistMapFromCharts(
 }
 
 /**
- * Merge accumulated chart votes into the cache. Idempotent: existing JPN /
- * AMBIGUOUS entries are not overwritten by chart evidence (which is weaker
- * than mixed-vote `searchSong` evidence). Existing UNKNOWN / KOR / ENG
- * entries get bumped to JPN if the chart sweep produced ≥3 distinct
- * appearances and the entry is not the much-stronger searchSong-vote tally.
+ * Seed-list KOR fallback. Runs ONLY when the primary KPOP chart sweep
+ * tagged 0 confident KOR artists.
+ *
+ * For each canonical name in the §2.E drop list, call `searchSong?strType=2&
+ * nationType=KOR` and tally exact-match KOR votes. Reuses `searchSongByArtist`
+ * so any apostrophe-strip / sanitization stays consistent with the rest of
+ * the enrichment chain.
+ *
+ * Threshold: ≥3 KOR votes on a canonical's variant key tags that variant
+ * confidently KOR — same bar as the chart sweep's CONFIDENT_THRESHOLD.
+ *
+ * Failure semantics: a per-name HTTP error logs and continues (does NOT
+ * abort the fallback). The outer try/catch guards against catastrophic
+ * failure (e.g. the http client throwing on construction).
+ */
+async function runKorFallback(
+  http: Pick<HttpClient, 'postForm'>,
+  cache: SearchSongCache,
+  now: Date,
+  logger: { log(msg: string): void; warn(msg: string): void },
+  stats: BootstrapStats,
+): Promise<number> {
+  // Per-fallback accumulator mirrors the chart sweep's shape so we can
+  // reuse `applyBootstrapVotes`.
+  const artistVotes = new Map<string, { displayName: string; pros: Set<string> }>();
+
+  for (const entry of DROP_LIST) {
+    for (const variant of entry.variants) {
+      const key = normalizeForMatch(variant);
+      if (key === '') continue;
+      try {
+        const items = await searchSongByArtist(http, variant, 'KOR');
+        stats.callsOk++;
+        for (const item of items) {
+          if (normalizeForMatch(item.indexSong) !== key) continue;
+          // Only count items the server tagged KOR — `nationType=KOR` should
+          // already filter, but defense-in-depth doesn't hurt.
+          if (item.nationalcode !== 'KOR') continue;
+          let bucket = artistVotes.get(key);
+          if (!bucket) {
+            bucket = { displayName: variant, pros: new Set<string>() };
+            artistVotes.set(key, bucket);
+          }
+          bucket.pros.add(item.pro);
+        }
+      } catch (err) {
+        stats.callsFailed++;
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`[tj-bootstrap] KOR fallback failed for "${variant}": ${msg}`);
+      }
+    }
+  }
+
+  return applyBootstrapVotes(cache, artistVotes, now, 'KOR');
+}
+
+/**
+ * Merge accumulated chart votes into the cache. Idempotent: existing entries
+ * with strong cross-genre evidence are not downgraded by a single-genre
+ * chart sweep.
+ *
+ * `voteAs` selects which `votes.*` slot the confident appearances accumulate
+ * into:
+ *   - `'JPN'`: write votes into `votes.JPN`. Skip update when the existing
+ *     entry has non-zero KOR or ENG votes (mixed-vote `searchSong` evidence
+ *     is stronger than chart-only).
+ *   - `'KOR'`: write votes into `votes.KOR`. Skip update when the existing
+ *     entry has non-zero JPN or ENG votes (symmetric protection — a JPOP-
+ *     chart-confirmed JPN artist briefly appearing on the K-pop chart
+ *     should not flip).
+ *
+ * The verdict is set to `voteAs` when the entry IS written. The
+ * `verdictFromVotes` rule (Phase 1 §2.A) is the authoritative classifier
+ * once `searchSong` votes land; the chart-bootstrap verdict is a placeholder
+ * for the cold-start window.
  */
 function applyBootstrapVotes(
   cache: SearchSongCache,
   artistVotes: ReadonlyMap<string, { displayName: string; pros: Set<string> }>,
   now: Date,
+  voteAs: 'JPN' | 'KOR',
 ): number {
   let tagged = 0;
   const seenAt = now.toISOString();
@@ -166,16 +327,34 @@ function applyBootstrapVotes(
     const distinctPros = bucket.pros.size;
     if (distinctPros < CONFIDENT_THRESHOLD) continue;
     const existing = cache.artistNationalityMap[key];
-    // Don't overwrite a stronger `searchSong`-derived tally. Heuristic: any
-    // entry with non-zero KOR or ENG votes came from `searchSong` (which
-    // collects mixed-nationality evidence); chart-only votes only ever hit
-    // JPN. Don't downgrade or override mixed-evidence entries.
-    if (existing && (existing.votes.KOR > 0 || existing.votes.ENG > 0)) continue;
+
+    // Don't overwrite an entry that already has STRONGER cross-evidence
+    // signal than this single-genre chart sweep can offer. Heuristic per
+    // direction:
+    //   - JPOP sweep: skip when KOR > 0 OR ENG > 0 (mixed-vote searchSong
+    //     evidence already classified this artist; don't blow it away).
+    //   - KPOP sweep: skip when JPN > 0 OR ENG > 0. JPN > 0 here covers the
+    //     case where the JPOP sweep already tagged the artist confidently
+    //     JPN — letting the KPOP sweep then write votes.KOR over it would
+    //     flip a real JP act to KOR. The Phase 1 §2.A ratio rule then sorts
+    //     out genuinely-mixed artists via `verdictFromVotes` after the
+    //     `searchSong` per-artist pass runs.
+    if (existing) {
+      if (voteAs === 'JPN' && (existing.votes.KOR > 0 || existing.votes.ENG > 0)) continue;
+      if (voteAs === 'KOR' && (existing.votes.JPN > 0 || existing.votes.ENG > 0)) continue;
+    }
+
     const entry: ArtistNationalityEntry = {
-      code: 'JPN',
+      code: voteAs,
       votes: {
-        JPN: Math.max(existing?.votes.JPN ?? 0, distinctPros),
-        KOR: existing?.votes.KOR ?? 0,
+        JPN:
+          voteAs === 'JPN'
+            ? Math.max(existing?.votes.JPN ?? 0, distinctPros)
+            : (existing?.votes.JPN ?? 0),
+        KOR:
+          voteAs === 'KOR'
+            ? Math.max(existing?.votes.KOR ?? 0, distinctPros)
+            : (existing?.votes.KOR ?? 0),
         ENG: existing?.votes.ENG ?? 0,
       },
       lastSeen: seenAt,
@@ -207,12 +386,13 @@ async function fetchChart(
   chartType: 'TOP' | 'HOT',
   start: string,
   end: string,
+  strType: string,
 ): Promise<ChartItem[]> {
   const res = await http.postForm(TOP_AND_HOT_URL, {
     chartType,
     searchStartDate: start,
     searchEndDate: end,
-    strType: '3',
+    strType,
   });
   if (res === null) {
     throw new Error(`[tj-bootstrap] topAndHot100 blocked by robots.txt: ${TOP_AND_HOT_URL}`);

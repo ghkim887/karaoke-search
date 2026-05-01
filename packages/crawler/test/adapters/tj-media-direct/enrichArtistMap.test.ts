@@ -83,12 +83,14 @@ describe('enrichArtistMap', () => {
   });
 
   it('classifies an all-KOR-vote artist as KOR', async () => {
+    // Phase 1 §2.A: KOR requires ≥3 votes AND ratio ≥ 0.7. 3/0 hits both.
     const records = [rawFor({ tj: '1', artist: 'BTS' })];
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     const { client } = buildHttp(() =>
       searchResp([
         { pro: 1, indexTitle: 't1', indexSong: 'BTS', nationalcode: 'KOR' },
         { pro: 2, indexTitle: 't2', indexSong: 'BTS', nationalcode: 'KOR' },
+        { pro: 3, indexTitle: 't3', indexSong: 'BTS', nationalcode: 'KOR' },
       ]),
     );
     await enrichArtistMap(client, records, cache, {
@@ -99,12 +101,18 @@ describe('enrichArtistMap', () => {
   });
 
   it('classifies a mixed-vote artist as AMBIGUOUS', async () => {
+    // Phase 1 §2.A: AMBIGUOUS requires ≥3 votes on BOTH sides AND neither
+    // side hits the 0.7 ratio. 3 JPN + 3 KOR = 0.5 ratio each side.
     const records = [rawFor({ tj: '1', artist: 'AmbiguousAct' })];
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     const { client } = buildHttp(() =>
       searchResp([
         { pro: 1, indexTitle: 't1', indexSong: 'AmbiguousAct', nationalcode: 'JPN' },
-        { pro: 2, indexTitle: 't2', indexSong: 'AmbiguousAct', nationalcode: 'KOR' },
+        { pro: 2, indexTitle: 't2', indexSong: 'AmbiguousAct', nationalcode: 'JPN' },
+        { pro: 3, indexTitle: 't3', indexSong: 'AmbiguousAct', nationalcode: 'JPN' },
+        { pro: 4, indexTitle: 't4', indexSong: 'AmbiguousAct', nationalcode: 'KOR' },
+        { pro: 5, indexTitle: 't5', indexSong: 'AmbiguousAct', nationalcode: 'KOR' },
+        { pro: 6, indexTitle: 't6', indexSong: 'AmbiguousAct', nationalcode: 'KOR' },
       ]),
     );
     await enrichArtistMap(client, records, cache, {
@@ -113,8 +121,8 @@ describe('enrichArtistMap', () => {
     });
     const entry = cache.artistNationalityMap.ambiguousact;
     expect(entry?.code).toBe('AMBIGUOUS');
-    expect(entry?.votes.JPN).toBe(1);
-    expect(entry?.votes.KOR).toBe(1);
+    expect(entry?.votes.JPN).toBe(3);
+    expect(entry?.votes.KOR).toBe(3);
   });
 
   it('classifies an artist with zero exact-match votes as UNKNOWN', async () => {
@@ -132,12 +140,17 @@ describe('enrichArtistMap', () => {
   });
 
   it('uses normalized matching (case + whitespace + NFKC)', async () => {
+    // Phase 1 §2.A: JPN requires ≥3 votes; bump fixture to 3 normalized hits.
     const records = [rawFor({ tj: '1', artist: 'YOASOBI' })];
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     const { client } = buildHttp(() =>
       // TJ returned a different case + extra whitespace — must still
-      // exact-match after normalize.
-      searchResp([{ pro: 1, indexTitle: 't1', indexSong: 'yo  asobi', nationalcode: 'JPN' }]),
+      // exact-match after normalize. 3 votes to clear the threshold.
+      searchResp([
+        { pro: 1, indexTitle: 't1', indexSong: 'yo  asobi', nationalcode: 'JPN' },
+        { pro: 2, indexTitle: 't2', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+        { pro: 3, indexTitle: 't3', indexSong: 'Yo Asobi', nationalcode: 'JPN' },
+      ]),
     );
     await enrichArtistMap(client, records, cache, {
       now: new Date('2026-04-29T00:00:00.000Z'),
@@ -215,11 +228,20 @@ describe('enrichArtistMap', () => {
       // TJ returns each artist as JPN when searched directly, and returns
       // empty for the combined `imase & なとり` (which is how the live
       // searchSong index typically behaves for collab strings).
+      // Phase 1 §2.A: JPN now requires ≥3 votes to classify confidently.
       if (searchTxt === 'imase') {
-        return searchResp([{ pro: 1, indexTitle: 't', indexSong: 'imase', nationalcode: 'JPN' }]);
+        return searchResp([
+          { pro: 1, indexTitle: 't1', indexSong: 'imase', nationalcode: 'JPN' },
+          { pro: 2, indexTitle: 't2', indexSong: 'imase', nationalcode: 'JPN' },
+          { pro: 3, indexTitle: 't3', indexSong: 'imase', nationalcode: 'JPN' },
+        ]);
       }
       if (searchTxt === 'なとり') {
-        return searchResp([{ pro: 2, indexTitle: 't', indexSong: 'なとり', nationalcode: 'JPN' }]);
+        return searchResp([
+          { pro: 4, indexTitle: 't1', indexSong: 'なとり', nationalcode: 'JPN' },
+          { pro: 5, indexTitle: 't2', indexSong: 'なとり', nationalcode: 'JPN' },
+          { pro: 6, indexTitle: 't3', indexSong: 'なとり', nationalcode: 'JPN' },
+        ]);
       }
       // The combined string scan finds nothing exact-matching itself — the
       // entry is still recorded, just as UNKNOWN.
@@ -273,12 +295,105 @@ describe('enrichArtistMap', () => {
     const records = [blank, baseRecord];
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     const { client, calls } = buildHttp(() =>
-      searchResp([{ pro: 1, indexTitle: 't', indexSong: 'YOASOBI', nationalcode: 'JPN' }]),
+      // 3 votes → JPN under the §2.A threshold rule.
+      searchResp([
+        { pro: 1, indexTitle: 't1', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+        { pro: 2, indexTitle: 't2', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+        { pro: 3, indexTitle: 't3', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+      ]),
     );
     await enrichArtistMap(client, records, cache, {
       now: new Date('2026-04-29T00:00:00.000Z'),
       logger: silentLogger(),
     });
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('verdictFromVotes — Phase 1 §2.A threshold rule', () => {
+  /**
+   * The verdict function isn't exported, so we exercise it through the
+   * scanner. Each case fabricates a `searchSong` response with the exact
+   * vote distribution we want and checks the resulting `code`.
+   *
+   * Phase 1 §2.A rule (KPOP-leak fix, 2026-05-01):
+   *   - JPN: `JPN ≥ 3 AND JPN/(JPN+KOR) ≥ 0.7`
+   *   - KOR: `KOR ≥ 3 AND KOR/(JPN+KOR) ≥ 0.7` (symmetric)
+   *   - AMBIGUOUS: both have ≥3 votes but neither hits 0.7 ratio
+   *   - UNKNOWN: insufficient signal
+   */
+  function buildVotes(distribution: { JPN?: number; KOR?: number }): Array<
+    Record<string, unknown>
+  > {
+    const items: Array<Record<string, unknown>> = [];
+    let pro = 1;
+    for (let i = 0; i < (distribution.JPN ?? 0); i++) {
+      items.push({
+        pro: pro++,
+        indexTitle: `t${pro}`,
+        indexSong: 'TestArtist',
+        nationalcode: 'JPN',
+      });
+    }
+    for (let i = 0; i < (distribution.KOR ?? 0); i++) {
+      items.push({
+        pro: pro++,
+        indexTitle: `t${pro}`,
+        indexSong: 'TestArtist',
+        nationalcode: 'KOR',
+      });
+    }
+    return items;
+  }
+
+  async function verdictFor(distribution: { JPN?: number; KOR?: number }): Promise<string> {
+    const records = [rawFor({ tj: '1', artist: 'TestArtist' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() => searchResp(buildVotes(distribution)));
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+    return cache.artistNationalityMap.testartist?.code ?? '<missing>';
+  }
+
+  it('JPN 2/0 votes → UNKNOWN (below ≥3 threshold)', async () => {
+    expect(await verdictFor({ JPN: 2, KOR: 0 })).toBe('UNKNOWN');
+  });
+
+  it('JPN 3/0 votes → JPN (3 votes, ratio 1.0)', async () => {
+    expect(await verdictFor({ JPN: 3, KOR: 0 })).toBe('JPN');
+  });
+
+  it('JPN 3/2 votes → UNKNOWN (3 JPN votes but ratio 0.6 fails 0.7 bar; KOR side has only 2 votes — not symmetric AMBIGUOUS)', async () => {
+    expect(await verdictFor({ JPN: 3, KOR: 2 })).toBe('UNKNOWN');
+  });
+
+  it('JPN 4/2 votes → UNKNOWN (4 JPN, ratio 0.67 fails 0.7 bar; KOR side has only 2 votes)', async () => {
+    expect(await verdictFor({ JPN: 4, KOR: 2 })).toBe('UNKNOWN');
+  });
+
+  it('JPN 7/3 votes → JPN (10 votes, ratio 0.7 hits the bar exactly)', async () => {
+    expect(await verdictFor({ JPN: 7, KOR: 3 })).toBe('JPN');
+  });
+
+  it('KOR 3/0 votes → KOR (symmetric — needed because §2.F seeds KOR votes)', async () => {
+    expect(await verdictFor({ KOR: 3, JPN: 0 })).toBe('KOR');
+  });
+
+  it('KOR 7/3 votes → KOR (symmetric ratio rule, 0.7 ratio)', async () => {
+    expect(await verdictFor({ KOR: 7, JPN: 3 })).toBe('KOR');
+  });
+
+  it('JPN 3/3 votes → AMBIGUOUS (both sides ≥3, neither hits 0.7)', async () => {
+    expect(await verdictFor({ JPN: 3, KOR: 3 })).toBe('AMBIGUOUS');
+  });
+
+  it('JPN 5/3 votes → AMBIGUOUS (both sides ≥3, ratio 0.625 < 0.7)', async () => {
+    expect(await verdictFor({ JPN: 5, KOR: 3 })).toBe('AMBIGUOUS');
+  });
+
+  it('0/0 votes → UNKNOWN', async () => {
+    expect(await verdictFor({ JPN: 0, KOR: 0 })).toBe('UNKNOWN');
   });
 });

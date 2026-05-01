@@ -193,20 +193,62 @@ function classifyVotes(
   return { code: verdict, votes, lastSeen: now.toISOString() };
 }
 
+/**
+ * Verdict rule (Phase 1 spec §2.A — KPOP-leak fix, 2026-05-01):
+ *
+ *   - JPN: `JPN ≥ 3 AND JPN/(JPN+KOR) ≥ 0.7`
+ *   - KOR: `KOR ≥ 3 AND KOR/(JPN+KOR) ≥ 0.7` (symmetric — needed because
+ *          spec §2.F now seeds KOR votes via the KPOP-chart sweep, so the
+ *          rule has data to work with on both sides).
+ *   - AMBIGUOUS: both JPN and KOR have ≥3 votes but neither hits the 0.7
+ *                ratio (mixed-evidence artist).
+ *   - ENG: `ENG ≥ 1 AND JPN == 0 AND KOR == 0` (English-only signal).
+ *   - UNKNOWN: insufficient signal (no JPN/KOR/ENG votes, or below the
+ *              threshold/ratio bar with no other tie-breaker).
+ *
+ * Why ≥3 + 0.7 (not the prior `JPN ≥ 1 AND KOR == 0`): the histogram across
+ * all 1,532 JPN-coded artists at spec time was 818 with `JPN=1`, 224 with
+ * `JPN=2`, 144 with `JPN=3`. `JPN ≥ 3` demotes ~68% to AMBIGUOUS purely on
+ * threshold; per-`pro` `nationalcode === 'JPN'` rescue (parser path 3) still
+ * catches the long-tail real-JP records via specific-pro confirmation.
+ *
+ * Why symmetric for KOR: spec §2.F's KPOP-chart bootstrap actively sources
+ * KOR votes (which were empirically zero across all JPN-coded artists pre-
+ * fix). The symmetric rule lets a KPOP chart sweep tag `방탄소년단` confidently
+ * KOR even when an old JPOP-chart vote is still on file.
+ */
 function verdictFromVotes(votes: {
   JPN: number;
   KOR: number;
   ENG: number;
 }): ArtistNationalityCode {
-  const jpn = votes.JPN > 0 ? 1 : 0;
-  const kor = votes.KOR > 0 ? 1 : 0;
-  const eng = votes.ENG > 0 ? 1 : 0;
-  const distinct = jpn + kor + eng;
-  if (distinct === 0) return 'UNKNOWN';
-  if (distinct > 1) return 'AMBIGUOUS';
-  if (jpn === 1) return 'JPN';
-  if (kor === 1) return 'KOR';
-  return 'ENG';
+  const { JPN, KOR, ENG } = votes;
+  const total = JPN + KOR;
+
+  // JPN: ≥3 votes AND ≥0.7 ratio of JPN/(JPN+KOR). When KOR is 0 the ratio is 1.0.
+  if (JPN >= 3 && total > 0 && JPN / total >= 0.7) return 'JPN';
+
+  // KOR: symmetric rule — ≥3 votes AND ≥0.7 ratio of KOR/(JPN+KOR).
+  if (KOR >= 3 && total > 0 && KOR / total >= 0.7) return 'KOR';
+
+  // AMBIGUOUS: both sides have ≥3 votes but neither side hit the 0.7 ratio.
+  // Mixed-evidence artist; the parser filter rejects these (only JPN admits).
+  if (JPN >= 3 && KOR >= 3) return 'AMBIGUOUS';
+
+  // ENG: English-only signal. Preserved from the previous rule — an artist
+  // with ENG votes and zero JPN/KOR votes is tagged ENG so the parser knows
+  // this is not a Japanese act. ENG votes alongside JPN/KOR votes (rare in
+  // practice) fall through to UNKNOWN, which the parser also rejects.
+  if (ENG > 0 && JPN === 0 && KOR === 0) return 'ENG';
+
+  // UNKNOWN: insufficient signal. Includes:
+  //   - 0/0/0 (no exact-match votes at all)
+  //   - JPN=1 KOR=0 / JPN=2 KOR=0 (below threshold)
+  //   - JPN=4 KOR=2 (4 votes, ratio 0.67 < 0.7, KOR side has only 2 votes —
+  //     not symmetric AMBIGUOUS)
+  // Parser filter rejects these; per-`pro` JPN rescue still catches real
+  // long-tail JP records via specific-pro confirmation.
+  return 'UNKNOWN';
 }
 
 function logProgress(

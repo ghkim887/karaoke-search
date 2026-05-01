@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHART_GENRES,
   bootstrapArtistMapFromCharts,
   parseChartResponse,
   weekWindow,
@@ -112,8 +113,18 @@ describe('parseChartResponse', () => {
   });
 });
 
+describe('CHART_GENRES — Phase 1 §2.F multi-genre sweep config', () => {
+  it('exposes both JPOP (strType=3) and KPOP (strType=1) genres', () => {
+    expect(CHART_GENRES).toHaveLength(2);
+    const jpop = CHART_GENRES.find((g) => g.voteAs === 'JPN');
+    const kpop = CHART_GENRES.find((g) => g.voteAs === 'KOR');
+    expect(jpop?.strType).toBe('3');
+    expect(kpop?.strType).toBe('1');
+  });
+});
+
 describe('bootstrapArtistMapFromCharts', () => {
-  it('issues 2 calls per week (TOP + HOT) for the configured sweep window', async () => {
+  it('issues 4 calls per week (TOP + HOT × 2 genres) for the configured sweep window', async () => {
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     const { client, calls } = buildHttp(() => chartResp([]));
     await bootstrapArtistMapFromCharts(client, cache, {
@@ -121,10 +132,12 @@ describe('bootstrapArtistMapFromCharts', () => {
       logger: silentLogger(),
       sweepWeeks: 3,
     });
-    // 3 weeks × 2 chartTypes = 6 calls.
-    expect(calls).toHaveLength(6);
-    expect(calls.every((c) => c.url.includes('topAndHot100'))).toBe(true);
-    expect(calls.every((c) => c.body.strType === '3')).toBe(true);
+    // 3 weeks × 2 chartTypes × 2 genres = 12 calls. Plus the KOR fallback
+    // (because primary KPOP sweep tagged 0 KOR artists with empty data) ran
+    // an additional N searchSong calls. Filter to the chart endpoint only.
+    const chartCalls = calls.filter((c) => c.url.includes('topAndHot100'));
+    expect(chartCalls).toHaveLength(12);
+    expect(new Set(chartCalls.map((c) => c.body.strType))).toEqual(new Set(['3', '1']));
   });
 
   it('dedupes by `pro` across weeks (one charting song = one vote)', async () => {
@@ -132,27 +145,34 @@ describe('bootstrapArtistMapFromCharts', () => {
     // The same single item charts in every weekly window — that should
     // count as ONE distinct `pro`, NOT N votes. Single-pro = no confident
     // tag (threshold is ≥3 distinct pros).
-    const { client } = buildHttp(() =>
-      chartResp([{ pro: 68058, indexTitle: 'Pretender', indexSong: 'Official髭男dism' }]),
-    );
+    const { client } = buildHttp(({ strType }) => {
+      // Only return data on the JPOP genre (strType=3); KPOP returns empty.
+      if (strType === '3') {
+        return chartResp([{ pro: 68058, indexTitle: 'Pretender', indexSong: 'Official髭男dism' }]);
+      }
+      return chartResp([]);
+    });
     await bootstrapArtistMapFromCharts(client, cache, {
       now: new Date('2026-04-29T00:00:00.000Z'),
       logger: silentLogger(),
       sweepWeeks: 5,
     });
-    // 5 weeks × 2 charts × 1 item = 10 returns, all the SAME pro. Distinct
-    // pros = 1; below the ≥3 threshold; nothing tagged.
+    // 5 weeks × 2 charts × 1 item = 10 returns from JPOP, all SAME pro.
+    // Distinct pros = 1; below the ≥3 threshold; nothing tagged.
     const key = 'official髭男dism';
     expect(cache.artistNationalityMap[key]).toBeUndefined();
   });
 
-  it('tags an artist confidently JPN when ≥3 distinct pros chart', async () => {
+  it('tags an artist confidently JPN when ≥3 distinct pros chart on the JPOP sweep', async () => {
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
-    let weekCounter = 0;
-    const { client } = buildHttp(() => {
-      weekCounter++;
-      // Different pro per call so distinct count grows.
-      return chartResp([{ pro: 60000 + weekCounter, indexTitle: 'song', indexSong: 'YOASOBI' }]);
+    let counter = 0;
+    const { client } = buildHttp(({ strType }) => {
+      if (strType === '3') {
+        counter++;
+        // Different pro per call so distinct count grows.
+        return chartResp([{ pro: 60000 + counter, indexTitle: 'song', indexSong: 'YOASOBI' }]);
+      }
+      return chartResp([]);
     });
     await bootstrapArtistMapFromCharts(client, cache, {
       now: new Date('2026-04-29T00:00:00.000Z'),
@@ -165,6 +185,84 @@ describe('bootstrapArtistMapFromCharts', () => {
     expect(entry?.votes.JPN).toBeGreaterThanOrEqual(3);
   });
 
+  it('tags an artist confidently KOR when ≥3 distinct pros chart on the KPOP sweep (Phase 1 §2.F)', async () => {
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    let counter = 0;
+    const { client } = buildHttp(({ strType }) => {
+      if (strType === '1') {
+        counter++;
+        return chartResp([{ pro: 70000 + counter, indexTitle: 'song', indexSong: 'BTS' }]);
+      }
+      return chartResp([]);
+    });
+    const stats = await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 4,
+    });
+    const entry = cache.artistNationalityMap.bts;
+    expect(entry).toBeDefined();
+    expect(entry?.code).toBe('KOR');
+    expect(entry?.votes.KOR).toBeGreaterThanOrEqual(3);
+    expect(stats.artistsTaggedKor).toBeGreaterThanOrEqual(1);
+    expect(stats.kpopFallbackUsed).toBe(false);
+  });
+
+  it('mixed JPN/KOR sweep populates BOTH vote slots for distinct artists', async () => {
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    let jpnCounter = 0;
+    let korCounter = 0;
+    const { client } = buildHttp(({ strType }) => {
+      if (strType === '3') {
+        jpnCounter++;
+        return chartResp([{ pro: 60000 + jpnCounter, indexTitle: 't', indexSong: 'YOASOBI' }]);
+      }
+      if (strType === '1') {
+        korCounter++;
+        return chartResp([{ pro: 70000 + korCounter, indexTitle: 't', indexSong: 'BTS' }]);
+      }
+      return chartResp([]);
+    });
+    const stats = await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 4,
+    });
+    expect(cache.artistNationalityMap.yoasobi?.code).toBe('JPN');
+    expect(cache.artistNationalityMap.bts?.code).toBe('KOR');
+    expect(stats.artistsTaggedJpn).toBeGreaterThanOrEqual(1);
+    expect(stats.artistsTaggedKor).toBeGreaterThanOrEqual(1);
+  });
+
+  it('idempotency: existing JPN entry is NOT downgraded by a KPOP-only sweep', async () => {
+    // Phase 1 §2.F idempotency requirement. If a JPOP-chart-confirmed
+    // YOASOBI somehow shows up on the K-pop chart, the KPOP sweep must NOT
+    // flip it to KOR.
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    cache.artistNationalityMap.yoasobi = {
+      code: 'JPN',
+      votes: { JPN: 5, KOR: 0, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    let counter = 0;
+    const { client } = buildHttp(({ strType }) => {
+      if (strType === '1') {
+        counter++;
+        return chartResp([{ pro: 70000 + counter, indexTitle: 't', indexSong: 'YOASOBI' }]);
+      }
+      return chartResp([]);
+    });
+    await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 4,
+    });
+    // Existing JPN entry has JPN > 0, so the KPOP sweep skipped it.
+    expect(cache.artistNationalityMap.yoasobi?.code).toBe('JPN');
+    expect(cache.artistNationalityMap.yoasobi?.votes.JPN).toBe(5);
+    expect(cache.artistNationalityMap.yoasobi?.votes.KOR).toBe(0);
+  });
+
   it('does NOT downgrade a mixed-vote (searchSong-derived) entry', async () => {
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     cache.artistNationalityMap.ambiguousact = {
@@ -173,16 +271,19 @@ describe('bootstrapArtistMapFromCharts', () => {
       lastSeen: '2026-04-29T00:00:00.000Z',
     };
     let counter = 0;
-    const { client } = buildHttp(() => {
-      counter++;
-      return chartResp([{ pro: 60000 + counter, indexTitle: 't', indexSong: 'AmbiguousAct' }]);
+    const { client } = buildHttp(({ strType }) => {
+      if (strType === '3') {
+        counter++;
+        return chartResp([{ pro: 60000 + counter, indexTitle: 't', indexSong: 'AmbiguousAct' }]);
+      }
+      return chartResp([]);
     });
     await bootstrapArtistMapFromCharts(client, cache, {
       now: new Date('2026-04-29T00:00:00.000Z'),
       logger: silentLogger(),
       sweepWeeks: 5,
     });
-    // Existing AMBIGUOUS entry has KOR > 0, so chart evidence is rejected.
+    // Existing AMBIGUOUS entry has KOR > 0, so JPOP-chart evidence is rejected.
     expect(cache.artistNationalityMap.ambiguousact?.code).toBe('AMBIGUOUS');
   });
 
@@ -201,7 +302,55 @@ describe('bootstrapArtistMapFromCharts', () => {
       sweepWeeks: 1,
     });
     expect(stats.callsFailed).toBe(1);
-    expect(stats.callsOk).toBe(1);
+    // 1 sweep week × 2 chartTypes × 2 genres = 4 chart calls; only 1 failed,
+    // so 3 chart calls succeeded. Plus the KOR fallback's searchSong calls
+    // (which all return empty `chartResp([])` data — counted as ok).
+    expect(stats.callsOk).toBeGreaterThanOrEqual(3);
     expect(logger.warns.some((w) => /chart fetch failed/.test(w))).toBe(true);
+  });
+
+  it('Phase 1 §2.F primary→fallback failover: KOR fallback runs when KPOP sweep tagged 0 confident KOR artists', async () => {
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    // KPOP chart returns empty for every call — primary path tags 0 KOR
+    // artists. Fallback should fire and try `searchSong?nationType=KOR` over
+    // the drop-list canonical names.
+    const { client, calls } = buildHttp(({ strType }) => {
+      // Chart endpoints return empty.
+      if (strType === '3' || strType === '1') return chartResp([]);
+      // Fallback `searchSong` call — return 3 KOR matches for `방탄소년단`
+      // (one of the drop-list canonicals) so the fallback tags it.
+      // strType=2 is the artist-search path used by searchSongByArtist.
+      return chartResp([]);
+    });
+    const stats = await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 1,
+    });
+    expect(stats.kpopFallbackUsed).toBe(true);
+    // The fallback ran (its searchSong calls hit the buildHttp handler).
+    const searchSongCalls = calls.filter((c) => c.url.includes('searchSong'));
+    expect(searchSongCalls.length).toBeGreaterThan(0);
+  });
+
+  it('KOR fallback skips when primary KPOP sweep tagged ≥1 KOR artist', async () => {
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    let counter = 0;
+    const { client, calls } = buildHttp(({ strType }) => {
+      if (strType === '1') {
+        counter++;
+        return chartResp([{ pro: 70000 + counter, indexTitle: 't', indexSong: 'BTS' }]);
+      }
+      return chartResp([]);
+    });
+    const stats = await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 4,
+    });
+    expect(stats.kpopFallbackUsed).toBe(false);
+    // No fallback searchSong calls should have been made.
+    const searchSongCalls = calls.filter((c) => c.url.includes('searchSong'));
+    expect(searchSongCalls).toHaveLength(0);
   });
 });

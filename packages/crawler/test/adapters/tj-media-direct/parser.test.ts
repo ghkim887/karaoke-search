@@ -223,15 +223,16 @@ describe('parseCatalogResponse — false-negative recovery (PR-2 promise)', () =
   });
 });
 
-describe('parseCatalogResponse — PR-4 multi-artist collab admit (path 1)', () => {
+describe('parseCatalogResponse — Phase 1 §2.B lead-component-only admit', () => {
   /**
-   * PR-4: the per-artist scan now considers every collab component, so a
-   * record like `imase & なとり` must admit via path 1 even when ONLY one of
-   * the components is JPN-tagged in the cache. This recovers the ~102 Latin-
-   * collab admits identified in the audit (records like
-   * `MY FIRST STORY & HYDE`, `Charlie Puth(Feat.宇多田ヒカル)`).
+   * Phase 1 §2.B (KPOP-leak fix, 2026-05-01) tightens the per-artist admit
+   * rule from "any component JPN-tagged" to "LEAD component JPN-tagged". The
+   * lead is index 1 of `splitArtistCollab(...)` when ≥2 components exist (the
+   * splitter places the whole string at index 0), else index 0. This drops
+   * the `Charlie Puth(Feat.宇多田ヒカル)` family — Western lead, JP feature —
+   * which is intentional per the spec's behavior table.
    */
-  it('admits a collab when ONE component is JPN-tagged (combined string is not in cache)', () => {
+  it('admits a collab when the LEAD component is JPN-tagged', () => {
     const json = {
       resultCode: '99',
       resultData: {
@@ -241,21 +242,22 @@ describe('parseCatalogResponse — PR-4 multi-artist collab admit (path 1)', () 
       },
     };
     const cache = emptyCache();
-    // Only `imase` is tagged JPN — the combined `imase & なとり` key is
-    // NOT in the cache (matches the live-API behavior where the literal
-    // collab string returns no exact-match results from searchSong).
+    // `imase` is the LEAD component (index 1 of splitArtistCollab; whole
+    // string at index 0). Phase 1 §2.B admits when the lead is JPN-tagged.
     cache.artistNationalityMap.imase = jpnArtist();
     const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
     expect(records).toHaveLength(1);
     expect(records[0]?.artist_primary).toBe('imase & なとり');
-    // Path-1 (per-artist) admitted via component split.
     expect(stats.admittedByArtist).toBe(1);
     expect(stats.admittedByPro).toBe(0);
     expect(stats.admittedByRescue).toBe(0);
     expect(stats.dropped).toBe(0);
   });
 
-  it('admits a `feat.` parenthetical collab when the featured artist is JPN-tagged', () => {
+  it('drops a `feat.` parenthetical collab when ONLY the featured artist is JPN-tagged (lead is non-JPN)', () => {
+    // Phase 1 §2.B explicit case from the behavior table:
+    //   `Charlie Puth(Feat.宇多田ヒカル)` → lead `Charlie Puth` is non-JPN
+    //   in cache → DROP (was KEEP under PR-4 any-component rule).
     const json = {
       resultCode: '99',
       resultData: {
@@ -270,11 +272,45 @@ describe('parseCatalogResponse — PR-4 multi-artist collab admit (path 1)', () 
       },
     };
     const cache = emptyCache();
-    // Only the featured artist is tagged JPN.
+    // Only the featured artist is tagged JPN. Lead `Charlie Puth` has no
+    // entry — falls through every admit path and drops.
     cache.artistNationalityMap.宇多田ヒカル = jpnArtist();
     const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(0);
+    expect(stats.admittedByArtist).toBe(0);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('still admits a `feat.` collab when the featured artist is JPN AND the per-record pro is JPN-tagged (path 3)', () => {
+    // Path-2 (per-pro) is the safety net for the case where the lead is
+    // unknown but the specific record is confidently JPN.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 99,
+            indexTitle: 'Collab Track',
+            indexSong: 'WesternLead(Feat.宇多田ヒカル)',
+            publishdate: '2022-01-20',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.宇多田ヒカル = jpnArtist();
+    cache.proEnrichmentMap['99'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
     expect(records).toHaveLength(1);
-    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.admittedByPro).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
   });
 
   it('regression: whole-string JPN tag still admits unchanged (no collab)', () => {
@@ -458,6 +494,187 @@ describe('shouldKeep — direct unit', () => {
 
   it('returns false when all three paths miss', () => {
     expect(shouldKeep('1', 'whatever', emptyCache())).toBe(false);
+  });
+});
+
+describe('parseCatalogResponse — Phase 1 §2.E drop-list reject', () => {
+  /**
+   * Phase 1 §2.E drop list catches known Korean acts deterministically,
+   * regardless of cache vote tallies. Applied any-component (inverse of
+   * §2.B's lead-only admit rule) — Korean acts as featured artists must
+   * sink Japanese-led collabs too.
+   */
+  it('drops a Hangul-script Korean act even when JPN-cached (drop list overrides cache)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 1, indexTitle: 'IDOL', indexSong: '방탄소년단', publishdate: '2018-08-24' }],
+      },
+    };
+    const cache = emptyCache();
+    // Pre-fix cache had `방탄소년단` JPN 3/0/0 via the JPOP-chart bootstrap.
+    // Drop list MUST reject regardless.
+    cache.artistNationalityMap.방탄소년단 = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+  });
+
+  it('drops a kanji-script Korean act even when JPN-cached', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 2, indexTitle: 'Mirotic', indexSong: '東方神起', publishdate: '2009-07-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    // Pre-fix cache had `東方神起` JPN 30/0/0 — the largest single kanji-script
+    // leaker in the corpus. Drop list catches it.
+    cache.artistNationalityMap.東方神起 = {
+      code: 'JPN',
+      votes: { JPN: 30, KOR: 0, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+  });
+
+  it('drops a Latin-script BTS variant', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 3, indexTitle: 'Dynamite', indexSong: 'BTS', publishdate: '2020-08-21' }],
+      },
+    };
+    const { records } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+    expect(records).toEqual([]);
+  });
+
+  it('drops collab when a featured component matches the drop list (any-component rule)', () => {
+    // Phase 1 §2.E behavior: a Japanese lead featuring a Korean drop-list
+    // member STILL drops. Inverse of §2.B's lead-only admit rule — drop list
+    // applies to all components.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 4,
+            indexTitle: 'Some Track',
+            indexSong: 'MAX(Feat.SUGA of BTS)',
+            publishdate: '2020-01-01',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    // MAX is the JP duo, properly JPN-tagged. Without the any-component drop
+    // rule, this would admit via path 1 (lead is MAX = JPN). With the rule,
+    // SUGA-of-BTS hits the drop list first and the record drops.
+    cache.artistNationalityMap.max = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('drops collab when the lead is a Korean act with JP-tagged feature (lead is on drop list)', () => {
+    // Symmetric case: Korean lead, JP feature — drop list catches the lead.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 5,
+            indexTitle: 'Collab',
+            indexSong: '방탄소년단(Feat.YOASOBI)',
+            publishdate: '2024-01-01',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+  });
+
+  it('does NOT drop a non-list Japanese act with similar surface form', () => {
+    // Sanity: LiSA is a real JP act, NOT on the drop list. The drop-list
+    // catch must not bleed.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 6, indexTitle: 'oath sign', indexSong: 'LiSA', publishdate: '2011-10-12' }],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.lisa = jpnArtist();
+    const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.artist_primary).toBe('LiSA');
+  });
+});
+
+describe('parseCatalogResponse — Phase 1 §2.C per-pro KOR-reject', () => {
+  /**
+   * Phase 1 §2.C: an explicit `nationalcode === 'KOR'` on `proEnrichmentMap`
+   * overrides every admit path including the blog rescue. A hand-validated
+   * blog mention can lag a TJ catalog metadata correction.
+   */
+  it('drops a record whose pro is KOR-tagged, before path 1 (per-artist) fires', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 100, indexTitle: 'Spring Day', indexSong: 'KorAct', publishdate: '2017-02-13' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    // The artist scan (incorrectly) tagged KorAct as JPN. The pro-level KOR
+    // signal MUST override.
+    cache.artistNationalityMap.koract = jpnArtist();
+    cache.proEnrichmentMap['100'] = {
+      nationalcode: 'KOR',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+  });
+
+  it('drops a record whose pro is KOR-tagged even when the rescue whitelist contains it', () => {
+    // Path 4 (rescue) does NOT override an explicit KOR signal.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 200, indexTitle: 'Some Track', indexSong: 'AnyArtist', publishdate: '2020-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.proEnrichmentMap['200'] = {
+      nationalcode: 'KOR',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { records } = parseCatalogResponse(json, SOURCE_URL, {
+      cache,
+      forceIncludeTjNumbers: new Set(['200']),
+    });
+    expect(records).toEqual([]);
   });
 });
 
