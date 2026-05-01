@@ -30,6 +30,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, '..');
 
+// Fix F.1 (2026-05-01): named constants for safety thresholds + sample sizes.
+// Pulled out of inline literals so the abort/sample policy is visible at the
+// top of the file rather than buried in branch logic.
+//
+// MAX_DELTA_THRESHOLD: refuse to write when the merger would remove more
+// records than this. 30 was picked because real Tier-C merges across the
+// 26k-record corpus rarely exceed single-digit clusters; a delta over 30
+// is more likely a bug in the matcher than a flood of legitimate dupes.
+const MAX_DELTA_THRESHOLD = 30;
+// SAMPLE_DISAPPEARED_LIMIT: how many disappeared records to print in the
+// console report. The full count is shown above the sample.
+const SAMPLE_DISAPPEARED_LIMIT = 5;
+// MIN_NON_FATAL_DELTA: the smallest delta that is NOT fatal. Anything below
+// this (i.e. delta < 0) means the merger output more records than the input
+// — impossible under correct merge logic. Treated as fatal (exit 2) without
+// writing.
+const MIN_NON_FATAL_DELTA = 0;
+
 const songsPath = resolve(repoRoot, 'apps/web/public/data/songs.json');
 const mergeJsPath = resolve(repoRoot, 'packages/crawler/dist/merge.js');
 const mergeTsPath = resolve(repoRoot, 'packages/crawler/src/merge.ts');
@@ -43,9 +61,30 @@ function needsBuild() {
   return srcMtime > distMtime;
 }
 
-if (needsBuild()) {
+// Fix E.1 (2026-05-01): in CI mode, the previous step (`pnpm -r build`) is
+// already responsible for ensuring `dist/merge.js` is fresh. Auto-rebuilding
+// here would mask the original failure: if the build step had a real error
+// (e.g. tsc type error) and a stale dist still existed on disk, this script
+// would silently rebuild and continue, hiding the failure. In CI, the right
+// behavior is to trust the previous step or error out loudly so the failure
+// is visible at the source.
+const isCI = !!process.env.CI;
+
+if (isCI) {
+  if (!existsSync(mergeJsPath)) {
+    console.error(
+      '[replay-merger] dist/merge.js missing in CI; previous build step must have failed',
+    );
+    process.exit(1);
+  }
+  console.log('[replay-merger] CI mode -> skipping auto-build (trusting previous build step)');
+} else if (needsBuild()) {
   console.log('[replay-merger] crawler dist is missing or stale -> building');
   // corepack ships with Node and shells out to pnpm. Build is sync.
+  // Fix E.3 (2026-05-01): args are hardcoded literals — never set
+  // `shell: true` here. If a future refactor parameterizes the args from
+  // user input, leaving `shell: true` enabled would expose a shell-
+  // injection vector via the unsanitized arg string.
   const result = spawnSync(
     process.platform === 'win32' ? 'corepack.cmd' : 'corepack',
     ['pnpm', '--filter', '@karaoke/crawler', 'build'],
@@ -141,8 +180,10 @@ for (const id of beforeIds) {
 
 if (disappeared.length > 0) {
   console.log('');
-  console.log(`--- Sample disappeared records (first 5 of ${disappeared.length}) ---`);
-  for (const r of disappeared.slice(0, 5)) {
+  console.log(
+    `--- Sample disappeared records (first ${SAMPLE_DISAPPEARED_LIMIT} of ${disappeared.length}) ---`,
+  );
+  for (const r of disappeared.slice(0, SAMPLE_DISAPPEARED_LIMIT)) {
     console.log(`  id=${r.id}`);
     console.log(`    title  : ${r.title_primary}`);
     console.log(`    artist : ${r.artist_primary}`);
@@ -150,7 +191,7 @@ if (disappeared.length > 0) {
 }
 
 // --- Step 6: safety gate -------------------------------------------------
-if (delta < 0) {
+if (delta < MIN_NON_FATAL_DELTA) {
   console.error('');
   console.error(
     `[replay-merger] FATAL: delta is negative (${delta}). Merger produced more records than input. Aborting.`,
@@ -158,10 +199,10 @@ if (delta < 0) {
   process.exit(2);
 }
 
-if (delta > 30) {
+if (delta > MAX_DELTA_THRESHOLD) {
   console.error('');
   console.error(
-    `[replay-merger] SAFETY GATE: delta=${delta} exceeds threshold of 30. Refusing to write.`,
+    `[replay-merger] SAFETY GATE: delta=${delta} exceeds threshold of ${MAX_DELTA_THRESHOLD}. Refusing to write.`,
   );
   console.error(
     '[replay-merger] Inspect the Tier C clusters above and the disappeared-record sample, then re-run if expected.',
