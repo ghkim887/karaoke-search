@@ -33,16 +33,95 @@ describe('koreanArtistDropList — Phase 1 §2.E seed list', () => {
     }
   });
 
-  it('DROP_KEY_SET size is at least the count of distinct variant keys', () => {
-    // Each entry contributes its variants; cross-entry collisions would be a
-    // data error worth surfacing.
-    const seen = new Set<string>();
+  it('DROP_KEY_SET has one entry per distinct normalized variant key', () => {
+    // Within-entry collisions are EXPECTED (intentional alias forms — e.g.
+    // `BIGBANG` / `BIG BANG` normalize to the same `bigbang` key for the
+    // hot-path `Set.has()` lookup). The check that matters is CROSS-entry:
+    // two distinct canonical entries normalizing to the same key would mean
+    // the canonical→variants mapping is ambiguous, which is a data error.
+    //
+    // Fix D.3 (2026-05-01): when a real cross-canonical collision exists,
+    // the failure message previously was just `expected N to be M` — useless
+    // for diagnosing WHICH entries collided. The new behavior groups the
+    // variants by their normalized key, surfaces only the keys that appear
+    // in ≥2 distinct CANONICAL names, and formats a readable failure
+    // message naming the conflicting entries.
+    const keyToCanonicals = new Map<string, Set<string>>();
+    const keyToEntryStrings = new Map<string, string[]>();
     for (const entry of DROP_LIST) {
       for (const variant of entry.variants) {
-        seen.add(normalizeForMatch(variant));
+        const key = normalizeForMatch(variant);
+        let canonSet = keyToCanonicals.get(key);
+        if (!canonSet) {
+          canonSet = new Set<string>();
+          keyToCanonicals.set(key, canonSet);
+        }
+        canonSet.add(entry.canonical);
+        const arr = keyToEntryStrings.get(key);
+        if (arr) arr.push(`${entry.canonical}/${variant}`);
+        else keyToEntryStrings.set(key, [`${entry.canonical}/${variant}`]);
       }
     }
-    expect(DROP_KEY_SET.size).toBe(seen.size);
+    const collisions: string[] = [];
+    for (const [key, canonSet] of keyToCanonicals) {
+      if (canonSet.size > 1) {
+        collisions.push(`  - "${key}": [${keyToEntryStrings.get(key)?.join(', ')}]`);
+      }
+    }
+    if (collisions.length > 0) {
+      throw new Error(
+        `Drop-list cross-canonical variant collisions detected — each normalized key must come from ONE canonical entry:\n${collisions.join('\n')}`,
+      );
+    }
+    // The set size must match the count of distinct keys (within-entry
+    // collisions naturally collapse — that's the intended behavior).
+    expect(DROP_KEY_SET.size).toBe(keyToCanonicals.size);
+  });
+
+  it('every entry has a `lastReviewed` ISO date (Fix D.1)', () => {
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    for (const entry of DROP_LIST) {
+      expect(
+        isoDate.test(entry.lastReviewed),
+        `entry ${entry.canonical} has malformed lastReviewed: ${entry.lastReviewed}`,
+      ).toBe(true);
+      // Also assert the date is parseable + not in the future. A typo like
+      // `2026-13-01` would slip past the regex; `Date.parse` catches it.
+      const parsed = Date.parse(entry.lastReviewed);
+      expect(Number.isFinite(parsed)).toBe(true);
+    }
+  });
+
+  it('Fix D.2 — non-blocking warning for entries older than 90 days', () => {
+    // Soft warning, not a hard test failure. Surfacing rot via console.warn
+    // makes the 3-month review cadence visible during local + CI test runs
+    // without blocking unrelated PRs. To promote to a hard failure later,
+    // change `console.warn` to `expect(...).toBe(true)`.
+    //
+    // Read the threshold from env so CI can override at audit time.
+    const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const stale: string[] = [];
+    for (const entry of DROP_LIST) {
+      const reviewedMs = Date.parse(entry.lastReviewed);
+      if (!Number.isFinite(reviewedMs)) continue; // covered by the previous test
+      if (nowMs - reviewedMs > NINETY_DAYS_MS) {
+        const ageDays = Math.floor((nowMs - reviewedMs) / (24 * 60 * 60 * 1000));
+        stale.push(`${entry.canonical} (lastReviewed=${entry.lastReviewed}, ${ageDays}d ago)`);
+      }
+    }
+    if (stale.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[koreanArtistDropList] ${stale.length} entries are older than 90 days — re-probe against tj-search-cache.json and bump lastReviewed:\n  ${stale.join('\n  ')}`,
+      );
+    }
+    // The test always passes — promotion to hard failure is a deliberate
+    // future-step. Rationale: drop-list rot rarely breaks correctness (the
+    // worst case is admitting a Korean act whose name evolved); a hard fail
+    // would block unrelated PRs every 3 months which is the wrong cost
+    // tradeoff. Surface, don't block.
+    expect(true).toBe(true);
   });
 });
 

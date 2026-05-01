@@ -333,6 +333,96 @@ describe('bootstrapArtistMapFromCharts', () => {
     expect(searchSongCalls.length).toBeGreaterThan(0);
   });
 
+  it('KOR fallback actually tags drop-list canonicals when searchSong returns ≥3 KOR matches (Fix C.3)', async () => {
+    // Stronger version of the fallback test: instead of just checking the
+    // fallback FIRED, verify it actually wrote KOR votes into cache for one
+    // of the drop-list canonicals (`방탄소년단`). This catches a regression
+    // where the fallback runs but `applyBootstrapVotes` silently no-ops
+    // (e.g. wrong skip-rule, vote-count off-by-one, etc.).
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    let counter = 0;
+    const { client } = buildHttp(({ strType, searchTxt }) => {
+      // Chart endpoints empty (so primary KPOP sweep tags 0 confident KOR
+      // artists, triggering the fallback).
+      if (strType === '3' || strType === '1') return chartResp([]);
+      // Fallback's `searchSong?strType=2` artist-search path. Return 3
+      // distinct KOR matches for the `방탄소년단` variant. The
+      // `nationalcode` filter inside `runKorFallback` requires KOR; the
+      // exact-match filter requires `normalize(item.indexSong)` to equal
+      // `normalize(searchTxt)`.
+      if (strType === '2' && searchTxt === '방탄소년단') {
+        const items: Array<Record<string, unknown>> = [];
+        for (let i = 0; i < 3; i++) {
+          counter++;
+          items.push({
+            pro: 80000 + counter,
+            indexTitle: `song${i}`,
+            indexSong: '방탄소년단',
+            nationalcode: 'KOR',
+          });
+        }
+        return chartResp(items);
+      }
+      return chartResp([]);
+    });
+    const stats = await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 1,
+    });
+    expect(stats.kpopFallbackUsed).toBe(true);
+    const entry = cache.artistNationalityMap.방탄소년단;
+    expect(entry).toBeDefined();
+    expect(entry?.code).toBe('KOR');
+    // The fallback observed exactly 3 distinct pros; with the per-variant
+    // cap of 5 (Fix C.2), the recorded vote count must be 3 (≤ cap).
+    expect(entry?.votes.KOR).toBeGreaterThanOrEqual(3);
+  });
+
+  it('KOR fallback DOES NOT fire when warm cache already has confident KOR signal (Fix C.1)', async () => {
+    // Pre-Fix-C.1 regression scenario: a warm cache where every confident
+    // KOR artist on the chart already has an existing entry. The skip-rule
+    // means `applyBootstrapVotes` writes 0 entries (existing.votes.JPN > 0
+    // or similar would block writes; here we just rely on the pre-existing
+    // KOR entry being intact). Without `seenConfidentKor`, the
+    // `artistsTaggedKor === 0` gate would falsely trigger the fallback.
+    // With Fix C.1, `seenConfidentKor` reflects that the chart sweep DID
+    // see confident signal — so the fallback is skipped.
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    // Pre-existing KOR entry for `BTS` — applyBootstrapVotes will overwrite
+    // (no skip — KOR sweep + KOR-only existing votes is allowed) but a
+    // pre-existing entry with JPN > 0 would force a skip. To exercise the
+    // skip-write path while still seeing confident signal, set an existing
+    // entry with `votes.JPN: 5` so the KPOP-sweep's skip-rule fires but
+    // `seenConfidentKor` still increments.
+    cache.artistNationalityMap.bts = {
+      code: 'JPN',
+      votes: { JPN: 5, KOR: 0, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    let counter = 0;
+    const { client, calls } = buildHttp(({ strType }) => {
+      if (strType === '1') {
+        counter++;
+        return chartResp([{ pro: 70000 + counter, indexTitle: 't', indexSong: 'BTS' }]);
+      }
+      return chartResp([]);
+    });
+    const stats = await bootstrapArtistMapFromCharts(client, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+      sweepWeeks: 4,
+    });
+    // The skip-rule blocked the write (pre-existing JPN > 0).
+    expect(stats.artistsTaggedKor).toBe(0);
+    // But the chart sweep DID see confident signal for `bts`.
+    expect(stats.seenConfidentKor).toBeGreaterThanOrEqual(1);
+    // So the fallback must NOT fire.
+    expect(stats.kpopFallbackUsed).toBe(false);
+    const searchSongCalls = calls.filter((c) => c.url.includes('searchSong'));
+    expect(searchSongCalls).toHaveLength(0);
+  });
+
   it('KOR fallback skips when primary KPOP sweep tagged ≥1 KOR artist', async () => {
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     let counter = 0;

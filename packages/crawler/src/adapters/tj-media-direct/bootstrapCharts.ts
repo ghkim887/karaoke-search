@@ -107,6 +107,18 @@ export interface BootstrapStats {
    * Pre-Phase-1 callers may not read this field; default 0 is a safe no-op.
    */
   artistsTaggedKor: number;
+  /**
+   * Distinct artists the KPOP sweep SAW with ≥CONFIDENT_THRESHOLD votes
+   * (Fix C.1, 2026-05-01). Distinct from `artistsTaggedKor`, which counts
+   * only artists where `applyBootstrapVotes` ACTUALLY wrote to cache. On a
+   * warm cache, an existing JPN/AMBIGUOUS entry causes a skip-write — under
+   * the old `artistsTaggedKor === 0 ? fallback` gate, that meant the
+   * fallback would falsely fire even when the chart sweep had plenty of
+   * confident KOR signal. Gating on `seenConfidentKor === 0` instead means
+   * the fallback only fires when there is NO chart-derived KOR signal at
+   * all. The fallback gate is now `artistsTaggedKor === 0 && seenConfidentKor === 0`.
+   */
+  seenConfidentKor: number;
   /** Distinct artists observed (any vote count, including singletons). */
   artistsSeen: number;
   /**
@@ -144,6 +156,7 @@ export async function bootstrapArtistMapFromCharts(
     callsFailed: 0,
     artistsTaggedJpn: 0,
     artistsTaggedKor: 0,
+    seenConfidentKor: 0,
     artistsSeen: 0,
     kpopFallbackUsed: false,
   };
@@ -189,9 +202,13 @@ export async function bootstrapArtistMapFromCharts(
     }
 
     for (const key of artistVotes.keys()) seenArtistKeys.add(key);
-    const tagged = applyBootstrapVotes(cache, artistVotes, now, genre.voteAs);
-    if (genre.voteAs === 'JPN') stats.artistsTaggedJpn += tagged;
-    else stats.artistsTaggedKor += tagged;
+    const { tagged, seenConfident } = applyBootstrapVotes(cache, artistVotes, now, genre.voteAs);
+    if (genre.voteAs === 'JPN') {
+      stats.artistsTaggedJpn += tagged;
+    } else {
+      stats.artistsTaggedKor += tagged;
+      stats.seenConfidentKor += seenConfident;
+    }
 
     logger.log(
       `[tj-bootstrap] ${genre.label} pass done — distinct artists tagged ${genre.voteAs}: ${tagged}`,
@@ -203,15 +220,23 @@ export async function bootstrapArtistMapFromCharts(
   // over the §2.E drop list canonical names. Strictly weaker than the
   // chart sweep (smaller seed list, no fresh-discovery surface) but it
   // guarantees the §2.A ratio rule has non-zero KOR data on cold-start.
-  if (stats.artistsTaggedKor === 0) {
+  //
+  // Fix C.1 (2026-05-01): the gate is now `tagged === 0 && seen === 0` so a
+  // warm cache where every confident KOR artist already has an entry (write
+  // skipped via the existing-vote skip-rule) does NOT falsely trigger the
+  // fallback every CI run. Without `seenConfidentKor`, an entirely-warm
+  // cache could see plenty of confident KOR signal but write 0 — burning
+  // ~33s of CI time on a fallback that adds no information.
+  if (stats.artistsTaggedKor === 0 && stats.seenConfidentKor === 0) {
     stats.kpopFallbackUsed = true;
     logger.log(
       '[tj-bootstrap] KPOP chart sweep produced 0 confident KOR artists — running seed-list fallback (searchSong?nationType=KOR over drop-list canonicals)',
     );
     try {
       const fallbackTagged = await runKorFallback(http, cache, now, logger, stats);
-      stats.artistsTaggedKor += fallbackTagged;
-      logger.log(`[tj-bootstrap] KOR fallback tagged ${fallbackTagged} artists`);
+      stats.artistsTaggedKor += fallbackTagged.tagged;
+      stats.seenConfidentKor += fallbackTagged.seenConfident;
+      logger.log(`[tj-bootstrap] KOR fallback tagged ${fallbackTagged.tagged} artists`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn(`[tj-bootstrap] KOR fallback aborted with error: ${msg}`);
@@ -260,7 +285,7 @@ async function runKorFallback(
   now: Date,
   logger: { log(msg: string): void; warn(msg: string): void },
   stats: BootstrapStats,
-): Promise<number> {
+): Promise<{ tagged: number; seenConfident: number }> {
   // Per-fallback accumulator mirrors the chart sweep's shape so we can
   // reuse `applyBootstrapVotes`.
   const artistVotes = new Map<string, { displayName: string; pros: Set<string> }>();
@@ -292,7 +317,15 @@ async function runKorFallback(
     }
   }
 
-  return applyBootstrapVotes(cache, artistVotes, now, 'KOR');
+  // Fix C.2 (2026-05-01): cap per-variant contribution at 5 votes. The drop
+  // list iterates ~67 variants across all entries; each variant's bucket can
+  // contribute up to `CONFIDENT_THRESHOLD` (3) needed for tagging. The cap
+  // bounds the per-bucket contribution so a server-side mis-tag burst on
+  // one variant cannot dominate the per-canonical vote tally — a single
+  // variant returning 50 hits stays bounded at 5. This is defense-in-depth
+  // against an over-eager server response, NOT the primary correctness path
+  // (which is the `nationalcode === 'KOR'` filter on each item above).
+  return applyBootstrapVotes(cache, artistVotes, now, 'KOR', { maxVotesPerEntry: 5 });
 }
 
 /**
@@ -314,18 +347,68 @@ async function runKorFallback(
  * `verdictFromVotes` rule (Phase 1 §2.A) is the authoritative classifier
  * once `searchSong` votes land; the chart-bootstrap verdict is a placeholder
  * for the cold-start window.
+ *
+ * KOR fallback skip-rule asymmetry (Fix C.4, 2026-05-01):
+ * The `voteAs === 'KOR'` skip-rule above (`existing.votes.JPN > 0 || ENG > 0`)
+ * means the KPOP-chart sweep AND its searchSong-fallback CANNOT downgrade an
+ * artist that already has any JPN or ENG vote signal. By design — chart
+ * evidence alone is weaker than mixed-vote `searchSong` evidence, so the
+ * sweep deliberately defers to whatever the per-artist pass found.
+ *
+ * The asymmetry: this means the bootstrap CANNOT correct a pre-existing
+ * mistakenly-JPN-tagged Korean act (e.g. `방탄소년단` JPN 3/0/0 in the
+ * pre-fix cache) — only the `koreanArtistDropList.ts` drop set can. The
+ * drop list is therefore the canonical override path for "artist seen in
+ * the cache as JPN, must be dropped anyway". When you find a Korean act
+ * leaking through despite chart-bootstrap confirmation in another genre,
+ * add it to the drop list — do NOT relax this skip-rule.
+ *
+ * Fix C.2 (2026-05-01): per-variant vote cap. When `options.maxVotesPerEntry`
+ * is set, the pre-cap `distinctPros` count is clamped to that value before
+ * being merged into the cache. Used by `runKorFallback` (drop-list seed-list
+ * scan) to bound a single variant's contribution at 5 votes — defense-in-
+ * depth against a server-side mis-tag burst on one variant.
+ *
+ * Returns both `tagged` (cache writes) and `seenConfident` (variants that
+ * exceeded `CONFIDENT_THRESHOLD` regardless of whether the cache write
+ * actually fired). Fix C.1 needs the latter to gate the KOR fallback on
+ * "did we see ANY confident KOR signal" rather than "did we WRITE any" —
+ * a warm cache where every confident artist already has a JPN/ENG entry
+ * (skip-rule fired) writes 0 but should NOT trigger the fallback.
  */
+interface ApplyBootstrapVotesOptions {
+  /**
+   * Cap each entry's contribution at this many votes. Used by the KOR
+   * fallback (Fix C.2). When unset, no cap is applied.
+   */
+  maxVotesPerEntry?: number;
+}
+
 function applyBootstrapVotes(
   cache: SearchSongCache,
   artistVotes: ReadonlyMap<string, { displayName: string; pros: Set<string> }>,
   now: Date,
   voteAs: 'JPN' | 'KOR',
-): number {
+  options: ApplyBootstrapVotesOptions = {},
+): { tagged: number; seenConfident: number } {
   let tagged = 0;
+  let seenConfident = 0;
   const seenAt = now.toISOString();
+  const cap = options.maxVotesPerEntry;
   for (const [key, bucket] of artistVotes) {
-    const distinctPros = bucket.pros.size;
-    if (distinctPros < CONFIDENT_THRESHOLD) continue;
+    const distinctProsRaw = bucket.pros.size;
+    if (distinctProsRaw < CONFIDENT_THRESHOLD) continue;
+    // Fix C.1: count this artist as "seen confident" BEFORE the skip-rule
+    // / cap. The fallback gate distinguishes "no chart signal at all"
+    // (fallback fires) from "chart signal exists but cache writes were
+    // skipped because the entry already had stronger evidence" (fallback
+    // skipped — burning ~33s for no new info).
+    seenConfident++;
+    // Fix C.2: clamp per-entry contribution at the cap before any cache
+    // write. Doesn't affect `seenConfident` — the cap is on what gets
+    // written to the cache, not on how we count signal.
+    const distinctPros = cap !== undefined ? Math.min(distinctProsRaw, cap) : distinctProsRaw;
+
     const existing = cache.artistNationalityMap[key];
 
     // Don't overwrite an entry that already has STRONGER cross-evidence
@@ -362,7 +445,7 @@ function applyBootstrapVotes(
     cache.artistNationalityMap[key] = entry;
     tagged++;
   }
-  return tagged;
+  return { tagged, seenConfident };
 }
 
 function countConfident(
