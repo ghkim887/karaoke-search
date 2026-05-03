@@ -542,7 +542,12 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
 
-  it('does NOT merge two blog-source ナユタン星人 records with same primary token (cross-source gate)', () => {
+  it('merges two blog-source ナユタン星人 太陽系デスコ records via feat-asymmetry+vocaloid exception', () => {
+    // Previously documented as "does NOT merge" (cross-source gate). That was
+    // a false negative — this pair is structurally identical to the 40mP-class
+    // duplicate (same vocaloid producer, same song, one record with the
+    // voicebank feat-credit and one without). The Bug 3 fix (2026-05-03) now
+    // correctly merges them via the feat-asymmetry+vocaloid exception.
     const a = record({
       id: 'blog-429-1',
       source_url: 'https://blog.test/429',
@@ -562,8 +567,11 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
 
     const { records, conflicts } = mergeRecords([a, b]);
 
-    expect(records).toHaveLength(2);
-    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
+    // feat-asymmetry + both vocaloid → Tier C merges them.
+    expect(records).toHaveLength(1);
+    const tierC = conflicts.filter((c) => c.field === 'tier_c_merge');
+    expect(tierC).toHaveLength(1);
+    expect(tierC[0]?.values.map((v) => v.value).sort()).toEqual(['blog-429-1', 'blog-429-58']);
   });
 
   it('does NOT cluster 中森明菜 少女A with 椎名もた 少女A (different primary tokens)', () => {
@@ -594,7 +602,7 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
 
     const { records, conflicts } = mergeRecords([akina, tj, blog]);
 
-    // 椎名もた pair merges (Tier C); 中森明菜 stays separate (different token).
+    // 椎名もた pair merges (Tier C, via cross-source path; feat-asymmetry exception not invoked); 中森明菜 stays separate (different token).
     expect(records).toHaveLength(2);
     const akinaOut = records.find((r) => r.artist_primary === '中森明菜');
     expect(akinaOut).toBeDefined();
@@ -674,6 +682,131 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     expect(tierC).toHaveLength(1);
     expect(tierC[0]?.values).toHaveLength(3);
     expect(tierC[0]?.values.map((v) => v.source).sort()).toEqual(['blog', 'namu', 'tj']);
+  });
+
+  // -------------------------------------------------------------------
+  // Feat-asymmetry + vocaloid exception (Bug 3 fix 2026-05-03)
+  // Same-source clusters where EXACTLY ONE member carries a feat-paren, the
+  // others do not, AND all members are tagged `vocaloid` are admitted via
+  // Tier C. This catches the 40mP-class duplicate: the same Vocaloid
+  // producer track published twice, once crediting the voicebank feat. and
+  // once without. The vocaloid-category gate is what distinguishes this from
+  // the BTS-IDOL class (jpop, genuinely distinct collab release).
+  // -------------------------------------------------------------------
+  it('merges same-source 40mP pair (feat-asymmetric, both vocaloid) via feat-asymmetry+vocaloid exception', () => {
+    const plain = record({
+      id: 'blog-440-0',
+      source_url: 'https://blog.test/440',
+      title_primary: 'Tell Your World',
+      artist_primary: '40mP',
+      karaoke_numbers: { tj: null, ky: null, joysound: '700001' },
+      categories: ['vocaloid'],
+    });
+    const feat = record({
+      id: 'blog-440-1',
+      source_url: 'https://blog.test/440',
+      title_primary: 'Tell Your World',
+      artist_primary: '40mP(Feat.初音ミク)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '700002' },
+      categories: ['vocaloid'],
+    });
+
+    const { records, conflicts } = mergeRecords([plain, feat]);
+
+    // feat-asymmetric + both vocaloid → Tier C merges the same-source pair.
+    expect(records).toHaveLength(1);
+    const tierC = conflicts.filter((c) => c.field === 'tier_c_merge');
+    expect(tierC).toHaveLength(1);
+    expect(tierC[0]?.values.map((v) => v.source).sort()).toEqual(['blog', 'blog']);
+  });
+
+  it('does NOT merge same-source vocaloid pair when BOTH members have feat-parens (asymmetry fails)', () => {
+    // Asymmetry condition fails (withFeat=2, withoutFeat=0) — the vocaloid
+    // gate passes but the feat-asymmetry gate does not. No merge.
+    const featA = record({
+      id: 'blog-500-0',
+      source_url: 'https://blog.test/500',
+      title_primary: 'Collab Song',
+      artist_primary: 'VocaProd(Feat.初音ミク)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '710001' },
+      categories: ['vocaloid'],
+    });
+    const featB = record({
+      id: 'blog-500-1',
+      source_url: 'https://blog.test/500',
+      title_primary: 'Collab Song',
+      artist_primary: 'VocaProd(Feat.鏡音リン)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '710002' },
+      categories: ['vocaloid'],
+    });
+
+    const { records, conflicts } = mergeRecords([featA, featB]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
+  });
+
+  it('does NOT merge same-source jpop pair even with feat-asymmetry (category gate blocks)', () => {
+    // Same structural shape as the 40mP case (feat-asymmetric, same-source,
+    // same primary token after getLeadComponent) but `jpop` category.
+    // The vocaloid-category gate blocks the merge — BTS-IDOL class.
+    const plain = record({
+      id: 'tj-98374',
+      source_url: 'https://tj.test/98374',
+      title_primary: 'IDOL',
+      artist_primary: '방탄소년단',
+      karaoke_numbers: { tj: '98374', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const feat = record({
+      id: 'tj-98392',
+      source_url: 'https://tj.test/98392',
+      title_primary: 'IDOL',
+      artist_primary: '방탄소년단(Feat.Nicki Minaj)',
+      karaoke_numbers: { tj: '98392', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+
+    const { records, conflicts } = mergeRecords([plain, feat]);
+
+    // jpop → category gate fails → no merge (preserves BTS-IDOL guard).
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
+  });
+
+  it('Tier C does NOT merge same-source vocaloid cluster when 2 of 3 members have feat-paren (asymmetry condition fails)', () => {
+    // withFeat=2, withoutFeat=1 → `withFeat === 1` is false → gate rejects.
+    // Pins the off-by-one boundary: only EXACTLY ONE feat-paren member admits.
+    const plain = record({
+      id: 'blog-430-0',
+      source_url: 'https://blog.test/430',
+      title_primary: 'エイリアンエイリアン',
+      artist_primary: 'ナユタン星人',
+      karaoke_numbers: { tj: null, ky: null, joysound: '800001' },
+      categories: ['vocaloid'],
+    });
+    const featMiku = record({
+      id: 'blog-430-1',
+      source_url: 'https://blog.test/430',
+      title_primary: 'エイリアンエイリアン',
+      artist_primary: 'ナユタン星人(Feat.初音ミク)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '800002' },
+      categories: ['vocaloid'],
+    });
+    const featRin = record({
+      id: 'blog-430-2',
+      source_url: 'https://blog.test/430',
+      title_primary: 'エイリアンエイリアン',
+      artist_primary: 'ナユタン星人(Feat.鏡音リン)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '800003' },
+      categories: ['vocaloid'],
+    });
+
+    const { records, conflicts } = mergeRecords([plain, featMiku, featRin]);
+
+    // withFeat=2 fails the `withFeat === 1` check — no same-source Tier C merge.
+    expect(records).toHaveLength(3);
+    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
 
   it('Tier C only sees post-Tier-A/B residuals — does not double-merge a Tier B cluster', () => {

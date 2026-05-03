@@ -74,6 +74,25 @@ function sourcePrefix(r: SongRecord): string {
 }
 
 /**
+ * Does `artist_primary` carry a `(Feat. X)` / `(feat. X)` / `(Prod. X)` /
+ * `(prod. X)` parenthetical? Uses the same inner-paren shape as `FEAT_PAREN_RE`
+ * in `adapters/tj-media-direct/normalize.ts` (outer `\s*` dropped because
+ * `.test()` doesn't need anchoring) so the merger's feat-asymmetry detection
+ * is consistent with the parser's collab-component splitter.
+ *
+ * Used by the Tier C cross-source gate's feat-asymmetry exception (Bug 3 fix
+ * 2026-05-03): same-source clusters where EXACTLY ONE member has a feat-paren
+ * and the others do NOT are admitted, since the same source publishing the
+ * same song with-and-without a feat. credit is the 40mP-class duplicate
+ * pattern. The BTS-IDOL guard is preserved because both BTS-IDOL records
+ * share the same feat-decoration state (both with, or both without) — the
+ * asymmetry condition fails.
+ */
+function hasFeatParen(artist: string): boolean {
+  return /\(\s*(?:feat|prod)\.\s*[^()]+?\)/i.test(artist);
+}
+
+/**
  * Structured warning emitted when records cluster via Tier B (fuzzy
  * title+artist) AND disagree on a vendor field neither side used as the
  * clustering key. The merger does NOT abort — highest-priority source wins
@@ -352,10 +371,16 @@ function mergeCluster(
  *   Tier C (cross-source primary-token match): residual singletons after
  *   Tier B are grouped by `normalize(title) | getLeadComponent(artist)`
  *   — the latter strips collab/feat. decoration so e.g. `椎名もた(Feat.鏡音リン)`
- *   matches `椎名もた｜ぽわぽわP`. A Tier C cluster fires ONLY when ≥ 2
- *   distinct source prefixes are represented (gate against same-source
- *   twin-release false positives). Each fired cluster emits a
- *   `MergeConflict { field: 'tier_c_merge' }` for crawl-PR-body visibility
+ *   matches `椎名もた｜ぽわぽわP`. A Tier C cluster fires when ≥ 2 distinct
+ *   source prefixes are represented (cross-source case) OR when a same-source
+ *   cluster satisfies the feat-asymmetry+vocaloid exception (Bug 3 fix
+ *   2026-05-03): EXACTLY ONE member has a `(Feat. X)` / `(Prod. X)` paren
+ *   while the others do not, AND every member is tagged `vocaloid`. This
+ *   catches the 40mP-class same-source duplicate (same Vocaloid producer
+ *   track published twice — once crediting the voicebank, once without) while
+ *   the `vocaloid` gate blocks BTS-IDOL (`jpop`, feat-asymmetric same-source
+ *   pair that is a genuinely distinct collab release). Each fired cluster emits
+ *   a `MergeConflict { field: 'tier_c_merge' }` for crawl-PR-body visibility
  *   (sunset cadence per design doc §3.C).
  *
  *   Per-cluster ownership: each output field is taken from the
@@ -487,13 +512,50 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   const tierCRoots = new Set<number>();
   for (const idxs of tierCGroups.values()) {
     if (idxs.length < 2) continue;
-    // Cross-source gate: skip clusters where every member shares one prefix.
+    // Cross-source gate: clusters where ≥2 distinct source prefixes are
+    // represented always admit. Same-source clusters require an additional
+    // signal of duplication.
     const prefixes = new Set<string>();
     for (const i of idxs) {
       // biome-ignore lint/style/noNonNullAssertion: i in bounds
       prefixes.add(sourcePrefix(records[i]!));
     }
-    if (prefixes.size < 2) continue;
+    if (prefixes.size < 2) {
+      // Feat-asymmetry exception (Bug 3 fix, 2026-05-03): admit a same-source
+      // cluster when ALL of:
+      //   1. EXACTLY ONE member carries a `(Feat. X)`/`(Prod. X)` paren and
+      //      the other(s) do not (feat-decoration asymmetry).
+      //   2. ALL members are tagged `vocaloid`.
+      //
+      // Condition 1 identifies the 40mP-class pattern: the same source
+      // publishes the song twice, once crediting the voicebank feat. and once
+      // without. Condition 2 is the BTS-IDOL discriminator: BTS-IDOL is
+      // `jpop`, so it fails condition 2 and stays unmerged even though it
+      // shares the same feat-decoration asymmetry. ナユタン星人 太陽系デスコ is
+      // `vocaloid` + feat-asymmetric, so it now correctly merges (the prior
+      // behavior was a false negative documenting the original bug).
+      //
+      // Why vocaloid-only (not vocaloid+anime): anime collab features are
+      // sometimes genuinely distinct releases (guest vocalists for OP/ED
+      // singles). Conservative scope; broaden if a similar class surfaces.
+      // Vocaloid is also occasionally a distinct-release surface (a producer
+      // publishing a `(Feat.鏡音リン)` Rin variant alongside a `(Feat.初音ミク)`
+      // Miku variant is two different tracks), so the vocaloid scope is itself
+      // a conservative bound — if a regression case surfaces in a future
+      // replay-merger run, tighten further (e.g. require the lead component to
+      // be a known-Vocaloid-producer alias).
+      let withFeat = 0;
+      let withoutFeat = 0;
+      let allVocaloid = true;
+      for (const i of idxs) {
+        // biome-ignore lint/style/noNonNullAssertion: i in bounds
+        const r = records[i]!;
+        if (hasFeatParen(r.artist_primary)) withFeat++;
+        else withoutFeat++;
+        if (!r.categories.includes('vocaloid')) allVocaloid = false;
+      }
+      if (!(withFeat === 1 && withoutFeat >= 1 && allVocaloid)) continue;
+    }
     // biome-ignore lint/style/noNonNullAssertion: length >= 2
     const first = idxs[0]!;
     for (let k = 1; k < idxs.length; k++) {
