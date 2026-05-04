@@ -716,6 +716,14 @@ class TestPdfVocaloidDenylist(unittest.TestCase):
                 f"黒うさP should stay vocaloid, got {by_id['tjpdf-28500']['categories']!r}",
             )
 
+
+class TestDropSplitReContents(unittest.TestCase):
+    """Parity-protection tests for `_DROP_SPLIT_RE` character contents."""
+
+    def test_drop_split_re_contains_full_width_pipe_for_ts_parity(self):
+        """U+FF5C parity with TS SPLIT_RE — protects against future regex tidying."""
+        self.assertIn('｜', ingest._DROP_SPLIT_RE.pattern)
+
     def test_main_downgrades_collab_lead_match(self) -> None:
         """A `HoneyWorks(Feat.GUMI)` row in section='vocaloid' must downgrade
         to `anime` — the lead component matches the denylist, so the tag

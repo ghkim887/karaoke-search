@@ -567,12 +567,12 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     // Cross-source gate: clusters where ≥2 distinct source prefixes are
     // represented always admit. Same-source clusters require an additional
     // signal of duplication.
-    const prefixes = new Set<string>();
+    const slugs = new Set<string>();
     for (const i of idxs) {
       // biome-ignore lint/style/noNonNullAssertion: i in bounds
-      prefixes.add(sourceSlug(records[i]!));
+      slugs.add(sourceSlug(records[i]!));
     }
-    if (prefixes.size < 2) {
+    if (slugs.size < 2) {
       // Feat-asymmetry exception (Bug 3 fix, 2026-05-03): admit a same-source
       // cluster when ALL of:
       //   1. EXACTLY ONE member carries a `(Feat. X)`/`(Prod. X)` paren and
