@@ -829,6 +829,12 @@ def is_artist_in_drop_list(artist: str, drop_keys: set[str]) -> bool:
 # every PDF-section HoneyWorks row is a human-vocal mistag; legitimate
 # HoneyWorks×Vocaloid records reach the corpus via the blog adapter (which
 # this filter does NOT touch — blog-path mistags are a separate vector).
+#
+# IMPLICIT COUPLING: `CHiCOwithHoneyWorks` denylist matching depends on
+# `_DROP_SPLIT_RE` containing `\s+meets\s+` so the corpus surface form
+# `CHiCO with HoneyWorks meets 中川翔子` decomposes to a `HoneyWorks`
+# component that hits this set. Removing the `meets` token from the splitter
+# silently breaks the denylist; do not unhook one without the other.
 _PDF_VOCALOID_DENYLIST_RAW: tuple[str, ...] = (
     'Gackt',
     'GARNiDELiA',
