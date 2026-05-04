@@ -117,44 +117,40 @@ export async function enrichArtistMap(
     processed++;
 
     // Cache hit fast path.
-    if (isArtistNationalityFresh(cache, key, now)) {
-      const entry = cache.artistNationalityMap[key];
-      if (entry) {
-        stats.cacheHits++;
+    const cachedEntry = isArtistNationalityFresh(cache, key, now)
+      ? cache.artistNationalityMap[key]
+      : undefined;
+    if (cachedEntry) {
+      stats.cacheHits++;
+      stats.byCode[cachedEntry.code]++;
+    } else {
+      let items: SearchSongItem[] = [];
+      let fetchOk = false;
+      try {
+        items = await searchSongByArtist(http, displayName, '');
+        fetchOk = true;
+        stats.fetches++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`[tj-artist] scan failed for "${displayName}" (key=${key}): ${msg}`);
+        stats.errors++;
+      }
+
+      if (fetchOk) {
+        const entry = classifyVotes(items, key, now);
+        cache.artistNationalityMap[key] = entry;
         stats.byCode[entry.code]++;
-        if (progressEveryN > 0 && processed % progressEveryN === 0) {
-          logProgress(logger, processed, stats);
-        }
-        continue;
       }
+      // On transport error (fetchOk=false), leave the cache entry untouched
+      // so a future crawl retries. Don't write a stub; that would suppress
+      // retries for 90 days and silently rot the artist.
     }
 
-    let items: SearchSongItem[] = [];
-    let fetchOk = false;
-    try {
-      items = await searchSongByArtist(http, displayName, '');
-      fetchOk = true;
-      stats.fetches++;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      logger.warn(`[tj-artist] scan failed for "${displayName}" (key=${key}): ${msg}`);
-      stats.errors++;
-    }
-
-    if (!fetchOk) {
-      // On transport error, leave the cache entry untouched so a future
-      // crawl retries. Don't write a stub; that would suppress retries for
-      // 90 days and silently rot the artist.
-      if (progressEveryN > 0 && processed % progressEveryN === 0) {
-        logProgress(logger, processed, stats);
-      }
-      continue;
-    }
-
-    const entry = classifyVotes(items, key, now);
-    cache.artistNationalityMap[key] = entry;
-    stats.byCode[entry.code]++;
-
+    // Single progress-print check shared across all loop exits (cache hit,
+    // fetch success, fetch error). Cadence semantics preserved: the print
+    // fires after every Nth processed entry regardless of which branch
+    // handled it. Spot-check with `progressEveryN: 1` shows one print per
+    // iteration, matching the prior triple-checked behaviour.
     if (progressEveryN > 0 && processed % progressEveryN === 0) {
       logProgress(logger, processed, stats);
     }
