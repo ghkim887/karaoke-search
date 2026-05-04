@@ -692,7 +692,7 @@ def _normalize_for_match(s: str) -> str:
 # re-splits on ` of ` via `_FEAT_INNER_OF_RE` — that's the only place ` of `
 # fires.
 _DROP_SPLIT_RE = re.compile(
-    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|\s*[&＆,×]\s*|\s+with\s+|\s*feat\.\s*',
+    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|\s*[&＆,×]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*',
     re.IGNORECASE,
 )
 
@@ -807,6 +807,64 @@ def is_artist_in_drop_list(artist: str, drop_keys: set[str]) -> bool:
     return False
 
 
+# PDF vocaloid-section denylist (Fix 1, 2026-05-04 — see audit memory
+# `project_zutomayo_pdf_section_contamination.md` and TODO 1 from the
+# 2026-05-03 vocaloid-mistag audit).
+#
+# Why this exists: the TJ Media anisong PDF's `보컬로이드, 우타이테, 니코동 등`
+# section (pages 84-95) is trusted verbatim by `parse_pdf()` — but the section
+# actually mixes real Vocaloid producers with non-Vocaloid bands that have
+# anime / Nicodō tie-in tracks. The 7 acts below were confirmed by the
+# 2026-05-03 audit as PDF-section mistags. When the parser would tag one of
+# their tracks `vocaloid`, downgrade the tag to `anime` instead — these acts
+# are anime-tied, not Vocaloid producers.
+#
+# Pattern parallels `koreanArtistDropList.ts`: hand-curated, source-of-truth
+# in one place. Python is the only consumer of this list (it never escapes
+# the PDF ingest path), so no JSON sidecar is needed.
+#
+# Membership uses `_artist_components_for_drop_check()` so collab forms hit
+# too (e.g. `HoneyWorks(Feat.GUMI)` → component `HoneyWorks` matches even
+# when the featured act is a real Vocaloid). This is intentional per spec:
+# every PDF-section HoneyWorks row is a human-vocal mistag; legitimate
+# HoneyWorks×Vocaloid records reach the corpus via the blog adapter (which
+# this filter does NOT touch — blog-path mistags are a separate vector).
+_PDF_VOCALOID_DENYLIST_RAW: tuple[str, ...] = (
+    'Gackt',
+    'GARNiDELiA',
+    'LIP×LIP',
+    '三月のパンタシア',
+    'Team.ねこかん[猫]',
+    'HoneyWorks',
+    'CHiCOwithHoneyWorks',
+)
+
+# Normalized at module-load time so the hot path is a single set membership
+# test per parsed PDF row. Matches `_normalize_for_match` so PDF surface
+# forms (`CHiCOwithHoneyWorks`) and corpus surface forms (`CHiCO with
+# HoneyWorks`) collapse to the same key.
+_PDF_VOCALOID_DENYLIST: frozenset[str] = frozenset(
+    _normalize_for_match(name) for name in _PDF_VOCALOID_DENYLIST_RAW
+)
+
+
+def is_artist_in_pdf_vocaloid_denylist(artist: str) -> bool:
+    """Return True if any component of `artist` is in the PDF vocaloid denylist.
+
+    Used by `main()` to downgrade `section='vocaloid'` to `section='anime'`
+    BEFORE the section value is written into `categories`, so the resulting
+    record has `['anime']` and is unaffected by `applyCategoryExclusivity`'s
+    `vocaloid > anime` priority.
+    """
+    if not _PDF_VOCALOID_DENYLIST:  # defensive — empty set means filter off
+        return False
+    for component in _artist_components_for_drop_check(artist):
+        key = _normalize_for_match(component)
+        if key and key in _PDF_VOCALOID_DENYLIST:
+            return True
+    return False
+
+
 def _apply_category_exclusivity(cats: list[str]) -> list[str]:
     """Apply the v2 category mutual-exclusivity rule: at most one of
     {jpop, vocaloid, anime} per record. Priority: vocaloid > anime > jpop.
@@ -909,6 +967,7 @@ def main() -> int:
     matched = 0
     already_tagged = 0  # corpus rows that already had the section's tag
     dropped_kpop = 0  # PDF rows skipped because the artist matched the drop list
+    vocaloid_downgraded = 0  # rows downgraded from vocaloid->anime by the PDF denylist
     section_counts: dict[str, int] = {'anime': 0, 'vocaloid': 0}
     new_records: list[dict] = []
     title_fallbacks: list[str] = []  # codes where title_primary fell back to artist
@@ -922,6 +981,26 @@ def main() -> int:
                 file=sys.stderr,
             )
             section = 'anime'
+        # PDF vocaloid-section denylist (Fix 1, 2026-05-04): the PDF's
+        # `보컬로이드,` section header is trusted by parse_pdf(), but the
+        # section actually mixes Vocaloid producers with non-Vocaloid bands
+        # that have anime/Nicodō tie-in tracks. Downgrade the 7 known
+        # mistagged acts to `anime` BEFORE the section value lands in
+        # `categories`, so applyCategoryExclusivity's vocaloid>anime priority
+        # can't silently re-elevate the tag during a later merge.
+        #
+        # Track the downgrade flag separately because the matched-existing-row
+        # path also needs it: a corpus row that already carries `vocaloid`
+        # (from a prior ingest's merge into a tj-* record) must have that
+        # stale tag REPLACED with `anime`, not unioned — the union path goes
+        # through applyCategoryExclusivity which would re-elevate vocaloid.
+        downgrade_triggered = (
+            section == 'vocaloid'
+            and is_artist_in_pdf_vocaloid_denylist(r['artist'])
+        )
+        if downgrade_triggered:
+            section = 'anime'
+            vocaloid_downgraded += 1
         section_counts[section] = section_counts.get(section, 0) + 1
         # Drop-list filter: Korean acts that leak through both the TS adapter's
         # filter chain AND the PDF ingest must be refused at this gate too.
@@ -934,6 +1013,16 @@ def main() -> int:
         if code in tj_to_idx:
             rec = corpus[tj_to_idx[code]]
             cats = list(rec.get('categories', []))
+            # If we downgraded, strip any pre-existing `vocaloid` tag the row
+            # carried in from a prior merge. Without this scrub, the union +
+            # applyCategoryExclusivity step below sees `['vocaloid', 'anime']`
+            # and the vocaloid>anime priority re-elevates the tag — leaving
+            # stale-vocaloid records in the corpus. The downgrade is
+            # authoritative for these 7 acts: every PDF-section row of theirs
+            # is a non-Vocaloid track, so the prior-merge vocaloid tag was
+            # itself sourced from a now-corrected tjpdf-* sibling.
+            if downgrade_triggered and 'vocaloid' in cats:
+                cats = [c for c in cats if c != 'vocaloid']
             if section in cats:
                 already_tagged += 1
             else:
@@ -1009,6 +1098,7 @@ def main() -> int:
         f.write(f'    of which had to fall back title_primary->artist: {len(title_fallbacks)}\n')
         f.write(f'  Dropped (artist matched Korean-artist drop list): {dropped_kpop}\n')
         f.write(f'  Drop-list keys loaded: {len(drop_keys)}\n')
+        f.write(f'  Vocaloid->anime downgrades (PDF vocaloid-section denylist): {vocaloid_downgraded}\n')
         f.write(f'Caveats / skipped: {len(caveats)}\n')
         for c in caveats:
             f.write(f'  - {c}\n')
@@ -1020,6 +1110,7 @@ def main() -> int:
         f'parsed={len(parsed)} unique={len(unique)} '
         f'dropped_old_tjpdf={dropped_old_tjpdf} matched={matched} '
         f'new={len(new_records)} dropped_kpop={dropped_kpop} '
+        f'voc_downgraded={vocaloid_downgraded} '
         f'skipped={len(caveats)}'
     )
     print(f'report: {log_path}')
