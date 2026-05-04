@@ -174,13 +174,6 @@ for (let i = 0; i < before.length; i++) {
   if (b.artist_primary !== r.artist_primary) {
     if (b.artist_primary.includes('｜')) aliasSplits += 1;
     else aliasReKeys += 1;
-  } else if (
-    !b.artist_aliases &&
-    r.artist_aliases &&
-    r.artist_aliases.length > 0 &&
-    b.artist_primary.includes('｜')
-  ) {
-    aliasSplits += 1;
   }
 }
 

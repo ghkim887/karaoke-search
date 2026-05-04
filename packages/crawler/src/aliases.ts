@@ -208,6 +208,17 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
   // Latin alias for search. (Spec §6 promises "searchable" + "visible";
   // omitting this lookup would create a search-coverage gap on records
   // that incidentally arrived in canonical form.)
+  // PROPAGATION INVARIANT: `aliasesByCanonical` is populated ONLY from Phase 1
+  // pipe-form records (those whose original `artist_primary` contained the
+  // full-width pipe separator). Aliases emitted directly via the
+  // `RawSongRecord.artist_aliases` field (which the schema permits — see
+  // `packages/schema/src/index.ts:71-72`) are NOT indexed here, so they will
+  // NOT be propagated to bare records sharing the same canonical. In the live
+  // corpus this is safe because every canonical with aliases originates from a
+  // pipe-form blog seed. If a future adapter starts emitting `artist_aliases`
+  // directly, the population loop below must be widened to also walk those
+  // rows (i.e. drop the `includes(FULLWIDTH_PIPE)` guard and key on whatever
+  // canonical is declared in that adapter's output).
   const aliasesByCanonical = new Map<string, string[]>();
   for (let i = 0; i < records.length; i++) {
     const original = records[i];
@@ -236,6 +247,11 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
 
   // Phase 3: re-key bare records (and propagate known aliases onto bare-
   // canonical records — see `aliasesByCanonical` rationale above).
+  // NOTE: the propagation source is exclusively the pipe-form Phase 1 rows
+  // indexed into `aliasesByCanonical`. Adapter-emitted `artist_aliases` (via
+  // `RawSongRecord.artist_aliases`) are not propagated here. See the
+  // PROPAGATION INVARIANT comment above for the full constraint and the action
+  // required if a future adapter starts emitting aliases directly.
   const phase3 = phase1.map((r) => {
     if (r.artist_primary.includes(FULLWIDTH_PIPE)) {
       // Pipe-form records were already canonicalized in Phase 1. Skip.

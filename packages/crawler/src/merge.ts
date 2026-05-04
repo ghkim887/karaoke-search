@@ -299,6 +299,13 @@ function mergeCategories(cluster: SongRecord[]): Category[] {
  * return undefined when the union is empty (the schema prefers absence over
  * `[]` for storage compactness — see `applyCategoryExclusivity` mirror in
  * §2.B of the alias-dedup spec).
+ *
+ * The canonical-only filter (`a === mergedArtistPrimary`) is correct because
+ * upstream propagation (Phase 3 of `resolveArtistAliases`) guarantees that by
+ * the time records reach the merger, any re-keyed record's `artist_primary` is
+ * already the canonical surface form. The loser's canonical therefore equals
+ * the winner's canonical, so filtering on the merged primary is sufficient to
+ * suppress self-aliases without any additional lookup.
  */
 function mergeArtistAliases(
   cluster: SongRecord[],
