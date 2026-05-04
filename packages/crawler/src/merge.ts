@@ -23,7 +23,17 @@ const SOURCE_RANK: Record<string, number> = {
  * Source slug derived from the `id` prefix (everything before the first `-`).
  * The schema's `id` pattern is `^[a-z0-9-]+-\d+$`, so the slug may itself
  * contain `-` only if the source convention uses it; for the v1 blog source
- * (`blog-449-0`) the slug is `blog`.
+ * (`blog-449-0`) the slug is `blog`. Examples: `tj-52498` → `tj`,
+ * `blog-487-1` → `blog`, `tjpdf-12345` → `tjpdf`.
+ *
+ * Used for two distinct purposes:
+ *   1. Per-field ownership and source-priority tiebreaks in `pickByOwnership`,
+ *      `pickByPriority`, and `mergeKaraokeNumbers` (lookup against
+ *      `SOURCE_RANK`).
+ *   2. Tier C cross-source gating: a Tier C cluster fires only when ≥ 2
+ *      distinct slugs are represented, blocking same-source twins (e.g. two
+ *      TJ releases of `방탄소년단(Feat.Nicki Minaj)` vs `방탄소년단`) from
+ *      wrongly merging.
  */
 function sourceSlug(r: SongRecord): string {
   const dash = r.id.indexOf('-');
@@ -58,19 +68,6 @@ function tierCKey(r: SongRecord): string | null {
   const a = getLeadComponent(r.artist_primary);
   if (t === '' || a === '') return null;
   return `${t}|${a}`;
-}
-
-/**
- * Source prefix derived from the substring of `id` before the first `-`
- * (e.g. `tj-52498` → `tj`, `blog-487-1` → `blog`, `tjpdf-12345` → `tjpdf`).
- * Used by Tier C's cross-source gate: a Tier C cluster fires only when at
- * least two distinct prefixes are represented, blocking same-source twins
- * (e.g. two TJ releases of `방탄소년단(Feat.Nicki Minaj)` vs `방탄소년단`)
- * from wrongly merging.
- */
-function sourcePrefix(r: SongRecord): string {
-  const dash = r.id.indexOf('-');
-  return dash === -1 ? r.id : r.id.slice(0, dash);
 }
 
 /**
@@ -117,6 +114,21 @@ export interface MergeConflict {
 export interface MergeResult {
   records: SongRecord[];
   conflicts: MergeConflict[];
+}
+
+/**
+ * Filter out `tier_c_merge` entries so the headline "merge conflicts" count
+ * reported to the crawl PR body / CLI stdout reflects only true vendor-number
+ * disagreements.
+ *
+ * Fix B.1 (2026-05-01): Tier C merges are NOT disagreements — they're
+ * successful soft-merges flagged for visibility. The full conflicts list
+ * (and any `sample` slice) keeps Tier C entries for forensic inspection per
+ * spec §3.C; only the headline `total` is filtered. Centralised here so
+ * `pipeline.ts` and `cli.ts` share one definition.
+ */
+export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
+  return conflicts.filter((c) => c.field !== 'tier_c_merge');
 }
 
 // --- Union-Find ----------------------------------------------------------
@@ -558,7 +570,7 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     const prefixes = new Set<string>();
     for (const i of idxs) {
       // biome-ignore lint/style/noNonNullAssertion: i in bounds
-      prefixes.add(sourcePrefix(records[i]!));
+      prefixes.add(sourceSlug(records[i]!));
     }
     if (prefixes.size < 2) {
       // Feat-asymmetry exception (Bug 3 fix, 2026-05-03): admit a same-source
