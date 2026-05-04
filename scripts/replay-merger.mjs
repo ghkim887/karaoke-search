@@ -1,18 +1,22 @@
 #!/usr/bin/env node
-// Re-applies the crawler's `mergeRecords` (Tier A + B + C) to the already-
-// committed `apps/web/public/data/songs.json`, without re-running the full
-// crawl. Use this whenever the merger source evolves (new Tier, ownership
-// chain, conflict shape) but the underlying corpus hasn't been re-crawled.
+// Re-applies the crawler's alias resolver + `mergeRecords` (Tier A + B + C)
+// to the already-committed `apps/web/public/data/songs.json`, without
+// re-running the full crawl. Use this whenever the merger source evolves
+// (new Tier, ownership chain, conflict shape) OR when the alias-resolution
+// stage's behavior changes (`packages/crawler/src/aliases.ts`).
 //
 // Behavior:
-//   1. Build the crawler if `dist/merge.js` is missing or stale relative to
-//      `src/merge.ts`.
+//   1. Build the crawler if `dist/merge.js` (or `dist/aliases.js`) is missing
+//      or stale relative to its corresponding `src` file.
 //   2. Load apps/web/public/data/songs.json, validate shape.
-//   3. Run mergeRecords(records).
-//   4. Print BEFORE/AFTER counts, delta, Tier C cluster details, and 5
-//      sample disappeared-records.
-//   5. Safety gate: delta > 30 -> abort without write, exit 2.
-//      delta = 0 -> no-op, exit 0.
+//   3. Run resolveArtistAliases(records) FIRST (spec 2026-05-04: alias
+//      resolution must precede merge so pipe-form `artist_primary` is
+//      canonicalized before Tier B clustering).
+//   4. Run mergeRecords(resolvedRecords).
+//   5. Print BEFORE/AFTER counts, delta, alias-resolution stats, Tier C
+//      cluster details, and 5 sample disappeared-records.
+//   6. Safety gate: delta > MAX_DELTA_THRESHOLD -> abort without write,
+//      exit 2. delta = 0 AND no alias rewrites -> no-op, exit 0.
 //      otherwise -> atomic write (.tmp -> rename) and exit 0.
 //
 // Output is UTF-8 on Windows: stdout is reset to utf8 explicitly.
@@ -35,10 +39,15 @@ const repoRoot = resolve(__dirname, '..');
 // top of the file rather than buried in branch logic.
 //
 // MAX_DELTA_THRESHOLD: refuse to write when the merger would remove more
-// records than this. 30 was picked because real Tier-C merges across the
-// 26k-record corpus rarely exceed single-digit clusters; a delta over 30
-// is more likely a bug in the matcher than a flood of legitimate dupes.
-const MAX_DELTA_THRESHOLD = 30;
+// records than this. Originally 30 (Tier C-only ceiling). Raised to 1000 in
+// the 2026-05-04 alias-dedup migration because the alias resolver +
+// subsequent Tier B merges can collapse hundreds of bare-vs-pipe-form pairs
+// in a single pass on the existing corpus. Spec §9 ("Verification + rollout")
+// estimates a ~50-150 drop from Tier B post-aliases, but the orchestrator's
+// migration target was ~840 collapses; either is below 1000. A delta above
+// 1000 is more likely a bug in the matcher than a flood of legitimate dupes
+// — abort and surface for review.
+const MAX_DELTA_THRESHOLD = 1000;
 // SAMPLE_DISAPPEARED_LIMIT: how many disappeared records to print in the
 // console report. The full count is shown above the sample.
 const SAMPLE_DISAPPEARED_LIMIT = 5;
@@ -51,14 +60,22 @@ const MIN_NON_FATAL_DELTA = 0;
 const songsPath = resolve(repoRoot, 'apps/web/public/data/songs.json');
 const mergeJsPath = resolve(repoRoot, 'packages/crawler/dist/merge.js');
 const mergeTsPath = resolve(repoRoot, 'packages/crawler/src/merge.ts');
+const aliasesJsPath = resolve(repoRoot, 'packages/crawler/dist/aliases.js');
+const aliasesTsPath = resolve(repoRoot, 'packages/crawler/src/aliases.ts');
 
 // --- Step 1: build crawler if dist is missing or stale -------------------
 function needsBuild() {
-  if (!existsSync(mergeJsPath)) return true;
-  if (!existsSync(mergeTsPath)) return false; // can't compare; trust dist
-  const distMtime = statSync(mergeJsPath).mtimeMs;
-  const srcMtime = statSync(mergeTsPath).mtimeMs;
-  return srcMtime > distMtime;
+  for (const [jsPath, tsPath] of [
+    [mergeJsPath, mergeTsPath],
+    [aliasesJsPath, aliasesTsPath],
+  ]) {
+    if (!existsSync(jsPath)) return true;
+    if (!existsSync(tsPath)) continue; // can't compare; trust dist
+    const distMtime = statSync(jsPath).mtimeMs;
+    const srcMtime = statSync(tsPath).mtimeMs;
+    if (srcMtime > distMtime) return true;
+  }
+  return false;
 }
 
 // Fix E.1 (2026-05-01): in CI mode, the previous step (`pnpm -r build`) is
@@ -71,11 +88,11 @@ function needsBuild() {
 const isCI = !!process.env.CI;
 
 if (isCI) {
-  if (!existsSync(mergeJsPath)) {
-    console.error(
-      '[replay-merger] dist/merge.js missing in CI; previous build step must have failed',
-    );
-    process.exit(1);
+  for (const p of [mergeJsPath, aliasesJsPath]) {
+    if (!existsSync(p)) {
+      console.error(`[replay-merger] ${p} missing in CI; previous build step must have failed`);
+      process.exit(1);
+    }
   }
   console.log('[replay-merger] CI mode -> skipping auto-build (trusting previous build step)');
 } else if (needsBuild()) {
@@ -98,10 +115,15 @@ if (isCI) {
   console.log('[replay-merger] crawler dist is up-to-date -> skipping build');
 }
 
-// --- Step 2: import mergeRecords -----------------------------------------
+// --- Step 2: import mergeRecords + resolveArtistAliases -----------------
 const { mergeRecords } = await import(pathToFileURL(mergeJsPath).href);
 if (typeof mergeRecords !== 'function') {
   console.error('[replay-merger] dist/merge.js did not export mergeRecords');
+  process.exit(1);
+}
+const { resolveArtistAliases } = await import(pathToFileURL(aliasesJsPath).href);
+if (typeof resolveArtistAliases !== 'function') {
+  console.error('[replay-merger] dist/aliases.js did not export resolveArtistAliases');
   process.exit(1);
 }
 
@@ -131,12 +153,38 @@ if (
   process.exit(1);
 }
 
-// --- Step 4: merge -------------------------------------------------------
+// --- Step 4: alias resolve, then merge -----------------------------------
+// Spec 2026-05-04 (folded migration): alias resolution must run BEFORE the
+// merger so pipe-form `artist_primary` is canonicalized into a (canonical,
+// aliases) pair, and bare records that match a known alias re-key to the
+// canonical surface form. Once `artist_primary` is canonical for both
+// halves of an alias pair, Tier B clusters them naturally.
 const beforeCount = before.length;
 const beforeIds = new Set(before.map((r) => r.id));
 const beforeById = new Map(before.map((r) => [r.id, r]));
 
-const { records: after, conflicts } = mergeRecords(before);
+const { records: resolved, warnings: aliasWarnings } = resolveArtistAliases(before);
+// Count how many records the alias stage actually rewrote, for the report.
+let aliasSplits = 0; // pipe-form records that produced canonical+aliases
+let aliasReKeys = 0; // bare records re-keyed to a canonical alias
+for (let i = 0; i < before.length; i++) {
+  const b = before[i];
+  const r = resolved[i];
+  if (!b || !r) continue;
+  if (b.artist_primary !== r.artist_primary) {
+    if (b.artist_primary.includes('｜')) aliasSplits += 1;
+    else aliasReKeys += 1;
+  } else if (
+    !b.artist_aliases &&
+    r.artist_aliases &&
+    r.artist_aliases.length > 0 &&
+    b.artist_primary.includes('｜')
+  ) {
+    aliasSplits += 1;
+  }
+}
+
+const { records: after, conflicts } = mergeRecords(resolved);
 const afterCount = after.length;
 const afterIds = new Set(after.map((r) => r.id));
 const delta = beforeCount - afterCount;
@@ -149,6 +197,20 @@ console.log('=== Replay-merger report ===');
 console.log(`Before: ${beforeCount} records`);
 console.log(`After : ${afterCount} records`);
 console.log(`Delta : ${delta}`);
+console.log(`Alias-resolution: ${aliasSplits} pipe-form splits, ${aliasReKeys} bare re-keys`);
+console.log(`Alias warnings  : ${aliasWarnings.length}`);
+if (aliasWarnings.length > 0) {
+  console.log('--- Alias warnings (first 5) ---');
+  for (const w of aliasWarnings.slice(0, 5)) {
+    console.log(`  alias=${w.alias}`);
+    if (w.canonicals.length > 0) {
+      console.log(`    canonicals: ${w.canonicals.join(' | ')}`);
+      console.log(`    affected  : ${w.affected}`);
+    } else {
+      console.log('    (malformed pipe-form input — record left untouched)');
+    }
+  }
+}
 console.log(`Tier C cluster fires: ${tierCConflicts.length}`);
 
 // Tier C cluster line per fire: list each cluster's members + winner +
@@ -210,9 +272,11 @@ if (delta > MAX_DELTA_THRESHOLD) {
   process.exit(2);
 }
 
-if (delta === 0) {
+if (delta === 0 && aliasSplits === 0 && aliasReKeys === 0) {
   console.log('');
-  console.log('[replay-merger] no Tier C merges fired - corpus already current; skipping write');
+  console.log(
+    '[replay-merger] no Tier C merges fired and no alias rewrites — corpus already current; skipping write',
+  );
   process.exit(0);
 }
 
@@ -224,5 +288,5 @@ renameSync(tmpPath, songsPath);
 
 console.log('');
 console.log(`[replay-merger] wrote ${afterCount} records to ${songsPath}`);
-console.log(`[replay-merger] removed ${delta} duplicate(s) via Tier C cross-source merge`);
+console.log(`[replay-merger] removed ${delta} duplicate(s) (alias-resolution + Tier A/B/C merges)`);
 process.exit(0);
