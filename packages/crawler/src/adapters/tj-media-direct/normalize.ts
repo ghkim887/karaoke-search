@@ -143,7 +143,7 @@ export function splitArtistCollab(artist: string): string[] {
   // admit rule and the merger's Tier C clustering. Required by Fix A.2's
   // shared `getLeadComponent` helper to reproduce the canonical Tier C
   // behavior (`椎名もた｜ぽわぽわP` → lead `椎名もた`).
-  const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s*feat\.\s*/i;
+  const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*/i;
   if (main !== '') {
     const pieces = main.split(SPLIT_RE);
     for (const piece of pieces) {

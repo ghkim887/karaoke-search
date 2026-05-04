@@ -224,6 +224,17 @@ describe('splitArtistCollab — `with` collabs', () => {
   });
 });
 
+describe('splitArtistCollab — `meets` collabs', () => {
+  it('splits `CHiCO with HoneyWorks meets 中川翔子` — ` meets ` delimiter', () => {
+    expect(splitArtistCollab('CHiCO with HoneyWorks meets 中川翔子')).toEqual([
+      'CHiCO with HoneyWorks meets 中川翔子',
+      'CHiCO',
+      'HoneyWorks',
+      '中川翔子',
+    ]);
+  });
+});
+
 describe('splitArtistCollab — multiplication-sign collabs', () => {
   it('splits `Artist X × Y` on the multiplication sign', () => {
     expect(splitArtistCollab('Artist X × Y')).toEqual(['Artist X × Y', 'Artist X', 'Y']);
