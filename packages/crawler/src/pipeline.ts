@@ -2,6 +2,7 @@ import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
 import type { Crawler } from './adapters/index.js';
+import { type AliasConflict, resolveArtistAliases } from './aliases.js';
 import { type MergeConflict, mergeRecords } from './merge.js';
 
 export interface RunPipelineOptions {
@@ -23,6 +24,7 @@ export interface RunPipelineOptions {
 export interface RunPipelineResult {
   written: number;
   conflicts: MergeConflict[];
+  aliasConflicts: AliasConflict[];
 }
 
 /**
@@ -48,7 +50,15 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
     }
   }
 
-  const { records: merged, conflicts } = mergeRecords(collected);
+  // Spec 2026-05-04: alias resolution runs BEFORE the merger so that pipe-form
+  // `artist_primary` strings (`"X｜Y"`) are split into a canonical+aliases pair
+  // and bare records whose value matches a known alias are re-keyed to the
+  // canonical surface form. Once `artist_primary` is canonical for both halves
+  // of an alias pair, Tier B's `(normalize(title), normalize(artist))` clusters
+  // them naturally — no changes to `merge.ts` are required.
+  const { records: resolved, warnings: aliasConflicts } = resolveArtistAliases(collected);
+
+  const { records: merged, conflicts } = mergeRecords(resolved);
   for (const record of merged) {
     validateSongRecord(record);
   }
@@ -74,10 +84,14 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
     const summary = {
       total: headlineConflicts.length,
       sample: conflicts.slice(0, 10),
+      aliasConflicts: {
+        total: aliasConflicts.length,
+        sample: aliasConflicts.slice(0, 5),
+      },
     };
     await mkdir(dirname(conflictsOutPath), { recursive: true });
     await writeFile(conflictsOutPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
   }
 
-  return { written: merged.length, conflicts };
+  return { written: merged.length, conflicts, aliasConflicts };
 }

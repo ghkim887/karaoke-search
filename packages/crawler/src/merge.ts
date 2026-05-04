@@ -293,6 +293,32 @@ function mergeCategories(cluster: SongRecord[]): Category[] {
   return [...set].sort();
 }
 
+/**
+ * Union the cluster's `artist_aliases` arrays (preserving first-seen order),
+ * filter out any alias equal to the merged record's `artist_primary`, and
+ * return undefined when the union is empty (the schema prefers absence over
+ * `[]` for storage compactness — see `applyCategoryExclusivity` mirror in
+ * §2.B of the alias-dedup spec).
+ */
+function mergeArtistAliases(
+  cluster: SongRecord[],
+  mergedArtistPrimary: string,
+): string[] | undefined {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of cluster) {
+    const aliases = r.artist_aliases;
+    if (!aliases) continue;
+    for (const a of aliases) {
+      if (a === mergedArtistPrimary) continue;
+      if (seen.has(a)) continue;
+      seen.add(a);
+      out.push(a);
+    }
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 function mergeCluster(
   cluster: SongRecord[],
   wasTierB: boolean,
@@ -320,6 +346,11 @@ function mergeCluster(
     if (r.crawled_at > latestCrawledAt) latestCrawledAt = r.crawled_at;
   }
 
+  const mergedArtistPrimary =
+    pickByOwnership(cluster, titleArtistChain, (r) => r.artist_primary) ??
+    cluster[0]?.artist_primary ??
+    '';
+  const mergedAliases = mergeArtistAliases(cluster, mergedArtistPrimary);
   const merged: SongRecord = {
     id: pickByPriority(cluster, (r) => r.id),
     source_url: pickByPriority(cluster, (r) => r.source_url),
@@ -330,11 +361,13 @@ function mergeCluster(
       cluster[0]?.title_primary ??
       '',
     title_ko: pickByOwnership(cluster, koChain, (r) => r.title_ko),
-    artist_primary:
-      pickByOwnership(cluster, titleArtistChain, (r) => r.artist_primary) ??
-      cluster[0]?.artist_primary ??
-      '',
+    artist_primary: mergedArtistPrimary,
     artist_ko: pickByOwnership(cluster, koChain, (r) => r.artist_ko),
+    // Spec 2026-05-04: union artist_aliases across the cluster, filtering out
+    // any alias that equals the merged canonical (defense-in-depth — the
+    // resolver already excludes this case, but a Tier C cluster could pick a
+    // non-resolver-emitted canonical via `pickByOwnership`).
+    ...(mergedAliases !== undefined ? { artist_aliases: mergedAliases } : {}),
     karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
     categories: mergeCategories(cluster),
     crawled_at: latestCrawledAt,
