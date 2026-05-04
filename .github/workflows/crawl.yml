@@ -88,6 +88,9 @@ jobs:
       - name: Replay merger after anisong PDF ingest
         run: node scripts/replay-merger.mjs
 
+      - name: Apply blog post-id category overrides
+        run: python scripts/retag-blog-vocaloid-mistags.py
+
       - name: Validate post-ingest songs.json against schema
         run: node scripts/validate-songs-json.mjs apps/web/public/data/songs.json
 

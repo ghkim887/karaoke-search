@@ -161,7 +161,7 @@ class TestParsePdfFixtures(unittest.TestCase):
           col 56-62:  TJ code
           col 63+:    artist
         """
-        # Real-world column widths observed in .omc/anisong_utf8.txt:
+        # Real-world column widths observed in scripts/data/anisong_utf8.txt:
         # anime-name ~col 0, title ~col 18-20, TJ code ~col 52-58, artist ~col 59+
         lines = [
             '일본 애니메이션 곡                                 0~9, 영문                    1\n',

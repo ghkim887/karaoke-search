@@ -19,12 +19,8 @@ yarn-error.log*
 .env.*
 !.env.example
 
-# OMC session state — never commit (use .omc/* not .omc/ so the whitelist below
-# can re-include a single file; git can't re-include a file under an excluded dir).
-.omc/*
-# …except the cached pdftotext output consumed by scripts/ingest-anisong-pdf.py;
-# it's the deterministic input for the weekly crawl's section-tag re-apply step.
-!.omc/anisong_utf8.txt
+# OMC session state — never commit.
+.omc/
 
 # Python
 __pycache__/
@@ -40,6 +36,10 @@ desktop.ini
 .vscode/
 .idea/
 .claude/
+
+# Local-only project docs (kept on disk for the active Claude Code session;
+# the repo is intentionally agent-tooling-agnostic).
+CLAUDE.md
 
 # Playwright MCP tooling artifact
 .playwright-mcp/

@@ -11,7 +11,7 @@ before writing songs.json. The script is now idempotent: it drops existing
 tjpdf-* records before merging the freshly-parsed ones in.
 
 Behavior:
-  1. Parses .omc/anisong_utf8.txt (pdftotext -table output) and extracts
+  1. Parses scripts/data/anisong_utf8.txt (pdftotext -table output) and extracts
      (tj_code, title, artist, section).
   2. Drops existing tjpdf-* records from apps/web/public/data/songs.json.
   3. For TJ codes already in the corpus (non-tjpdf-* rows), adds the section
@@ -31,7 +31,7 @@ NOT a recurring crawler — schema-equivalent to a side-channel monthly enrichme
 Run from repo root: `python scripts/ingest-anisong-pdf.py`
 
 Regenerate the source text with:
-  pdftotext -table -enc UTF-8 -nopgbrk anisong_2026-02.pdf .omc/anisong_utf8.txt
+  pdftotext -table -enc UTF-8 -nopgbrk anisong_2026-02.pdf scripts/data/anisong_utf8.txt
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PDF_TEXT = REPO_ROOT / '.omc' / 'anisong_utf8.txt'
+PDF_TEXT = REPO_ROOT / 'scripts' / 'data' / 'anisong_utf8.txt'
 SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
 SOURCE_URL = 'https://www.tjmedia.com/support/poster?cate_cd=P06'
 
@@ -101,7 +101,7 @@ _BOILERPLATE_PATTERNS = [
 # the start of a new categorical section. Map from divider keyword (matched as the
 # first non-space token, with optional trailing comma) to the SongRecord category.
 #
-# Anchors observed in .omc/anisong_utf8.txt (TJ Anisong 2026-02 PDF):
+# Anchors observed in scripts/data/anisong_utf8.txt (TJ Anisong 2026-02 PDF):
 #   - L8281: `보컬로이드,       1925   28000  冨田悠斗(とみー/T-POCKET)`
 #       → first vocaloid track. The `보컬로이드,` (vocaloid) cell on the same line
 #         as `1925` is the in-flow divider — pages 84-95 (vocaloid/utaite/nicodō).
