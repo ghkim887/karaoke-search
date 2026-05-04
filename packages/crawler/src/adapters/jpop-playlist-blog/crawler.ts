@@ -17,6 +17,60 @@ interface IndexEntry {
 const ARTIST_SUCCESS_RATIO_FLOOR = 0.9;
 
 /**
+ * Per-post category override map (2026-05-04 audit, TODO 2 of vocaloid-mistag
+ * audit). The blog's `/417` index lists a small handful of artists whose posts
+ * are catalogs of their J-pop / J-rock career, NOT their Vocaloid catalog —
+ * the index author appears to have categorized them under Vocaloid because
+ * the artist had Vocaloid roots, not because the post's contents are Vocaloid
+ * songs. Records emitted from these posts must be tagged `jpop`, not
+ * `vocaloid`, regardless of which index page surfaced the artist path.
+ *
+ * Why per-post (NOT per-artist):
+ *   米津玄師's early career as ハチ was a real Vocaloid producer (初音ミク /
+ *   GUMI). The j-pop-playlist blog already publishes that catalog separately
+ *   under post `/428` (artist name `ハチ`), and those records ARE genuinely
+ *   vocaloid. An artist-name denylist would wrongly demote those. Keying on
+ *   post-id is surgical: only the named posts get retagged; any future blog
+ *   post about the same artist's other catalogs is unaffected (different
+ *   post-id).
+ *
+ * Key shape: the numeric portion of the artist path. The path returned by
+ * the index parser is `/101`, `/105`, `/112`; this map keys on `'101'`, etc.,
+ * matching the `artistIdNumber` segment used in the record `id`
+ * (`blog-{artistIdNumber}-{rowIndex}`).
+ *
+ * Override semantics: the override REPLACES the index-derived category set
+ * (it does not union with it). Applied BEFORE `applyCategoryExclusivity` so
+ * the priority rule never silently re-elevates the override.
+ *
+ * Audit (2026-05-04 corpus, 25,793 records):
+ *   - blog-101 / 米津玄師   — 9 records, post-Vocaloid solo J-pop catalog.
+ *   - blog-105 / Zutomayo   — 11 records, J-rock duo (no Vocaloid catalog).
+ *   - blog-112 / Aimer      — 2 records, pop / anime singer.
+ *
+ * Maintenance: removing an entry is correct only when the post's contents
+ * have actually shifted to Vocaloid. Adding an entry requires confirming
+ * (a) the post is currently indexed under `/417`, and (b) the post's record
+ * list is a different career era from the artist's actual Vocaloid catalog.
+ */
+const POST_CATEGORY_OVERRIDES: Readonly<Record<string, Category>> = {
+  '101': 'jpop',
+  '105': 'jpop',
+  '112': 'jpop',
+};
+
+/**
+ * Returns the override category for an artist path (e.g. `/101`) when the path
+ * is in `POST_CATEGORY_OVERRIDES`, else `null`. Exported for unit testing.
+ */
+export function getPostCategoryOverride(artistPath: string): Category | null {
+  const m = /^\/(\d+)$/.exec(artistPath);
+  if (!m) return null;
+  const key = m[1] as string;
+  return POST_CATEGORY_OVERRIDES[key] ?? null;
+}
+
+/**
  * `BlogCrawler` walks `/98` (J-POP) and `/417` (Vocaloid) index pages,
  * collects per-artist post URLs, dedupes them across indexes, fetches each
  * artist page once, and yields normalized `SongRecord`s tagged with the
@@ -103,6 +157,16 @@ export class BlogCrawler implements Crawler {
         }
         // Defensive copy: callsite below may share `categorySet` between rounds.
         const cats = new Set<Category>(categorySet);
+        // Per-post category override (audit TODO 2, 2026-05-04). The override
+        // REPLACES the index-derived category — applied BEFORE
+        // `applyCategoryExclusivity` so the priority rule (vocaloid > anime >
+        // jpop) cannot silently re-elevate `vocaloid` after the override
+        // demotes a post to `jpop`. See `POST_CATEGORY_OVERRIDES` above.
+        const override = getPostCategoryOverride(artistPath);
+        if (override !== null) {
+          cats.clear();
+          cats.add(override);
+        }
         applyCategoryExclusivity(cats);
         const categories = [...cats].sort() as Category[];
         const records = normalizeRawRecords(raw, artistPath, categories, crawledAt);
