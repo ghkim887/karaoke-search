@@ -289,6 +289,54 @@ describe('applyCategoryExclusivity — priority vocaloid > anime > jpop', () => 
   });
 });
 
+describe('artist_aliases — optional field (spec 2026-05-04)', () => {
+  function recordWithAliases(aliases: unknown): unknown {
+    return {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/1',
+      title_primary: 'Foo',
+      title_ko: null,
+      artist_primary: 'Bar',
+      artist_ko: null,
+      artist_aliases: aliases,
+      karaoke_numbers: { ...baseKaraokeNumbers },
+      categories: ['jpop'],
+      crawled_at: '2026-04-26T10:00:00Z',
+    };
+  }
+
+  it('accepts a record without artist_aliases (optional field)', () => {
+    const record: SongRecord = {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/1',
+      title_primary: 'Foo',
+      title_ko: null,
+      artist_primary: 'Bar',
+      artist_ko: null,
+      karaoke_numbers: { ...baseKaraokeNumbers },
+      categories: ['jpop'],
+      crawled_at: '2026-04-26T10:00:00Z',
+    };
+    expect(() => validateSongRecord(record)).not.toThrow();
+  });
+
+  it('accepts artist_aliases: [] (empty array tolerated)', () => {
+    expect(() => validateSongRecord(recordWithAliases([]))).not.toThrow();
+  });
+
+  it('accepts artist_aliases: ["ZUTOMAYO"] (single non-empty alias)', () => {
+    expect(() => validateSongRecord(recordWithAliases(['ZUTOMAYO']))).not.toThrow();
+  });
+
+  it('rejects artist_aliases containing an empty string (minLength: 1 per item)', () => {
+    expect(() => validateSongRecord(recordWithAliases(['', 'X']))).toThrowError(/artist_aliases/);
+  });
+
+  it('rejects artist_aliases with duplicate entries (uniqueItems: true)', () => {
+    expect(() => validateSongRecord(recordWithAliases(['X', 'X']))).toThrowError(/artist_aliases/);
+  });
+});
+
 describe('RawSongRecord type shape', () => {
   it('compiles a raw pre-normalization record', () => {
     const raw: RawSongRecord = {

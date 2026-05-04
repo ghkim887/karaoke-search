@@ -34,6 +34,16 @@ export interface SongRecord {
   artist_primary: string;
   /** Official Korean artist name. Nullable. */
   artist_ko: string | null;
+  /**
+   * Optional alternate forms of the canonical `artist_primary`. Populated by
+   * the alias-resolution stage (pre-merge) when an `artist_primary` carries
+   * full-width pipe (`｜`) separators OR a bare record's value matches a
+   * known alias of another canonical. NEVER used as the canonical key.
+   * Empty/absent when the record has no known aliases.
+   *
+   * Spec: docs/superpowers/specs/2026-05-04-artist-alias-dedup-design.md.
+   */
+  artist_aliases?: string[];
   /** Cross-source karaoke numbers. */
   karaoke_numbers: KaraokeNumbers;
   /** At least one category, no duplicates. */
@@ -54,6 +64,12 @@ export interface RawSongRecord {
   title_ko: string | null;
   artist_primary: string;
   artist_ko: string | null;
+  /**
+   * Optional alias forms — adapters MAY populate this directly when they have
+   * structured alias data; otherwise the alias-resolution stage populates it
+   * from `artist_primary` shape. See `SongRecord.artist_aliases`.
+   */
+  artist_aliases?: string[];
   karaoke_numbers: KaraokeNumbers;
   categories: Category[];
 }
@@ -122,6 +138,15 @@ export const songRecordSchema = {
     title_ko: { type: ['string', 'null'] },
     artist_primary: { type: 'string', minLength: 1 },
     artist_ko: { type: ['string', 'null'] },
+    artist_aliases: {
+      type: 'array',
+      uniqueItems: true,
+      items: { type: 'string', minLength: 1 },
+      // No `minItems` — empty array is tolerated. The resolver omits the
+      // field when there are no aliases (smaller corpus footprint), but a
+      // record with `artist_aliases: []` still validates so callers can be
+      // lenient about producing empty arrays.
+    },
     karaoke_numbers: {
       type: 'object',
       additionalProperties: false,
