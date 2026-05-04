@@ -8,7 +8,7 @@ import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
 import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
 import { enrichArtistMap } from './enrichArtistMap.js';
 import { enrichWithTranslit } from './enrichTranslit.js';
-import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA } from './normalize.js';
+import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA, isPlainObject } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { parseCatalogResponse } from './parser.js';
 
@@ -323,10 +323,6 @@ function asArtistShell(item: Record<string, unknown>): {
     karaoke_numbers: { tj, ky: null, joysound: null },
     categories: ['jpop'],
   };
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 /**

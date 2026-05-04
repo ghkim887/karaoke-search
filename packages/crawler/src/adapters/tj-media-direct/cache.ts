@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { isPlainObject } from './normalize.js';
 
 /**
  * Persistent cache file for TJ `searchSong` enrichment.
@@ -361,8 +362,4 @@ function nullableString(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   if (typeof v === 'string') return v === '' ? null : v;
   return null;
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }

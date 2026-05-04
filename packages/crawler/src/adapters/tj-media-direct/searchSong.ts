@@ -1,5 +1,5 @@
 import type { HttpClient } from '../../http.js';
-import { sanitizeSearchTxt } from './normalize.js';
+import { coerceProString, isPlainObject, sanitizeSearchTxt } from './normalize.js';
 
 /**
  * `/legacy/api/searchSong` HTTP helper.
@@ -264,12 +264,6 @@ function mapItem(raw: unknown): SearchSongItem | null {
   };
 }
 
-function coerceProString(v: unknown): string | null {
-  if (typeof v === 'number' && Number.isFinite(v)) return String(v);
-  if (typeof v === 'string' && v.trim() !== '') return v.trim();
-  return null;
-}
-
 function coerceString(v: unknown): string | null {
   if (typeof v === 'string') return v;
   return null;
@@ -279,8 +273,4 @@ function emptyToNull(v: string | null): string | null {
   if (v === null) return null;
   if (v === '') return null;
   return v;
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }

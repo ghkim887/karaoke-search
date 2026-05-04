@@ -1,7 +1,7 @@
 import type { HttpClient } from '../../http.js';
 import type { ArtistNationalityEntry, SearchSongCache } from './cache.js';
 import { DROP_LIST } from './koreanArtistDropList.js';
-import { normalizeForMatch } from './normalize.js';
+import { coerceProString, isPlainObject, normalizeForMatch } from './normalize.js';
 import { searchSongByArtist } from './searchSong.js';
 
 /**
@@ -557,20 +557,10 @@ function mapChartItem(raw: unknown): ChartItem | null {
   return { pro, indexTitle, indexSong };
 }
 
-function coerceProString(v: unknown): string | null {
-  if (typeof v === 'number' && Number.isFinite(v)) return String(v);
-  if (typeof v === 'string' && v.trim() !== '') return v.trim();
-  return null;
-}
-
 function coerceNonEmpty(v: unknown): string | null {
   if (typeof v !== 'string') return null;
   const trimmed = v.trim();
   return trimmed === '' ? null : trimmed;
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 /**

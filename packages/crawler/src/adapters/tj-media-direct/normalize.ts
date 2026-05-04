@@ -101,6 +101,49 @@ export function sanitizeSearchTxt(s: string): string {
  * (`MAX(Feat.SUGA of BTS)` → MAX, SUGA, BTS), so the scope is restricted
  * accordingly.
  */
+/**
+ * Module-scope regexes for `splitArtistCollab`. Hoisted out of the function
+ * body so they aren't recompiled on every call. Safe to share because none
+ * carry per-call state: `FEAT_PAREN_RE` is `/g` but is consumed via
+ * `.replace(re, fn)` which iterates the match list internally without leaking
+ * `lastIndex` across calls; `SPLIT_RE` and `OF_RE` are non-`/g` and are used
+ * with `.split` / `.test` which don't touch `lastIndex` either.
+ *
+ * Behaviour notes (preserved from the original in-function definitions):
+ *
+ *  - `FEAT_PAREN_RE` extracts every `(Feat. X)` / `(FEAT. X)` / `(Prod. X)`
+ *    parenthetical from anywhere in the string (not just trailing). Mid-string
+ *    cases like `Charlie Puth(Feat.宇多田ヒカル) & Adele` are handled, and
+ *    `(Prod.X)` producer-credit syntax used by TJ (`LE SSERAFIM(Prod.imase)`)
+ *    is structurally identical to `(Feat.X)` — the producer is a collab
+ *    component for nationality-tag purposes.
+ *
+ *  - `SPLIT_RE` matches the primary delimiters (case-insensitive `i` covers
+ *    FEAT. / With / WITH / meets):
+ *      - `&` / `＆` (U+FF06 full-width — split runs before NFKC normalisation)
+ *        / `,` / `×` / `｜` (U+FF5C full-width vertical bar) with optional
+ *        surrounding whitespace
+ *      - ` with ` (whitespace-delimited so it never bites mid-word)
+ *      - ` meets ` (added 2026-05-04 for `CHiCO with HoneyWorks meets …`)
+ *      - `feat.` (any case) with optional surrounding whitespace (catches the
+ *        un-parenthesized form like `Artist1 FEAT. Artist2`)
+ *
+ *    Fix A.2 (2026-05-01): added `｜` (U+FF5C) to the delimiter set. The blog
+ *    adapter convention for collab is `Artist1｜Artist2`; the legacy
+ *    `primaryArtistToken` regex in `merge.ts` split on this character but
+ *    `splitArtistCollab` did not, causing silent drift between the parser's
+ *    admit rule and the merger's Tier C clustering. Required by Fix A.2's
+ *    shared `getLeadComponent` helper to reproduce the canonical Tier C
+ *    behavior (`椎名もた｜ぽわぽわP` → lead `椎名もた`).
+ *
+ *  - `OF_RE` is the ` of ` member-of-group sub-split, applied ONLY to text
+ *    captured INSIDE a `(Feat. X)` / `(Prod. X)` parenthetical (Fix 1,
+ *    2026-05-01). See the call site for full rationale.
+ */
+const FEAT_PAREN_RE = /\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*/gi;
+const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*/i;
+const OF_RE = /\s+of\s+/i;
+
 export function splitArtistCollab(artist: string): string[] {
   const whole = artist.trim();
   if (whole === '') return [];
@@ -111,15 +154,7 @@ export function splitArtistCollab(artist: string): string[] {
   const parts: string[] = [whole];
 
   // Global pre-pass: extract every `(Feat. X)` / `(FEAT. X)` / `(Prod. X)`
-  // parenthetical from anywhere in the string (not just trailing). Each matched
-  // block is replaced with a single space (collapsed by later trim) and its
-  // inner content is captured for appending after the primary split. This
-  // handles mid-string parentheticals like
-  // `Charlie Puth(Feat.宇多田ヒカル) & Adele` that the old anchored-at-$ approach
-  // missed, and `(Prod.X)` producer-credit syntax used by TJ
-  // (`LE SSERAFIM(Prod.imase)`) that's structurally identical to `(Feat.X)` —
-  // the producer is a collab component for nationality-tag purposes.
-  const FEAT_PAREN_RE = /\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*/gi;
+  // parenthetical from anywhere in the string. See `FEAT_PAREN_RE` docblock.
   const featContents: string[] = [];
   let main = whole.replace(FEAT_PAREN_RE, (_, inner: string) => {
     featContents.push(inner);
@@ -127,23 +162,7 @@ export function splitArtistCollab(artist: string): string[] {
   });
   main = main.trim();
 
-  // Split the remaining string on the primary delimiters (case-insensitive
-  // flag `i` covers FEAT. / With / WITH). The regex matches:
-  //   - `&` / `＆` (U+FF06 full-width — split runs before NFKC normalisation)
-  //     / `,` / `×` / `｜` (U+FF5C full-width vertical bar) with optional
-  //     surrounding whitespace
-  //   - ` with ` (whitespace-delimited so it never bites mid-word)
-  //   - `feat.` (any case) with optional surrounding whitespace (catches the
-  //     un-parenthesized form like `Artist1 FEAT. Artist2`)
-  //
-  // Fix A.2 (2026-05-01): added `｜` (U+FF5C) to the delimiter set. The blog
-  // adapter convention for collab is `Artist1｜Artist2`; the legacy
-  // `primaryArtistToken` regex in `merge.ts` split on this character but
-  // `splitArtistCollab` did not, causing silent drift between the parser's
-  // admit rule and the merger's Tier C clustering. Required by Fix A.2's
-  // shared `getLeadComponent` helper to reproduce the canonical Tier C
-  // behavior (`椎名もた｜ぽわぽわP` → lead `椎名もた`).
-  const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*/i;
+  // Split the remaining string on the primary delimiters. See `SPLIT_RE` docblock.
   if (main !== '') {
     const pieces = main.split(SPLIT_RE);
     for (const piece of pieces) {
@@ -170,7 +189,6 @@ export function splitArtistCollab(artist: string): string[] {
   //   1. Append the whole inner string (already done above).
   //   2. Additionally split it on ` of ` and append each non-empty token.
   // Dedupe afterward via `normalizeForMatch` collapses overlap.
-  const OF_RE = /\s+of\s+/i;
   for (const fc of featContents) {
     if (fc !== '') parts.push(fc);
     if (fc !== '' && OF_RE.test(fc)) {
@@ -206,6 +224,32 @@ export function splitArtistCollab(artist: string): string[] {
     );
   }
   return out;
+}
+
+/**
+ * Narrow type-guard for plain JSON objects (i.e. `Record<string, unknown>` and
+ * not an array). Centralised here in PR (cleanup wave) so the TJ-direct
+ * adapter modules (`parser.ts`, `searchSong.ts`, `cache.ts`, `crawler.ts`,
+ * `bootstrapCharts.ts`) all share a single definition rather than each
+ * declaring an identical local copy.
+ */
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Coerce a JSON value into a non-empty trimmed string suitable for use as a
+ * TJ `pro` (program) identifier. Numbers are stringified (finite-only) and
+ * strings are trimmed; anything else (or empty/whitespace) returns `null`.
+ *
+ * Centralised here so `searchSong.ts` and `bootstrapCharts.ts` share one
+ * definition (both consume the same TJ JSON shape; the original duplicates
+ * were byte-identical).
+ */
+export function coerceProString(v: unknown): string | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+  if (typeof v === 'string' && v.trim() !== '') return v.trim();
+  return null;
 }
 
 /**

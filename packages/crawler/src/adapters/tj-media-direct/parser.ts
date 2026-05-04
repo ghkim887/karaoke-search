@@ -1,7 +1,7 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import type { SearchSongCache } from './cache.js';
 import { isInDropList } from './koreanArtistDropList.js';
-import { normalizeForMatch, splitArtistCollab } from './normalize.js';
+import { isPlainObject, normalizeForMatch, splitArtistCollab } from './normalize.js';
 
 /**
  * Parse a TJ Media catalog JSON response into `RawSongRecord`s.
@@ -292,8 +292,4 @@ function extractItems(json: unknown): unknown[] {
     throw new Error('tj-media-direct parser: response.resultData.items is not an array');
   }
   return items;
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
