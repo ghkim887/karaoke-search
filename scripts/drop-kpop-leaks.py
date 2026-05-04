@@ -84,12 +84,14 @@ DROP_LIST_SIDECAR = (
 )
 
 
-def _ensure_utf8_stdio() -> None:
-    """Force stdout/stderr to UTF-8 so Hangul/kana log output doesn't trip cp949."""
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-    if hasattr(sys.stderr, 'reconfigure'):
-        sys.stderr.reconfigure(encoding='utf-8')
+# Shared helpers from the ingest script — `_ensure_utf8_stdio()` and
+# `_atomic_write_corpus()` (M1 + M2, 2026-05-04). Re-exported as module-level
+# names so consumers and tests can keep the existing call sites.
+_ensure_utf8_stdio = _ingest._ensure_utf8_stdio
+_atomic_write_corpus = _ingest._atomic_write_corpus
+
+# Apply UTF-8 stdio at module load (idempotent — also re-applied in main()).
+_ensure_utf8_stdio()
 
 
 def main() -> int:
@@ -138,13 +140,8 @@ def main() -> int:
         print('no records matched the drop list — corpus already clean (no-op)')
         return 0
 
-    # Atomic write: songs.json.tmp -> os.replace.
-    tmp_path = SONGS_JSON.with_suffix(SONGS_JSON.suffix + '.tmp')
-    tmp_path.write_text(
-        json.dumps(kept, ensure_ascii=False, indent=2) + '\n',
-        encoding='utf-8',
-    )
-    os.replace(tmp_path, SONGS_JSON)
+    # Atomic write via shared helper (songs.json.tmp -> os.replace).
+    _atomic_write_corpus(SONGS_JSON, kept)
 
     print(f'total before: {total_before}')
     print(f'total after:  {total_after}')

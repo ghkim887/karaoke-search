@@ -44,12 +44,42 @@ import sys
 import unicodedata
 from pathlib import Path
 
-# Force stdout/stderr to UTF-8 on Windows so emoji/Hangul/kana in log output
-# don't trip cp949. Safe on POSIX (already UTF-8). idempotent.
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+def _ensure_utf8_stdio() -> None:
+    """Force stdout/stderr to UTF-8 so emoji/Hangul/kana log output doesn't trip cp949.
+
+    Safe on POSIX (already UTF-8). Idempotent. Shared with `drop-kpop-leaks.py`
+    and `retag-blog-vocaloid-mistags.py` which import this script via importlib
+    and call this helper from their own module-load time.
+    """
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8')
+
+
+def _atomic_write_corpus(path: Path, records: list) -> None:
+    """Atomic-write `records` to `path` as pretty-printed UTF-8 JSON.
+
+    Writes to `<path>.tmp` then `os.replace()` swaps it onto `path`. Mirrors
+    the TS pipeline's `songs.json.tmp` + rename pattern in
+    `.github/workflows/crawl.yml` so a crash mid-write can never leave a
+    truncated/corrupt songs.json on disk. Load-bearing on Windows where
+    `os.replace()` is the only cross-filesystem atomic rename guaranteed.
+
+    Format: `ensure_ascii=False`, `indent=2`, trailing newline — matches the
+    existing on-disk shape so re-running on an unchanged corpus is byte-
+    idempotent.
+    """
+    tmp_path = path.with_suffix(path.suffix + '.tmp')
+    tmp_path.write_text(
+        json.dumps(records, ensure_ascii=False, indent=2) + '\n',
+        encoding='utf-8',
+    )
+    os.replace(tmp_path, path)
+
+
+# Force stdout/stderr to UTF-8 at module load (idempotent).
+_ensure_utf8_stdio()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PDF_TEXT = REPO_ROOT / 'scripts' / 'data' / 'anisong_utf8.txt'
@@ -1074,18 +1104,11 @@ def main() -> int:
 
     corpus.extend(new_records)
 
-    # Write back. Match the existing file's encoding/format: UTF-8, no BOM, no
-    # ensure_ascii, indent=2 to match the existing pretty-printed file.
-    # Atomic publish: write to a sibling .tmp first, then os.replace() onto the
-    # final path. Mirrors the TS pipeline's `songs.json.tmp` + rename in
-    # `.github/workflows/crawl.yml` so a crash mid-write can never leave a
-    # truncated/corrupt songs.json on disk.
-    tmp_path = SONGS_JSON.with_suffix(SONGS_JSON.suffix + '.tmp')
-    tmp_path.write_text(
-        json.dumps(corpus, ensure_ascii=False, indent=2) + '\n',
-        encoding='utf-8',
-    )
-    os.replace(tmp_path, SONGS_JSON)
+    # Write back via shared atomic-write helper (UTF-8, no BOM, no ensure_ascii,
+    # indent=2 + trailing newline to match the existing on-disk pretty-printed
+    # shape). Helper writes to `<path>.tmp` and `os.replace()`s onto the final
+    # path so a crash mid-write can never leave a truncated/corrupt songs.json.
+    _atomic_write_corpus(SONGS_JSON, corpus)
 
     # Report.
     log_path = REPO_ROOT / '.omc' / 'anisong_ingest_report.txt'
