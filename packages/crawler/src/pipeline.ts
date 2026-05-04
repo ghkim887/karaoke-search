@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
 import type { Crawler } from './adapters/index.js';
 import { type AliasConflict, resolveArtistAliases } from './aliases.js';
-import { type MergeConflict, mergeRecords } from './merge.js';
+import { type MergeConflict, headlineConflicts, mergeRecords } from './merge.js';
 
 export interface RunPipelineOptions {
   adapters: Crawler[];
@@ -70,19 +70,13 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
   await rename(tmp, outPath);
 
   if (conflictsOutPath) {
-    // Fix B.1 (2026-05-01): exclude `tier_c_merge` from the headline `total`.
-    // The PR body composition step in `.github/workflows/crawl.yml` reads
-    // `total` and surfaces it as "Merge conflicts during dedup", but Tier C
-    // merges are NOT disagreements — they're successful soft-merges flagged
-    // for visibility. Counting them in the headline number was misleading.
-    //
-    // Asymmetry (Fix 3, 2026-05-01): only the headline `total` is filtered.
-    // The `sample` (and the full conflicts list) remains UNFILTERED so Tier C
-    // cluster details stay visible for forensic inspection per spec §3.C —
-    // a reader of the JSON file can still see which Tier C clusters fired.
-    const headlineConflicts = conflicts.filter((c) => c.field !== 'tier_c_merge');
+    // Asymmetry (Fix 3, 2026-05-01): only the headline `total` is filtered
+    // via `headlineConflicts()`. The `sample` (and the full conflicts list)
+    // remains UNFILTERED so Tier C cluster details stay visible for forensic
+    // inspection per spec §3.C — a reader of the JSON file can still see
+    // which Tier C clusters fired.
     const summary = {
-      total: headlineConflicts.length,
+      total: headlineConflicts(conflicts).length,
       sample: conflicts.slice(0, 10),
       aliasConflicts: {
         total: aliasConflicts.length,

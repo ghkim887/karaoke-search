@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adapters as registeredAdapters } from './adapters/index.js';
+import { headlineConflicts } from './merge.js';
 import { runPipeline } from './pipeline.js';
 
 const HELP = `karaoke-crawl — run registered source adapters and emit songs.json
@@ -134,13 +135,9 @@ async function main(): Promise<void> {
   };
   const { written, conflicts } = await runPipeline(pipelineOpts);
   process.stdout.write(`wrote ${written} records to ${outPath}\n`);
-  // Fix B.1 (2026-05-01): the headline "merge conflicts" count excludes
-  // `tier_c_merge` entries — those are successful soft-merges flagged for
-  // visibility, not disagreements. Per-cluster Tier C detail still lives in
-  // the conflicts-out JSON for downstream readers.
-  const headlineConflicts = conflicts.filter((c) => c.field !== 'tier_c_merge');
-  if (headlineConflicts.length > 0) {
-    process.stdout.write(`merge conflicts: ${headlineConflicts.length}\n`);
+  const headline = headlineConflicts(conflicts);
+  if (headline.length > 0) {
+    process.stdout.write(`merge conflicts: ${headline.length}\n`);
   }
 }
 
