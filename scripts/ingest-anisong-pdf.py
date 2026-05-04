@@ -692,7 +692,7 @@ def _normalize_for_match(s: str) -> str:
 # re-splits on ` of ` via `_FEAT_INNER_OF_RE` — that's the only place ` of `
 # fires.
 _DROP_SPLIT_RE = re.compile(
-    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|\s*[&＆,×]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*',
+    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*',
     re.IGNORECASE,
 )
 
