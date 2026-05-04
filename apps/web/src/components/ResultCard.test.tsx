@@ -51,3 +51,77 @@ describe('ResultCard favorite-star', () => {
     expect(onToggle).toHaveBeenCalledWith('tj-1');
   });
 });
+
+describe('ResultCard artist_aliases display (spec 2026-05-04)', () => {
+  let host: HTMLElement;
+  afterEach(() => {
+    if (host?.parentNode) host.parentNode.removeChild(host);
+  });
+
+  function makeRecord(over: Partial<SongRecord>): SongRecord {
+    return {
+      id: 'alias-card-0',
+      source_url: 'https://example.test/0',
+      title_primary: 'Song',
+      title_ko: null,
+      artist_primary: 'スピッツ',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-04T00:00:00Z',
+      ...over,
+    };
+  }
+
+  it('renders "スピッツ (Spitz) — 스피츠" when artist_aliases + artist_ko both present', () => {
+    const r = makeRecord({
+      artist_primary: 'スピッツ',
+      artist_ko: '스피츠',
+      artist_aliases: ['Spitz'],
+    });
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={r} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const artist = host.querySelector('.result-artist');
+    expect(artist?.textContent).toBe('スピッツ (Spitz) — 스피츠');
+  });
+
+  it('renders "スピッツ — 스피츠" (unchanged behavior) with empty artist_aliases array', () => {
+    const r = makeRecord({
+      artist_primary: 'スピッツ',
+      artist_ko: '스피츠',
+      artist_aliases: [],
+    });
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={r} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const artist = host.querySelector('.result-artist');
+    expect(artist?.textContent).toBe('スピッツ — 스피츠');
+  });
+
+  it('renders canonical only (no parens, no em-dash) when no artist_aliases and no artist_ko', () => {
+    const r = makeRecord({
+      artist_primary: 'BUMP OF CHICKEN',
+      artist_ko: null,
+      // No artist_aliases.
+    });
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={r} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const artist = host.querySelector('.result-artist');
+    expect(artist?.textContent).toBe('BUMP OF CHICKEN');
+  });
+
+  it('joins multiple aliases with ", " (preserves canonical order, no sort)', () => {
+    const r = makeRecord({
+      artist_primary: '40mP',
+      artist_ko: null,
+      artist_aliases: ['40meterP', 'M40'],
+    });
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={r} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const artist = host.querySelector('.result-artist');
+    expect(artist?.textContent).toBe('40mP (40meterP, M40)');
+  });
+});

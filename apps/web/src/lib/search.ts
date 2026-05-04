@@ -5,17 +5,31 @@ import { fetchWithRetry } from './retry.js';
 
 /**
  * Fields indexed by MiniSearch. Keep in sync with the boost map below.
+ *
+ * Spec 2026-05-04: `artist_aliases` is included so typing `"ZUTOMAYO"` or
+ * `"40meterP"` finds the canonical record after the alias-resolution stage.
+ * MiniSearch's default field accessor joins array values with whitespace, so
+ * an `artist_aliases: ["ZUTOMAYO"]` record is searchable on `"ZUTOMAYO"`.
  */
-const SEARCH_FIELDS = ['title_primary', 'title_ko', 'artist_primary', 'artist_ko'] as const;
+const SEARCH_FIELDS = [
+  'title_primary',
+  'title_ko',
+  'artist_primary',
+  'artist_aliases',
+  'artist_ko',
+] as const;
 
 /**
  * Per-field boosts. Title fields outrank artist fields.
- * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-design.md.
+ * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-design.md plus the
+ * 2026-05-04 alias-dedup spec for `artist_aliases` (boost equal to
+ * `artist_primary`).
  */
 const SEARCH_BOOSTS = {
   title_primary: 3,
   title_ko: 3,
   artist_primary: 2,
+  artist_aliases: 2,
   artist_ko: 2,
 } as const;
 

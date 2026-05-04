@@ -17,6 +17,16 @@ function joinBilingual(primary: string | null, ko: string | null): string {
   return primary ?? ko ?? '—';
 }
 
+/**
+ * Append `(Alias1, Alias2)` to the canonical artist when `aliases` is non-
+ * empty. Spec 2026-05-04: alias-display preserves the canonical pipe-form
+ * order (no alphabetic sort), and aliases join with `", "`.
+ */
+function joinArtistDisplay(primary: string, aliases: string[] | undefined): string {
+  if (!aliases || aliases.length === 0) return primary;
+  return `${primary} (${aliases.join(', ')})`;
+}
+
 interface NumberBadgeProps {
   label: 'TJ' | 'KY' | 'JOY';
   value: string | null;
@@ -63,7 +73,11 @@ function NumberBadge({ label, value, testId }: NumberBadgeProps) {
 
 export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardProps) {
   const titleText = joinBilingual(record.title_primary, record.title_ko);
-  const artistText = joinBilingual(record.artist_primary, record.artist_ko);
+  // Spec 2026-05-04: alias display runs first, then bilingual joiner. The
+  // resulting string is e.g. `"スピッツ (Spitz) — 스피츠"` when both aliases
+  // and `artist_ko` are present.
+  const artistPrimaryWithAliases = joinArtistDisplay(record.artist_primary, record.artist_aliases);
+  const artistText = joinBilingual(artistPrimaryWithAliases, record.artist_ko);
 
   return (
     <article class="result-card" data-testid="result-card">
