@@ -266,5 +266,3 @@ export class HttpClient {
     return result;
   }
 }
-
-// integration: run locally

@@ -47,11 +47,3 @@ export function buildAdapters(http: HttpClient): Crawler[] {
  * `buildAdapters(new HttpClient())` instead.
  */
 export const adapters: Crawler[] = buildAdapters(new HttpClient());
-
-/**
- * Append a crawler to the default registry. Exposed primarily for tests;
- * production code should rely on the static `adapters` array shape.
- */
-export function registerAdapter(c: Crawler): void {
-  adapters.push(c);
-}
