@@ -1,0 +1,4502 @@
+[
+  {
+    "id": "tj-20142",
+    "title_primary": "Somewhere(スレイヤーズ TRY OST)",
+    "title_ko": null,
+    "media_context_ko": "(슬레이어즈 TRY OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25003",
+    "title_primary": "マイフレンド (SLAM DUNK ED)",
+    "title_ko": "마이 프렌드",
+    "media_context_ko": "(슬램덩크 4기 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25005",
+    "title_primary": "The Rumbling(進撃の巨人 OP)",
+    "title_ko": null,
+    "media_context_ko": "(진격의 거인 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25007",
+    "title_primary": "Secret of my heart(名探偵コナン ED)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 9기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25011",
+    "title_primary": "愛が見えない",
+    "title_ko": "사랑이 보이지 않아",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25015",
+    "title_primary": "もう探さない",
+    "title_ko": "이제 찾지 않을게",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25017",
+    "title_primary": "おもかげ",
+    "title_ko": "잔영",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25019",
+    "title_primary": "コイシイヒト",
+    "title_ko": "사랑스러운 사람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25020",
+    "title_primary": "パラシュートの部屋",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25022",
+    "title_primary": "たいせつなひと",
+    "title_ko": "소중한 사람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25024",
+    "title_primary": "ひとひらの自由",
+    "title_ko": "한 조각의 자유",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25027",
+    "title_primary": "予 感",
+    "title_ko": "예감",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25028",
+    "title_primary": "3カウント",
+    "title_ko": "3카운트",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25029",
+    "title_primary": "君のために僕がいる",
+    "title_ko": "너를 위해 내가 있어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25031",
+    "title_primary": "六幻(東京リベンジャーズ OST)",
+    "title_ko": "육환",
+    "media_context_ko": "(도쿄리벤저스 OST)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25032",
+    "title_primary": "優しい歌",
+    "title_ko": "상냥한 노래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25033",
+    "title_primary": "アドレナリン",
+    "title_ko": "아드레날린",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25034",
+    "title_primary": "ミニモニ。テレフォン! リンリンリン",
+    "title_ko": "미니모니. 텔레폰! 링링링",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25037",
+    "title_primary": "戀をしちゃいました",
+    "title_ko": "사랑을 해 버렸어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25038",
+    "title_primary": "Baby! 戀に knock out",
+    "title_ko": "Baby! 사랑에 knock out",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25040",
+    "title_primary": "Dearest(犬夜叉 ED)",
+    "title_ko": null,
+    "media_context_ko": "(이누야샤 3기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25048",
+    "title_primary": "君のためにできること",
+    "title_ko": "너를 위해 할 수 있는 것",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25050",
+    "title_primary": "冒險者たち",
+    "title_ko": "모험가들",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25058",
+    "title_primary": "愛のMelody",
+    "title_ko": "사랑의 Melody",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25060",
+    "title_primary": "ロケットの樹の下で",
+    "title_ko": "로켓 나무 아래에서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25061",
+    "title_primary": "情 熱",
+    "title_ko": "정열",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25062",
+    "title_primary": "ミニモニ。 ジャンケンぴょん!",
+    "title_ko": "미니모니. 가위바위보뿅!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25067",
+    "title_primary": "always(名探偵コナン ED)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25070",
+    "title_primary": "限界破裂",
+    "title_ko": "한계파열",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25071",
+    "title_primary": "心を開いて",
+    "title_ko": "마음을 열고",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25072",
+    "title_primary": "秋風の狂詩曲 (ラプソディー)",
+    "title_ko": "가을바람의 광시곡 (랩소디)",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25073",
+    "title_primary": "夏の憂鬱",
+    "title_ko": "여름의 우울",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25083",
+    "title_primary": "ゆらめき",
+    "title_ko": "흔들림",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25086",
+    "title_primary": "恋愛レボリューション21",
+    "title_ko": "연애 레볼루션 21",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25092",
+    "title_primary": "戀 人",
+    "title_ko": "연인",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25095",
+    "title_primary": "ひとりじゃない (ドラゴンボールGT ED)",
+    "title_ko": "혼자가 아니야",
+    "media_context_ko": "(드래곤볼GT 1기 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25096",
+    "title_primary": "Try me~私を信じて~",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25098",
+    "title_primary": "The Fourth Avenue Cafe(るろうに劍心 ED)",
+    "title_ko": null,
+    "media_context_ko": "(바람의검심 4기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25100",
+    "title_primary": "太陽の碧",
+    "title_ko": "태양의 푸른빛",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25108",
+    "title_primary": "サヨナラバス",
+    "title_ko": "사요나라 버스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25111",
+    "title_primary": "この世界のどこかで(スレイヤーズ TRY OST)",
+    "title_ko": "이 세상 어딘가에서",
+    "media_context_ko": "(슬레이어즈 TRY OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25115",
+    "title_primary": "忘却の空",
+    "title_ko": "망각의 하늘",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25117",
+    "title_primary": "sunrise日本",
+    "title_ko": "sunrise 일본",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25122",
+    "title_primary": "深い森(犬夜叉 ED)",
+    "title_ko": "깊은 숲",
+    "media_context_ko": "(이누야샤 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25125",
+    "title_primary": "戀のダンスサイト",
+    "title_ko": "사랑의 댄스 사이트",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25128",
+    "title_primary": "Winter Bells(名探偵コナン OP)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 10기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25132",
+    "title_primary": "友達の唄",
+    "title_ko": "친구의 노래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25133",
+    "title_primary": "靑春時代1.2.3!",
+    "title_ko": "청춘시대 1.2.3!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25134",
+    "title_primary": "Rusted Fist(東京リベンジャーズ OST)",
+    "title_ko": null,
+    "media_context_ko": "(도쿄리벤저스 OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25135",
+    "title_primary": "月下の夜想曲",
+    "title_ko": "월하의 야상곡",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25139",
+    "title_primary": "DAN DAN 心魅かれてく(ドラゴンボールGT OP)",
+    "title_ko": "DAN DAN 마음에 끌려가",
+    "media_context_ko": "(드래곤볼GT OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25140",
+    "title_primary": "大スキ!",
+    "title_ko": "너무 좋아!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25142",
+    "title_primary": "乙女パスタに感動",
+    "title_ko": "오토메 파스타에 감동",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25144",
+    "title_primary": "月　光",
+    "title_ko": "월광",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25147",
+    "title_primary": "君はいないか",
+    "title_ko": "너는 없는 거니",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25148",
+    "title_primary": "はじまりはいつも雨",
+    "title_ko": "시작은 언제나 비",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25149",
+    "title_primary": "男のロマン",
+    "title_ko": "남자의 로망",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25150",
+    "title_primary": "遠い星を數えて",
+    "title_ko": "머나먼 별을 헤아리며",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25156",
+    "title_primary": "王子樣と雪の夜",
+    "title_ko": "왕자님과 눈 오는 밤",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25158",
+    "title_primary": "あなたのキスを数えましょう (アレクサンダー戦記 主題歌)",
+    "title_ko": "당신의 키스를 세어볼까요",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25159",
+    "title_primary": "LOVE 涙色",
+    "title_ko": "LOVE 눈물색",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25160",
+    "title_primary": "I am(犬夜叉 OP)",
+    "title_ko": null,
+    "media_context_ko": "(이누야샤 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25163",
+    "title_primary": "ジュリア",
+    "title_ko": "줄리아",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25164",
+    "title_primary": "Change the world (犬夜叉 OP)",
+    "title_ko": null,
+    "media_context_ko": "(이누야샤 1기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25165",
+    "title_primary": "12月の Love song",
+    "title_ko": "12월의 Love song",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25173",
+    "title_primary": "情熱の風",
+    "title_ko": "정열의 바람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25174",
+    "title_primary": "殘-ZAN-",
+    "title_ko": "잔-ZAN-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25176",
+    "title_primary": "桃色片想い",
+    "title_ko": "복숭아빛 짝사랑",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25179",
+    "title_primary": "Ma cherie∼愛しい君へ∼",
+    "title_ko": "Ma cherie ~사랑스런 그대에게~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25180",
+    "title_primary": "そうだ！We're ALIVE",
+    "title_ko": "그래! We're ALIVE",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25184",
+    "title_primary": "Flying(テイルズオブエターニア OP)",
+    "title_ko": null,
+    "media_context_ko": "(테일즈오브이터니아 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25187",
+    "title_primary": "Heart of sword∼夜明け前∼(るろうに剣心 ED)",
+    "title_ko": "Heart of sword ~동트기 전~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25196",
+    "title_primary": "君が好きだと叫びたい(SLAM DUNK OP)",
+    "title_ko": "네가 좋다고 외치고 싶어",
+    "media_context_ko": "(슬램덩크 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25198",
+    "title_primary": "トロピカル戀してる",
+    "title_ko": "트로피컬 사랑하고 있어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25200",
+    "title_primary": "WILL(仙界伝封神演義 OP)",
+    "title_ko": null,
+    "media_context_ko": "(봉신연의 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25201",
+    "title_primary": "とまどい",
+    "title_ko": "망설임",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25206",
+    "title_primary": "secret base~君がくれたもの~(あの日見た花の名前を僕達はまだ知らない ED)",
+    "title_ko": "secret base ~네가 준 것~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25208",
+    "title_primary": "忘れないから",
+    "title_ko": "잊지 않을 거야",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25213",
+    "title_primary": "Love Destiny(シスター・プリンセス OP)",
+    "title_ko": null,
+    "media_context_ko": "(시스터프린세스 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25221",
+    "title_primary": "出逢った頃のように",
+    "title_ko": "만났던 그때처럼",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25224",
+    "title_primary": "CHA-LA HEAD-CHA-LA(ドラゴンボールZ OP)",
+    "title_ko": null,
+    "media_context_ko": "(드래곤볼Z 1기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25227",
+    "title_primary": "夏の王樣",
+    "title_ko": "여름의 왕님",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25229",
+    "title_primary": "イナズマ",
+    "title_ko": "번개",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25230",
+    "title_primary": "君さえいれば (中華一番 OP)",
+    "title_ko": "너만 있으면",
+    "media_context_ko": "(요리왕비룡 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25231",
+    "title_primary": "Blue Velvet(ドラゴンボールGT ED)",
+    "title_ko": null,
+    "media_context_ko": "(드래곤볼GT 3기 ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25232",
+    "title_primary": "檄! 帝国華撃団 (サクラ大戦 OP)",
+    "title_ko": "격! 제국화격단",
+    "media_context_ko": "(사쿠라대전 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25235",
+    "title_primary": "ギリギリ chop(名探偵コナン OP)",
+    "title_ko": "아슬아슬 chop",
+    "media_context_ko": "(명탐정코난 6기 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25238",
+    "title_primary": "鋼の救世主(スーパーロボット大戦α外伝OST)",
+    "title_ko": "강철의 구세주",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25239",
+    "title_primary": "Pure Snow(火魅子伝 OP)",
+    "title_ko": null,
+    "media_context_ko": "(히미코전 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25240",
+    "title_primary": "Heats(真ゲッターロボ~世界最後の日~ OP)",
+    "title_ko": null,
+    "media_context_ko": "(진겟타로보~세계최후의날~ OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25242",
+    "title_primary": "鳥の詩(AIR OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25244",
+    "title_primary": "あなたを感じていたい",
+    "title_ko": "너를 느끼고 싶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25247",
+    "title_primary": "シングルベッド(D.N.A2 ED)",
+    "title_ko": "싱글 베드",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25252",
+    "title_primary": "Dynamite Explosion (マクロス ダイナマイト7 OP)",
+    "title_ko": null,
+    "media_context_ko": "(마크로스 다이너마이트7 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25253",
+    "title_primary": "約束 (ラブひな OST)",
+    "title_ko": "약속",
+    "media_context_ko": "(러브히나 OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25255",
+    "title_primary": "勇者王誕生(勇者王ガオガイガー OP)",
+    "title_ko": "용자왕 탄생",
+    "media_context_ko": "(용자왕 가오가이거 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25257",
+    "title_primary": "For フルーツバスケット (フルーツバスケット OP)",
+    "title_ko": "For 후르츠 바스켓",
+    "media_context_ko": "(후르츠바스켓 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25258",
+    "title_primary": "勇者王誕生 (神話 Ver.)(勇者王ガオガイガー OP)",
+    "title_ko": "용자왕 탄생 (신화 Ver.)",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25259",
+    "title_primary": "冬東京",
+    "title_ko": "겨울 도쿄",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25262",
+    "title_primary": "Friends(仙界伝封神演義 ED)",
+    "title_ko": null,
+    "media_context_ko": "(봉신연의 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25263",
+    "title_primary": "東京DAYS",
+    "title_ko": "도쿄 DAYS",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25264",
+    "title_primary": "誓いのエスペロス(Apocripha/0 OP)",
+    "title_ko": "맹세의 에스페로스",
+    "media_context_ko": "(아포크리파 제로 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25265",
+    "title_primary": "嵐の中で輝いて(機動戦士ガンダム第08MS小隊 OP)",
+    "title_ko": "폭풍 속에서 빛나며",
+    "media_context_ko": "(기동전사건담 제08MS소대 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25266",
+    "title_primary": "For Real(幻想魔伝 最遊記 OP)",
+    "title_ko": null,
+    "media_context_ko": "(환상마전 최유기 1기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25267",
+    "title_primary": "Hybrid Rainbow (フリクリ OST)",
+    "title_ko": null,
+    "media_context_ko": "(프리크리 OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25269",
+    "title_primary": "ミニモニ。ひなまつり",
+    "title_ko": "미니모니. 히나마츠리",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25270",
+    "title_primary": "Mr. Moonlight ~愛のビックバンド~",
+    "title_ko": "Mr. Moonlight ~사랑의 빅 밴드~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25272",
+    "title_primary": "好きなように踊りたいの",
+    "title_ko": "좋을 대로 춤추고 싶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25274",
+    "title_primary": "ヴェル・エール∼空白の瞬間の中で∼",
+    "title_ko": "베르 에르 ~공백의 순간 속에서~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25277",
+    "title_primary": "世界が終るまでは…(SLAM DUNK ED)",
+    "title_ko": "세상이 끝날 때까지는…",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25278",
+    "title_primary": "Sink (金田一少年の事件簿 ED)",
+    "title_ko": null,
+    "media_context_ko": "(소년탐정김전일 8기 ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25280",
+    "title_primary": "The Real Folk Blues(カウボーイビバップ ED)",
+    "title_ko": null,
+    "media_context_ko": "(카우보이비밥 ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25281",
+    "title_primary": "素敵だね",
+    "title_ko": "근사하지",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25283",
+    "title_primary": "Let Me Be With You (ちょびっツ OP)",
+    "title_ko": null,
+    "media_context_ko": "(쵸비츠 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25284",
+    "title_primary": "RUN! RUN! RUN!(ワンピース ED)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25286",
+    "title_primary": "愛のままにわがままに 僕は君だけを傷つけない",
+    "title_ko": "사랑하는 그대로 제멋대로 나는 너만은 상처입히지 않아",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25287",
+    "title_primary": "Le ciel~空白の彼方へ~",
+    "title_ko": "Le ciel ~공백의 저편으로~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25289",
+    "title_primary": "100回のKISS",
+    "title_ko": "100번의 KISS",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25291",
+    "title_primary": "侵食 lose control",
+    "title_ko": "침식 lose control",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25296",
+    "title_primary": "ウィーアー!(ワンピース OP)",
+    "title_ko": "위 아!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25298",
+    "title_primary": "再會~Story~",
+    "title_ko": "재회 ~Story~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25299",
+    "title_primary": "風にきえないで",
+    "title_ko": "바람에 사라지지 마",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25300",
+    "title_primary": "嫉妬 KURID/PHANTOM　mix",
+    "title_ko": "질투 KURID/PHANTOM mix",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25301",
+    "title_primary": "Pray(サイバーフォーミュラOST)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25302",
+    "title_primary": "Reckless fire(スクライド OP)",
+    "title_ko": null,
+    "media_context_ko": "(스크라이드 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25303",
+    "title_primary": "ナイスな心意気 (こちら葛飾区亀有公園前派出所 ED)",
+    "title_ko": "멋진 마음가짐",
+    "media_context_ko": "(여기는잘나가는파출소 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25304",
+    "title_primary": "ドッキドキ! LOVEメール",
+    "title_ko": "두근두근! LOVE 메일",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25305",
+    "title_primary": "しずく(GTO ED)",
+    "title_ko": "물방울",
+    "media_context_ko": "(GTO 2기 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25306",
+    "title_primary": "熱き鼓動の果て",
+    "title_ko": "뜨거운 고동의 끝",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25307",
+    "title_primary": "夢遊病",
+    "title_ko": "몽유병",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25311",
+    "title_primary": "Always～伝えたい～",
+    "title_ko": "Always ~전하고 싶어~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25313",
+    "title_primary": "Soul Of Rebirth ~時代の鼓動になれ~(新世紀GPXサイバーフォーミュラSIN OST)",
+    "title_ko": "Soul Of Rebirth ~시대의 고동이 되어라~",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25317",
+    "title_primary": "夕空の紙飛行機(はじめの一歩 ED)",
+    "title_ko": "저녁하늘의 종이비행기",
+    "media_context_ko": "(더파이팅 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25319",
+    "title_primary": "鶺鴒",
+    "title_ko": "할미새",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25323",
+    "title_primary": "遠くまで(バンパイアハンターD ED)",
+    "title_ko": "멀리까지",
+    "media_context_ko": "(뱀파이어헌터D ED)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25324",
+    "title_primary": "All My Love(陸上防衛隊まおちゃん OP)",
+    "title_ko": null,
+    "media_context_ko": "(육상방위대마오짱 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25325",
+    "title_primary": "ビリビリクラッシュメン",
+    "title_ko": "삐리삐리 크래시 맨",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25326",
+    "title_primary": "いばらの涙",
+    "title_ko": "가시의 눈물",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25327",
+    "title_primary": "イノセントワールド",
+    "title_ko": "이노센트 월드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25330",
+    "title_primary": "EDEN～君がいない～",
+    "title_ko": "EDEN ~네가 없어~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25331",
+    "title_primary": "バラは美しく散る",
+    "title_ko": "장미는 아름답게 진다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25343",
+    "title_primary": "Tomorrow(フルメタル・パニック OP)",
+    "title_ko": null,
+    "media_context_ko": "(풀메탈패닉 1기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25345",
+    "title_primary": "さわやかな君の気持ち",
+    "title_ko": "상쾌한 너의 기분",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25346",
+    "title_primary": "手のひらの宇宙 (Key the Metal Idol ED)",
+    "title_ko": "손바닥의 우주",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25348",
+    "title_primary": "White Reflection(新機動戦記ガンダムW Endless Waltz OST)",
+    "title_ko": null,
+    "media_context_ko": "(신기동전기건담W Endless Waltz OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25349",
+    "title_primary": "Yeah! めっちゃホリディ",
+    "title_ko": "Yeah! 굉장한 홀리데이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25350",
+    "title_primary": "Truth 〜A GreatDetective of Love〜(名探偵コナン OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25351",
+    "title_primary": "眠れぬ夜は君のせい",
+    "title_ko": "잠 못 드는 밤은 너 때문",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25353",
+    "title_primary": "Shining Ray(ワンピース ED)",
+    "title_ko": null,
+    "media_context_ko": "(원피스 8기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25355",
+    "title_primary": "陽のあたる坂道",
+    "title_ko": "볕 드는 비탈길",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25358",
+    "title_primary": "太陽のSEASON",
+    "title_ko": "태양의 SEASON",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25359",
+    "title_primary": "台風ジェネレーション",
+    "title_ko": "태풍 제너레이션",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25361",
+    "title_primary": "カナシミ ブルー",
+    "title_ko": "카나시미 블루",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25362",
+    "title_primary": "幸せですか?",
+    "title_ko": "행복하세요?",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25364",
+    "title_primary": "まほろDEまんぼー(まほろまてぃっく ED)",
+    "title_ko": "마호로데만보",
+    "media_context_ko": "(마호로매틱 ED)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25366",
+    "title_primary": "Century Color(ターンAガンダム OP)",
+    "title_ko": null,
+    "media_context_ko": "(턴에이건담 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25367",
+    "title_primary": "散りユク僕ラ",
+    "title_ko": "흩어져가는 우리들",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25368",
+    "title_primary": "空耳ケーキ (あずまんが大王 OP)",
+    "title_ko": "소라미미 케이크",
+    "media_context_ko": "(아즈망가대왕 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25369",
+    "title_primary": "Ultra Relax (こどものおもちゃ OP)",
+    "title_ko": null,
+    "media_context_ko": "(아이들의 장난감 OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25370",
+    "title_primary": "情熱(東京アンダーグラウンド OP)",
+    "title_ko": "정열",
+    "media_context_ko": "(도쿄언더그라운드 OP)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25371",
+    "title_primary": "天使のゆびきり(彼氏彼女の事情 OP)",
+    "title_ko": "천사의 약속",
+    "media_context_ko": "(그남자그여자의사정 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25372",
+    "title_primary": "御旗のもとに(サクラ大戦3 OP)",
+    "title_ko": "깃발 아래에",
+    "media_context_ko": "(사쿠라대전3 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25373",
+    "title_primary": "ガッチャマンの歌(科学忍者隊ガッチャマン ED)",
+    "title_ko": "갓챠맨의 노래",
+    "media_context_ko": "(독수리오형제 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25374",
+    "title_primary": "BEYOND THE TIME ~メビウスの宇宙を越えて~(新機動戦士ガンダム逆襲のシャア ED)",
+    "title_ko": "BEYOND THE TIME ~뫼비우스의 우주를 넘어서~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25375",
+    "title_primary": "さよなら大好きな人",
+    "title_ko": "안녕 사랑하는 사람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25377",
+    "title_primary": "またここであいましょう",
+    "title_ko": "또 여기서 만나요",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25382",
+    "title_primary": "少女の頃に戻ったみたいに(劇場版名探偵コナン OST)",
+    "title_ko": "소녀였을 적으로 돌아간 듯이",
+    "media_context_ko": "(극장판 명탐정코난 2기 OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25384",
+    "title_primary": "ここにいるぜぇ!",
+    "title_ko": "여기 있어!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25387",
+    "title_primary": "キ.セ.キ",
+    "title_ko": "키.세.키",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25389",
+    "title_primary": "あなた",
+    "title_ko": "당신",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25391",
+    "title_primary": "Myself(満月をさがして ED)",
+    "title_ko": null,
+    "media_context_ko": "(달빛천사 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25393",
+    "title_primary": "All You Need Is Love(魔法騎士レイアース OVA ED)",
+    "title_ko": null,
+    "media_context_ko": "(마법기사레이어스 OVA ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25394",
+    "title_primary": "In My Dream(ブレンパワード OP)",
+    "title_ko": null,
+    "media_context_ko": "(브레인파워드 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25395",
+    "title_primary": "ゲッターロボ!(ゲッターロボG OP)",
+    "title_ko": "겟타로보!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25396",
+    "title_primary": "理由",
+    "title_ko": "이유",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25398",
+    "title_primary": "クリスマス タイム",
+    "title_ko": "크리스마스 타임",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25400",
+    "title_primary": "Your eyes only~曖昧なぼくの輪郭~",
+    "title_ko": "Your eyes only ~애매한 나의 윤곽~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25405",
+    "title_primary": "真冬の星座たちに守られて",
+    "title_ko": "한겨울 별자리들에게 지켜져서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25407",
+    "title_primary": "となりのトトロ(となりのトトロ ED)",
+    "title_ko": "이웃집 토토로",
+    "media_context_ko": "(이웃집토토로 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25409",
+    "title_primary": "慎吾ママのおはロック",
+    "title_ko": "신고 마마의 오하 록",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25410",
+    "title_primary": "angel song～イヴの鐘「かね」～",
+    "title_ko": "엔젤 송 ~이브의 종~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25412",
+    "title_primary": "真実の詩(犬夜叉 ED)",
+    "title_ko": "진실의 시",
+    "media_context_ko": "(이누야샤 5기 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25413",
+    "title_primary": "あの日に…(電影少女 ED)",
+    "title_ko": "그날에…",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25414",
+    "title_primary": "たんぽぽ",
+    "title_ko": "민들레",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25415",
+    "title_primary": "あさっては Sunday",
+    "title_ko": "모레는 Sunday",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25418",
+    "title_primary": "君がいない夏 (名探偵コナン ED)",
+    "title_ko": "네가 없는 여름",
+    "media_context_ko": "(명탐정코난 4기 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25422",
+    "title_primary": "solitude~真実のサヨナラ~",
+    "title_ko": "solitude ~진실의 사요나라~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25425",
+    "title_primary": "ガラスのメモリーズ",
+    "title_ko": "유리의 메모리즈",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25430",
+    "title_primary": "蜃気楼",
+    "title_ko": "신기루",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25432",
+    "title_primary": "INVOKE(機動戦士ガンダムSEED OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사건담SEED OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25436",
+    "title_primary": "マクロス(超時空要塞マクロス OP)",
+    "title_ko": "마크로스",
+    "media_context_ko": "(초시공요새 마크로스 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25437",
+    "title_primary": "あんなに一緒だったのに(機動戦士ガンダムSEED ED)",
+    "title_ko": "그토록 함께였는데",
+    "media_context_ko": "(기동전사건담SEED ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25438",
+    "title_primary": "Shooting Star(おねがい☆ティーチャー OP)",
+    "title_ko": null,
+    "media_context_ko": "(오네가이티쳐 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25441",
+    "title_primary": "静かな日々の階段を",
+    "title_ko": "고요한 나날의 계단을",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25442",
+    "title_primary": "304号室白死の桜",
+    "title_ko": "304호실 백사의 벚꽃",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25443",
+    "title_primary": "カプチーノ",
+    "title_ko": "카푸치노",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25445",
+    "title_primary": "Be My Angel(機動天使エンジェリックレイヤー OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동천사 엔젤릭레이어 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25446",
+    "title_primary": "The 美学",
+    "title_ko": "The 미학",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25450",
+    "title_primary": "Drastic my soul(スクライド ED)",
+    "title_ko": null,
+    "media_context_ko": "(스크라이드 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25455",
+    "title_primary": "Blue Water(ふしぎの海のナディア OP)",
+    "title_ko": null,
+    "media_context_ko": "(신비한바다의나디아 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25456",
+    "title_primary": "やる気!　IT'S　EASY",
+    "title_ko": "의욕! IT'S EASY",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25457",
+    "title_primary": "愛のしるし",
+    "title_ko": "사랑의 증표",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25458",
+    "title_primary": "君と僕の６ヶ月",
+    "title_ko": "너와 나의 6개월",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25459",
+    "title_primary": "霞ゆく空背にして (アソボット戦記五九 ED)",
+    "title_ko": "아련해지는 하늘을 등지고",
+    "media_context_ko": "(아소봇토 전기 고쿠 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25460",
+    "title_primary": "白い花",
+    "title_ko": "하얀 꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25463",
+    "title_primary": "サン・トワ・マミー",
+    "title_ko": "상 투아 마미",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25464",
+    "title_primary": "大切なもの",
+    "title_ko": "소중한 것",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25466",
+    "title_primary": "グロウアップ (学校の怪談 OP)",
+    "title_ko": "그로우 업",
+    "media_context_ko": "(학교괴담 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25467",
+    "title_primary": "世界に一つだけの花",
+    "title_ko": "세상에 단 하나뿐인 꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25468",
+    "title_primary": "もっと!モット!ときめき(ときめきメモリアル OP)",
+    "title_ko": "더! 모토! 두근거림",
+    "media_context_ko": "(토키메키메모리얼 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25469",
+    "title_primary": "FLYING IN THE SKY(機動武闘伝Ｇガンダム OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동무투전Ｇ건담 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25471",
+    "title_primary": "BE HAPPY 恋のやじろべえ",
+    "title_ko": "BE HAPPY 사랑의 시소",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25472",
+    "title_primary": "FACE(ヒートガイJ OP)",
+    "title_ko": null,
+    "media_context_ko": "(히트가이J OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25473",
+    "title_primary": "草原の人",
+    "title_ko": "초원의 사람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25474",
+    "title_primary": "とまどいながら",
+    "title_ko": "망설이면서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25476",
+    "title_primary": "TIGHTROPE (最遊記 ED)",
+    "title_ko": null,
+    "media_context_ko": "(최유기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25477",
+    "title_primary": "サヨナラ(最終兵器彼女 ED)",
+    "title_ko": "사요나라",
+    "media_context_ko": "(최종병기그녀 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25478",
+    "title_primary": "涙そうそう",
+    "title_ko": "눈물이 주룩주룩",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25480",
+    "title_primary": "モーニング娘。 のひょっこりひょうたん島",
+    "title_ko": "모닝구 무스메. 의 효콧코리효탄지마",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25481",
+    "title_primary": "もらい泣き",
+    "title_ko": "덩달아 울다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25482",
+    "title_primary": "明日への扉",
+    "title_ko": "내일로의 문",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25483",
+    "title_primary": "いつか",
+    "title_ko": "언젠가",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25484",
+    "title_primary": "ボクの背中には羽根がある",
+    "title_ko": "내 등에는 날개가 있어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25485",
+    "title_primary": "嘆きのロザリオ(超重神グラヴィオン OP)",
+    "title_ko": "한탄의 로자리오",
+    "media_context_ko": "(초중신그라비온 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25489",
+    "title_primary": "ロマンティック 浮かれモード",
+    "title_ko": "로맨틱 들뜬 모드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25491",
+    "title_primary": "ね~え?",
+    "title_ko": "있잖아~?",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25492",
+    "title_primary": "moment (機動戦士ガンダムSEED OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25495",
+    "title_primary": "key to my heart(テイルズオブディスティニー OP)",
+    "title_ko": null,
+    "media_context_ko": "(테일즈오브데스티니 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25498",
+    "title_primary": "亜麻色の髪の乙女",
+    "title_ko": "아마빛 머리의 소녀",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25499",
+    "title_primary": "WINTER WISH(ラブひな WINTER SPECIAL)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25502",
+    "title_primary": "恋はスリル、ショック、サスペンス(名探偵コナン OP)",
+    "title_ko": "사랑은 스릴, 쇼크, 서스펜스",
+    "media_context_ko": "(명탐정코난 8기 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25503",
+    "title_primary": "いつかの メリークリスマス",
+    "title_ko": "언젠가의 메리 크리스마스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25505",
+    "title_primary": "カレーライスの女",
+    "title_ko": "카레라이스의 여자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25506",
+    "title_primary": "月のしずく",
+    "title_ko": "달의 물방울",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25508",
+    "title_primary": "future (テニスの王子様 OP)",
+    "title_ko": null,
+    "media_context_ko": "(테니스의왕자 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25509",
+    "title_primary": "Time after time ~花舞う街で~(名探偵コナンOST)",
+    "title_ko": "Time after time ~꽃이 흩날리는 거리에서~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25510",
+    "title_primary": "ride on shooting star (フリクリ ED)",
+    "title_ko": null,
+    "media_context_ko": "(프리크리 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25512",
+    "title_primary": "Grip!(犬夜叉 主題歌)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25513",
+    "title_primary": "永遠のBLOODS",
+    "title_ko": "영원의 BLOODS",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25514",
+    "title_primary": "SKILL(第2次スーパーロボット大戦α OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25517",
+    "title_primary": "うわさのSEXY GUY",
+    "title_ko": "소문의 SEXY GUY",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25518",
+    "title_primary": "キングゲイナーオーバー! (オバーマン キングゲイナー OP)",
+    "title_ko": "킹게이너 오버!",
+    "media_context_ko": "(오버맨킹게이나 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25520",
+    "title_primary": "君が追いかけた夢",
+    "title_ko": "네가 쫓아간 꿈",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25525",
+    "title_primary": "STAND UP TO THE VICTORY(機動戦士Ｖガンダム OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사V 건담OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25526",
+    "title_primary": "Life (愛なんていらねえよ,夏 OST)",
+    "title_ko": null,
+    "media_context_ko": "(사랑따윈필요없어, 여름OST)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25529",
+    "title_primary": "RIVER (機動戦士ガンダムSEED ED)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사 건담 SEED ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25531",
+    "title_primary": "dis- (無限のリヴァイアス OP)",
+    "title_ko": null,
+    "media_context_ko": "(무한의리바이어스 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25532",
+    "title_primary": "明日を夢見て (名探偵コナ OP)",
+    "title_ko": "내일을 꿈꾸며",
+    "media_context_ko": "(명탐정코난 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25533",
+    "title_primary": "さくら",
+    "title_ko": "벚꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25535",
+    "title_primary": "Hey You!! ~失ってはならないもの~(東京アンダーグラウンド OP)",
+    "title_ko": "Hey You!! ~잃어서는 안 될 것~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25536",
+    "title_primary": "Believe (機動戦士ガンダムSEED OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사 건담 SEED OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25537",
+    "title_primary": "卒業~さよならは 明日のために~!(犬夜叉 OST)",
+    "title_ko": "졸업 ~사요나라는 내일을 위해~!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25539",
+    "title_primary": "風のららら(名探偵コナンOST)",
+    "title_ko": "바람의 라라라",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25542",
+    "title_primary": "storm (真ゲッターロボ対ネオゲッターロボ OP)",
+    "title_ko": null,
+    "media_context_ko": "(네오 겟타로보 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25543",
+    "title_primary": "Catch You Catch Me(カードキャプターさくら OP)",
+    "title_ko": null,
+    "media_context_ko": "(카드캡터체리 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25544",
+    "title_primary": "GOOD BYE 夏男",
+    "title_ko": "GOOD BYE 여름 남자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25545",
+    "title_primary": "かすみ",
+    "title_ko": "안개",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25546",
+    "title_primary": "夏の幻 (名探偵コナン ED)",
+    "title_ko": "여름의 환영",
+    "media_context_ko": "(명탐정코난 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25547",
+    "title_primary": "ふるさと",
+    "title_ko": "고향",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25548",
+    "title_primary": "Get Over (ヒカルの碁 OP)",
+    "title_ko": null,
+    "media_context_ko": "(히카루의바둑 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25550",
+    "title_primary": "まぼろし(シスタープリンセス Re Pure OP)",
+    "title_ko": "환영",
+    "media_context_ko": "(시스터프린세스Re Pure OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25552",
+    "title_primary": "魔法の言葉~Would you marry me?~",
+    "title_ko": "마법의 말 ~Would you marry me?~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25553",
+    "title_primary": "感謝カンゲキ雨嵐",
+    "title_ko": "감사 감격 비바람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25554",
+    "title_primary": "YOU GET TO BURNING(機動戦艦ナデシコOST)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25555",
+    "title_primary": "輪舞-revolution (少女革命ウテナ OP)",
+    "title_ko": "윤무 -revolution",
+    "media_context_ko": "(소녀혁명 우테나 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25556",
+    "title_primary": "心に夢を君には愛を",
+    "title_ko": "마음에 꿈을 너에게는 사랑을",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25558",
+    "title_primary": "空に唄えば",
+    "title_ko": "하늘에 노래하면",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25559",
+    "title_primary": "スパイラル",
+    "title_ko": "스파이럴",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25560",
+    "title_primary": "My Will(犬夜叉 OST)",
+    "title_ko": null,
+    "media_context_ko": "(이누야샤OST)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25562",
+    "title_primary": "Alone (幻想魔伝最遊記 ED)",
+    "title_ko": null,
+    "media_context_ko": "(환상마전최유기 ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25564",
+    "title_primary": "君が好き",
+    "title_ko": "네가 좋아",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25565",
+    "title_primary": "手を握って歩きたい",
+    "title_ko": "손을 잡고 걷고 싶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25567",
+    "title_primary": "熱風！疾風！サイバスター(スーパーロボット大戦α外伝 OST)",
+    "title_ko": "열풍! 질풍! 사이바스터",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25569",
+    "title_primary": "君をのせて(天空の城ラピュタOST)",
+    "title_ko": "너를 태우고",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25572",
+    "title_primary": "月の詩",
+    "title_ko": "달의 시",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25576",
+    "title_primary": "マリアの爪痕",
+    "title_ko": "마리아의 손톱자국",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25577",
+    "title_primary": "DREAMS (機動新世紀ガンダムＸ OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동신세기건담X OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25578",
+    "title_primary": "白夜~True Light~ (D.N.ANGEL OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25580",
+    "title_primary": "LOVE トロピカーナ (ジャングルはいつもハレのちグゥ OP)",
+    "title_ko": "LOVE 트로피카나",
+    "media_context_ko": "(정글은언제나하레와구우 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25581",
+    "title_primary": "Realize (機動戦士ガンダムSEED OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사 건담 SEED OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25582",
+    "title_primary": "シャボン玉",
+    "title_ko": "비눗방울",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25586",
+    "title_primary": "イタズラなKISS (犬夜叉 主題歌)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25588",
+    "title_primary": "壊れない愛がほしいの",
+    "title_ko": "깨지지 않을 사랑이 갖고 싶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25589",
+    "title_primary": "Butter-Fly(デジモンアドベンチャーOP)",
+    "title_ko": null,
+    "media_context_ko": "(디지몬 어드벤쳐 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25590",
+    "title_primary": "元気を出して",
+    "title_ko": "기운을 내",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25591",
+    "title_primary": "スクランブル",
+    "title_ko": "스크램블",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25592",
+    "title_primary": "薄荷キャンディー",
+    "title_ko": "박하 캔디",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25594",
+    "title_primary": "MYSTIC EYES(天空のエスカフローネ ED)",
+    "title_ko": null,
+    "media_context_ko": "(천공의 에스카플로네 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25596",
+    "title_primary": "野性のENERGY",
+    "title_ko": "야성의 ENERGY",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25598",
+    "title_primary": "明日へのbrilliant road(宇宙のステルヴィア OP)",
+    "title_ko": null,
+    "media_context_ko": "(우주의 스텔비아 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25601",
+    "title_primary": "Make You Free (テニスの王子様 OP)",
+    "title_ko": null,
+    "media_context_ko": "(테니스의왕자 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25602",
+    "title_primary": "Free will (ワンピース ED)",
+    "title_ko": null,
+    "media_context_ko": "(원피스 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25603",
+    "title_primary": "風になる(猫の恩返し OST)",
+    "title_ko": "바람이 되어",
+    "media_context_ko": "(고양이의 보은 OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25604",
+    "title_primary": "言葉より大切なもの(ドラマ'Stand Up!' OST)",
+    "title_ko": "말보다 소중한 것",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25606",
+    "title_primary": "会えない長い日曜日",
+    "title_ko": "만날 수 없는 긴 일요일",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25612",
+    "title_primary": "花園キネマ (神世紀伝マーズ OP)",
+    "title_ko": "꽃동산 키네마",
+    "media_context_ko": "(신세기전마즈 OP)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25613",
+    "title_primary": "HANABI~君がいた夏~",
+    "title_ko": "HANABI ~네가 있던 여름~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25614",
+    "title_primary": "Second Flight(おねがい☆ツインズ OP)",
+    "title_ko": null,
+    "media_context_ko": "(오네가이☆트윈즈 OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25617",
+    "title_primary": "晴「は」れ雨のちスキ",
+    "title_ko": "맑음 비 그리고 좋아함",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25620",
+    "title_primary": "My Heart 言い出せない, Your Heart 確かめたい(ああっ女神さまっOP)",
+    "title_ko": null,
+    "media_context_ko": "(오 나의 여신님 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25621",
+    "title_primary": "果てなく続くストーリー",
+    "title_ko": "끝없이 이어지는 스토리",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25623",
+    "title_primary": "愛の園~Touch My Heart!~",
+    "title_ko": "사랑의 정원 ~Touch My Heart!~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25624",
+    "title_primary": "JustiΦ's (仮面ライダー555 OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25628",
+    "title_primary": "GET UP! ラッパー",
+    "title_ko": "GET UP! 래퍼",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25632",
+    "title_primary": "ALL THE WAY (キノの旅 OP)",
+    "title_ko": null,
+    "media_context_ko": "(키노의여행 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25633",
+    "title_primary": "愛,おぼえていますか(マクロス OST)",
+    "title_ko": "사랑, 기억하고 있나요",
+    "media_context_ko": "(마크로스OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25635",
+    "title_primary": "Another Life (猟奇的な彼女 OST)",
+    "title_ko": null,
+    "media_context_ko": "(엽기적인그녀 OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25636",
+    "title_primary": "LAST IMPRESSION (新機動戦記ガンダムＷ OST)",
+    "title_ko": null,
+    "media_context_ko": "(신기동전기건담W OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25640",
+    "title_primary": "ひとりぼっちのハブラシ(ムコ殿 OST)",
+    "title_ko": "혼자만의 칫솔",
+    "media_context_ko": "(무코도노 OST)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25642",
+    "title_primary": "枯れない花(フルメタル・パニック ED)",
+    "title_ko": "시들지 않는 꽃",
+    "media_context_ko": "(풀메탈패닉 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25643",
+    "title_primary": "BOY MEETS GIRL (だぁ!だぁ!だぁ! ED)",
+    "title_ko": null,
+    "media_context_ko": "(다!다!다! ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25645",
+    "title_primary": "Starry Heavens(テールズオブシンフォニア OST)",
+    "title_ko": null,
+    "media_context_ko": "(테일즈오브심포니아 OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25646",
+    "title_primary": "ミニモニ。数え歌 ~お風呂ば~じょん~",
+    "title_ko": "미니모니. 셈노래 ~목욕 버전~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25647",
+    "title_primary": "Resolution (機動新世紀ガンダムＸ OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동신세기건담X OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25650",
+    "title_primary": "本日ハ晴天ナリ",
+    "title_ko": "오늘은 맑음",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25651",
+    "title_primary": "GO Girl ~恋のヴィクトリー~",
+    "title_ko": "GO Girl ~사랑의 빅토리~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25652",
+    "title_primary": "消せない罪(鋼の錬金術師 ED)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25655",
+    "title_primary": "I can't stop my love for you(名探偵コナン 11th OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25658",
+    "title_primary": "赤いフリージア",
+    "title_ko": "붉은 프리지아",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25659",
+    "title_primary": "くるみ",
+    "title_ko": "호두",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25660",
+    "title_primary": "SUGAR BABY LOVE (ちっちゃな雪使いシュガー OP)",
+    "title_ko": null,
+    "media_context_ko": "(작은눈의요정슈가 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25662",
+    "title_primary": "true blue (アストロボーイ・鉄腕アトム OP)",
+    "title_ko": null,
+    "media_context_ko": "(아스트로보이 철완아톰 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25663",
+    "title_primary": "Fire wars (マジンカイザーOP)",
+    "title_ko": null,
+    "media_context_ko": "(마징카이져 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25664",
+    "title_primary": "不思議の国の スィートミント(魔法のエンジェルスイートミントOP)",
+    "title_ko": "이상한 나라의 스위트민트",
+    "media_context_ko": "(뾰로롱 꼬마마녀 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25665",
+    "title_primary": "アシタヘカエル",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25666",
+    "title_primary": "Believe (ワンピース OP)",
+    "title_ko": null,
+    "media_context_ko": "(원피스OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25667",
+    "title_primary": "ハダシの未来",
+    "title_ko": "맨발의 미래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25671",
+    "title_primary": "名もなき詩",
+    "title_ko": "이름 없는 시",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25672",
+    "title_primary": "愛のカケラ",
+    "title_ko": "사랑의 조각",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25673",
+    "title_primary": "純(魁!! クロマティ高校 OP)",
+    "title_ko": "쥰",
+    "media_context_ko": "(사키가케!! 크로마티 고교 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25676",
+    "title_primary": "それが, 愛でしょう(フルメタルパニック ふもっふ OP)",
+    "title_ko": "그것이, 사랑이지",
+    "media_context_ko": "(풀메탈패닉 후못후 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25677",
+    "title_primary": "永遠の扉(機動戦士ガンダム第08MS小隊 OST)",
+    "title_ko": "영원의 문",
+    "media_context_ko": "(기동전사 건담 제MS08소대OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25678",
+    "title_primary": "花唄",
+    "title_ko": "꽃노래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25681",
+    "title_primary": "原色GAL派手に行くべ!",
+    "title_ko": "원색 GAL 화려하게 가자!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25683",
+    "title_primary": "夢物語",
+    "title_ko": "꿈 이야기",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25684",
+    "title_primary": "扉をあけて(カードキャプターさくら OP)",
+    "title_ko": null,
+    "media_context_ko": "(카드캡터체리 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25685",
+    "title_primary": "柊",
+    "title_ko": "호랑가시나무",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25687",
+    "title_primary": "夢ノカケラ...",
+    "title_ko": "꿈의 조각...",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25688",
+    "title_primary": "Hey! みんな元気かい?",
+    "title_ko": "Hey! 모두 잘 지내?",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25689",
+    "title_primary": "Mysterious Eyes (名探偵コナン OP)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25690",
+    "title_primary": "POWER OF LOVE(新世紀GPXサイバーフォーミュラSIN OST)",
+    "title_ko": null,
+    "media_context_ko": "(신세기 GPX 사이버포뮬러 SIN OST)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25691",
+    "title_primary": "独島は韓国モノ",
+    "title_ko": "독도는 한국 땅",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25692",
+    "title_primary": "READY STEADY GO(鋼の錬金術師 OP)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25695",
+    "title_primary": "ね,がんばるよ。",
+    "title_ko": "있잖아, 열심히 할게.",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25696",
+    "title_primary": "異邦人",
+    "title_ko": "이방인",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25705",
+    "title_primary": "飛び方を忘れた小さな鳥",
+    "title_ko": "날아가는 법을 잊은 작은 새",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25707",
+    "title_primary": "風唄",
+    "title_ko": "바람의 노래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25708",
+    "title_primary": "きっと どこかで",
+    "title_ko": "분명 어딘가에서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25709",
+    "title_primary": "Four Seasons (犬夜叉 主題歌)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25710",
+    "title_primary": "翼はPleasure Line(クロノクルセイド OP)",
+    "title_ko": "날개는 Pleasure Line",
+    "media_context_ko": "(크루노 크루세이드 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25711",
+    "title_primary": "瞳の中の迷宮(ヤミと帽子と本の旅人 OP)",
+    "title_ko": "눈동자 속의 미궁",
+    "media_context_ko": "(야미와모자와책의여행자 OP)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25712",
+    "title_primary": "扉の向こうへ(鋼の錬金術師 ED)",
+    "title_ko": "문 너머로",
+    "media_context_ko": "(강철의연금술사 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25713",
+    "title_primary": "愛あらば IT'S ALL RIGHT",
+    "title_ko": "사랑이 있다면 IT'S ALL RIGHT",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25714",
+    "title_primary": "瞳の住人",
+    "title_ko": "눈동자의 주민",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25715",
+    "title_primary": "恋しさとせつなさと心強さと(ストリートファイター2nd 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(극장판 스트리트 파이터 2 주제가)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25716",
+    "title_primary": "Around the world(頭文字D 1st stage OP)",
+    "title_ko": null,
+    "media_context_ko": "(이니셜D 1st stage OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25717",
+    "title_primary": "コンディション グリーン(機動警察パトレイバー OP)",
+    "title_ko": "컨디션 그린",
+    "media_context_ko": "(기동경찰패트레이버 2기 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25718",
+    "title_primary": "Count down(GEAR戦士電童 ED)",
+    "title_ko": null,
+    "media_context_ko": "(기어전사덴도 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25719",
+    "title_primary": "恋のマホウ(まぶらほ OP)",
+    "title_ko": "사랑의 마법",
+    "media_context_ko": "(마부라호 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25720",
+    "title_primary": "One Day, One Dream(犬夜叉 OP)",
+    "title_ko": null,
+    "media_context_ko": "(이누야사5기 OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25721",
+    "title_primary": "あなたとの日々",
+    "title_ko": "너와의 나날들",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25722",
+    "title_primary": "ため息",
+    "title_ko": "한숨",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25724",
+    "title_primary": "また　あした",
+    "title_ko": "또 내일",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25725",
+    "title_primary": "It's Gonna Rain!(るろうに剣心 ED)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25726",
+    "title_primary": "心ひとつ",
+    "title_ko": "마음 하나",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25728",
+    "title_primary": "さくら満開",
+    "title_ko": "벚꽃 만개",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25729",
+    "title_primary": "アニメタル (アニメタル 主題歌)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25730",
+    "title_primary": "BON VOYAGE!(ワンピース OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25732",
+    "title_primary": "W-infinity(GEAR戦士電童 OP)",
+    "title_ko": null,
+    "media_context_ko": "(기어전사덴도 OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25733",
+    "title_primary": "風信子",
+    "title_ko": "히아신스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25735",
+    "title_primary": "ありがとうのうた",
+    "title_ko": "고마워의 노래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25736",
+    "title_primary": "掌",
+    "title_ko": "손바닥",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25739",
+    "title_primary": "餓えた太陽",
+    "title_ko": "굶주린 태양",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25740",
+    "title_primary": "ハルモニア (NARUTO-ナルト-疾風伝 ED)",
+    "title_ko": "하르모니아",
+    "media_context_ko": "(나루토-질풍전 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25742",
+    "title_primary": "ミチシルベ ～a road home～",
+    "title_ko": "미치시루베 ~a road home~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25745",
+    "title_primary": "まっ白",
+    "title_ko": "새하얀",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25748",
+    "title_primary": "VOICE(遊戯王デュエルモンスターズ OP)",
+    "title_ko": null,
+    "media_context_ko": "(유희왕 듀얼몬스터즈 1기 OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25750",
+    "title_primary": "Victory(スーパーロボット大戦 MX OP)",
+    "title_ko": null,
+    "media_context_ko": "(슈퍼로봇대전MX OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25751",
+    "title_primary": "サヨナラのLOVE SONG",
+    "title_ko": "사요나라의 LOVE SONG",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25752",
+    "title_primary": "さくらんぼ",
+    "title_ko": "체리",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25754",
+    "title_primary": "ビバ★ロック (NARUTO-ナルト-疾風伝 ED)",
+    "title_ko": "비바 록",
+    "media_context_ko": "(나루토-질풍전 ED)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25755",
+    "title_primary": "心晴れて夜も明けて(十兵衛ちゃん2~シベリア柳生の逆襲 OST)",
+    "title_ko": "마음 개고 밤도 밝아서",
+    "media_context_ko": "(쥬베짱2~시베리아야규의역습OST)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25756",
+    "title_primary": "おジャ魔女カーニバル!!(おジャ魔女どれみ OP)",
+    "title_ko": "오자마녀 카니발!!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25757",
+    "title_primary": "街",
+    "title_ko": "거리",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25758",
+    "title_primary": "奇跡の香りダンス。",
+    "title_ko": "기적의 향기 댄스.",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25761",
+    "title_primary": "ハッスルマッスル (HUTLE MUSCLE)(キン肉マンII世 OP)",
+    "title_ko": "허슬 머슬",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25766",
+    "title_primary": "卒業",
+    "title_ko": "졸업",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25767",
+    "title_primary": "夏祭り",
+    "title_ko": "여름축제",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25768",
+    "title_primary": "Motherland(鋼の錬金術師 ED)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사 3기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25771",
+    "title_primary": "only one, No1  (焼きたて!!ジャぱん OST)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25774",
+    "title_primary": "青いイナズマ",
+    "title_ko": "파란 번개",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25776",
+    "title_primary": "眩暈",
+    "title_ko": "현기증",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25778",
+    "title_primary": "抱いてよ! PLEASE GO ON",
+    "title_ko": "안아줘! PLEASE GO ON",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25780",
+    "title_primary": "WHITE LINE (テニスの王子様 3 ED)",
+    "title_ko": null,
+    "media_context_ko": "(테니스의왕자3기 ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25782",
+    "title_primary": "天使",
+    "title_ko": "천사",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25783",
+    "title_primary": "プロポーズ",
+    "title_ko": "프러포즈",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25784",
+    "title_primary": "Dream×Dream(名探偵コナン劇場版テーマソング)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25785",
+    "title_primary": "きよしのズンドコ節",
+    "title_ko": "키요시의 즌도코부시",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25786",
+    "title_primary": "プレイバック Part2",
+    "title_ko": "플레이백 Part2",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25787",
+    "title_primary": "ふるさと",
+    "title_ko": "고향",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25790",
+    "title_primary": "友情～心のブスには ならねぇ！～",
+    "title_ko": "우정 ~마음의 못난이는 되지 않아!~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25791",
+    "title_primary": "キラリ☆セーラードリーム (実写 セーラームーン 主題歌)",
+    "title_ko": "키라리☆세일러 드림",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25792",
+    "title_primary": "ススメ！",
+    "title_ko": "나아가!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25797",
+    "title_primary": "You got game? (テニスの王子様 1 ED)",
+    "title_ko": null,
+    "media_context_ko": "(테니스의왕자 1기 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25798",
+    "title_primary": "Agape(円盤皇女ワるきゅーレ OST)",
+    "title_ko": null,
+    "media_context_ko": "(원반황녀왈큐레OST)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25799",
+    "title_primary": "時の雫",
+    "title_ko": "시간의 물방울",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25800",
+    "title_primary": "自由への招待",
+    "title_ko": "자유로의 초대",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25801",
+    "title_primary": "太陽のKiss",
+    "title_ko": "태양의 Kiss",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25803",
+    "title_primary": "ETERNAL SNOW(満月をさがして ED)",
+    "title_ko": null,
+    "media_context_ko": "(달빛천사 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25805",
+    "title_primary": "流星群",
+    "title_ko": "유성군",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25806",
+    "title_primary": "爆竜戦隊アバレンジャー (爆竜戦隊アバレンジャー OP)",
+    "title_ko": "폭룡전대 아바레인저",
+    "media_context_ko": "(폭룡전대 아바레인저 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25809",
+    "title_primary": "1/2(るろうに剣心 OP)",
+    "title_ko": null,
+    "media_context_ko": "(바람의검심 2기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25810",
+    "title_primary": "YOUR SONG～青春宣誓～",
+    "title_ko": "YOUR SONG ~청춘선언~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25811",
+    "title_primary": "いくつかの空(着信アリ OST)",
+    "title_ko": "몇 개의 하늘",
+    "media_context_ko": "(착신아리 OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25812",
+    "title_primary": "カサブタ(金色のガッシュベル!! OP)",
+    "title_ko": "딱지",
+    "media_context_ko": "(금색의갓슈벨!! 1기 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25813",
+    "title_primary": "蝶",
+    "title_ko": "나비",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25815",
+    "title_primary": "四季ノ唄(サムライチャンプルー ED)",
+    "title_ko": "사계의 노래",
+    "media_context_ko": "(사무라이 참프루 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25816",
+    "title_primary": "女子かしまし物語",
+    "title_ko": "여자 시끌시끌 이야기",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25818",
+    "title_primary": "夢がチカラ",
+    "title_ko": "꿈이 힘",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25821",
+    "title_primary": "夏を抱きしめて",
+    "title_ko": "여름을 끌어안고",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25823",
+    "title_primary": "暁の車 (機動戦士ガンダムSEED)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사건담 SEED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25824",
+    "title_primary": "キレイだ",
+    "title_ko": "예쁘다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25826",
+    "title_primary": "UNDO(鋼の錬金術師 OP)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사 3기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25827",
+    "title_primary": "迷Q!?-迷宮-MAKE★YOU- (探偵学園Q OP)",
+    "title_ko": "미Q!? -미궁- MAKE★YOU-",
+    "media_context_ko": "(탐정학원Q OP)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25831",
+    "title_primary": "Say Yeah! ～もっとミラクルナイト～",
+    "title_ko": "Say Yeah! ~더욱 미라클 나이트~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25832",
+    "title_primary": "キラキラ",
+    "title_ko": "반짝반짝",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25833",
+    "title_primary": "サンダーバード -your voice-",
+    "title_ko": "썬더버드 -your voice-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25834",
+    "title_primary": "茜色が燃えるとき (GUNGRAVE ED)",
+    "title_ko": "꼭두서니빛이 불타오를 때",
+    "media_context_ko": "(건그레이브 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25835",
+    "title_primary": "ソラアイ",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25836",
+    "title_primary": "明日へ架ける橋",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25838",
+    "title_primary": "FLY HIGH (テニスの王子様5기 OP)",
+    "title_ko": null,
+    "media_context_ko": "(테니스의왕자 5기 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25840",
+    "title_primary": "瞳の中のGalaxy",
+    "title_ko": "눈동자 속의 Galaxy",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25841",
+    "title_primary": "果てしなく遠い空に(今日からマ王！OP)",
+    "title_ko": "끝없이 먼 하늘에",
+    "media_context_ko": "(오늘부터 마왕! OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25842",
+    "title_primary": "愛のために。",
+    "title_ko": "사랑을 위해.",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25843",
+    "title_primary": "キューティーハニー(キューティーハニ OP)",
+    "title_ko": "큐티 하니",
+    "media_context_ko": "(큐티하니 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25844",
+    "title_primary": "いとしい人",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25845",
+    "title_primary": "ファンダメンタル・ラブ",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25846",
+    "title_primary": "モーニングコーヒー",
+    "title_ko": "모닝 커피",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25847",
+    "title_primary": "上海ハニー",
+    "title_ko": "상하이 허니",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25849",
+    "title_primary": "I Will (鋼の錬金術師 ED)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25851",
+    "title_primary": "PERSONAL (金色のガッシュベル ED)",
+    "title_ko": null,
+    "media_context_ko": "(금색의갓슈벨!! ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25852",
+    "title_primary": "かたちあるもの",
+    "title_ko": "형태가 있는 것",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25857",
+    "title_primary": "RISING(テニスの王子様 OP)",
+    "title_ko": null,
+    "media_context_ko": "(테니스의왕자 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25863",
+    "title_primary": "冷たい海 (名探偵コナン ED)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 ED)",
+    "confidence": "low",
+    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25865",
+    "title_primary": "さくらんぼキッス ~爆発だも~ん~",
+    "title_ko": "체리 키스 ~폭발이라구~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25867",
+    "title_primary": "浪漫～MY DEAR BOY～",
+    "title_ko": "낭만 ~MY DEAR BOY~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25868",
+    "title_primary": "四季",
+    "title_ko": "사계",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25869",
+    "title_primary": "浪花いろは節",
+    "title_ko": "나니와 이로하 부시",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25872",
+    "title_primary": "トイレットペッパーマン",
+    "title_ko": "화장실 페퍼맨",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25873",
+    "title_primary": "甘えんぼ",
+    "title_ko": "응석꾸러기",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25874",
+    "title_primary": "口笛",
+    "title_ko": "휘파람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25875",
+    "title_primary": "ロボキッス",
+    "title_ko": "로보 키스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25878",
+    "title_primary": "DRAGON (新ゲッターロボ OP)",
+    "title_ko": null,
+    "media_context_ko": "(신겟타로보 OP)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25879",
+    "title_primary": "光戦隊マスクマン",
+    "title_ko": "광전대 마스크맨",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25880",
+    "title_primary": "紅ノ牙 (超重神グラヴィオン OP)",
+    "title_ko": "붉은 송곳니",
+    "media_context_ko": "(초중신그라비온 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25881",
+    "title_primary": "GO!!! (NARUTO-ナルト-疾風伝 OP)",
+    "title_ko": null,
+    "media_context_ko": "(나루토-질풍전 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25884",
+    "title_primary": "もう君以外愛せない",
+    "title_ko": "이제 너 말고는 사랑할 수 없어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25885",
+    "title_primary": "君に逢いたくて",
+    "title_ko": "너를 만나고 싶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25887",
+    "title_primary": "Ignited-イグナイテッド-(機動戦士ガンダムSEED OP)",
+    "title_ko": "Ignited -이그나이티드-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25888",
+    "title_primary": "MEMORIES(ワンピース ED)",
+    "title_ko": null,
+    "media_context_ko": "(원피스 1기 ED)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25889",
+    "title_primary": "約束(Beautiful Days OST)",
+    "title_ko": "약속",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25890",
+    "title_primary": "青のレクイエム(Samurai Deeper Kyo OP)",
+    "title_ko": null,
+    "media_context_ko": "(사무라이 디퍼 쿄우 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25893",
+    "title_primary": "日本ブレイク工業社歌",
+    "title_ko": "일본 브레이크 공업 사가",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25894",
+    "title_primary": "愛想曲(セレナーデ)",
+    "title_ko": "애상곡 (세레나데)",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25895",
+    "title_primary": "涙が止まらない放課後",
+    "title_ko": "눈물이 멈추지 않는 방과후",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25897",
+    "title_primary": "1000の言葉",
+    "title_ko": "1000개의 말",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25898",
+    "title_primary": "渡良瀬橋",
+    "title_ko": "와타라세교",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25899",
+    "title_primary": "群青日和",
+    "title_ko": "군청 일화",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25901",
+    "title_primary": "希望～Yell～",
+    "title_ko": "희망 ~Yell~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25902",
+    "title_primary": "ゆずれない願い(魔法騎士レイアース OP)",
+    "title_ko": "양보할 수 없는 소원",
+    "media_context_ko": "(마법기사 레이어스 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25903",
+    "title_primary": "New Future(満月をさがして ED)",
+    "title_ko": null,
+    "media_context_ko": "(달빛천사 ED)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25904",
+    "title_primary": "花",
+    "title_ko": "꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25905",
+    "title_primary": "ギャラクシー★Bang! Bang!(ギャラクシーエンジェルX OP)",
+    "title_ko": "갤럭시★Bang! Bang!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25906",
+    "title_primary": "ケロッとマーチ (ケロロ軍曹乙 OP)",
+    "title_ko": "케롯토 마치",
+    "media_context_ko": "(케로로 중사 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25908",
+    "title_primary": "普遍 (SAMURAI７ ED)",
+    "title_ko": "보편",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25909",
+    "title_primary": "哀戦士(機動戦士ガンダムⅡ OST)",
+    "title_ko": "슬픈 전사",
+    "media_context_ko": "(기동전사건담Ⅱ OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25910",
+    "title_primary": "Shangri-La(蒼穹のファフナー OP)",
+    "title_ko": null,
+    "media_context_ko": "(창궁의파프너 OP)",
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25911",
+    "title_primary": "恋文",
+    "title_ko": "연애편지",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25913",
+    "title_primary": "さよなら「友達にはなりたくないの」",
+    "title_ko": "안녕 「친구가 되고 싶지 않아」",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25915",
+    "title_primary": "忘れ咲き (名探偵コナン ED)",
+    "title_ko": "늦봄의 꽃",
+    "media_context_ko": "(명탐정코난 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25917",
+    "title_primary": "Re-sublimity (神無月の巫女 OP)",
+    "title_ko": null,
+    "media_context_ko": "(신무월의무녀 OP)",
+    "confidence": "medium",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25918",
+    "title_primary": "スクランブル (スクールランブル OP)",
+    "title_ko": "스크램블",
+    "media_context_ko": "(스쿠루람브루 OP)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25919",
+    "title_primary": "夢の場所へ",
+    "title_ko": "꿈의 장소로",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25921",
+    "title_primary": "自分のために",
+    "title_ko": "나 자신을 위해",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25922",
+    "title_primary": "大好きだよ。",
+    "title_ko": "정말 좋아해.",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25923",
+    "title_primary": "遭難",
+    "title_ko": "조난",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25925",
+    "title_primary": "ブギートレイン'03",
+    "title_ko": "부기 트레인 '03",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25927",
+    "title_primary": "そばにいるよ",
+    "title_ko": "곁에 있을게",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25928",
+    "title_primary": "マツケンサンバII",
+    "title_ko": "마츠켄 삼바 II",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25930",
+    "title_primary": "月光花 (ブラック・ジャック OP)",
+    "title_ko": "월광화",
+    "media_context_ko": "(블랙잭 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25931",
+    "title_primary": "愛をとりもどせ!! (北斗の拳 OP)",
+    "title_ko": "사랑을 되찾아라!!",
+    "media_context_ko": "(북두의권 OP)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25932",
+    "title_primary": "ふられ気分でRock'n Roll(せんせいのお時間 ED)",
+    "title_ko": "차인 기분으로 Rock'n Roll",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25933",
+    "title_primary": "ココロオドル(SDガンダムフォース ED)",
+    "title_ko": "코코로 오도루",
+    "media_context_ko": "(SD건담포스 ED)",
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25935",
+    "title_primary": "ファンタスティポ",
+    "title_ko": "판타스티포",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25937",
+    "title_primary": "合神！ゴッドグラヴィオン(超重神グラヴィオンOST)",
+    "title_ko": "합신! 갓 그라비온",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25938",
+    "title_primary": "時を越えて(スーパーロボット大戦 OST)",
+    "title_ko": "시간을 넘어서",
+    "media_context_ko": "(슈퍼로봇대전OST)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25939",
+    "title_primary": "月迷風影(十二国記 ED)",
+    "title_ko": "월미풍영",
+    "media_context_ko": "(십이국기 ED)",
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25940",
+    "title_primary": "THE マンパワー!!!",
+    "title_ko": "THE 맨파워!!!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct translation of well-known Japanese title from training knowledge; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25941",
+    "title_primary": "CRUSH GEAR FIGHT!!(激闘!クラッシュギアＴ(ターボ) OP)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-25942",
+    "title_primary": "～アスタリスク～ (BLEACH OP)",
+    "title_ko": "~아스타리스크~",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
+    "web_sources": []
+  }
+]

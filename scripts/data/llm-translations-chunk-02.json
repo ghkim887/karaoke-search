@@ -1,0 +1,4503 @@
+[
+  {
+    "id": "tj-26724",
+    "title_primary": "Beloved~櫻の彼方へ~(それは舞い散る桜のように ED)",
+    "title_ko": "Beloved~사쿠라의 저편으로~",
+    "media_context_ko": "(그것은 흩날리는 벚꽃처럼 ED)",
+    "confidence": "high",
+    "reasoning": "Literal title translation; established anime ED.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26725",
+    "title_primary": "FALCO~ファルコ~(うえきの法則 OP)",
+    "title_ko": "FALCO~팔코~",
+    "media_context_ko": "(우에키의 법칙 OP)",
+    "confidence": "high",
+    "reasoning": "Title is name with subtitle; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26726",
+    "title_primary": "Zips (機動戦士ガンダムSEED MSV 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사 건담 SEED MSV 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26728",
+    "title_primary": "夢の途中",
+    "title_ko": "꿈의 도중",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26729",
+    "title_primary": "冬の幻",
+    "title_ko": "겨울의 환영",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation of Acid Black Cherry song.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26730",
+    "title_primary": "Romantic summer (瀬戸の花嫁 OP)",
+    "title_ko": null,
+    "media_context_ko": "(세토의 신부 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26731",
+    "title_primary": "人として軸がぶれている(さよなら絶望先生 OP)",
+    "title_ko": "사람으로서 축이 흔들리고 있다",
+    "media_context_ko": "(안녕절망선생 OP)",
+    "confidence": "high",
+    "reasoning": "Known SZS OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26732",
+    "title_primary": "プリズム (ゴクドーくん漫遊記 OP)",
+    "title_ko": "프리즘",
+    "media_context_ko": "(천방지축 모험왕 OP)",
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26733",
+    "title_primary": "Happily ever after(天元突破グレンラガン OST)",
+    "title_ko": null,
+    "media_context_ko": "(천원돌파그렌라간OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26735",
+    "title_primary": "出会いのかけら",
+    "title_ko": "만남의 조각",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26737",
+    "title_primary": "まっがーれ↓スペクタクル(涼宮ハルヒの憂鬱 古泉一 Character Song)",
+    "title_ko": "맛가-레↓스펙터클",
+    "media_context_ko": "(스즈미야 하루히의 우울 코이즈미 잇키 캐릭터송)",
+    "confidence": "medium",
+    "reasoning": "Stylized wordplay; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26740",
+    "title_primary": "STAND UP! (家庭教師ヒットマンREBORN! ED)",
+    "title_ko": null,
+    "media_context_ko": "(가정교사히트맨 REBORN! ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26742",
+    "title_primary": "片翼のイカロス (H2O ~FOOTPRINTS IN THE SAND~ OP)",
+    "title_ko": "한쪽 날개의 이카로스",
+    "media_context_ko": "(H2O ~FOOTPRINTS IN THE SAND~ OP)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26744",
+    "title_primary": "OPEN YOUR MIND (ああっ女神様 OP)",
+    "title_ko": null,
+    "media_context_ko": "(오 나의 여신님 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26745",
+    "title_primary": "Like an angel (人魚の森 OP)",
+    "title_ko": null,
+    "media_context_ko": "(인어의 숲 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26746",
+    "title_primary": "I say yes (ゼロの使い魔~双月の騎士~ 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(제로의 사역마~쌍월의 기사~ 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26747",
+    "title_primary": "Grand blue (天使な小生意気 OP)",
+    "title_ko": null,
+    "media_context_ko": "(건방진 천사 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26750",
+    "title_primary": "空想ルンバ(懺・さよなら絶望先生 OP)",
+    "title_ko": "공상 룸바",
+    "media_context_ko": "(참 안녕 절망선생 OP)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26752",
+    "title_primary": "ターゲット~赤い衝撃~(デジモンアドベンチャー02 OP)",
+    "title_ko": "타깃~붉은 충격~",
+    "media_context_ko": "(디지몬 어드벤처 02 OP)",
+    "confidence": "high",
+    "reasoning": "Known Digimon OP; literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26753",
+    "title_primary": "Crescendo(金色のコルダ 〜primo passo〜 ED)",
+    "title_ko": null,
+    "media_context_ko": "(금색의 코르다 ~primo passo~ ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26754",
+    "title_primary": "Your gravitation(瀬戸の花嫁 OST)",
+    "title_ko": null,
+    "media_context_ko": "(세토의 신부 8화 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26756",
+    "title_primary": "羞恥心",
+    "title_ko": "수치심",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal hanja-to-Korean translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26757",
+    "title_primary": "BURN-フメツノフェイス-",
+    "title_ko": "BURN-불멸의 페이스-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "B'z song subtitle is 'fumetsu no face'.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26758",
+    "title_primary": "Brave heart (デジモンアドベンチャー OST)",
+    "title_ko": null,
+    "media_context_ko": "(디지몬 어드벤쳐 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26759",
+    "title_primary": "ジリリキテル",
+    "title_ko": "지리리키테루",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Stylized onomatopoeic title; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26763",
+    "title_primary": "アナタボシ (きらりん☆レボリューション OP)",
+    "title_ko": "아나타보시",
+    "media_context_ko": "(라라의 스타일기 OP)",
+    "confidence": "high",
+    "reasoning": "Wordplay (anata + hoshi); transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26766",
+    "title_primary": "キミの記憶(ペルソナ3 ED)",
+    "title_ko": "그대의 기억",
+    "media_context_ko": "(페르소나 3 ED)",
+    "confidence": "high",
+    "reasoning": "Known Persona 3 ED translation.",
+    "web_sources": []
+  },
+  {
+    "id": "blog-1143-14",
+    "title_primary": "Don't be discouraged(スレイヤーズTRY ED)",
+    "title_ko": null,
+    "media_context_ko": "(슬레이어즈 TRY ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26768",
+    "title_primary": "Ash Like Snow(機動戦士ガンダム00 OP)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사건담 더블오 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26770",
+    "title_primary": "SEVENTH MOON (マクロス OP)",
+    "title_ko": null,
+    "media_context_ko": "(마크로스 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26772",
+    "title_primary": "踊る赤ちゃん人間(NHKにようこそ! ED)",
+    "title_ko": "춤추는 아기 인간",
+    "media_context_ko": "(NHK에 어서오세요! 1기 ED)",
+    "confidence": "high",
+    "reasoning": "Literal translation of NHK ED.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26773",
+    "title_primary": "O2(コードギアス反逆のルルーシュR2 OP)",
+    "title_ko": null,
+    "media_context_ko": "(코드기어스 반역의 를르슈 R2 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin/numeric title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26774",
+    "title_primary": "The Biggest Dreamer(デジモンテイマーズ OP)",
+    "title_ko": null,
+    "media_context_ko": "(디지몬테이머즈 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26775",
+    "title_primary": "永遠",
+    "title_ko": "영원",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26776",
+    "title_primary": "BOYS & GIRLS (家庭教師ヒットマンREBORN! OP)",
+    "title_ko": null,
+    "media_context_ko": "(가정교사 히트맨 REBORN! OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26778",
+    "title_primary": "オレじゃなきゃ、 キミじゃなきゃ",
+    "title_ko": "내가 아니면, 너가 아니면",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26779",
+    "title_primary": "手をつなごう (映画 ドラえもん のび太と緑の巨人伝 主題歌)",
+    "title_ko": "손을 잡자",
+    "media_context_ko": "(영화 도라에몽 진구와 초록거인전 주제가)",
+    "confidence": "high",
+    "reasoning": "Literal Ayaka translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26782",
+    "title_primary": "アイアイ傘 (ネオアンジェリークABYSS ED)",
+    "title_ko": "아이아이 우산",
+    "media_context_ko": "(네오 안젤리크 ABYSS ED)",
+    "confidence": "high",
+    "reasoning": "Aiai-gasa is the side-by-side umbrella concept.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26783",
+    "title_primary": "だんご大家族(CLANNAD ED)",
+    "title_ko": "당고 대가족",
+    "media_context_ko": "(CLANNAD ED)",
+    "confidence": "high",
+    "reasoning": "Famous CLANNAD ED title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26786",
+    "title_primary": "見えざる腕",
+    "title_ko": "보이지 않는 팔",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Sound Horizon translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26788",
+    "title_primary": "リゾナント ブルー",
+    "title_ko": "리조넌트 블루",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Katakana 'Resonant Blue'.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26789",
+    "title_primary": "changes (図書館戦争 ED)",
+    "title_ko": null,
+    "media_context_ko": "(도서관전쟁 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26793",
+    "title_primary": "インフィニティ(マクロスF OST)",
+    "title_ko": "인피니티",
+    "media_context_ko": "(마크로스F OST)",
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26797",
+    "title_primary": "Truth(魔王 OST)",
+    "title_ko": null,
+    "media_context_ko": "(마왕 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26799",
+    "title_primary": "HANABI(ドラマ'コード・ブルー -ドクターヘリ緊急救命-'OST)",
+    "title_ko": null,
+    "media_context_ko": "(드라마 '코드 블루 -닥터헬기 긴급구명-' OST)",
+    "confidence": "high",
+    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26801",
+    "title_primary": "少年ハート(交響詩篇エウレカセブン OP)",
+    "title_ko": "소년 하트",
+    "media_context_ko": "(교향시편 유레카 OP)",
+    "confidence": "high",
+    "reasoning": "Known Eureka Seven OP literal title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26802",
+    "title_primary": "雨傘",
+    "title_ko": "우산",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26805",
+    "title_primary": "星間飛行(マクロスF OST)",
+    "title_ko": "성간비행",
+    "media_context_ko": "(마크로스F OST)",
+    "confidence": "high",
+    "reasoning": "Famous Ranka Lee song; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26806",
+    "title_primary": "真夏のスピカ",
+    "title_ko": "한여름의 스피카",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26808",
+    "title_primary": "冥王",
+    "title_ko": "명왕",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal hanja translation; Sound Horizon song.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26809",
+    "title_primary": "曇天(銀魂 OP)",
+    "title_ko": "흐린 하늘",
+    "media_context_ko": "(은혼 5기 OP)",
+    "confidence": "high",
+    "reasoning": "Known Gintama OP; donten=흐린 하늘.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26810",
+    "title_primary": "ライオン(マクロスF OP)",
+    "title_ko": "라이온",
+    "media_context_ko": "(마크로스F OP)",
+    "confidence": "high",
+    "reasoning": "Famous Macross F OP; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26811",
+    "title_primary": "この瞬間,きっと夢じゃない",
+    "title_ko": "이 순간, 분명 꿈이 아니야",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SMAP translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26812",
+    "title_primary": "エルの楽園[→side:E→]",
+    "title_ko": "엘의 낙원[→side:E→]",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Sound Horizon known translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26817",
+    "title_primary": "夏のかけら",
+    "title_ko": "여름의 조각",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26823",
+    "title_primary": "ペッパー警部",
+    "title_ko": "페퍼 경부",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Pink Lady cover; established translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26824",
+    "title_primary": "OK!(ポケットモンスター OP)",
+    "title_ko": null,
+    "media_context_ko": "(포켓몬스터 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26825",
+    "title_primary": "Resonance (ソウルイーター OP)",
+    "title_ko": null,
+    "media_context_ko": "(소울이터 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26826",
+    "title_primary": "大声ダイヤモンド",
+    "title_ko": "큰소리 다이아몬드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48 single literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26827",
+    "title_primary": "F・G・K・S",
+    "title_ko": null,
+    "media_context_ho": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Pure-Latin acronym.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26829",
+    "title_primary": "WORLD END (コードギアス反逆のルルーシュR2 OP)",
+    "title_ko": null,
+    "media_context_ko": "(코드 기어스 반역의 를르슈 R2 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26833",
+    "title_primary": "儚くも永久のカナシ(機動戦士ガンダムOO OP)",
+    "title_ko": "덧없이 영원의 슬픔",
+    "media_context_ko": "(기동전사건담 더블오 OP)",
+    "confidence": "high",
+    "reasoning": "UVERworld OP; established literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26834",
+    "title_primary": "COOL EDITION (涼宮ハルヒの憂鬱 Character Song)",
+    "title_ko": null,
+    "media_context_ko": "(스즈미야 하루히의 우울 캐릭터송)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26835",
+    "title_primary": "ノーザンクロス(マクロスFRONTIER ED)",
+    "title_ko": "노던 크로스",
+    "media_context_ko": "(마크로스 프론티어 ED)",
+    "confidence": "high",
+    "reasoning": "Famous Macross F ED; katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26836",
+    "title_primary": "最愛",
+    "title_ko": "최애",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja-to-Korean translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26838",
+    "title_primary": "牙狼 ~SAVIOR IN THE DARK~(New Ver.)",
+    "title_ko": "가로 ~SAVIOR IN THE DARK~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "GARO franchise; known title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26839",
+    "title_primary": "薔薇は美しく散る(ベルサイユのばら OP)",
+    "title_ko": "장미는 아름답게 진다",
+    "media_context_ko": "(베르사이유의장미 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Rose of Versailles OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26840",
+    "title_primary": "碧いうさぎ (星の金貨 主題歌)",
+    "title_ko": "푸른 토끼",
+    "media_context_ko": "(별의 금화 주제가)",
+    "confidence": "high",
+    "reasoning": "Famous Sakai Noriko song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26842",
+    "title_primary": "戰士よ眠れ(マジンカイザー 死闘！暗黒大将軍 ED)",
+    "title_ko": "전사여 잠들라",
+    "media_context_ko": "(마징카이저 사투! 암흑대장군 ED)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26850",
+    "title_primary": "衝動 (純情ロマンチカ OP)",
+    "title_ko": "충동",
+    "media_context_ko": "(순정로맨티카 OP)",
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26855",
+    "title_primary": "Prototype (機動戦士ガンダム00 ED)",
+    "title_ko": null,
+    "media_context_ko": "(기동전사건담 더블오 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26856",
+    "title_primary": "崖の上のポニョ (崖の上のポニョ 主題歌)",
+    "title_ko": "벼랑 위의 포뇨",
+    "media_context_ko": "(벼랑 위의 포뇨 주제가)",
+    "confidence": "high",
+    "reasoning": "Established Korean Ghibli title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26857",
+    "title_primary": "焔",
+    "title_ko": "불꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Sound Horizon; honoo=불꽃.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26858",
+    "title_primary": "弱虫サンタ",
+    "title_ko": "겁쟁이 산타",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26860",
+    "title_primary": "風の向こうへ",
+    "title_ko": "바람의 저편으로",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Arashi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26861",
+    "title_primary": "踊れ!モーニングカレー",
+    "title_ko": "춤춰라! 모닝 카레",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Morning Musume translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26862",
+    "title_primary": "夏影(AIR OST)",
+    "title_ko": "여름 그림자",
+    "media_context_ko": "(AIR OST)",
+    "confidence": "high",
+    "reasoning": "Famous AIR BGM literal title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26863",
+    "title_primary": "カントリー ロード(耳をすませば OST)",
+    "title_ko": "컨트리 로드",
+    "media_context_ko": "(귀를기울이면OST)",
+    "confidence": "high",
+    "reasoning": "Famous Ghibli song katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26866",
+    "title_primary": "SHINE(精霊の守り人 OP)",
+    "title_ko": null,
+    "media_context_ko": "(정령의수호자 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26867",
+    "title_primary": "PSI-missing(とある魔術の禁書目録 OP)",
+    "title_ko": null,
+    "media_context_ko": "(어떤마술의금서목록 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26868",
+    "title_primary": "The Gate of the Hell(マジンカイザー 死闘！暗黒大将軍 OP)",
+    "title_ko": null,
+    "media_context_ko": "(마징카이저 사투! 암흑대장군 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26870",
+    "title_primary": "約束",
+    "title_ko": "약속",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26875",
+    "title_primary": "黄昏の賢者",
+    "title_ko": "황혼의 현자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Sound Horizon literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26876",
+    "title_primary": "大阪",
+    "title_ko": "오사카",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26877",
+    "title_primary": "under the darkness(鬼畜眼鏡 OP)",
+    "title_ko": null,
+    "media_context_ko": "(귀축안경 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26878",
+    "title_primary": "ONE DROP (神の雫 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(신의 물방울 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26881",
+    "title_primary": "涙のムコウ(機動戦士ガンダム00 OP)",
+    "title_ko": "눈물의 저편",
+    "media_context_ko": "(기동전사건담 더블오 2기 OP)",
+    "confidence": "high",
+    "reasoning": "Stereopony Gundam OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26882",
+    "title_primary": "伊豆の雨",
+    "title_ko": "이즈의 비",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26885",
+    "title_primary": "Silky heart(とらドラ！OP)",
+    "title_ko": null,
+    "media_context_ko": "(토라도라! OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26886",
+    "title_primary": "Lacrimosa(黒執事 ED)",
+    "title_ko": null,
+    "media_context_ko": "(흑집사2기 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26887",
+    "title_primary": "motto☆派手にね(TVA かんなぎ OP)",
+    "title_ko": "motto☆화려하게",
+    "media_context_ko": "(TVA 칸나기 OP)",
+    "confidence": "high",
+    "reasoning": "Known Kannagi OP; mixed Latin+kanji literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26889",
+    "title_primary": "曇りのち、快晴",
+    "title_ko": "흐림 후, 쾌청",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26890",
+    "title_primary": "夢追い酒",
+    "title_ko": "꿈 좇는 술",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal enka translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26901",
+    "title_primary": "ひまわり",
+    "title_ko": "해바라기",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26903",
+    "title_primary": "炉心融解",
+    "title_ko": "노심융해",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kagamine Rin Vocaloid; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26904",
+    "title_primary": "Sanagi(銀魂 ED)",
+    "title_ko": null,
+    "media_context_ko": "(은혼 9기 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26905",
+    "title_primary": "死せる英雄達の戦い",
+    "title_ko": "죽은 영웅들의 싸움",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Sound Horizon literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26907",
+    "title_primary": "Cagayake! GIRLS(けいおん! OP)",
+    "title_ko": null,
+    "media_context_ko": "(케이온 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26908",
+    "title_primary": "Don't say \"lazy\" (けいおん! ED)",
+    "title_ko": null,
+    "media_context_ko": "(케이온 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26911",
+    "title_primary": "恋のABO",
+    "title_ko": "사랑의 ABO",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26912",
+    "title_primary": "嘘(鋼の錬金術師 ED)",
+    "title_ko": "거짓말",
+    "media_context_ko": "(강철의연금술사 ED)",
+    "confidence": "high",
+    "reasoning": "Famous SID FMA ED; uso=거짓말.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26913",
+    "title_primary": "Oblivious(空の境界 ED)",
+    "title_ko": null,
+    "media_context_ko": "(공의경계 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26914",
+    "title_primary": "感じてKnight (マジンガーZ OP)",
+    "title_ko": "느껴봐 Knight",
+    "media_context_ko": "(마징가Z OP)",
+    "confidence": "medium",
+    "reasoning": "Mixed wordplay (kanjite/kanji=Knight).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26915",
+    "title_primary": "無限の羽",
+    "title_ko": "무한의 날개",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26916",
+    "title_primary": "ふわふわ時間(けいおん! OST)",
+    "title_ko": "푹신푹신 타임",
+    "media_context_ko": "(케이온OST)",
+    "confidence": "high",
+    "reasoning": "Famous K-On! song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26917",
+    "title_primary": "下剋上",
+    "title_ko": "하극상",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26918",
+    "title_primary": "明日の記憶",
+    "title_ko": "내일의 기억",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26919",
+    "title_primary": "素直に言えなくて",
+    "title_ko": "솔직하게 말할 수 없어서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal ZARD translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26920",
+    "title_primary": "Crazy Moon ～キミ・ハ・ムテキ～",
+    "title_ko": "Crazy Moon ~너는 무적~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle is 'kimi wa muteki'.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26921",
+    "title_primary": "悲しみよこんにちは(めぞん一刻 OP)",
+    "title_ko": "슬픔이여 안녕",
+    "media_context_ko": "(메종일각 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Maison Ikkoku OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26923",
+    "title_primary": "ダブルラリアット",
+    "title_ko": "더블 라리어트",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Megurine Luka Vocaloid; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26927",
+    "title_primary": "済州エア･ポート",
+    "title_ko": "제주 에어포트",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name + transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26929",
+    "title_primary": "本日、満開ワタシ色 (ハヤテのごとく! ED)",
+    "title_ko": "오늘, 만개 나의 색",
+    "media_context_ko": "(하야테처럼 2기 ED)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26930",
+    "title_primary": "いままでのあらすじ (涼宮ハルヒちゃんの憂鬱  OP)",
+    "title_ko": "지금까지의 줄거리",
+    "media_context_ko": "(스즈미야 하루히짱의 우울 OP)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26931",
+    "title_primary": "スピリット",
+    "title_ko": "스피릿",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26932",
+    "title_primary": "涙サプライズ！",
+    "title_ko": "눈물 서프라이즈!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "AKB48; literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26933",
+    "title_primary": "ヴァンパイア",
+    "title_ko": "뱀파이어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26935",
+    "title_primary": "Butterfly Kiss (RAVE 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(RAVE 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26937",
+    "title_primary": "レスキューファイアー",
+    "title_ko": "레스큐 파이어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Tokusatsu title; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26938",
+    "title_primary": "奴隷市場",
+    "title_ko": "노예시장",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26940",
+    "title_primary": "魔弾～Der Freischutz～",
+    "title_ko": "마탄 ~Der Freischutz~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26942",
+    "title_primary": "STRENGTH(ソウルイーター ED)",
+    "title_ko": null,
+    "media_context_ko": "(소울이터 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26943",
+    "title_primary": "初恋 limited (初恋限定 ED)",
+    "title_ko": "첫사랑 limited",
+    "media_context_ko": "(첫사랑한정 ED)",
+    "confidence": "high",
+    "reasoning": "Mixed; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26946",
+    "title_primary": "JAP (戦国 BASARA OP)",
+    "title_ko": null,
+    "media_context_ko": "(전국 BASARA OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26948",
+    "title_primary": "瞳の先に",
+    "title_ko": "눈동자의 앞에",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26952",
+    "title_primary": "ホタルノヒカリ(NARUTO-ナルト-疾風伝 OP)",
+    "title_ko": "반딧불의 빛",
+    "media_context_ko": "(나루토-질풍전 5기 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Naruto OP literal translation (hotaru no hikari).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26956",
+    "title_primary": "Programming for non-fiction(よくわかる現代魔法 OP)",
+    "title_ko": null,
+    "media_context_ko": "(알기쉬운현대마법 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26958",
+    "title_primary": "賽は投げられた",
+    "title_ko": "주사위는 던져졌다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal L'Arc-en-Ciel translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26961",
+    "title_primary": "STORMBRINGER (鋼鉄神ジーグ OP)",
+    "title_ko": null,
+    "media_context_ko": "(강철신지그 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26962",
+    "title_primary": "Stairway Generation(銀魂 OP)",
+    "title_ko": null,
+    "media_context_ko": "(은혼 7기 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26964",
+    "title_primary": "daily-daily Dream(ハヤテのごとく! OP)",
+    "title_ko": null,
+    "media_context_ko": "(하야테처럼! 2기 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26965",
+    "title_primary": "ダンシング☆サムライ",
+    "title_ko": "댄싱☆사무라이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Gakupo Vocaloid; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26966",
+    "title_primary": "LET IT OUT(鋼の錬金術師 FULLMETAL ALCHEMIST ED)",
+    "title_ko": null,
+    "media_context_ko": "(강철의 연금술사 BROTHERHOOD ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26967",
+    "title_primary": "ウォーアイニー(銀魂 ED)",
+    "title_ko": "워 아이 니",
+    "media_context_ko": "(은혼14기 ED)",
+    "confidence": "high",
+    "reasoning": "Wo ai ni Chinese phrase katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26968",
+    "title_primary": "la divina tragedia(うみねこのなく頃に ED)",
+    "title_ko": null,
+    "media_context_ko": "(괭이갈매기울적에 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26972",
+    "title_primary": "片翼の鳥(うみねこのなく頃に OP)",
+    "title_ko": "한쪽 날개의 새",
+    "media_context_ko": "(괭이갈매기울적에 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Umineko OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26973",
+    "title_primary": "しょうがない 夢追い人",
+    "title_ko": "어쩔 수 없는 꿈 좇는 사람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Morning Musume translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26974",
+    "title_primary": "手紙 ～拝啓 十五の君へ～",
+    "title_ko": "편지 ~배계 열다섯의 너에게~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Angela Aki song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26977",
+    "title_primary": "じょいふる",
+    "title_ko": "조이풀",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Ikimonogakari; transliteration of 'joyful'.",
+    "web_sources": []
+  },
+  {
+    "id": "blog-537-16",
+    "title_primary": "It's all too much (カイジ人生逆転ゲーム 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(카이지 인생역전 게임 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26980",
+    "title_primary": "Sprinter(空の境界 ED)",
+    "title_ko": null,
+    "media_context_ko": "(공의경계 모순나선 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26981",
+    "title_primary": "空~sora~",
+    "title_ko": "하늘 ~sora~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "sora=하늘.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26984",
+    "title_primary": "翼をください(けいおん! OST)",
+    "title_ko": "날개를 주세요",
+    "media_context_ko": "(케이온 OST)",
+    "confidence": "high",
+    "reasoning": "Famous song; established Korean translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26987",
+    "title_primary": "ツキアカリのミチシルベ(DARKER THAN BLACK-流星の双子- OP)",
+    "title_ko": "달빛의 이정표",
+    "media_context_ko": "(DARKER THAN BLACK-유성의 제미니-OP)",
+    "confidence": "high",
+    "reasoning": "Stereopony OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26988",
+    "title_primary": "マイガール",
+    "title_ko": "마이걸",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26989",
+    "title_primary": "ふたつの唇",
+    "title_ko": "두 개의 입술",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal EXILE translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26991",
+    "title_primary": "I'm ALIVE!(黒執事 ED)",
+    "title_ko": null,
+    "media_context_ko": "(흑집사 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26993",
+    "title_primary": "DIVE TO WORLD(家庭教師ヒットマンREBORN! 3rd OP)",
+    "title_ko": null,
+    "media_context_ko": "(가정교사 히트맨 리본! 3기 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26994",
+    "title_primary": "しねばいいのに",
+    "title_ko": "죽어버리면 좋을 텐데",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "KAITO Vocaloid; literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26996",
+    "title_primary": "愛し子よ",
+    "title_ko": "사랑하는 아이여",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal RURUTIA translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26997",
+    "title_primary": "好きなんだ",
+    "title_ko": "좋아해",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-26998",
+    "title_primary": "愛すべき未来へ",
+    "title_ko": "사랑해야 할 미래로",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal EXILE translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27001",
+    "title_primary": "すまない",
+    "title_ko": "미안해",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27002",
+    "title_primary": "冬恋",
+    "title_ko": "겨울 사랑",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27004",
+    "title_primary": "火葬曲",
+    "title_ko": "화장곡",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27005",
+    "title_primary": "風をさがして (ワンピース OP)",
+    "title_ko": "바람을 찾아서",
+    "media_context_ko": "(원피스 OP)",
+    "confidence": "high",
+    "reasoning": "Famous One Piece OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27006",
+    "title_primary": "Sign(NARUTO-ナルト-疾風伝 OP)",
+    "title_ko": null,
+    "media_context_ko": "(나루토-질풍전 6기 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27007",
+    "title_primary": "君がいない未来(犬夜叉 完結編 OP)",
+    "title_ko": "네가 없는 미래",
+    "media_context_ko": "(이누야샤완결편 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Inuyasha OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27009",
+    "title_primary": "Fanfare(ワンピース FILM STRONG WORLD OST)",
+    "title_ko": null,
+    "media_context_ko": "(원피스 극장판 스트롱 월드 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27010",
+    "title_primary": "From Dusk Till Dawn(DARKER THAN BLACK -流星の双子- ED)",
+    "title_ko": null,
+    "media_context_ko": "(다커댄 블랙 -유성의 제미니- ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27015",
+    "title_primary": "真夜中のシャドーボーイ",
+    "title_ko": "한밤중의 섀도우 보이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Hey!Say!JUMP translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27016",
+    "title_primary": "88(家庭教師ヒットマンREBORN! OP)",
+    "title_ko": null,
+    "media_context_ko": "(가정교사 히트맨 리본! OP)",
+    "confidence": "high",
+    "reasoning": "Numeric title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27017",
+    "title_primary": "BLACK DIAMOND(しゅごキャラ! OST)",
+    "title_ko": null,
+    "media_context_ko": "(수호캐릭터 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27018",
+    "title_primary": "Sakura addiction (家庭教師ヒットマンREBORN! ED)",
+    "title_ko": null,
+    "media_context_ko": "(가정교사히트맨 REBORN! ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27019",
+    "title_primary": "あいたい",
+    "title_ko": "보고싶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27021",
+    "title_primary": "Only my railgun(とある科学の超電磁砲 OP)",
+    "title_ko": null,
+    "media_context_ko": "(어떤과학의초전자포 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27023",
+    "title_primary": "哀しみはきっと",
+    "title_ko": "슬픔은 분명",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal UVERworld translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27026",
+    "title_primary": "バカ・ゴー・ホーム(バカとテストと召喚獣 ED)",
+    "title_ko": "바보·고·홈",
+    "media_context_ko": "(바보와 시험과 소환수 ED)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27027",
+    "title_primary": "恋愛サーキュレーション(化物語 OP)",
+    "title_ko": "연애 서큘레이션",
+    "media_context_ko": "(바케모노가타리 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Bakemonogatari OP; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27032",
+    "title_primary": "元気ピカッピカッ!",
+    "title_ko": "기운 반짝반짝!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation; pikapika onomatopoeia.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27035",
+    "title_primary": "天樂",
+    "title_ko": "천악",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Vocaloid Kagamine Rin; direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27037",
+    "title_primary": "桜ロック(家庭教師ヒットマンREBORN! ED)",
+    "title_ko": "사쿠라 록",
+    "media_context_ko": "(가정교사히트맨 REBORN! ED)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27038",
+    "title_primary": "右肩の蝶",
+    "title_ko": "오른쪽 어깨의 나비",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kagamine Vocaloid; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27039",
+    "title_primary": "パラジクロロベンゼン",
+    "title_ko": "파라지클로로벤젠",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Vocaloid (paradichlorobenzene); standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27042",
+    "title_primary": "スワンソング",
+    "title_ko": "스완송",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27045",
+    "title_primary": "オメデトウ",
+    "title_ko": "축하해",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "omedetou=축하해.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27046",
+    "title_primary": "ペテン師が笑う頃に",
+    "title_ko": "사기꾼이 웃을 무렵에",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Vocaloid translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27047",
+    "title_primary": "GO! GO! MANIAC(けいおん!! OP)",
+    "title_ko": null,
+    "media_context_ko": "(케이온 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27050",
+    "title_primary": "RAY OF LIGHT(鋼の錬金術師 FULLMETAL ALCHEMIST ED)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사리메이크5기 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27051",
+    "title_primary": "Listen!!(けいおん!! ED)",
+    "title_ko": null,
+    "media_context_ko": "(케이온 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27054",
+    "title_primary": "LISTEN TO THE STEREO!!(家庭教師ヒットマンREBORN! 8th OP)",
+    "title_ko": null,
+    "media_context_ko": "(가정교사 히트맨 리본! 8기 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27057",
+    "title_primary": "コンプリケイション(デュラララ!! OP)",
+    "title_ko": "콤플리케이션",
+    "media_context_ko": "(듀라라라 2기 OP)",
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27058",
+    "title_primary": "ぴゅあぴゅあはーと(けいおん!! OST)",
+    "title_ko": "퓨어퓨어 하트",
+    "media_context_ko": "(케이온 2기OST)",
+    "confidence": "high",
+    "reasoning": "K-On! song; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27059",
+    "title_primary": "ポニーテールとシュシュ",
+    "title_ko": "포니테일과 슈슈",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27060",
+    "title_primary": "キミノウタ (東京マグニチュード8.0 OP)",
+    "title_ko": "그대의 노래",
+    "media_context_ko": "(도쿄 매그니튜드 8.0 OP)",
+    "confidence": "high",
+    "reasoning": "kimi no uta literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27062",
+    "title_primary": "レイン(鋼の錬金術師 FULLMETAL ALCHEMIST OP)",
+    "title_ko": "레인",
+    "media_context_ko": "(강철의연금술사리메이크5기 OP)",
+    "confidence": "high",
+    "reasoning": "Famous SID FMA OP 'Rain' transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27063",
+    "title_primary": "Alchemy(エンジェルビーツ! OST)",
+    "title_ko": null,
+    "media_context_ko": "(엔젤비트! OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27064",
+    "title_primary": "光と闇の童話",
+    "title_ko": "빛과 어둠의 동화",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Sound Horizon literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27065",
+    "title_primary": "Butterfly(デュラララ!! ED)",
+    "title_ko": null,
+    "media_context_ko": "(듀라라라 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27067",
+    "title_primary": "Precious ~君だけが僕の歸る場所",
+    "title_ko": "Precious ~너만이 내가 돌아갈 곳",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal subtitle translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27070",
+    "title_primary": "Love yourself ~君が嫌いな君が好き~",
+    "title_ko": "Love yourself ~네가 싫어하는 네가 좋아~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27071",
+    "title_primary": "My Soul, Your Beats!(エンジェルビーツ! OP)",
+    "title_ko": null,
+    "media_context_ko": "(엔젤비트! OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27073",
+    "title_primary": "大きな愛でもてなして (きらりん☆レボリューション ED)",
+    "title_ko": "큰 사랑으로 대접해줘",
+    "media_context_ko": "(라라의 스타일기 ED)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27075",
+    "title_primary": "女が目立って なぜイケナイ",
+    "title_ko": "여자가 눈에 띄어서 왜 안되나",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Morning Musume translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27076",
+    "title_primary": "Period(鋼の錬金術師 FULLMETAL ALCHEMIST OP)",
+    "title_ko": null,
+    "media_context_ko": "(강철의 연금술사 BROTHERHOOD OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27077",
+    "title_primary": "勝手にしやがれ",
+    "title_ko": "마음대로 해라",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Sawada Kenji song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27078",
+    "title_primary": "春夏秋冬",
+    "title_ko": "춘하추동",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27079",
+    "title_primary": "また君に恋してる",
+    "title_ko": "다시 너에게 반해있어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27084",
+    "title_primary": "青春コレクション",
+    "title_ko": "청춘 컬렉션",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27085",
+    "title_primary": "Fast Forward (ぬらりひょんの孫 OP)",
+    "title_ko": null,
+    "media_context_ko": "(누라리횬의손자 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27092",
+    "title_primary": "愛のままで...",
+    "title_ko": "사랑인 채로...",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27093",
+    "title_primary": "もっと...",
+    "title_ko": "더...",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27097",
+    "title_primary": "Summer Time Gone (名探偵コナン OP)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27098",
+    "title_primary": "Always (サヨナライツカ OST)",
+    "title_ko": null,
+    "media_context_ko": "(사요나라 이츠카 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27101",
+    "title_primary": "ソラトモ ~空を見上げて",
+    "title_ko": "소라토모 ~하늘을 올려다보며",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Wordplay sora+tomo; subtitle literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27102",
+    "title_primary": "イチブトゼンブ",
+    "title_ko": "일부와 전부",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous B'z song; ichibu to zenbu.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27104",
+    "title_primary": "人恋酒場",
+    "title_ko": "사람 그리운 술집",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal enka translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27107",
+    "title_primary": "おしろい花",
+    "title_ko": "분꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "oshiroi-bana=분꽃 (mirabilis).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27109",
+    "title_primary": "好きで、好きで、好きで。",
+    "title_ko": "좋아해서, 좋아해서, 좋아해서.",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Koda Kumi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27110",
+    "title_primary": "風",
+    "title_ko": "바람",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27111",
+    "title_primary": "睡蓮花",
+    "title_ko": "수련화",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27112",
+    "title_primary": "北の港駅",
+    "title_ko": "북쪽의 항구역",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27113",
+    "title_primary": "タッチ (TOUCH 主題歌)",
+    "title_ko": "터치",
+    "media_context_ko": "(터치 주제가)",
+    "confidence": "high",
+    "reasoning": "Famous anime OP; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27114",
+    "title_primary": "栄光の架橋",
+    "title_ko": "영광의 가교",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Yuzu song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27115",
+    "title_primary": "赤い糸",
+    "title_ko": "붉은 실",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27119",
+    "title_primary": "あなただけ見つめてる (SLAM DUNK ED)",
+    "title_ko": "당신만 바라보고 있어",
+    "media_context_ko": "(슬램덩크 ED)",
+    "confidence": "high",
+    "reasoning": "Famous Slam Dunk ED literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27120",
+    "title_primary": "オレンジ",
+    "title_ko": "오렌지",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27123",
+    "title_primary": "Family~ひとつになること",
+    "title_ko": "Family ~하나가 되는 것",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27125",
+    "title_primary": "永遠にともに",
+    "title_ko": "영원히 함께",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Kobukuro translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27126",
+    "title_primary": "桜チラリ",
+    "title_ko": "벚꽃 살짝",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "chirari=살짝/언뜻.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27127",
+    "title_primary": "夏の日の1993",
+    "title_ko": "여름 날의 1993",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous class song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27128",
+    "title_primary": "果てない空",
+    "title_ko": "끝없는 하늘",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Arashi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27130",
+    "title_primary": "ヘビーローテーション",
+    "title_ko": "헤비 로테이션",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27135",
+    "title_primary": "流星",
+    "title_ko": "유성",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27136",
+    "title_primary": "恋の呪縛",
+    "title_ko": "사랑의 주박",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27139",
+    "title_primary": "トイレの神様",
+    "title_ko": "화장실의 신",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Uemura Kana song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27141",
+    "title_primary": "チャンスの順番",
+    "title_ko": "찬스의 순번",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal AKB48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27142",
+    "title_primary": "LIFE~目の前の向こうへ~",
+    "title_ko": "LIFE ~눈앞의 저편으로~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27144",
+    "title_primary": "瞳のスクリーン",
+    "title_ko": "눈동자의 스크린",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Hey!Say!JUMP translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27146",
+    "title_primary": "さくらガール",
+    "title_ko": "사쿠라 걸",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27147",
+    "title_primary": "ユカイツーカイ怪物くん",
+    "title_ko": "유쾌통쾌 괴물군",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kaibutsu-kun song; established translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27148",
+    "title_primary": "ありがとう",
+    "title_ko": "고마워",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "arigatou=고마워.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27153",
+    "title_primary": "はだかんぼー",
+    "title_ko": "벌거숭이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "hadakanbo=벌거숭이.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27158",
+    "title_primary": "桜の木になろう",
+    "title_ko": "벚나무가 되자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48 song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27159",
+    "title_primary": "NO, Thank You!(けいおん!! ED)",
+    "title_ko": null,
+    "media_context_ko": "(케이온 2기 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27163",
+    "title_primary": "そばにいるね",
+    "title_ko": "곁에 있을게",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Aoyama Thelma song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27164",
+    "title_primary": "バンザイVenus",
+    "title_ko": "만세 Venus",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "banzai=만세.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27166",
+    "title_primary": "箱根八里の半次郎",
+    "title_ko": "하코네 8리의 한지로",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Hikawa Kiyoshi enka; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27167",
+    "title_primary": "桜の栞",
+    "title_ko": "벚꽃 책갈피",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "AKB48; shiori=책갈피.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27168",
+    "title_primary": "ラブ・ストーリーは突然に",
+    "title_ko": "러브 스토리는 갑자기",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Oda Kazumasa song; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27171",
+    "title_primary": "週末Not yet",
+    "title_ko": "주말 Not yet",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "shuumatsu=주말.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27173",
+    "title_primary": "会いたくて会いたくて",
+    "title_ko": "만나고 싶어서 만나고 싶어서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Nishino Kana song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27174",
+    "title_primary": "縁を結いて",
+    "title_ko": "인연을 묶어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Domoto Tsuyoshi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27179",
+    "title_primary": "さよなら傷だらけの日々よ",
+    "title_ko": "안녕 상처투성이의 나날들이여",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal B'z translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27180",
+    "title_primary": "T.W.L (劇場版 クレヨンしんちゃん 嵐を呼ぶ黄金のスパイ大作戦 OST)",
+    "title_ko": null,
+    "media_context_ko": "(극장판 짱구는못말려 폭풍을 부르는 황금스파이 대작전 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin acronym.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27183",
+    "title_primary": "あの太陽が、この世界を 照らし続けるように。",
+    "title_ko": "저 태양이, 이 세계를 계속 비추도록.",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Kobukuro translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27184",
+    "title_primary": "If (NARUTO-ナルト-疾風伝 ザ・ロストタワー主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(나루토-질풍전 더 로스트 타워 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27185",
+    "title_primary": "マイホーム",
+    "title_ko": "마이홈",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27187",
+    "title_primary": "カッコ悪い I love you!(SKET DANCE OP)",
+    "title_ko": "꼴사나운 I love you!",
+    "media_context_ko": "(스켓 댄스 OP)",
+    "confidence": "high",
+    "reasoning": "kakkowarui=꼴사나운/멋없는.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27190",
+    "title_primary": "Everyday、カチューシャ",
+    "title_ko": "Everyday, 카츄샤",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; katyusha=헤어밴드.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27191",
+    "title_primary": "レーザービーム",
+    "title_ko": "레이저 빔",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27192",
+    "title_primary": "Take off (青の祓魔師 ED)",
+    "title_ko": null,
+    "media_context_ko": "(청의 엑소시스트 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27193",
+    "title_primary": "Don't Wanna Lie (名探偵コナン OP)",
+    "title_ko": null,
+    "media_context_ko": "(명탐정코난 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "blog-537-2",
+    "title_primary": "HELLO ~Paradise Kiss~(映画'Paradise Kiss' 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(영화 'Paradise Kiss' 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27195",
+    "title_primary": "365日家族",
+    "title_ko": "365일 가족",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Kanjani8 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27198",
+    "title_primary": "Core Pride (青の祓魔師 OP)",
+    "title_ko": null,
+    "media_context_ko": "(청의 엑소시스트 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27203",
+    "title_primary": "マル・マル・モリ・モリ!(マルモのおきて 主題歌)",
+    "title_ko": "마루·마루·모리·모리!",
+    "media_context_ko": "(마루모의 규칙 주제가)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27205",
+    "title_primary": "波乗りかき氷",
+    "title_ko": "파도타기 빙수",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "kakigori=빙수.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27207",
+    "title_primary": "ポリリズム",
+    "title_ko": "폴리리듬",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Perfume song; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27208",
+    "title_primary": "空が鳴っている",
+    "title_ko": "하늘이 울고 있다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Tokyo Jihen translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27211",
+    "title_primary": "会いたかった",
+    "title_ko": "만나고 싶었어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48 literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27212",
+    "title_primary": "エイリアンズ",
+    "title_ko": "에일리언즈",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kirinji song; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27213",
+    "title_primary": "パレオはエメラルド",
+    "title_ko": "파레오는 에메랄드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "SKE48; pareo=파레오 (sarong).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27215",
+    "title_primary": "Everybody Go (美男ですね 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(미남이시네요 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27216",
+    "title_primary": "ツブサニコイ",
+    "title_ko": "츠부사니코이",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Stylized wordplay; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27218",
+    "title_primary": "フライングゲット",
+    "title_ko": "플라잉 겟",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27219",
+    "title_primary": "MIN・MIN・MIN",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27226",
+    "title_primary": "Nijiの詩",
+    "title_ko": "Niji의 시",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "uta=시 (poem).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27232",
+    "title_primary": "いつかきっと...(陽はまた昇るOST)",
+    "title_ko": "언젠가 분명...",
+    "media_context_ko": "(태양은 다시 떠오른다 OST)",
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27235",
+    "title_primary": "Promise (美男ですね OST)",
+    "title_ko": null,
+    "media_context_ko": "(미남이시네요 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27238",
+    "title_primary": "Hello Goodbye & Hello (星を追う子ども OST)",
+    "title_ko": null,
+    "media_context_ko": "(별을 쫓는 아이 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27242",
+    "title_primary": "風は吹いている",
+    "title_ko": "바람은 불고 있다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal AKB48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27244",
+    "title_primary": "迷宮ラブソング(謎解きはディナーのあとでOST)",
+    "title_ko": "미궁 러브송",
+    "media_context_ko": "(수수께끼 풀이는 디너 후에 OST)",
+    "confidence": "high",
+    "reasoning": "Literal Arashi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27245",
+    "title_primary": "スパイス(専業主婦探偵～私はシャドウOST)",
+    "title_ko": "스파이스",
+    "media_context_ko": "(전업주부 탐정 ~나는 섀도우 OST)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27246",
+    "title_primary": "リフレイン",
+    "title_ko": "리프레인",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard katakana transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27247",
+    "title_primary": "オーマイガー!",
+    "title_ko": "오마이갓!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "NMB48; transliteration of Oh My God.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27248",
+    "title_primary": "オキドキ",
+    "title_ko": "오키도키",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Okie-dokie transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27250",
+    "title_primary": "あなたへ",
+    "title_ko": "당신에게",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27252",
+    "title_primary": "コネクト (魔法少女まどか☆マギカ OP)",
+    "title_ko": "커넥트",
+    "media_context_ko": "(마법소녀 마도카 마기카 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Madoka Magica OP; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27253",
+    "title_primary": "上からマリコ",
+    "title_ko": "위에서 마리코",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48 literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27255",
+    "title_primary": "きみにとどけ(君に届けOP)",
+    "title_ko": "너에게 닿기를",
+    "media_context_ko": "(너에게닿기를OP)",
+    "confidence": "high",
+    "reasoning": "Famous Kimi ni Todoke OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27256",
+    "title_primary": "最初のメール",
+    "title_ko": "최초의 메일",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27257",
+    "title_primary": "Love Story(私が恋愛できない理由OST)",
+    "title_ko": null,
+    "media_context_ko": "(내가연애할수없는이유OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27259",
+    "title_primary": "僕の半分",
+    "title_ko": "나의 절반",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SMAP translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27260",
+    "title_primary": "CHASE (ワイルド7主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(와일드 7 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27262",
+    "title_primary": "ペディキュアDay",
+    "title_ko": "페디큐어 Day",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal mixed transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27263",
+    "title_primary": "口説きながら麻布十番",
+    "title_ko": "꼬시면서 아자부주반",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SDN48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27264",
+    "title_primary": "変わったかたちの石",
+    "title_ko": "이상한 모양의 돌",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal KinKi Kids translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27265",
+    "title_primary": "希望山脈(クレヨンしんちゃん OP)",
+    "title_ko": "희망 산맥",
+    "media_context_ko": "(짱구는못말려OP)",
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27266",
+    "title_primary": "ペラペラペラオ",
+    "title_ko": "페라페라페라오",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Stylized wordplay; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27269",
+    "title_primary": "片想いFinally",
+    "title_ko": "짝사랑 Finally",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "katasoi=짝사랑.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27274",
+    "title_primary": "イエローパンジー ストリート(劇場版 クレヨンしんちゃん 嵐を呼ぶ黄金のスパイ大作戦 OST)",
+    "title_ko": "옐로우 팬지 스트리트",
+    "media_context_ko": "(극장판 짱구는못말려 : 태풍을부르는황금스파이대작전 OST)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27275",
+    "title_primary": "イエス",
+    "title_ko": "예스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27276",
+    "title_primary": "純情U-19",
+    "title_ko": "순정 U-19",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27281",
+    "title_primary": "Happy Girl (パパのいうことを聞きなさい! 主題歌)",
+    "title_ko": null,
+    "media_context_ko": "(아빠 말 좀 들어라! 주제가)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27283",
+    "title_primary": "Coloring (パパのいうことを聞きなさい! ED)",
+    "title_ko": null,
+    "media_context_ko": "(아빠 말 좀 들어라! ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27284",
+    "title_primary": "ぐるぐるカーテン",
+    "title_ko": "빙글빙글 커튼",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Nogizaka46 debut song; established translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27285",
+    "title_primary": "羽田空港の奇跡",
+    "title_ko": "하네다 공항의 기적",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal TOKIO translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27287",
+    "title_primary": "バリバリBUDDY!",
+    "title_ko": "빠릿빠릿 BUDDY!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "baribari onomatopoeia.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27289",
+    "title_primary": "ハッピーシンセサイザ",
+    "title_ko": "해피 신디사이저",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Vocaloid; established transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27298",
+    "title_primary": "未来が私を待っている",
+    "title_ko": "미래가 나를 기다리고 있어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27301",
+    "title_primary": "Go For It, Baby -キオクの山脈-",
+    "title_ko": "Go For It, Baby -기억의 산맥-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27302",
+    "title_primary": "君の神話 ~ アクエリオン第二章(アクエリオン EVOL OP)",
+    "title_ko": "그대의 신화 ~ 아쿠에리온 제2장",
+    "media_context_ko": "(아쿠에리온 EVOL OP)",
+    "confidence": "high",
+    "reasoning": "Famous Aquarion EVOL OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27303",
+    "title_primary": "さかさまの空",
+    "title_ko": "거꾸로 된 하늘",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SMAP translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27304",
+    "title_primary": "祈り~涙の軌道",
+    "title_ko": "기도 ~눈물의 궤도",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Mr.Children translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27307",
+    "title_primary": "Lady ダイヤモンド",
+    "title_ko": "Lady 다이아몬드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27309",
+    "title_primary": "おいでシャンプー",
+    "title_ko": "와봐 샴푸",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Nogizaka46 song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27310",
+    "title_primary": "10年後の君へ",
+    "title_ko": "10년 후의 너에게",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Itano Tomomi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27312",
+    "title_primary": "ナギイチ",
+    "title_ko": "나기이치",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Stylized wordplay; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27313",
+    "title_primary": "松島紀行",
+    "title_ko": "마츠시마 기행",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal enka translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27314",
+    "title_primary": "安芸の宮島",
+    "title_ko": "아키의 미야지마",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place names; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27315",
+    "title_primary": "庄内平野風の中",
+    "title_ko": "쇼나이 평야 바람 속",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal place-name enka.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27316",
+    "title_primary": "函館山から",
+    "title_ko": "하코다테야마에서",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name + particle.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27317",
+    "title_primary": "運命の女",
+    "title_ko": "운명의 여자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27318",
+    "title_primary": "今夜もしものストーリー",
+    "title_ko": "오늘 밤 만약의 스토리",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27319",
+    "title_primary": "アイシテラブル!",
+    "title_ko": "사랑해러블!",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Wordplay aishite+lovable.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27320",
+    "title_primary": "私たち",
+    "title_ko": "우리들",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27321",
+    "title_primary": "Shine(カエルの王女さま OST)",
+    "title_ko": null,
+    "media_context_ko": "(개구리의 왕녀님 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27323",
+    "title_primary": "愛でした。(パパドル! OST)",
+    "title_ko": "사랑이었습니다.",
+    "media_context_ko": "(파파돌! OST)",
+    "confidence": "high",
+    "reasoning": "Literal Kanjani8 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27325",
+    "title_primary": "ブルーバード (Blue Bird)(NARUTO-ナルト-疾風伝 OP)",
+    "title_ko": "블루버드",
+    "media_context_ko": "(나루토-질풍전 OP)",
+    "confidence": "high",
+    "reasoning": "Famous Naruto OP; established transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27327",
+    "title_primary": "真夏のSounds Good!",
+    "title_ko": "한여름의 Sounds Good!",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "manatsu=한여름.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27328",
+    "title_primary": "Your Eyes(三毛猫ホームズの推理 OST)",
+    "title_ko": null,
+    "media_context_ko": "(삼색털 고양이 홈즈의 추리 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27329",
+    "title_primary": "ただいま",
+    "title_ko": "다녀왔습니다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "tadaima=다녀왔습니다.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27331",
+    "title_primary": "女々しくて",
+    "title_ko": "여자처럼",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Golden Bomber song; mejimeshikute=여성스럽게/여자처럼.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27332",
+    "title_primary": "ビリーヴ",
+    "title_ko": "빌리브",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Believe transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27334",
+    "title_primary": "君は僕だ(LOVE まさお君が行く! OST)",
+    "title_ko": "너는 나야",
+    "media_context_ko": "(LOVE 마사오군이 간다! OST)",
+    "confidence": "high",
+    "reasoning": "Literal Maeda Atsuko translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27335",
+    "title_primary": "ハルウタ(名探偵コナン 11人目のストライカー OST)",
+    "title_ko": "봄노래",
+    "media_context_ko": "(명탐정 코난 11번째 스트라이커 OST)",
+    "confidence": "high",
+    "reasoning": "haru+uta=봄+노래.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27336",
+    "title_primary": "ニルヴァーナ (妖狐×僕SS OP)",
+    "title_ko": "니르바나",
+    "media_context_ko": "(요괴×나SS OP)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27340",
+    "title_primary": "チャンカパーナ",
+    "title_ko": "찬카파나",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Coined word; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27344",
+    "title_primary": "ヒカリヘ(リッチマン, プアウーマン OST)",
+    "title_ko": "빛으로",
+    "media_context_ko": "(리치맨푸어우먼OST)",
+    "confidence": "high",
+    "reasoning": "hikari e=빛으로.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27345",
+    "title_primary": "Wanna Beeee!!! (ビギナーズ! OST)",
+    "title_ko": null,
+    "media_context_ko": "(비기너즈! OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27348",
+    "title_primary": "ギンガムチェック",
+    "title_ko": "깅엄체크",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27351",
+    "title_primary": "あおっぱな(ボーイズ・オン・ザ・ラン OST)",
+    "title_ko": "콧물",
+    "media_context_ko": "(보이즈온더런OST)",
+    "confidence": "high",
+    "reasoning": "ao-ppana=청 콧물(아이의 콧물).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27352",
+    "title_primary": "ヴァージニティー",
+    "title_ko": "버지니티",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27353",
+    "title_primary": "花火",
+    "title_ko": "불꽃놀이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "hanabi=불꽃놀이.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27356",
+    "title_primary": "キスだって左利き",
+    "title_ko": "키스도 왼손잡이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SKE48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27358",
+    "title_primary": "長い夜",
+    "title_ko": "긴 밤",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27361",
+    "title_primary": "ファッションモンスター",
+    "title_ko": "패션 몬스터",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kyary; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27362",
+    "title_primary": "ルミナス(劇場版 魔法少女まどか☆マギカ OST)",
+    "title_ko": "루미너스",
+    "media_context_ko": "(극장판 마법소녀 마도카 마기카 OST)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27365",
+    "title_primary": "Life Is Show Time(仮面ライダーウィザード OP)",
+    "title_ko": null,
+    "media_context_ko": "(가면라이더 위자드 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27366",
+    "title_primary": "ひかりふる(劇場版 魔法少女まどか☆マギカ OST)",
+    "title_ko": "빛이 내리다",
+    "media_context_ko": "(극장판 마법소녀 마도카 마기카 OST)",
+    "confidence": "high",
+    "reasoning": "hikari furu literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27367",
+    "title_primary": "Damage (黄金を抱いて翔べ OST)",
+    "title_ko": null,
+    "media_context_ko": "(황금을안고튀어라OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27368",
+    "title_primary": "アイノビート(Dance Ver.)",
+    "title_ko": "사랑의 비트",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "ai no beat literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27369",
+    "title_primary": "風が吹いている",
+    "title_ko": "바람이 불고 있어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Ikimonogakari translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27372",
+    "title_primary": "マスカレード ~Masquerade~",
+    "title_ko": "마스카레이드 ~Masquerade~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27375",
+    "title_primary": "たとえどんなに...",
+    "title_ko": "비록 아무리...",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Nishino Kana translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27376",
+    "title_primary": "The Over (黒の女教師 OST)",
+    "title_ko": null,
+    "media_context_ko": "(검은 여교사 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27379",
+    "title_primary": "永遠プレッシャー",
+    "title_ko": "영원 프레셔",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal AKB48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27380",
+    "title_primary": "Powder Snow ~永遠に終わらない冬~",
+    "title_ko": "Powder Snow ~영원히 끝나지 않는 겨울~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27381",
+    "title_primary": "Melrose~愛さない約束~",
+    "title_ko": "Melrose ~사랑하지 않는 약속~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27382",
+    "title_primary": "ハピネス",
+    "title_ko": "해피니스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27383",
+    "title_primary": "サラバ、愛しき悲しみたちよ",
+    "title_ko": "안녕, 사랑스러운 슬픔들이여",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Momoiro Clover Z translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27384",
+    "title_primary": "夜明けのブルース",
+    "title_ko": "새벽의 블루스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal enka translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27385",
+    "title_primary": "ひとり長良川",
+    "title_ko": "혼자 나가라 강",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name + hitori.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27386",
+    "title_primary": "上を向いて歩こう",
+    "title_ko": "위를 보고 걷자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Sukiyaki song; established translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27387",
+    "title_primary": "櫻",
+    "title_ko": "벚꽃",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "sakura=벚꽃.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27388",
+    "title_primary": "好きだよ。 ~100回の後悔~",
+    "title_ko": "좋아해. ~100번의 후회~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27389",
+    "title_primary": "道",
+    "title_ko": "길",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "michi=길.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27390",
+    "title_primary": "つけまつける",
+    "title_ko": "츠케마 츠케루",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Famous Kyary; tsukema(인조속눈썹)+tsukeru(붙이다); transliterate per common idiom.",
+    "web_sources": []
+  },
+  {
+    "id": "blog-1229-17",
+    "title_primary": "BRIGHT STREAM(魔法少女リリカルなのは THE MOVIE 2nd A's OST)",
+    "title_ko": null,
+    "media_context_ko": "(마법소녀 리리컬 나노하 더 무비 2nd A's OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27396",
+    "title_primary": "サヨナラじゃない",
+    "title_ko": "안녕이 아니야",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27402",
+    "title_primary": "はじまりのとき",
+    "title_ko": "시작의 때",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Ayaka translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27404",
+    "title_primary": "紙飛行機",
+    "title_ko": "종이비행기",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "kami-hikouki=종이비행기.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27406",
+    "title_primary": "ヨイトマケの唄",
+    "title_ko": "요이토마케의 노래",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Miwa Akihiro song; transliterate yoitomake.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27407",
+    "title_primary": "プリズム",
+    "title_ko": "프리즘",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27409",
+    "title_primary": "制服のマネキン",
+    "title_ko": "교복의 마네킹",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Nogizaka46 literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27410",
+    "title_primary": "REVERSI (劇場版 青の祓魔師 OST)",
+    "title_ko": null,
+    "media_context_ko": "(극장판 청의 엑소시스트 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27413",
+    "title_primary": "チョコの奴隷",
+    "title_ko": "초코의 노예",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SKE48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27416",
+    "title_primary": "パンダヒーロー",
+    "title_ko": "팬더 히어로",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous GUMI Vocaloid; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27418",
+    "title_primary": "Magia(魔法少女まどか☆マギカ ED)",
+    "title_ko": null,
+    "media_context_ko": "(마법소녀 마도카 마기카 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27419",
+    "title_primary": "Voice (夜行観覧車 OST)",
+    "title_ko": null,
+    "media_context_ko": "(야행관람차OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27421",
+    "title_primary": "未来のミュージアム(ドラえもんのび太のひみつ道具博物館 主題歌)",
+    "title_ko": "미래의 뮤지엄",
+    "media_context_ko": "(도라에몽 진구의 비밀도구 박물관 주제가)",
+    "confidence": "high",
+    "reasoning": "Literal Perfume translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27422",
+    "title_primary": "My Resistance -タシカナモノ-",
+    "title_ko": "My Resistance -확실한 것-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "tashikana mono=확실한 것.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27423",
+    "title_primary": "ありがとう",
+    "title_ko": "고마워",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "arigatou=고마워.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27427",
+    "title_primary": "にんじゃりばんばん",
+    "title_ko": "닌자리 반반",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kyary; established transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27428",
+    "title_primary": "君の名は希望",
+    "title_ko": "너의 이름은 희망",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Nogizaka46 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27429",
+    "title_primary": "Exile Pride ~こんな世界を愛するため~",
+    "title_ko": "Exile Pride ~이런 세계를 사랑하기 위해~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27430",
+    "title_primary": "キ・ス・ウ・マ・イ ~Kiss Your Mind~",
+    "title_ko": "키·스·우·마·이 ~Kiss Your Mind~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Wordplay band-name acrostic; transliterate.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27432",
+    "title_primary": "Bloody Stream(ジョジョの奇妙な冒険 OP)",
+    "title_ko": null,
+    "media_context_ko": "(죠죠의기묘한모험OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27433",
+    "title_primary": "ミラクル",
+    "title_ko": "미라클",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27435",
+    "title_primary": "へそ曲がり (お天気お姉さん OST)",
+    "title_ko": "심술쟁이",
+    "media_context_ko": "(날씨언니OST)",
+    "confidence": "high",
+    "reasoning": "heso-magari=비뚤어진사람/심술쟁이.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27437",
+    "title_primary": "さよならクロール",
+    "title_ko": "안녕 크롤",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal AKB48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27438",
+    "title_primary": "マジLOVE2000% (うたの☆プリンスさまっ♪マジLOVE2000％ ED)",
+    "title_ko": "진심 LOVE 2000%",
+    "media_context_ko": "(노래의왕자님진심LOVE2000% ED)",
+    "confidence": "high",
+    "reasoning": "maji=진심.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27440",
+    "title_primary": "sister's noise (とある科学の超電磁砲S OP)",
+    "title_ko": null,
+    "media_context_ko": "(어떤과학의초전자포S OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27442",
+    "title_primary": "それでも,生きてゆく",
+    "title_ko": "그래도, 살아간다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27444",
+    "title_primary": "1 2 3~恋がはじまる~",
+    "title_ko": "1 2 3 ~사랑이 시작된다~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Ikimonogakari translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27445",
+    "title_primary": "Endless Game (家族ゲーム OST)",
+    "title_ko": null,
+    "media_context_ko": "(가족게임OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27446",
+    "title_primary": "涙の答え (100回泣くこと OST)",
+    "title_ko": "눈물의 대답",
+    "media_context_ko": "(100번울기OST)",
+    "confidence": "high",
+    "reasoning": "Literal Kanjani8 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27449",
+    "title_primary": "笑顔 (劇場版 ポケットモンスターベストウイッシュ OST)",
+    "title_ko": "미소",
+    "media_context_ko": "(극장판 포켓폰 베스트위시 OST)",
+    "confidence": "high",
+    "reasoning": "egao=미소/웃는얼굴.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27450",
+    "title_primary": "インベーダーインベーダー",
+    "title_ko": "인베이더 인베이더",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kyary; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27457",
+    "title_primary": "紅蓮の弓矢 (進撃の巨人 OP)",
+    "title_ko": "홍련의 화살",
+    "media_context_ko": "(진격의거인OP)",
+    "confidence": "high",
+    "reasoning": "Famous Attack on Titan OP; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27459",
+    "title_primary": "この夜を止めてよ (ギルティ悪魔と契約した女 OST)",
+    "title_ko": "이 밤을 멈춰줘",
+    "media_context_ko": "(길티-악마와계약한여자 OST)",
+    "confidence": "high",
+    "reasoning": "Literal JUJU translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27461",
+    "title_primary": "ありがとう(たまゆら～もあぐれっしぶ～ED)",
+    "title_ko": "고마워",
+    "media_context_ko": "(타마유라~모어그레시브~ED)",
+    "confidence": "high",
+    "reasoning": "arigatou=고마워.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27464",
+    "title_primary": "コーヒー・ルンバ",
+    "title_ko": "커피 룸바",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous song; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27465",
+    "title_primary": "恋するフォーチュン クッキー",
+    "title_ko": "사랑하는 포춘 쿠키",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27466",
+    "title_primary": "STARMANN (スターマン・この星の恋 OST)",
+    "title_ko": null,
+    "media_context_ko": "(스타맨이별의사랑OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27467",
+    "title_primary": "幸せをフォーエバー",
+    "title_ko": "행복을 포에버",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "shiawase=행복.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27468",
+    "title_primary": "君って (フリーター、家を買う OST)",
+    "title_ko": "너란 사람",
+    "media_context_ko": "(프리터,집을사다OST)",
+    "confidence": "high",
+    "reasoning": "Literal Nishino Kana translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27469",
+    "title_primary": "潮騒のメモリー (あまちゃん OST)",
+    "title_ko": "파도소리의 메모리",
+    "media_context_ko": "(아마짱 OST)",
+    "confidence": "high",
+    "reasoning": "shiosai=파도소리.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27470",
+    "title_primary": "ガールズルール",
+    "title_ko": "걸즈 룰",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Nogizaka46; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27471",
+    "title_primary": "秋吉台",
+    "title_ko": "아키요시다이",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27472",
+    "title_primary": "酒ごころ",
+    "title_ko": "술의 마음",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "sake-gokoro literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27473",
+    "title_primary": "博多ア・ラ・モード",
+    "title_ko": "하카타 아·라·모드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place + a la mode transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27474",
+    "title_primary": "男酒",
+    "title_ko": "남자의 술",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "otoko-zake literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27475",
+    "title_primary": "伊勢めぐり",
+    "title_ko": "이세 순례",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "ise-meguri=이세 순례.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27476",
+    "title_primary": "浪花人情",
+    "title_ko": "나니와 인정",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "naniwa+ninjou literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27477",
+    "title_primary": "たしかなこと",
+    "title_ko": "확실한 것",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27478",
+    "title_primary": "みてみて☆こっちっち(ポケットモンスター ED)",
+    "title_ko": "봐줘봐줘☆이쪽이쪽",
+    "media_context_ko": "(포켓몬스터 ED)",
+    "confidence": "high",
+    "reasoning": "Literal MomokuroZ Pokemon ED translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27481",
+    "title_primary": "友～旅立ちの時～",
+    "title_ko": "친구 ~떠나는 때~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Subtitle literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27482",
+    "title_primary": "釧路空港",
+    "title_ko": "구시로 공항",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27483",
+    "title_primary": "地元に帰ろう",
+    "title_ko": "고향으로 돌아가자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27484",
+    "title_primary": "暦の上ではディセンバー",
+    "title_ko": "달력 상으로는 디셈버",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Baby Raids translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27485",
+    "title_primary": "花は咲く",
+    "title_ko": "꽃은 핀다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous song; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27487",
+    "title_primary": "南部蝉しぐれ",
+    "title_ko": "난부 매미 시구레",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Region+seasonal noun; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27488",
+    "title_primary": "酒の河",
+    "title_ko": "술의 강",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27489",
+    "title_primary": "男の意地",
+    "title_ko": "남자의 고집",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "iji=고집.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27490",
+    "title_primary": "湯の里慕情",
+    "title_ko": "온천마을 모정",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "yu-no-sato literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27491",
+    "title_primary": "雨の居酒屋",
+    "title_ko": "비 오는 이자카야",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27492",
+    "title_primary": "タイムマシンなんていらない",
+    "title_ko": "타임머신 따위 필요 없어",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Maeda Atsuko translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27496",
+    "title_primary": "星のかがやきよ (名探偵コナン OP)",
+    "title_ko": "별의 빛이여",
+    "media_context_ko": "(명탐정코난OP)",
+    "confidence": "high",
+    "reasoning": "Famous ZARD Conan OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27497",
+    "title_primary": "さよなら (ガラスの家 OST)",
+    "title_ko": "안녕",
+    "media_context_ko": "(유리의집OST)",
+    "confidence": "high",
+    "reasoning": "sayonara=안녕.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27498",
+    "title_primary": "恋は匂へと散りぬるを",
+    "title_ko": "사랑은 향기롭게 흩날린다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Classical-style; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27499",
+    "title_primary": "大阪ちぎり",
+    "title_ko": "오사카 맹세",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "chigiri=맹세/약속.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27500",
+    "title_primary": "男宿",
+    "title_ko": "남자의 숙소",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27501",
+    "title_primary": "龍神",
+    "title_ko": "용신",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27502",
+    "title_primary": "雨のち晴レルヤ",
+    "title_ko": "비 그친 후 맑음",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Yuzu song; established Korean translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27503",
+    "title_primary": "サヨナラにさよなら",
+    "title_ko": "안녕에게 안녕",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Tegomass translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27504",
+    "title_primary": "カラフル (魔法少女まどか☆マギカ 主題歌)",
+    "title_ko": "컬러풀",
+    "media_context_ko": "(마법소녀 마도카 마기카 주제가)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27505",
+    "title_primary": "一本勝負",
+    "title_ko": "일대일 승부",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "ipponshoubu=한판승부.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27507",
+    "title_primary": "涙色",
+    "title_ko": "눈물색",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "namida-iro literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27509",
+    "title_primary": "東京パラダイス",
+    "title_ko": "도쿄 파라다이스",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27510",
+    "title_primary": "恋月夜",
+    "title_ko": "사랑의 달밤",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "koi+tsukiyo literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27511",
+    "title_primary": "ハート・エレキ",
+    "title_ko": "하트 일렉트로닉",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "AKB48; ereki=일렉트릭/일렉기타.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27512",
+    "title_primary": "くまモンもん",
+    "title_ko": "쿠마몬몬",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Mascot name reduplication.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27513",
+    "title_primary": "面影の都",
+    "title_ko": "추억의 도시",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "omokage=추억의 모습.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27514",
+    "title_primary": "あゝ青春",
+    "title_ko": "아 청춘",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Yoshida Takuro translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27515",
+    "title_primary": "男の火祭り",
+    "title_ko": "남자의 불축제",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "hi-matsuri=불축제.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27516",
+    "title_primary": "夢やぶれて-I DREAMED A DREAM-",
+    "title_ko": "꿈은 깨어지고 -I DREAMED A DREAM-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Les Mis cover; established translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27517",
+    "title_primary": "大阪湾",
+    "title_ko": "오사카만",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27518",
+    "title_primary": "おもろい女",
+    "title_ko": "재밌는 여자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Kansai-ben omoroi=재밌는.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27519",
+    "title_primary": "いで湯の宿",
+    "title_ko": "온천 여관",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "ideyu=온천.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27520",
+    "title_primary": "夢で逢えたら",
+    "title_ko": "꿈에서 만날 수 있다면",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous song; established translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27521",
+    "title_primary": "1986年のマリリン",
+    "title_ko": "1986년의 마릴린",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Honda Minako song literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27522",
+    "title_primary": "満天の瞳",
+    "title_ko": "만천의 눈동자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27523",
+    "title_primary": "24時の孤独",
+    "title_ko": "24시의 고독",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27524",
+    "title_primary": "銭五の海",
+    "title_ko": "젠고의 바다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Historic figure name + sea; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27529",
+    "title_primary": "負けてたまるか",
+    "title_ko": "져서야 되겠는가",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal idiom translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27531",
+    "title_primary": "大阪ロマネスク",
+    "title_ko": "오사카 로마네스크",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Kanjani8; standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27536",
+    "title_primary": "船酒場~ふねさかば~",
+    "title_ko": "배 술집 ~후네사카바~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "fune+sakaba literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27538",
+    "title_primary": "キミ+ボク=LOVE? (ラブ★コン OP)",
+    "title_ko": "너+나=LOVE?",
+    "media_context_ko": "(러브★콤 OP)",
+    "confidence": "high",
+    "reasoning": "Literal Lovely Complex OP translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27543",
+    "title_primary": "深山しぐれ",
+    "title_ko": "심산 시구레",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "miyama=깊은산; shigure=가을비.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27544",
+    "title_primary": "チョコレイト・ディスコ",
+    "title_ko": "초콜릿 디스코",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Perfume; established transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27545",
+    "title_primary": "青い栞 (あの日見た花の名前を僕達はまだ知らない OP)",
+    "title_ko": "푸른 책갈피",
+    "media_context_ko": "(그날본꽃의이름을우리는아직모른다OP)",
+    "confidence": "high",
+    "reasoning": "Famous Anohana OP; established Korean translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27549",
+    "title_primary": "済州島雨情",
+    "title_ko": "제주도 우정",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name + ujou (rainy emotion).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27550",
+    "title_primary": "花 (ひまわりと子犬の7日間 主題歌)",
+    "title_ko": "꽃",
+    "media_context_ko": "(해바라기와 강아지의 7일간 주제가)",
+    "confidence": "high",
+    "reasoning": "hana=꽃.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27551",
+    "title_primary": "Fight Together (ワンピース OP)",
+    "title_ko": null,
+    "media_context_ko": "(원피스OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27552",
+    "title_primary": "元禄名槍譜 俵星玄蕃",
+    "title_ko": "겐로쿠 명창보 다와라보시 겐바",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous Naniwa-bushi/enka; literal historical title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27554",
+    "title_primary": "前しか向かねえ",
+    "title_ko": "앞만 보고 간다",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal AKB48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27555",
+    "title_primary": "HANDS UP! (ワンピース OP)",
+    "title_ko": null,
+    "media_context_ko": "(원피스OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27556",
+    "title_primary": "Days Of Dash (さくら荘のペットな彼女 ED)",
+    "title_ko": null,
+    "media_context_ko": "(사쿠라장의애완그녀 ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27564",
+    "title_primary": "Irony (俺の妹がこんなに可愛いわけがない OP)",
+    "title_ko": null,
+    "media_context_ko": "(내여동생이이렇게귀여울리가없어 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27566",
+    "title_primary": "クオリア (劇場版機動戦士ガンダム00 ED)",
+    "title_ko": "퀄리아",
+    "media_context_ko": "(극장판 기동전사건담더블오 ED)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27567",
+    "title_primary": "サークルゲーム(あの日見た花の名前を僕たちはまだ知らない OP)",
+    "title_ko": "서클 게임",
+    "media_context_ko": "(그날본꽃의이름을우리는아직모른다 OP)",
+    "confidence": "high",
+    "reasoning": "Standard transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27568",
+    "title_primary": "今、咲き誇る花たちよ",
+    "title_ko": "지금, 활짝 핀 꽃들이여",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Kobukuro translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27569",
+    "title_primary": "夕子のお店",
+    "title_ko": "유우코의 가게",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Personal name + literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27570",
+    "title_primary": "人道",
+    "title_ko": "인도",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27572",
+    "title_primary": "キング オブ 男 (土竜の唄 潜入捜査官 REIJI OST)",
+    "title_ko": "킹 오브 남자",
+    "media_context_ko": "(두더지의노래잠입탐정REIJI OST)",
+    "confidence": "high",
+    "reasoning": "Mixed; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27573",
+    "title_primary": "気づいたら片想い",
+    "title_ko": "정신차려 보니 짝사랑",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Nogizaka46 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27574",
+    "title_primary": "未来とは?",
+    "title_ko": "미래란?",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal SKE48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27575",
+    "title_primary": "祇園のおんな",
+    "title_ko": "기온의 여자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal place + onna.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27576",
+    "title_primary": "夫婦三昧",
+    "title_ko": "부부삼매",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27577",
+    "title_primary": "Snow halation(ラブライブ! OST)",
+    "title_ko": null,
+    "media_context_ko": "(러브라이브! OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27579",
+    "title_primary": "GUTS! (弱くても勝てます ED)",
+    "title_ko": null,
+    "media_context_ko": "(약해도이길수있습니다ED)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27581",
+    "title_primary": "Stand Proud (ジョジョの奇妙な冒険 OP)",
+    "title_ko": null,
+    "media_context_ko": "(죠죠의기묘한모험 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27582",
+    "title_primary": "We Don't Stop(花咲舞が黙ってない OST)",
+    "title_ko": null,
+    "media_context_ko": "(하나사키 마이가 입다물지 않아 OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27584",
+    "title_primary": "Good Luck My Way(鋼の錬金術師 嘆きの丘の聖なる星OST)",
+    "title_ko": null,
+    "media_context_ko": "(강철의연금술사 미로스의성스러운별OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27585",
+    "title_primary": "雨の函館",
+    "title_ko": "비 오는 하코다테",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name + literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27586",
+    "title_primary": "秋月の女",
+    "title_ko": "아키즈키의 여자",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Place name + onna.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27589",
+    "title_primary": "白金ディスコ(偽物語 OP)",
+    "title_ko": "백금 디스코",
+    "media_context_ko": "(니세모노가타리OP)",
+    "confidence": "high",
+    "reasoning": "Famous Nisemonogatari OP; established Korean title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27590",
+    "title_primary": "Bittersweet (失恋ショコラティエ OST)",
+    "title_ko": null,
+    "media_context_ko": "(실연쇼콜라티에OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27592",
+    "title_primary": "にじいろ (花子とアン OST)",
+    "title_ko": "무지개 색",
+    "media_context_ko": "(하나코와앤OST)",
+    "confidence": "high",
+    "reasoning": "nijiiro=무지개색.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27593",
+    "title_primary": "童神~ヤマトグチ~",
+    "title_ko": "동신 ~야마토구치~",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Direct hanja translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27594",
+    "title_primary": "酒のやど",
+    "title_ko": "술의 숙소",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27595",
+    "title_primary": "7日目の決意",
+    "title_ko": "7일째의 결의",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal UVERworld translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27597",
+    "title_primary": "ラブラドール・レトリバー",
+    "title_ko": "래브라도 리트리버",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous AKB48; established transliteration.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27598",
+    "title_primary": "オモイダマ",
+    "title_ko": "추억의 구슬",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "omoide+tama wordplay; literal.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27599",
+    "title_primary": "Wake Up (ワンピース OP)",
+    "title_ko": null,
+    "media_context_ko": "(원피스OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27606",
+    "title_primary": "夏のFree&Easy",
+    "title_ko": "여름의 Free&Easy",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "natsu=여름; rest pure-Latin.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27608",
+    "title_primary": "愛を止めないで",
+    "title_ko": "사랑을 멈추지 마",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Koda Kumi translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27609",
+    "title_primary": "ラブソングはとまらないよ",
+    "title_ko": "러브송은 멈추지 않아",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal Ikimonogakari translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27610",
+    "title_primary": "Wonderful Rush(ラブライブ! OST)",
+    "title_ko": null,
+    "media_context_ko": "(러브라이브OST)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27613",
+    "title_primary": "君に出会えたから",
+    "title_ko": "너를 만날 수 있었으니까",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal miwa translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27617",
+    "title_primary": "Black Bullet(ブラック・ブレット OP)",
+    "title_ko": null,
+    "media_context_ko": "(블랙불릿OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27621",
+    "title_primary": "青いベンチ",
+    "title_ko": "파란 벤치",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Famous song; established Korean translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27626",
+    "title_primary": "おかえり (絶対彼氏 OST)",
+    "title_ko": "어서 와",
+    "media_context_ko": "(절대그이OST)",
+    "confidence": "high",
+    "reasoning": "okaeri=어서와.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27627",
+    "title_primary": "心のプラカード",
+    "title_ko": "마음의 플래카드",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Literal AKB48 translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27629",
+    "title_primary": "それは僕たちの奇跡(ラブライブ! OP)",
+    "title_ko": "그건 우리들의 기적",
+    "media_context_ko": "(러브라이브OP)",
+    "confidence": "high",
+    "reasoning": "Famous Love Live OP literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27630",
+    "title_primary": "君の銀の庭 (劇場版 魔法少女まどか☆マギカ ED)",
+    "title_ko": "너의 은빛 정원",
+    "media_context_ko": "(극장판 마법소녀 마도카 마기카 ED)",
+    "confidence": "high",
+    "reasoning": "Famous Kalafina Madoka movie ED literal translation.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27632",
+    "title_primary": "Click (ニセコイ OP)",
+    "title_ko": null,
+    "media_context_ko": "(니세코이 OP)",
+    "confidence": "high",
+    "reasoning": "Pure-Latin title.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27633",
+    "title_primary": "僕らのLIVE 君とのLIFE(ラブライブ! OST)",
+    "title_ko": "우리들의 LIVE 너와의 LIFE",
+    "media_context_ko": "(러브라이브OST)",
+    "confidence": "high",
+    "reasoning": "Famous Love Live OST literal translation.",
+    "web_sources": []
+  }
+]
