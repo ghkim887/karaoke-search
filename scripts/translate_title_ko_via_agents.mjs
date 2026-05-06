@@ -175,8 +175,10 @@ export function writeReviewCsv(path, decisions) {
         .join(','),
     );
   }
+  // UTF-8 BOM prefix so Excel on Korean Windows (default CP949 codepage) opens
+  // the file decoded as UTF-8 instead of mojibake.
   const tmp = `${path}.tmp`;
-  writeFileSync(tmp, `${lines.join('\n')}\n`, 'utf-8');
+  writeFileSync(tmp, `﻿${lines.join('\n')}\n`, 'utf-8');
   renameSync(tmp, path);
 }
 
