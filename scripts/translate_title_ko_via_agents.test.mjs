@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  applyDecisionsToCorpus,
   chunkRecords,
   filterTranslatableRecords,
   loadAndValidateChunkOutputs,
@@ -203,5 +204,80 @@ describe('loadAndValidateChunkOutputs', () => {
       ]),
     );
     expect(() => loadAndValidateChunkOutputs(workdir)).toThrow(/duplicate/i);
+  });
+});
+
+describe('applyDecisionsToCorpus', () => {
+  it('sets title_ko, media_context_ko, source, confidence on decided records', () => {
+    const records = [
+      { id: 'tj-1', title_ko: null, title_primary: '愛', artist_primary: 'A' },
+    ];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: '愛',
+          title_ko: '사랑',
+          media_context_ko: '(진격의 거인 OP)',
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const out = applyDecisionsToCorpus(records, decisions);
+    expect(out[0].title_ko).toBe('사랑');
+    expect(out[0].media_context_ko).toBe('(진격의 거인 OP)');
+    expect(out[0].title_ko_source).toBe('llm-translated');
+    expect(out[0].title_ko_confidence).toBe('high');
+  });
+
+  it('skips records the decisions Map does not cover', () => {
+    const records = [{ id: 'blog-1', title_ko: '엑스', title_primary: 'X' }];
+    const out = applyDecisionsToCorpus(records, new Map());
+    expect(out[0]).toEqual({ id: 'blog-1', title_ko: '엑스', title_primary: 'X' });
+  });
+
+  it('omits media_context_ko key when decision has null value', () => {
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: '愛' }];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: '愛',
+          title_ko: '사랑',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const out = applyDecisionsToCorpus(records, decisions);
+    expect(out[0]).not.toHaveProperty('media_context_ko');
+  });
+
+  it('does not set title_ko_source when title_ko stays null (low-confidence)', () => {
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: '愛' }];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: '愛',
+          title_ko: null,
+          media_context_ko: null,
+          confidence: 'low',
+          reasoning: 'unknown song',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const out = applyDecisionsToCorpus(records, decisions);
+    expect(out[0].title_ko).toBe(null);
+    expect(out[0]).not.toHaveProperty('title_ko_source');
+    expect(out[0]).not.toHaveProperty('title_ko_confidence');
   });
 });

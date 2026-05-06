@@ -126,6 +126,33 @@ export function loadAndValidateChunkOutputs(chunksDir) {
   return map;
 }
 
+/**
+ * Apply Map<id, decision> to records[]. Returns a NEW array (does not
+ * mutate input). Records not covered by the decisions Map pass through
+ * unchanged. Decisions with title_ko === null leave the record without
+ * title_ko_source/title_ko_confidence (eligible for re-run); decisions
+ * with non-null title_ko set source='llm-translated' and the confidence
+ * tag.
+ */
+export function applyDecisionsToCorpus(records, decisions) {
+  return records.map((rec) => {
+    const d = decisions.get(rec.id);
+    if (!d) return rec;
+    const next = { ...rec };
+    if (d.title_ko != null) {
+      next.title_ko = d.title_ko;
+      next.title_ko_source = 'llm-translated';
+      next.title_ko_confidence = d.confidence;
+    } else {
+      next.title_ko = null;
+    }
+    if (d.media_context_ko != null) {
+      next.media_context_ko = d.media_context_ko;
+    }
+    return next;
+  });
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const cmd = process.argv[2];
   if (cmd === 'prep') {
