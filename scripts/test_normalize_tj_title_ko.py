@@ -79,7 +79,7 @@ class TestProcessRecord(unittest.TestCase):
             'id': 'tj-400',
             'title_primary': 'X',
             'title_ko': '엑스',
-            'title_ko_source': 'llm-translated',
+            'title_ko_source': 'legacy-stale',
             'title_ko_confidence': 'high',
         }
         out = process_record(rec)
@@ -124,6 +124,20 @@ class TestProcessRecord(unittest.TestCase):
         out = process_record(rec)
         self.assertEqual(rec['title_ko'], '엑스')  # original untouched
         self.assertIsNone(out['title_ko'])
+
+    def test_tj_record_with_llm_translated_source_preserved(self):
+        rec = {
+            'id': 'tj-700',
+            'title_primary': '愛が見えない',
+            'title_ko': '사랑이 보이지 않아',
+            'title_ko_source': 'llm-translated',
+            'title_ko_confidence': 'high',
+        }
+        out = process_record(rec)
+        self.assertEqual(out['title_ko'], '사랑이 보이지 않아')
+        self.assertEqual(out['title_ko_source'], 'llm-translated')
+        self.assertEqual(out['title_ko_confidence'], 'high')
+        self.assertNotIn('media_context_ko', out)  # not added because we short-circuit
 
 
 class TestMainAtomicWrite(unittest.TestCase):

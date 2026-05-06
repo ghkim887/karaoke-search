@@ -6,6 +6,8 @@ dispatch** (Claude Code session, parallel subagents), **merge**
 
 ## Step 1 — Prep
 
+> **Note:** Stage 1 (`scripts/normalize_tj_title_ko.py`) MUST have been applied to the corpus before Stage 2 runs. Stage 2 only processes records where `title_ko === null`; if Stage 1 hasn't run, TJ records still carry phonetic transliterations and Stage 2 will silently skip them (the `prep` stats will show `0/N eligible`).
+
 ```
 node scripts/translate_title_ko_via_agents.mjs prep \
   apps/web/public/data/songs.json \

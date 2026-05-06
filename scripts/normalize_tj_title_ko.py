@@ -86,6 +86,11 @@ def process_record(rec: dict) -> dict:
     rec_id = out.get('id') or ''
 
     if rec_id.startswith('tj-') or rec_id.startswith('tjpdf-'):
+        # Preserve Stage-2 (llm-translated) work on TJ records. Without this guard,
+        # re-running Stage 1 after Stage 2 would null the translated title_ko and
+        # drop the source/confidence tags — exactly the work Stage 2 just did.
+        if out.get('title_ko_source') == 'llm-translated':
+            return out
         salvaged = extract_media_context_paren(out.get('title_ko'))
         out['title_ko'] = None
         if salvaged is not None:
