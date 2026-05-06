@@ -405,6 +405,59 @@ describe('SongRecord — title_ko_source', () => {
   });
 });
 
+describe('SongRecord — title_ko_confidence', () => {
+  it('accepts confidence high paired with llm-translated source', () => {
+    const rec = {
+      id: 'tj-1',
+      source_url: 'https://example.com/x',
+      title_primary: '愛が見えない',
+      title_ko: '사랑이 보이지 않아',
+      artist_primary: 'X',
+      artist_ko: null,
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      title_ko_source: 'llm-translated',
+      title_ko_confidence: 'high',
+    };
+    expect(() => validateSongRecord(rec)).not.toThrow();
+  });
+
+  it('rejects title_ko_confidence when title_ko_source is blog', () => {
+    const rec = {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/x',
+      title_primary: 'X',
+      title_ko: '엑스',
+      artist_primary: 'Y',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      title_ko_source: 'blog',
+      title_ko_confidence: 'high', // illegal: only allowed with llm-translated
+    };
+    expect(() => validateSongRecord(rec)).toThrow();
+  });
+
+  it('rejects unknown confidence value', () => {
+    const rec = {
+      id: 'tj-1',
+      source_url: 'https://example.com/x',
+      title_primary: 'X',
+      title_ko: '엑스',
+      artist_primary: 'Y',
+      artist_ko: null,
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      title_ko_source: 'llm-translated',
+      title_ko_confidence: 'super-high',
+    };
+    expect(() => validateSongRecord(rec)).toThrow();
+  });
+});
+
 describe('RawSongRecord type shape', () => {
   it('compiles a raw pre-normalization record', () => {
     const raw: RawSongRecord = {

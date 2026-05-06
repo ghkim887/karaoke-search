@@ -69,6 +69,13 @@ export interface SongRecord {
    * every TJ-derived title_ko (it is transliteration, not translation).
    */
   title_ko_source?: 'blog' | 'llm-translated' | 'manual';
+  /**
+   * Confidence the agent attached during the title_ko backfill pipeline.
+   * Only valid when `title_ko_source === 'llm-translated'`. Records with
+   * 'low' confidence are surfaced in scripts/data/llm-review.csv for
+   * human spot-check.
+   */
+  title_ko_confidence?: 'high' | 'medium' | 'low';
 }
 
 /**
@@ -200,7 +207,27 @@ export const songRecordSchema = {
       type: 'string',
       enum: ['blog', 'llm-translated', 'manual'],
     },
+    title_ko_confidence: {
+      type: 'string',
+      enum: ['high', 'medium', 'low'],
+    },
   },
+  allOf: [
+    {
+      if: {
+        properties: {
+          title_ko_confidence: { type: 'string' },
+        },
+        required: ['title_ko_confidence'],
+      },
+      then: {
+        properties: {
+          title_ko_source: { const: 'llm-translated' },
+        },
+        required: ['title_ko_source'],
+      },
+    },
+  ],
 } as const;
 
 // Ajv (when emitted via CJS interop) puts the constructor on `.default`.
