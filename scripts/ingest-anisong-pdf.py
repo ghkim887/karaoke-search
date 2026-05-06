@@ -157,6 +157,16 @@ _SECTION_DIVIDER_RE = re.compile(
 )
 
 
+def _iso_utc_now() -> str:
+    """ISO-8601 UTC with millisecond precision and Z suffix.
+
+    Byte-identical to JS `new Date().toISOString()` so cross-source
+    lexicographic compare in merge.ts:393 is safe.
+    """
+    now = _dt.datetime.now(_dt.timezone.utc)
+    return now.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+
+
 def detect_section_divider(line: str) -> str | None:
     """If `line` starts with a known section divider, return the new category.
 
@@ -1078,7 +1088,7 @@ def main() -> int:
             # Preserve the original crawled_at for codes already in the corpus
             # (byte-idempotency: unchanged inputs produce an identical file).
             # Fall back to a fresh timestamp only for genuinely new tj codes.
-            crawled_at_for_record = tj_to_old_crawled_at.get(code) or _dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds')
+            crawled_at_for_record = tj_to_old_crawled_at.get(code) or _iso_utc_now()
             new_record = {
                 'id': f'tjpdf-{code}',
                 'source_url': SOURCE_URL,

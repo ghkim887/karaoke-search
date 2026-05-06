@@ -932,5 +932,40 @@ class TestDropSplitReContents(unittest.TestCase):
             )
 
 
+class TestIsoUtcNow(unittest.TestCase):
+    """Verify _iso_utc_now() output is byte-compatible with JS toISOString()."""
+
+    def test_ends_with_z(self) -> None:
+        result = ingest._iso_utc_now()
+        self.assertTrue(result.endswith('Z'), f"Expected Z suffix, got {result!r}")
+
+    def test_length_is_24(self) -> None:
+        result = ingest._iso_utc_now()
+        self.assertEqual(len(result), 24, f"Expected length 24, got {len(result)} for {result!r}")
+
+    def test_parses_as_datetime(self) -> None:
+        import datetime as _dt
+        result = ingest._iso_utc_now()
+        # Strip Z and parse — fromisoformat accepts ISO-8601 without timezone suffix
+        parsed = _dt.datetime.fromisoformat(result[:-1])
+        self.assertIsNotNone(parsed)
+
+    def test_has_millisecond_precision(self) -> None:
+        # Format: YYYY-MM-DDTHH:MM:SS.mmmZ — the last 4 chars before Z are .mmm
+        result = ingest._iso_utc_now()
+        ms_part = result[-4:-1]
+        self.assertEqual(len(ms_part), 3, f"Expected 3-digit ms, got {ms_part!r} from {result!r}")
+        self.assertTrue(ms_part.isdigit(), f"ms part not digits: {ms_part!r}")
+
+    def test_lex_compare_compatible_with_js_format(self) -> None:
+        # A timestamp well in the past must sort before a far-future JS-format reference.
+        result = ingest._iso_utc_now()
+        future_ref = '2099-12-31T23:59:59.999Z'
+        self.assertLess(result, future_ref, f"{result!r} should sort before {future_ref!r}")
+        # A far-past reference must sort before our result.
+        past_ref = '2000-01-01T00:00:00.000Z'
+        self.assertGreater(result, past_ref, f"{result!r} should sort after {past_ref!r}")
+
+
 if __name__ == '__main__':
     unittest.main()
