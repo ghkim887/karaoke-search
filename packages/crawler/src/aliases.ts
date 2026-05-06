@@ -197,6 +197,12 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
     }
   }
 
+  if (records.length !== phase1.length) {
+    throw new Error(
+      `aliases.ts Phase 2 invariant violated: records.length (${records.length}) !== phase1.length (${phase1.length}). Phase 1 must produce exactly one phase1[] entry per input record.`,
+    );
+  }
+
   // Pre-Phase-3 helper: a reverse map from normalized canonical key →
   // ordered list of (un-normalized) alias surface forms. Built by walking
   // the pipe-form records of Phase 1 once. Used in Phase 3's "already
@@ -264,6 +270,8 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
       // Bare record matches a colliding alias — the safe action is to leave
       // it untouched. Bump the conflict's affected counter so the warning
       // reflects real residual records, not hypothetical ones.
+      // See aliases.test.ts "collision guard vs canonical identity (audit regression)"
+      // for the X｜Y / Y｜Z / bare-Y scenario that confirms this guard is alias-keyed.
       const conflict = collisionWarnings.get(bareKey);
       if (conflict) conflict.affected += 1;
       return r;
