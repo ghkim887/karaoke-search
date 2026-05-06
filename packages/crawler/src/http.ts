@@ -11,6 +11,64 @@ const DEFAULT_RATE_LIMIT_JITTER_MS = 100; // ±50ms uniform → 150–250ms gap
 const CACHE_PATH = resolve(process.cwd(), '.cache', 'http.json');
 
 /**
+ * (S2) Exhaustive allowlist of hostnames the crawler is permitted to contact.
+ * Derived from every adapter's base-URL constant and every key in HOST_CONFIG:
+ *   - j-pop-playlist.tistory.com  → BlogCrawler.BASE
+ *   - www.tjmedia.com              → CATALOG_URL / SEARCH_SONG_URL / TOP_AND_HOT_URL
+ *                                    + HOST_CONFIG entry
+ *
+ * Throw on any other host (including RFC1918, link-local, loopback, file://).
+ * Do NOT add catch-all entries — every entry must trace to a real call site.
+ */
+const ALLOWED_HOSTS: ReadonlySet<string> = new Set([
+  'j-pop-playlist.tistory.com',
+  'www.tjmedia.com',
+]);
+
+/**
+ * (S6) Maximum response body size. Bodies larger than this are rejected before
+ * being decoded to a JS string to prevent unbounded memory allocation.
+ * 50 MB is well above any real API response in this codebase.
+ */
+const BODY_SIZE_LIMIT = 50 * 1024 * 1024;
+
+/**
+ * Read a response body with a hard size cap. Uses the streaming `res.body`
+ * iterator so we can abort early without buffering the full payload.
+ *
+ * Throws if the accumulated byte length exceeds `BODY_SIZE_LIMIT`.
+ */
+async function readBodyCapped(body: {
+  [Symbol.asyncIterator](): AsyncIterator<Uint8Array>;
+}): Promise<string> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of body) {
+    total += chunk.byteLength;
+    if (total > BODY_SIZE_LIMIT) {
+      throw new Error(`Response body exceeds size limit (${BODY_SIZE_LIMIT} bytes)`);
+    }
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+/**
+ * Validate that `url` uses an allowed scheme and an allowed hostname.
+ * Throws `Error` on violations — silently swallowing a misconfigured URL
+ * would hide bugs.
+ */
+function assertUrlAllowed(url: string): void {
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error(`Disallowed scheme: ${parsed.protocol} in URL: ${url}`);
+  }
+  if (!ALLOWED_HOSTS.has(parsed.hostname)) {
+    throw new Error(`Disallowed host: ${parsed.hostname} in URL: ${url}`);
+  }
+}
+
+/**
  * Per-host override for HTTP client behaviour. Any field left undefined
  * falls back to the project default. Keyed by `URL.host` (e.g.
  * `www.tjmedia.com`, lowercase, no port unless non-default).
@@ -144,7 +202,7 @@ export class HttpClient {
           method: 'GET',
           headers: { 'user-agent': userAgent },
         });
-        const body = await res.body.text();
+        const body = await readBodyCapped(res.body);
         const status = res.statusCode;
         // Per RFC: 4xx means no rules apply (allow all); 5xx pessimistically
         // disallows. We follow common crawler convention: treat non-2xx as
@@ -173,6 +231,7 @@ export class HttpClient {
    * conditional-request cache. Returns `null` iff robots disallows the URL.
    */
   async fetch(url: string): Promise<FetchResult | null> {
+    assertUrlAllowed(url);
     await this.loadCache();
 
     const parsed = new URL(url);
@@ -203,7 +262,7 @@ export class HttpClient {
       return out;
     }
 
-    const body = await res.body.text();
+    const body = await readBodyCapped(res.body);
     const etagHeader = res.headers.etag;
     const lastModifiedHeader = res.headers['last-modified'];
     const etag = typeof etagHeader === 'string' ? etagHeader : undefined;
@@ -233,6 +292,7 @@ export class HttpClient {
    * would thrash the cache file for no benefit.
    */
   async postForm(url: string, body: Record<string, string>): Promise<FetchResult | null> {
+    assertUrlAllowed(url);
     const parsed = new URL(url);
     const origin = `${parsed.protocol}//${parsed.host}`;
     const hostCfg = this.resolveHostConfig(parsed.host);
@@ -254,7 +314,7 @@ export class HttpClient {
 
     const res = await request(url, { method: 'POST', headers, body: encoded });
     const status = res.statusCode;
-    const respBody = await res.body.text();
+    const respBody = await readBodyCapped(res.body);
     const etagHeader = res.headers.etag;
     const lastModifiedHeader = res.headers['last-modified'];
     const etag = typeof etagHeader === 'string' ? etagHeader : undefined;
