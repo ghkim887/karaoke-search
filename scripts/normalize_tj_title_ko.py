@@ -6,19 +6,34 @@ parenthetical media-context tag (e.g. `(진격의 거인 OP)`) into the new
 `media_context_ko` field. Tags blog records' `title_ko_source` as 'blog'.
 
 Idempotent: re-running on unchanged input produces no diff. Atomic write
-via `<file>.tmp + os.replace`.
+via the shared `_atomic_write_corpus` helper from `ingest-anisong-pdf.py`
+(indent=2 + trailing newline) so output stays byte-compatible with the
+rest of the pipeline.
 
 Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import json
-import os
 import re
 import sys
 from pathlib import Path
 from typing import Optional
+
+# Reuse `_atomic_write_corpus` from the anisong ingest so output formatting
+# (indent=2 + trailing newline) matches the rest of the pipeline. Without
+# this, a minified write here would produce a ~25k-line diff in CI on the
+# next non-Stage-1 step. Importing via importlib because the filename
+# contains a hyphen (Python identifier rules).
+_HERE = Path(__file__).resolve().parent
+_INGEST_PATH = _HERE / 'ingest-anisong-pdf.py'
+_spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _INGEST_PATH)
+assert _spec is not None and _spec.loader is not None
+_ingest = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_ingest)
+_atomic_write_corpus = _ingest._atomic_write_corpus
 
 # Korean (Hangul Syllables block) detection.
 _HANGUL_RE = re.compile(r'[가-힯]')
@@ -104,12 +119,7 @@ def main(corpus_path: str) -> dict:
             stats['tagged'] += 1
         out_records.append(new)
 
-    tmp_p = corpus_p.with_suffix(corpus_p.suffix + '.tmp')
-    tmp_p.write_text(
-        json.dumps(out_records, ensure_ascii=False, separators=(',', ':')),
-        encoding='utf-8',
-    )
-    os.replace(tmp_p, corpus_p)
+    _atomic_write_corpus(corpus_p, out_records)
     return stats
 
 
