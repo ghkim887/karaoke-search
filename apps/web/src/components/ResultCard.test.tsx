@@ -125,3 +125,70 @@ describe('ResultCard artist_aliases display (spec 2026-05-04)', () => {
     expect(artist?.textContent).toBe('40mP (40meterP, M40)');
   });
 });
+
+describe('ResultCard — media_context_ko', () => {
+  let host: HTMLElement;
+  afterEach(() => {
+    if (host?.parentNode) host.parentNode.removeChild(host);
+  });
+
+  it('renders title_ko and media_context_ko side by side when both set', () => {
+    const record: SongRecord = {
+      id: 'tj-1',
+      source_url: 'https://x.test',
+      title_primary: '君が好きだと叫びたい',
+      title_ko: '네가 좋다고 외치고 싶어',
+      artist_primary: 'BAAD',
+      artist_ko: null,
+      karaoke_numbers: { tj: '1234', ky: null, joysound: null },
+      categories: ['anime'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      media_context_ko: '(슬램덩크 OP)',
+    };
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={record} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const text = host.textContent ?? '';
+    expect(text).toContain('네가 좋다고 외치고 싶어');
+    expect(text).toContain('(슬램덩크 OP)');
+  });
+
+  it('renders only media_context_ko when title_ko is null', () => {
+    const record: SongRecord = {
+      id: 'tj-2',
+      source_url: 'https://x.test',
+      title_primary: 'Butter-Fly',
+      title_ko: null,
+      artist_primary: '和田光司',
+      artist_ko: null,
+      karaoke_numbers: { tj: '5678', ky: null, joysound: null },
+      categories: ['anime'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      media_context_ko: '(디지몬 어드벤처 OP)',
+    };
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={record} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    expect(host.textContent ?? '').toContain('(디지몬 어드벤처 OP)');
+  });
+
+  it('does not duplicate when media_context_ko is already a substring of title_ko', () => {
+    const record: SongRecord = {
+      id: 'blog-1',
+      source_url: 'https://x.test',
+      title_primary: '光',
+      title_ko: '빛 (진격의 거인 OP)',
+      artist_primary: 'X',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['anime'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      media_context_ko: '(진격의 거인 OP)',
+    };
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={record} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const occurrences = (host.textContent ?? '').match(/\(진격의 거인 OP\)/g) ?? [];
+    expect(occurrences).toHaveLength(1);
+  });
+});
