@@ -191,7 +191,11 @@ export class TJDirectCrawler implements Crawler {
       // with just `artist_primary` populated since that's all the scanner
       // reads. Importing `RawSongRecord` here is a slight schema lean-in but
       // keeps the scanner reusable for the post-filter case too.
-      const artistShells = allItems.map(asArtistShell).filter((s) => s !== null);
+      const artistShells: NonNullable<ReturnType<typeof asArtistShell>>[] = [];
+      for (const item of allItems) {
+        const shell = asArtistShell(item);
+        if (shell !== null) artistShells.push(shell);
+      }
       const stats = await enrichArtistMap(this.http, artistShells, cache);
       if (stats.fetches > 0) cacheMutated = true;
     }
