@@ -1,5 +1,6 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import type { SearchSongCache } from './cache.js';
+import { isInChineseDropList } from './chineseArtistDropList.js';
 import { isInDropList } from './koreanArtistDropList.js';
 import { isPlainObject, normalizeForMatch, splitArtistCollab } from './normalize.js';
 
@@ -219,10 +220,14 @@ export function classifyRecord(
   // Step 0: drop-list check (any-component). The drop list is the strongest
   // negative signal — it overrides every admit path including the blog
   // rescue, because a hand-validated blog mention can lag a Korean act's
-  // entry into the JP market.
+  // entry into the JP market. The Chinese (Cantopop / Mandopop) drop list
+  // applies the same any-component rule for acts that have NO Japan presence
+  // at all — the cache vote-tally signal can't demote them, so the drop list
+  // is the only deterministic gate.
   for (const component of components) {
     const key = normalizeForMatch(component);
     if (isInDropList(key)) return 'drop';
+    if (isInChineseDropList(key)) return 'drop';
   }
 
   // Step 1: per-pro KOR-reject. An explicit KOR `nationalcode` from the

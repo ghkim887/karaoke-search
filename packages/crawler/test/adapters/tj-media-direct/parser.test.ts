@@ -618,6 +618,44 @@ describe('parseCatalogResponse — Phase 1 §2.E drop-list reject', () => {
   });
 });
 
+describe('parseCatalogResponse — Chinese-artist drop-list reject', () => {
+  /**
+   * Cantopop / Mandopop drop list (chineseArtistDropList.ts) — same any-component
+   * scan as the Korean drop list. These acts have no Japan presence at all,
+   * so the cache vote-tally signal can't demote them; the drop list is the
+   * only deterministic gate.
+   */
+  it('drops a record with `BEYOND` as artist (Cantopop leaker)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 70170, indexTitle: '大地', indexSong: 'BEYOND', publishdate: '2000-01-01' }],
+      },
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+  });
+
+  it('admits a real Japanese act (`米津玄師`) when the drop list is wired in', () => {
+    // Sanity: the Chinese drop list MUST NOT bleed onto Japanese acts. 米津玄師
+    // is a real JP act — admit via per-artist JPN tag.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 12345, indexTitle: 'Lemon', indexSong: '米津玄師', publishdate: '2018-03-14' }],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.米津玄師 = jpnArtist();
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.artist_primary).toBe('米津玄師');
+    expect(stats.admittedByArtist).toBe(1);
+  });
+});
+
 describe('parseCatalogResponse — Phase 1 §2.C per-pro KOR-reject', () => {
   /**
    * Phase 1 §2.C: an explicit `nationalcode === 'KOR'` on `proEnrichmentMap`
