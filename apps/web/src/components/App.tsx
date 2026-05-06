@@ -28,20 +28,6 @@ interface AppProps {
   songCount: number;
 }
 
-/** Case-insensitive substring match against the four MiniSearch fields. Used
- *  ONLY by the Favorites tab — Browse uses the real MiniSearch index. The
- *  favorites set is bounded by the user (in the dozens), so a linear pass is
- *  sub-millisecond and avoids building a second index. */
-function matchesQuery(record: SongRecord, query: string): boolean {
-  const q = query.toLowerCase();
-  return (
-    record.title_primary.toLowerCase().includes(q) ||
-    (record.title_ko?.toLowerCase().includes(q) ?? false) ||
-    record.artist_primary.toLowerCase().includes(q) ||
-    (record.artist_ko?.toLowerCase().includes(q) ?? false)
-  );
-}
-
 /**
  * Render-branch discriminator. The order in which `renderBody()` checks these
  * is fixed by spec (see the docstring on `renderBody` below). Keep this union
@@ -145,7 +131,20 @@ export function App({ songCount }: AppProps) {
         const rec = bundle.byId.get(id);
         if (rec !== undefined) favRecords.push(rec);
       }
-      candidates = query === '' ? favRecords : favRecords.filter((r) => matchesQuery(r, query));
+      if (query === '') {
+        candidates = favRecords;
+      } else {
+        const favIdSet = new Set(favoriteIds);
+        const hits = bundle.index.search(query);
+        candidates = [];
+        for (const hit of hits) {
+          const id = String(hit.id);
+          if (favIdSet.has(id)) {
+            const rec = bundle.byId.get(id);
+            if (rec !== undefined) candidates.push(rec);
+          }
+        }
+      }
     } else {
       // Browse candidate set: full-corpus MiniSearch on a non-empty query.
       if (query === '') return [];

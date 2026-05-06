@@ -113,7 +113,8 @@ function buildFixtureBundle() {
         .filter(
           (r) =>
             r.title_primary.toLowerCase().includes(lower) ||
-            r.artist_primary.toLowerCase().includes(lower),
+            r.artist_primary.toLowerCase().includes(lower) ||
+            (r.artist_aliases ?? []).some((a) => a.toLowerCase().includes(lower)),
         )
         .map((r) => ({ id: r.id }));
     },
@@ -214,6 +215,51 @@ describe('App tab behavior', () => {
     const cards = host.querySelectorAll<HTMLElement>('[data-testid="result-card"]');
     expect(cards.length).toBe(1);
     expect(cards[0]?.textContent).toContain('Idol');
+  });
+
+  it('with Favorites active, searching via an artist alias finds the record (alias-aware search)', async () => {
+    // Fixture record with an alias — not in fixtureRecords, injected via a
+    // custom bundle that adds a fourth record.
+    const aliasRecord: SongRecord = {
+      id: 'r4',
+      title_primary: 'Robinson',
+      title_ko: null,
+      artist_primary: 'スピッツ',
+      artist_ko: null,
+      artist_aliases: ['Spitz'],
+      categories: ['jpop'],
+      karaoke_numbers: { tj: '99999', ky: null, joysound: null },
+      source_url: 'https://example.invalid/4',
+      crawled_at: '2026-04-29T00:00:00.000Z',
+    };
+    const allRecords = [...fixtureRecords, aliasRecord];
+    const byId = new Map(allRecords.map((r) => [r.id, r] as const));
+    const fakeIndexAlias = {
+      search: (q: string) => {
+        const lower = q.toLowerCase();
+        return allRecords
+          .filter(
+            (r) =>
+              r.title_primary.toLowerCase().includes(lower) ||
+              r.artist_primary.toLowerCase().includes(lower) ||
+              (r.artist_aliases ?? []).some((a) => a.toLowerCase().includes(lower)),
+          )
+          .map((r) => ({ id: r.id }));
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: minimal MiniSearch stub for tests
+    } as any;
+    vi.spyOn(searchModule, 'loadIndex').mockResolvedValue({ index: fakeIndexAlias, byId });
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r4']));
+    await mount();
+    await clickFavoritesTab(host);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'Spitz');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+    await flushPromises();
+    const cards = host.querySelectorAll<HTMLElement>('[data-testid="result-card"]');
+    expect(cards.length).toBe(1);
+    expect(cards[0]?.textContent).toContain('スピッツ');
   });
 
   it('with Favorites active and zero favorites (corpus loaded), <FavoritesEmpty> renders', async () => {
