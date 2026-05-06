@@ -228,4 +228,41 @@ describe('parseArtistPage — number-cell defensive guards', () => {
     expect(recs).toHaveLength(1);
     expect(recs[0]?.karaoke_numbers).toEqual({ tj: '25627', ky: '41637', joysound: '31783' });
   });
+
+  // classifyNumberCell must treat ideographic (full-width JP) space as whitespace.
+  it('classifyNumberCell treats ideographic-space-only input as null', () => {
+    // Three ideographic spaces (U+3000) — common from blog editor paste.
+    const html = buildHtml('<tr><td>Title</td><td>　　　</td><td>1</td><td>2</td></tr>');
+    const recs = parseArtistPage(html, 'https://x.test/1');
+    expect(recs).toHaveLength(1);
+    expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+  });
+
+  // classifyNumberCell must treat zero-width space as whitespace.
+  it('classifyNumberCell treats zero-width-space-only input as null', () => {
+    // Three ZWSP characters (U+200B).
+    const html = buildHtml('<tr><td>Title</td><td>​​​</td><td>1</td><td>2</td></tr>');
+    const recs = parseArtistPage(html, 'https://x.test/1');
+    expect(recs).toHaveLength(1);
+    expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+  });
+
+  // extractNumberCell must bail early (null + warn) on HTML longer than 64 KB.
+  it('extractNumberCell returns null and warns when cell HTML exceeds 64KB', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      // Build a <td> whose innerHTML is >65536 bytes by padding with spaces.
+      const padding = ' '.repeat(65537);
+      const html = buildHtml(`<tr><td>Title</td><td>${padding}12345</td><td>1</td><td>2</td></tr>`);
+      const recs = parseArtistPage(html, 'https://x.test/cap');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      const warnMsg = warnSpy.mock.calls.find((c) => String(c[0]).includes('64KB'));
+      expect(warnMsg).toBeDefined();
+      expect(String(warnMsg?.[0])).toMatch(/https:\/\/x\.test\/cap/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });

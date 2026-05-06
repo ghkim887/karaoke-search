@@ -31,7 +31,7 @@ const NUMBER_LENGTH_CAPS = { tj: 6, ky: 6, joysound: 7 } as const;
  *  - Otherwise → trimmed text.
  */
 function classifyNumberCell(raw: string): string | null {
-  const trimmed = raw.replace(/ /g, ' ').trim();
+  const trimmed = raw.replace(/[ ​　 ]/g, ' ').trim();
   if (trimmed === '') return null;
   if (/^[-—–]$/.test(trimmed)) return null;
   return trimmed;
@@ -63,6 +63,10 @@ function extractNumberCell(
 ): string | null {
   // biome-ignore lint/suspicious/noExplicitAny: cheerio Element superset
   const html = $(td as any).html() ?? '';
+  if (html.length > 65536) {
+    console.warn(`[jpop-playlist-blog] cell exceeds 64KB cap, skipping: ${sourceUrl}`);
+    return null;
+  }
   const segments = html
     .split(/<br\b[^>]*>/i)
     .map((part) => {
@@ -99,8 +103,15 @@ function extractNumberCell(
  * Returns `[title_primary, title_ko]` where `title_ko` is null when the cell
  * has only a single non-empty line.
  */
-function parseTitleCell($cell: ReturnType<ReturnType<typeof load>>): [string, string | null] {
+function parseTitleCell(
+  $cell: ReturnType<ReturnType<typeof load>>,
+  sourceUrl: string,
+): [string, string | null] {
   const html = $cell.html() ?? '';
+  if (html.length > 65536) {
+    console.warn(`[jpop-playlist-blog] cell exceeds 64KB cap, skipping: ${sourceUrl}`);
+    return ['', null];
+  }
   const $c = load(`<root>${html}</root>`, null, false);
   const root = $c('root');
 
@@ -152,12 +163,13 @@ function parseTitleCell($cell: ReturnType<ReturnType<typeof load>>): [string, st
  */
 function parseArtistFromBlockquote(
   $body: ReturnType<ReturnType<typeof load>>,
+  sourceUrl: string,
 ): [string | null, string | null] {
   const $bq = $body.find('blockquote').first();
   if ($bq.length === 0) return [null, null];
   const $p = $bq.find('p').first();
   if ($p.length === 0) return [null, null];
-  const [first, second] = parseTitleCell($p);
+  const [first, second] = parseTitleCell($p, sourceUrl);
   if (!first) return [null, null];
   if (!second) return [first, null];
   return [second, first]; // second = primary (Latin/Japanese), first = Korean
@@ -183,7 +195,7 @@ export function parseArtistPage(html: string, sourceUrl: string): RawSongRecord[
     return [];
   }
 
-  const [artistPrimary, artistKo] = parseArtistFromBlockquote($body);
+  const [artistPrimary, artistKo] = parseArtistFromBlockquote($body, sourceUrl);
   if (!artistPrimary) {
     console.warn(`[jpop-playlist-blog] no artist name found: ${sourceUrl}`);
     return [];
@@ -215,7 +227,7 @@ export function parseArtistPage(html: string, sourceUrl: string): RawSongRecord[
           return;
         }
 
-        const [titlePrimary, titleKo] = parseTitleCell($tds.eq(0));
+        const [titlePrimary, titleKo] = parseTitleCell($tds.eq(0), sourceUrl);
         if (!titlePrimary) return; // empty title row — skip silently
 
         // Re-extract number cells with `<br>`-aware splitting so multi-code
