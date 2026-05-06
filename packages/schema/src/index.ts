@@ -50,6 +50,15 @@ export interface SongRecord {
   categories: Category[];
   /** ISO-8601 date-time when the source page was crawled. */
   crawled_at: string;
+  /**
+   * Korean translation of the parenthetical media-context tag, when
+   * title_primary contains one. e.g. title_primary "Somewhere(スレイヤーズ TRY OST)"
+   * → media_context_ko "(슬레이어즈 TRY OST)". Independent of title_ko —
+   * a record may have one, both, or neither.
+   *
+   * Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
+   */
+  media_context_ko?: string;
 }
 
 /**
@@ -176,6 +185,7 @@ export const songRecordSchema = {
       type: 'string',
       format: 'date-time',
     },
+    media_context_ko: { type: 'string', minLength: 1 },
   },
 } as const;
 

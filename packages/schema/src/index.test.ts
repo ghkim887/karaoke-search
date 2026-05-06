@@ -337,6 +337,40 @@ describe('artist_aliases — optional field (spec 2026-05-04)', () => {
   });
 });
 
+describe('SongRecord — media_context_ko', () => {
+  it('accepts a record with media_context_ko populated', () => {
+    const rec = {
+      id: 'tj-1',
+      source_url: 'https://example.com/x',
+      title_primary: 'Somewhere',
+      title_ko: null,
+      artist_primary: 'Some Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+      categories: ['anime'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      media_context_ko: '(슬레이어즈 TRY OST)',
+    };
+    expect(() => validateSongRecord(rec)).not.toThrow();
+  });
+
+  it('rejects a record with non-string media_context_ko', () => {
+    const rec = {
+      id: 'tj-1',
+      source_url: 'https://example.com/x',
+      title_primary: 'X',
+      title_ko: null,
+      artist_primary: 'Y',
+      artist_ko: null,
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      media_context_ko: 42,
+    };
+    expect(() => validateSongRecord(rec)).toThrow();
+  });
+});
+
 describe('RawSongRecord type shape', () => {
   it('compiles a raw pre-normalization record', () => {
     const raw: RawSongRecord = {
