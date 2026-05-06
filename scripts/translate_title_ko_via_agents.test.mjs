@@ -1,10 +1,11 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   chunkRecords,
   filterTranslatableRecords,
+  loadAndValidateChunkOutputs,
   writeChunkInputs,
 } from './translate_title_ko_via_agents.mjs';
 
@@ -115,5 +116,92 @@ describe('writeChunkInputs', () => {
     writeChunkInputs(workdir, chunks);
     const second = readFileSync(join(workdir, 'llm-translations-chunk-00-input.json'));
     expect(first.equals(second)).toBe(true);
+  });
+});
+
+describe('loadAndValidateChunkOutputs', () => {
+  let workdir;
+  beforeEach(() => {
+    workdir = mkdtempSync(join(tmpdir(), 'title-ko-merge-'));
+  });
+  afterEach(() => {
+    rmSync(workdir, { recursive: true, force: true });
+  });
+
+  it('loads chunks and merges entries into a Map by id', () => {
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-00.json'),
+      JSON.stringify([
+        {
+          id: 'tj-1',
+          title_primary: 'X',
+          title_ko: '엑스',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ]),
+    );
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-01.json'),
+      JSON.stringify([
+        {
+          id: 'tj-2',
+          title_primary: 'Y',
+          title_ko: null,
+          media_context_ko: null,
+          confidence: 'low',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ]),
+    );
+    const result = loadAndValidateChunkOutputs(workdir);
+    expect(result.size).toBe(2);
+    expect(result.get('tj-1').confidence).toBe('high');
+    expect(result.get('tj-2').title_ko).toBe(null);
+  });
+
+  it('throws when an entry is missing a required field', () => {
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-00.json'),
+      JSON.stringify([{ id: 'tj-1' }]),
+    );
+    expect(() => loadAndValidateChunkOutputs(workdir)).toThrow(/missing/i);
+  });
+
+  it('throws on unknown confidence value', () => {
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-00.json'),
+      JSON.stringify([
+        {
+          id: 'tj-1',
+          title_primary: 'X',
+          title_ko: '엑스',
+          media_context_ko: null,
+          confidence: 'super-high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ]),
+    );
+    expect(() => loadAndValidateChunkOutputs(workdir)).toThrow(/confidence/i);
+  });
+
+  it('throws on duplicate id across chunks', () => {
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-00.json'),
+      JSON.stringify([
+        { id: 'tj-1', title_primary: 'X', title_ko: '엑스', media_context_ko: null, confidence: 'high', reasoning: 'r', web_sources: [] },
+      ]),
+    );
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-01.json'),
+      JSON.stringify([
+        { id: 'tj-1', title_primary: 'X', title_ko: '엑스2', media_context_ko: null, confidence: 'high', reasoning: 'r', web_sources: [] },
+      ]),
+    );
+    expect(() => loadAndValidateChunkOutputs(workdir)).toThrow(/duplicate/i);
   });
 });

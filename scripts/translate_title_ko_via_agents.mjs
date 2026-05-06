@@ -15,7 +15,7 @@
  * Claude Code session — see scripts/title_ko_stage2_howto.md.
  */
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -76,6 +76,54 @@ export function runPrep({ corpusPath, outDir, chunkSize = 500 }) {
     eligibleRecords: eligible.length,
     chunkCount: chunks.length,
   };
+}
+
+const REQUIRED_FIELDS = [
+  'id',
+  'title_primary',
+  'title_ko',
+  'media_context_ko',
+  'confidence',
+  'reasoning',
+  'web_sources',
+];
+const VALID_CONFIDENCE = new Set(['high', 'medium', 'low']);
+
+/**
+ * Load every llm-translations-chunk-NN.json under `chunksDir`, validate
+ * each entry's shape, and merge into a Map<id, decision>.
+ *
+ * Filename pattern matches OUTPUT files only (`llm-translations-chunk-NN.json`),
+ * NOT the prep-stage INPUT files (`...-NN-input.json`). Throws on
+ * missing required fields, invalid confidence enum, or duplicate ids.
+ */
+export function loadAndValidateChunkOutputs(chunksDir) {
+  const map = new Map();
+  const files = readdirSync(chunksDir)
+    .filter((f) => /^llm-translations-chunk-\d+\.json$/.test(f))
+    .sort();
+  for (const f of files) {
+    const path = join(chunksDir, f);
+    const arr = JSON.parse(readFileSync(path, 'utf-8'));
+    if (!Array.isArray(arr)) {
+      throw new Error(`${f}: expected JSON array, got ${typeof arr}`);
+    }
+    for (const entry of arr) {
+      for (const k of REQUIRED_FIELDS) {
+        if (!(k in entry)) {
+          throw new Error(`${f}: entry id=${entry.id ?? '?'} missing field ${k}`);
+        }
+      }
+      if (!VALID_CONFIDENCE.has(entry.confidence)) {
+        throw new Error(`${f}: entry id=${entry.id} unknown confidence "${entry.confidence}"`);
+      }
+      if (map.has(entry.id)) {
+        throw new Error(`duplicate id ${entry.id} across chunk outputs`);
+      }
+      map.set(entry.id, entry);
+    }
+  }
+  return map;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
