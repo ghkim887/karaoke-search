@@ -153,6 +153,52 @@ export function applyDecisionsToCorpus(records, decisions) {
   });
 }
 
+function csvEscape(field) {
+  const s = String(field ?? '');
+  if (/[",\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/**
+ * Write a CSV containing every medium- and low-confidence decision.
+ * High-confidence decisions are excluded (they don't need review).
+ */
+export function writeReviewCsv(path, decisions) {
+  const lines = ['id,title_primary,title_ko,confidence,reasoning'];
+  for (const d of decisions.values()) {
+    if (d.confidence === 'high') continue;
+    lines.push(
+      [d.id, d.title_primary, d.title_ko ?? '', d.confidence, d.reasoning ?? '']
+        .map(csvEscape)
+        .join(','),
+    );
+  }
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, `${lines.join('\n')}\n`, 'utf-8');
+  renameSync(tmp, path);
+}
+
+/**
+ * `merge` subcommand: load chunk outputs, apply to corpus (atomic
+ * write with indent=2 + trailing newline to match the rest of the
+ * pipeline), write review CSV.
+ */
+export function runMerge({ corpusPath, chunksDir, reviewCsvPath }) {
+  const decisions = loadAndValidateChunkOutputs(chunksDir);
+  const records = JSON.parse(readFileSync(corpusPath, 'utf-8'));
+  const updated = applyDecisionsToCorpus(records, decisions);
+  const tmp = `${corpusPath}.tmp`;
+  writeFileSync(tmp, `${JSON.stringify(updated, null, 2)}\n`, 'utf-8');
+  renameSync(tmp, corpusPath);
+  if (reviewCsvPath) writeReviewCsv(reviewCsvPath, decisions);
+  return {
+    decisionCount: decisions.size,
+    recordCount: records.length,
+  };
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const cmd = process.argv[2];
   if (cmd === 'prep') {
@@ -166,6 +212,19 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     console.log(
       `prep: ${stats.eligibleRecords}/${stats.totalRecords} eligible, ` +
         `${stats.chunkCount} chunks written to ${outDir}`,
+    );
+  } else if (cmd === 'merge') {
+    const corpusPath = process.argv[3];
+    const chunksDir = process.argv[4];
+    const reviewIdx = process.argv.indexOf('--review-csv');
+    const reviewCsvPath = reviewIdx >= 0 ? process.argv[reviewIdx + 1] : undefined;
+    if (!corpusPath || !chunksDir) {
+      console.error('usage: merge <corpus.json> <chunks_dir> [--review-csv <path>]');
+      process.exit(2);
+    }
+    const stats = runMerge({ corpusPath, chunksDir, reviewCsvPath });
+    console.log(
+      `merge: ${stats.decisionCount} decisions applied to ${stats.recordCount}-record corpus`,
     );
   } else {
     console.error(`unknown subcommand: ${cmd}`);

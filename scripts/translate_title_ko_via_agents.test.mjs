@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -7,34 +7,30 @@ import {
   chunkRecords,
   filterTranslatableRecords,
   loadAndValidateChunkOutputs,
+  runMerge,
   writeChunkInputs,
+  writeReviewCsv,
 } from './translate_title_ko_via_agents.mjs';
 
 describe('filterTranslatableRecords', () => {
   it('keeps records with null title_ko and CJK in title_primary', () => {
-    const records = [
-      { id: 'tj-1', title_ko: null, title_primary: '愛が見えない' },
-    ];
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: '愛が見えない' }];
     expect(filterTranslatableRecords(records)).toHaveLength(1);
   });
 
   it('drops records with non-null title_ko', () => {
-    const records = [
-      { id: 'blog-1', title_ko: '엑스', title_primary: 'X' },
-    ];
+    const records = [{ id: 'blog-1', title_ko: '엑스', title_primary: 'X' }];
     expect(filterTranslatableRecords(records)).toHaveLength(0);
   });
 
   it('drops records with pure-Latin title_primary', () => {
-    const records = [
-      { id: 'tj-1', title_ko: null, title_primary: 'Bloomin' },
-    ];
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: 'Bloomin' }];
     expect(filterTranslatableRecords(records)).toHaveLength(0);
   });
 
   it('keeps records with hiragana, katakana, or kanji', () => {
     const records = [
-      { id: 'tj-1', title_ko: null, title_primary: 'おもかげ' },     // hiragana
+      { id: 'tj-1', title_ko: null, title_primary: 'おもかげ' }, // hiragana
       { id: 'tj-2', title_ko: null, title_primary: 'コイシイヒト' }, // katakana
       { id: 'tj-3', title_ko: null, title_primary: '冬のリヴィエラ' }, // kanji+kana
     ];
@@ -72,7 +68,13 @@ describe('chunkRecords', () => {
     const records = Array.from({ length: 7 }, (_, i) => ({ id: `tj-${i}` }));
     const chunks = chunkRecords(records, 3);
     expect(chunks.flat().map((r) => r.id)).toEqual([
-      'tj-0', 'tj-1', 'tj-2', 'tj-3', 'tj-4', 'tj-5', 'tj-6',
+      'tj-0',
+      'tj-1',
+      'tj-2',
+      'tj-3',
+      'tj-4',
+      'tj-5',
+      'tj-6',
     ]);
   });
 });
@@ -87,10 +89,7 @@ describe('writeChunkInputs', () => {
   });
 
   it('writes one file per chunk with zero-padded NN', () => {
-    const chunks = [
-      [{ id: 'tj-1' }, { id: 'tj-2' }],
-      [{ id: 'tj-3' }],
-    ];
+    const chunks = [[{ id: 'tj-1' }, { id: 'tj-2' }], [{ id: 'tj-3' }]];
     writeChunkInputs(workdir, chunks);
     const files = readdirSync(workdir).sort();
     expect(files).toEqual([
@@ -100,9 +99,7 @@ describe('writeChunkInputs', () => {
   });
 
   it('produces JSON arrays matching input chunks', () => {
-    const chunks = [
-      [{ id: 'tj-1', title_primary: 'X' }],
-    ];
+    const chunks = [[{ id: 'tj-1', title_primary: 'X' }]];
     writeChunkInputs(workdir, chunks);
     const written = JSON.parse(
       readFileSync(join(workdir, 'llm-translations-chunk-00-input.json'), 'utf-8'),
@@ -194,13 +191,29 @@ describe('loadAndValidateChunkOutputs', () => {
     writeFileSync(
       join(workdir, 'llm-translations-chunk-00.json'),
       JSON.stringify([
-        { id: 'tj-1', title_primary: 'X', title_ko: '엑스', media_context_ko: null, confidence: 'high', reasoning: 'r', web_sources: [] },
+        {
+          id: 'tj-1',
+          title_primary: 'X',
+          title_ko: '엑스',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
       ]),
     );
     writeFileSync(
       join(workdir, 'llm-translations-chunk-01.json'),
       JSON.stringify([
-        { id: 'tj-1', title_primary: 'X', title_ko: '엑스2', media_context_ko: null, confidence: 'high', reasoning: 'r', web_sources: [] },
+        {
+          id: 'tj-1',
+          title_primary: 'X',
+          title_ko: '엑스2',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
       ]),
     );
     expect(() => loadAndValidateChunkOutputs(workdir)).toThrow(/duplicate/i);
@@ -209,9 +222,7 @@ describe('loadAndValidateChunkOutputs', () => {
 
 describe('applyDecisionsToCorpus', () => {
   it('sets title_ko, media_context_ko, source, confidence on decided records', () => {
-    const records = [
-      { id: 'tj-1', title_ko: null, title_primary: '愛', artist_primary: 'A' },
-    ];
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: '愛', artist_primary: 'A' }];
     const decisions = new Map([
       [
         'tj-1',
@@ -279,5 +290,115 @@ describe('applyDecisionsToCorpus', () => {
     expect(out[0].title_ko).toBe(null);
     expect(out[0]).not.toHaveProperty('title_ko_source');
     expect(out[0]).not.toHaveProperty('title_ko_confidence');
+  });
+});
+
+describe('writeReviewCsv', () => {
+  let workdir;
+  beforeEach(() => {
+    workdir = mkdtempSync(join(tmpdir(), 'title-ko-csv-'));
+  });
+  afterEach(() => {
+    rmSync(workdir, { recursive: true, force: true });
+  });
+
+  it('writes header + one row per low-confidence decision', () => {
+    const decisions = new Map([
+      ['tj-1', { id: 'tj-1', title_primary: '愛', title_ko: '사랑', confidence: 'high' }],
+      [
+        'tj-2',
+        {
+          id: 'tj-2',
+          title_primary: '光',
+          title_ko: null,
+          confidence: 'low',
+          reasoning: 'unknown',
+        },
+      ],
+    ]);
+    const path = join(workdir, 'llm-review.csv');
+    writeReviewCsv(path, decisions);
+    const csv = readFileSync(path, 'utf-8');
+    expect(csv.split('\n')[0]).toBe('id,title_primary,title_ko,confidence,reasoning');
+    expect(csv).toContain('tj-2');
+    expect(csv).not.toContain('tj-1'); // high-confidence excluded
+  });
+
+  it('also includes medium-confidence rows', () => {
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: '愛',
+          title_ko: '사랑',
+          confidence: 'medium',
+          reasoning: 'literal translation',
+        },
+      ],
+    ]);
+    const path = join(workdir, 'llm-review.csv');
+    writeReviewCsv(path, decisions);
+    const csv = readFileSync(path, 'utf-8');
+    expect(csv).toContain('tj-1');
+    expect(csv).toContain('medium');
+  });
+
+  it('escapes commas and quotes correctly', () => {
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: 'a, b',
+          title_ko: 'a "quote"',
+          confidence: 'low',
+          reasoning: 'with, commas',
+        },
+      ],
+    ]);
+    const path = join(workdir, 'llm-review.csv');
+    writeReviewCsv(path, decisions);
+    const csv = readFileSync(path, 'utf-8');
+    expect(csv).toContain('"a, b"');
+    expect(csv).toContain('"a ""quote"""');
+  });
+});
+
+describe('runMerge — integration', () => {
+  let workdir;
+  beforeEach(() => {
+    workdir = mkdtempSync(join(tmpdir(), 'title-ko-merge-'));
+  });
+  afterEach(() => {
+    rmSync(workdir, { recursive: true, force: true });
+  });
+
+  it('end-to-end: chunk outputs → corpus updated + CSV written', () => {
+    const corpusPath = join(workdir, 'songs.json');
+    writeFileSync(
+      corpusPath,
+      JSON.stringify([{ id: 'tj-1', title_ko: null, title_primary: '愛が見えない' }]),
+    );
+    writeFileSync(
+      join(workdir, 'llm-translations-chunk-00.json'),
+      JSON.stringify([
+        {
+          id: 'tj-1',
+          title_primary: '愛が見えない',
+          title_ko: '사랑이 보이지 않아',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'literal',
+          web_sources: [],
+        },
+      ]),
+    );
+    const reviewCsvPath = join(workdir, 'llm-review.csv');
+    runMerge({ corpusPath, chunksDir: workdir, reviewCsvPath });
+    const updated = JSON.parse(readFileSync(corpusPath, 'utf-8'));
+    expect(updated[0].title_ko).toBe('사랑이 보이지 않아');
+    expect(updated[0].title_ko_source).toBe('llm-translated');
+    expect(existsSync(reviewCsvPath)).toBe(true);
   });
 });
