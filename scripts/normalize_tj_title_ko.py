@@ -13,7 +13,11 @@ Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
 
 from __future__ import annotations
 
+import json
+import os
 import re
+import sys
+from pathlib import Path
 from typing import Optional
 
 # Korean (Hangul Syllables block) detection.
@@ -77,3 +81,41 @@ def process_record(rec: dict) -> dict:
         out['title_ko_source'] = 'blog'
 
     return out
+
+
+def main(corpus_path: str) -> dict:
+    """Read corpus JSON, apply process_record to every record, write
+    back atomically. Returns stats dict for stdout reporting.
+    """
+    corpus_p = Path(corpus_path)
+    records = json.loads(corpus_p.read_text(encoding='utf-8'))
+
+    stats = {'stripped': 0, 'salvaged': 0, 'tagged': 0}
+    out_records = []
+    for rec in records:
+        before_title_ko = rec.get('title_ko')
+        before_source = rec.get('title_ko_source')
+        new = process_record(rec)
+        if before_title_ko and new.get('title_ko') is None:
+            stats['stripped'] += 1
+        if 'media_context_ko' in new and 'media_context_ko' not in rec:
+            stats['salvaged'] += 1
+        if new.get('title_ko_source') == 'blog' and before_source != 'blog':
+            stats['tagged'] += 1
+        out_records.append(new)
+
+    tmp_p = corpus_p.with_suffix(corpus_p.suffix + '.tmp')
+    tmp_p.write_text(
+        json.dumps(out_records, ensure_ascii=False, separators=(',', ':')),
+        encoding='utf-8',
+    )
+    os.replace(tmp_p, corpus_p)
+    return stats
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('usage: python normalize_tj_title_ko.py <songs.json>', file=sys.stderr)
+        sys.exit(2)
+    s = main(sys.argv[1])
+    print(f"stripped: {s['stripped']}, salvaged: {s['salvaged']}, tagged: {s['tagged']}")

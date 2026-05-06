@@ -1,12 +1,14 @@
 """Tests for scripts/normalize_tj_title_ko.py — Stage 1 of title_ko backfill."""
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from normalize_tj_title_ko import extract_media_context_paren, process_record
+from normalize_tj_title_ko import extract_media_context_paren, main, process_record
 
 
 class TestExtractMediaContextParen(unittest.TestCase):
@@ -122,6 +124,71 @@ class TestProcessRecord(unittest.TestCase):
         out = process_record(rec)
         self.assertEqual(rec['title_ko'], '엑스')  # original untouched
         self.assertIsNone(out['title_ko'])
+
+
+class TestMainAtomicWrite(unittest.TestCase):
+    def test_main_rewrites_corpus_atomically(self):
+        records = [
+            {
+                'id': 'tj-1',
+                'source_url': 'https://x.test/1',
+                'title_primary': '愛が見えない',
+                'title_ko': '아이가 미에나이',
+                'artist_primary': 'A',
+                'artist_ko': None,
+                'karaoke_numbers': {'tj': '1', 'ky': None, 'joysound': None},
+                'categories': ['jpop'],
+                'crawled_at': '2026-05-06T00:00:00.000Z',
+            },
+            {
+                'id': 'blog-1-0',
+                'source_url': 'https://x.test/2',
+                'title_primary': '逆光オーケストラ',
+                'title_ko': '역광의 오케스트라',
+                'artist_primary': 'B',
+                'artist_ko': None,
+                'karaoke_numbers': {'tj': None, 'ky': None, 'joysound': None},
+                'categories': ['jpop'],
+                'crawled_at': '2026-05-06T00:00:00.000Z',
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            corpus = Path(tmp) / 'songs.json'
+            corpus.write_text(json.dumps(records, ensure_ascii=False), encoding='utf-8')
+            stats = main(str(corpus))
+            out = json.loads(corpus.read_text(encoding='utf-8'))
+
+        # TJ record nullified.
+        self.assertIsNone(out[0]['title_ko'])
+        # Blog record tagged.
+        self.assertEqual(out[1]['title_ko_source'], 'blog')
+        # Stats reported.
+        self.assertEqual(stats['stripped'], 1)
+        self.assertEqual(stats['tagged'], 1)
+        self.assertEqual(stats['salvaged'], 0)
+
+    def test_main_is_idempotent(self):
+        records = [
+            {
+                'id': 'tj-1',
+                'source_url': 'https://x.test/1',
+                'title_primary': 'X',
+                'title_ko': '엑스',
+                'artist_primary': 'A',
+                'artist_ko': None,
+                'karaoke_numbers': {'tj': '1', 'ky': None, 'joysound': None},
+                'categories': ['jpop'],
+                'crawled_at': '2026-05-06T00:00:00.000Z',
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            corpus = Path(tmp) / 'songs.json'
+            corpus.write_text(json.dumps(records, ensure_ascii=False), encoding='utf-8')
+            main(str(corpus))
+            first = corpus.read_bytes()
+            main(str(corpus))
+            second = corpus.read_bytes()
+            self.assertEqual(first, second, 'corpus byte-changed on second run')
 
 
 if __name__ == '__main__':
