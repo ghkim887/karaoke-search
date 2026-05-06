@@ -53,7 +53,7 @@ const ARTIST_SUCCESS_RATIO_FLOOR = 0.9;
  * (a) the post is currently indexed under `/417`, and (b) the post's record
  * list is a different career era from the artist's actual Vocaloid catalog.
  */
-const POST_CATEGORY_OVERRIDES: Readonly<Record<string, Category>> = {
+export const POST_CATEGORY_OVERRIDES: Readonly<Record<string, Category>> = {
   '101': 'jpop',
   '105': 'jpop',
   '112': 'jpop',
