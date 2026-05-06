@@ -19,36 +19,34 @@ function findRepoRoot(start: string): string | null {
   return null;
 }
 
-const repoRoot =
-  findRepoRoot(fileURLToPath(import.meta.url)) ?? findRepoRoot(process.cwd()) ?? process.cwd();
-
-// Surface a build-config bug: if neither the source-tree walk nor the cwd walk
-// finds a `.git` marker, the git command below will run from `process.cwd()`
-// and likely return empty. Warn unconditionally — this is not environment-
-// dependent the way the missing-git-output case is.
-if (findRepoRoot(fileURLToPath(import.meta.url)) === null && findRepoRoot(process.cwd()) === null) {
-  console.warn(
-    '[Footer] could not resolve repo root via .git walk from import.meta.url or process.cwd();',
-    `falling back to process.cwd()=${process.cwd()}`,
-  );
-}
+const repoRoot = findRepoRoot(fileURLToPath(import.meta.url)) ?? findRepoRoot(process.cwd());
 
 let gitOutput = '';
-try {
-  gitOutput = execSync('git log -1 --format=%cs -- apps/web/public/data/songs.json', {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
-} catch (err) {
-  // git unavailable, shallow checkout, or path not in history — fall through.
-  // In CI an empty result is a build-time signal: surface it as a warning so
-  // the deploy log captures the regression. Locally, swallow silently.
-  if (process.env.CI === 'true') {
-    console.warn(
-      '[Footer] git log failed for songs.json — date will render empty:',
-      err instanceof Error ? err.message : err,
-    );
+if (repoRoot === null) {
+  // Neither the source-tree walk nor the cwd walk found a .git marker.
+  // Running git log from an unrelated directory would silently return a wrong
+  // date, so skip the command entirely and leave gitOutput empty.
+  console.warn(
+    '[Footer] could not resolve repo root via .git walk from import.meta.url or process.cwd();',
+    `skipping git log (process.cwd()=${process.cwd()})`,
+  );
+} else {
+  try {
+    gitOutput = execSync('git log -1 --format=%cs -- apps/web/public/data/songs.json', {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch (err) {
+    // git unavailable, shallow checkout, or path not in history — fall through.
+    // In CI an empty result is a build-time signal: surface it as a warning so
+    // the deploy log captures the regression. Locally, swallow silently.
+    if (process.env.CI === 'true') {
+      console.warn(
+        '[Footer] git log failed for songs.json — date will render empty:',
+        err instanceof Error ? err.message : err,
+      );
+    }
   }
 }
 
