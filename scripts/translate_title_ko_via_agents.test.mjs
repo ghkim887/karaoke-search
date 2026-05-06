@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  filterTranslatableRecords,
   chunkRecords,
+  filterTranslatableRecords,
+  writeChunkInputs,
 } from './translate_title_ko_via_agents.mjs';
 
 describe('filterTranslatableRecords', () => {
@@ -68,5 +72,48 @@ describe('chunkRecords', () => {
     expect(chunks.flat().map((r) => r.id)).toEqual([
       'tj-0', 'tj-1', 'tj-2', 'tj-3', 'tj-4', 'tj-5', 'tj-6',
     ]);
+  });
+});
+
+describe('writeChunkInputs', () => {
+  let workdir;
+  beforeEach(() => {
+    workdir = mkdtempSync(join(tmpdir(), 'title-ko-stage2-'));
+  });
+  afterEach(() => {
+    rmSync(workdir, { recursive: true, force: true });
+  });
+
+  it('writes one file per chunk with zero-padded NN', () => {
+    const chunks = [
+      [{ id: 'tj-1' }, { id: 'tj-2' }],
+      [{ id: 'tj-3' }],
+    ];
+    writeChunkInputs(workdir, chunks);
+    const files = readdirSync(workdir).sort();
+    expect(files).toEqual([
+      'llm-translations-chunk-00-input.json',
+      'llm-translations-chunk-01-input.json',
+    ]);
+  });
+
+  it('produces JSON arrays matching input chunks', () => {
+    const chunks = [
+      [{ id: 'tj-1', title_primary: 'X' }],
+    ];
+    writeChunkInputs(workdir, chunks);
+    const written = JSON.parse(
+      readFileSync(join(workdir, 'llm-translations-chunk-00-input.json'), 'utf-8'),
+    );
+    expect(written).toEqual([{ id: 'tj-1', title_primary: 'X' }]);
+  });
+
+  it('is byte-stable on identical input (idempotent)', () => {
+    const chunks = [[{ id: 'tj-1' }]];
+    writeChunkInputs(workdir, chunks);
+    const first = readFileSync(join(workdir, 'llm-translations-chunk-00-input.json'));
+    writeChunkInputs(workdir, chunks);
+    const second = readFileSync(join(workdir, 'llm-translations-chunk-00-input.json'));
+    expect(first.equals(second)).toBe(true);
   });
 });
