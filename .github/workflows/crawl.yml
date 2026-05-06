@@ -16,12 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
@@ -95,29 +97,25 @@ jobs:
         run: node scripts/validate-songs-json.mjs apps/web/public/data/songs.json
 
       - name: Compose PR body with merge-conflict summary
-        id: pr_body
         run: |
-          {
-            echo 'body<<EOF'
-            echo 'Automated crawl output. See workflow run for logs.'
-            if [ -f /tmp/merge-conflicts.json ]; then
-              total=$(node -e "console.log(JSON.parse(require('node:fs').readFileSync('/tmp/merge-conflicts.json','utf8')).total)")
-              if [ "$total" -gt 0 ]; then
-                echo ''
-                echo '## Merge conflicts during dedup'
-                echo "- Total: $total"
-                echo '- Sample (first 10):'
-                node -e "
-                  const s = JSON.parse(require('node:fs').readFileSync('/tmp/merge-conflicts.json','utf8'));
-                  for (const c of s.sample) {
-                    const vs = c.values.map(v => \`\${v.source}=\${v.value}\`).join(', ');
-                    console.log(\`  - \${c.field}: \${vs} -> winner: \${c.winner} (cluster_key=\${c.cluster_key})\`);
-                  }
-                "
-              fi
+          PR_BODY_FILE="${RUNNER_TEMP}/pr_body.md"
+          printf '%s\n' 'Automated crawl output. See workflow run for logs.' > "$PR_BODY_FILE"
+          if [ -f /tmp/merge-conflicts.json ]; then
+            total=$(node -e "console.log(JSON.parse(require('node:fs').readFileSync('/tmp/merge-conflicts.json','utf8')).total)")
+            if [ "$total" -gt 0 ]; then
+              printf '\n' >> "$PR_BODY_FILE"
+              printf '%s\n' '## Merge conflicts during dedup' >> "$PR_BODY_FILE"
+              printf '%s\n' "- Total: $total" >> "$PR_BODY_FILE"
+              printf '%s\n' '- Sample (first 10):' >> "$PR_BODY_FILE"
+              node -e "
+                const s = JSON.parse(require('node:fs').readFileSync('/tmp/merge-conflicts.json','utf8'));
+                for (const c of s.sample) {
+                  const vs = c.values.map(v => \`\${v.source}=\${v.value}\`).join(', ');
+                  process.stdout.write(\`  - \${c.field}: \${vs} -> winner: \${c.winner} (cluster_key=\${c.cluster_key})\n\`);
+                }
+              " >> "$PR_BODY_FILE"
             fi
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Close prior crawl PRs
         env:
@@ -131,6 +129,6 @@ jobs:
           branch: "crawl/${{ github.run_id }}"
           commit-message: "data: weekly crawl ${{ github.run_id }}"
           title: "data: weekly crawl ${{ github.run_id }}"
-          body: ${{ steps.pr_body.outputs.body }}
+          body-path: ${{ runner.temp }}/pr_body.md
           labels: crawl-output
           add-paths: apps/web/public/data/songs.json
