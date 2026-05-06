@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from normalize_tj_title_ko import extract_media_context_paren
+from normalize_tj_title_ko import extract_media_context_paren, process_record
 
 
 class TestExtractMediaContextParen(unittest.TestCase):
@@ -40,6 +40,88 @@ class TestExtractMediaContextParen(unittest.TestCase):
 
     def test_handles_none(self):
         self.assertIsNone(extract_media_context_paren(None))
+
+
+class TestProcessRecord(unittest.TestCase):
+    def test_tj_record_with_phonetic_title_ko_nullified(self):
+        rec = {
+            'id': 'tj-100',
+            'title_primary': '愛が見えない',
+            'title_ko': '아이가 미에나이',
+        }
+        out = process_record(rec)
+        self.assertIsNone(out['title_ko'])
+        self.assertNotIn('media_context_ko', out)
+
+    def test_tj_record_with_media_context_salvaged(self):
+        rec = {
+            'id': 'tj-200',
+            'title_primary': 'Somewhere(スレイヤーズ TRY OST)',
+            'title_ko': '(슬레이어즈 TRY OST)',
+        }
+        out = process_record(rec)
+        self.assertIsNone(out['title_ko'])
+        self.assertEqual(out['media_context_ko'], '(슬레이어즈 TRY OST)')
+
+    def test_tjpdf_record_treated_like_tj(self):
+        rec = {
+            'id': 'tjpdf-300',
+            'title_primary': 'X',
+            'title_ko': '엑스',
+        }
+        out = process_record(rec)
+        self.assertIsNone(out['title_ko'])
+
+    def test_tj_record_strips_existing_source_and_confidence(self):
+        rec = {
+            'id': 'tj-400',
+            'title_primary': 'X',
+            'title_ko': '엑스',
+            'title_ko_source': 'llm-translated',
+            'title_ko_confidence': 'high',
+        }
+        out = process_record(rec)
+        self.assertNotIn('title_ko_source', out)
+        self.assertNotIn('title_ko_confidence', out)
+
+    def test_blog_record_with_title_ko_tagged_blog(self):
+        rec = {
+            'id': 'blog-1-0',
+            'title_primary': '逆光オーケストラ',
+            'title_ko': '역광의 오케스트라',
+        }
+        out = process_record(rec)
+        self.assertEqual(out['title_ko'], '역광의 오케스트라')
+        self.assertEqual(out['title_ko_source'], 'blog')
+
+    def test_blog_record_with_null_title_ko_not_tagged(self):
+        rec = {
+            'id': 'blog-2-0',
+            'title_primary': 'X',
+            'title_ko': None,
+        }
+        out = process_record(rec)
+        self.assertNotIn('title_ko_source', out)
+
+    def test_tj_record_with_null_title_ko_unchanged(self):
+        rec = {
+            'id': 'tj-500',
+            'title_primary': 'X',
+            'title_ko': None,
+        }
+        out = process_record(rec)
+        self.assertIsNone(out['title_ko'])
+        self.assertNotIn('media_context_ko', out)
+
+    def test_returns_a_copy_does_not_mutate_input(self):
+        rec = {
+            'id': 'tj-600',
+            'title_primary': 'X',
+            'title_ko': '엑스',
+        }
+        out = process_record(rec)
+        self.assertEqual(rec['title_ko'], '엑스')  # original untouched
+        self.assertIsNone(out['title_ko'])
 
 
 if __name__ == '__main__':

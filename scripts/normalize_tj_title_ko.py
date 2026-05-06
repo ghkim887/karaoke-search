@@ -46,3 +46,34 @@ def extract_media_context_paren(text: Optional[str]) -> Optional[str]:
     if not matches:
         return None
     return ' '.join(matches)
+
+
+def process_record(rec: dict) -> dict:
+    """Apply Stage 1 rules to a single record. Returns a NEW dict (does
+    not mutate input).
+
+    TJ-prefixed records (`id` starts with `tj-` or `tjpdf-`):
+      - Salvage media-context paren from title_ko into media_context_ko.
+      - Set title_ko = None.
+      - Drop pre-existing title_ko_source and title_ko_confidence.
+
+    Blog-prefixed records (`id` starts with `blog-`) with non-empty
+    title_ko:
+      - Set title_ko_source = 'blog' (provenance only — value unchanged).
+
+    All other records pass through unchanged.
+    """
+    out = dict(rec)
+    rec_id = out.get('id') or ''
+
+    if rec_id.startswith('tj-') or rec_id.startswith('tjpdf-'):
+        salvaged = extract_media_context_paren(out.get('title_ko'))
+        out['title_ko'] = None
+        if salvaged is not None:
+            out['media_context_ko'] = salvaged
+        out.pop('title_ko_source', None)
+        out.pop('title_ko_confidence', None)
+    elif rec_id.startswith('blog-') and out.get('title_ko'):
+        out['title_ko_source'] = 'blog'
+
+    return out
