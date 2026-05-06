@@ -4,7 +4,7 @@ import {
   type SongRecord,
   applyCategoryExclusivity as applyCategoryExclusivitySet,
 } from '@karaoke/schema';
-import { getLeadComponent } from './adapters/tj-media-direct/normalize.js';
+import { getLeadComponent } from './clustering.js';
 import { normalize } from './normalize.js';
 
 /**
@@ -55,7 +55,7 @@ function tierBKey(r: SongRecord): string {
  * case the record is unkeyable for Tier C and stays a singleton.
  *
  * Fix A.2 (2026-05-01): the lead-component extraction is now sourced from
- * the canonical `getLeadComponent` helper in the TJ-direct normalize module
+ * the canonical `getLeadComponent` helper in the shared `clustering.ts` module
  * — the same helper the parser's lead-admit rule consumes. The previous
  * inline `primaryArtistToken` had a SUBSET of `splitArtistCollab`'s delimiter
  * regex (no `×` or `＆`), risking silent divergence: the same artist string
@@ -73,7 +73,7 @@ function tierCKey(r: SongRecord): string | null {
 /**
  * Does `artist_primary` carry a `(Feat. X)` / `(feat. X)` / `(Prod. X)` /
  * `(prod. X)` parenthetical? Uses the same inner-paren shape as `FEAT_PAREN_RE`
- * in `adapters/tj-media-direct/normalize.ts` (outer `\s*` dropped because
+ * in `clustering.ts` (outer `\s*` dropped because
  * `.test()` doesn't need anchoring) so the merger's feat-asymmetry detection
  * is consistent with the parser's collab-component splitter.
  *

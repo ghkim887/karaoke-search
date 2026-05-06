@@ -1,17 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SPLIT_RE,
   getLeadComponent,
   normalizeForMatch,
   splitArtistCollab,
-} from '../../../src/adapters/tj-media-direct/normalize.js';
+} from '../src/clustering.js';
 
 /**
- * `splitArtistCollab` is the PR-4 multi-artist splitter — it explodes
+ * `splitArtistCollab` is the cross-adapter multi-artist splitter — it explodes
  * collab strings (`imase & なとり`, `Charlie Puth(Feat.宇多田ヒカル)`, …)
  * into component names so the per-artist scan can tag each component
  * independently. The whole string is always the FIRST element of the
  * returned array so single-artist names round-trip unchanged AND the
  * existing per-record cache path keeps hitting on the whole-string key.
+ *
+ * Lives in `packages/crawler/src/clustering.ts` (formerly under
+ * `adapters/tj-media-direct/normalize.ts` — moved 2026-05-06 so the central
+ * merger doesn't depend on a specific adapter's normalize module).
  */
 describe('splitArtistCollab — single-artist (round-trip)', () => {
   it('returns [whole] for a Latin single artist', () => {
@@ -344,5 +349,22 @@ describe('getLeadComponent — Fix A.2 unified lead extractor', () => {
     expect(getLeadComponent('imase ＆ なとり')).toBe(normalizeForMatch('imase'));
     expect(getLeadComponent('A,B')).toBe(normalizeForMatch('A'));
     expect(getLeadComponent('A FEAT. B')).toBe(normalizeForMatch('A'));
+  });
+});
+
+// Cross-language parity partner: scripts/test_ingest_anisong_pdf.py
+// class TestDropSplitReContents — mirrors the assertIn guards there so that
+// a Biome/copilot "tidy" that removes a delimiter from the TS character class
+// is caught by CI before a real anisong PDF retag silently drops records.
+describe('SPLIT_RE — TS parity with Python _DROP_SPLIT_RE', () => {
+  it('contains the full delimiter character class for cross-language parity', () => {
+    expect(SPLIT_RE.source).toContain('\\s+meets\\s+');
+    expect(SPLIT_RE.source).toContain('｜');
+    expect(SPLIT_RE.source).toContain('\\s+with\\s+');
+    expect(SPLIT_RE.source).toContain('&');
+    expect(SPLIT_RE.source).toContain('＆');
+    expect(SPLIT_RE.source).toContain(',');
+    expect(SPLIT_RE.source).toContain('×');
+    expect(SPLIT_RE.source).toContain('feat\\.');
   });
 });
