@@ -371,6 +371,40 @@ describe('SongRecord — media_context_ko', () => {
   });
 });
 
+describe('SongRecord — title_ko_source', () => {
+  it('accepts a record with title_ko_source = blog', () => {
+    const rec = {
+      id: 'blog-1-0',
+      source_url: 'https://example.com/x',
+      title_primary: 'X',
+      title_ko: '엑스',
+      artist_primary: 'Y',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      title_ko_source: 'blog',
+    };
+    expect(() => validateSongRecord(rec)).not.toThrow();
+  });
+
+  it('rejects a record with unknown title_ko_source value', () => {
+    const rec = {
+      id: 'tj-1',
+      source_url: 'https://example.com/x',
+      title_primary: 'X',
+      title_ko: null,
+      artist_primary: 'Y',
+      artist_ko: null,
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-05-06T00:00:00.000Z',
+      title_ko_source: 'tj-original', // not in enum
+    };
+    expect(() => validateSongRecord(rec)).toThrow();
+  });
+});
+
 describe('RawSongRecord type shape', () => {
   it('compiles a raw pre-normalization record', () => {
     const raw: RawSongRecord = {

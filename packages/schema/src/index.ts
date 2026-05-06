@@ -59,6 +59,16 @@ export interface SongRecord {
    * Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
    */
   media_context_ko?: string;
+  /**
+   * Provenance tag for title_ko.
+   *   'blog'           — original blog crawl Korean translation
+   *   'llm-translated' — agent-translated in the title_ko backfill pipeline
+   *   'manual'         — reserved for any future hand-curation
+   *
+   * TJ-direct sortTitleKo never lands here. The Stage 1 normalizer nulls
+   * every TJ-derived title_ko (it is transliteration, not translation).
+   */
+  title_ko_source?: 'blog' | 'llm-translated' | 'manual';
 }
 
 /**
@@ -186,6 +196,10 @@ export const songRecordSchema = {
       format: 'date-time',
     },
     media_context_ko: { type: 'string', minLength: 1 },
+    title_ko_source: {
+      type: 'string',
+      enum: ['blog', 'llm-translated', 'manual'],
+    },
   },
 } as const;
 
