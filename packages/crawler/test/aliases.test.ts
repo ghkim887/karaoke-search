@@ -193,6 +193,72 @@ describe('resolveArtistAliases — Phase 2 collision detection', () => {
   });
 });
 
+describe('resolveArtistAliases — collision guard vs canonical identity (audit regression)', () => {
+  /**
+   * Regression test for the hypothesis raised in a code-review audit:
+   *
+   * > If Y is BOTH a canonical (record B: "Y｜Z") AND an alias (record A:
+   * > "X｜Y"), does record C (bare "Y") get wrongly blocked by `collidingKeys`?
+   *
+   * Trace:
+   *   Phase 1: aliasMap[normalize("Y")] = {normalize("X")}  (from A, size=1).
+   *            aliasMap[normalize("Z")] = {normalize("Y")}  (from B, size=1).
+   *            aliasesByCanonical[normalize("Y")] = ["Z"]   (from B).
+   *   Phase 2: aliasMap[normalize("Y")].size === 1 → NOT colliding.
+   *            collidingKeys does NOT contain normalize("Y").
+   *   Phase 3 for record C (bare "Y"):
+   *     - collidingKeys.has(normalize("Y")) → FALSE (no early-exit here).
+   *     - aliasesByCanonical.has(normalize("Y")) → TRUE (Y is a known canonical).
+   *     - Result: record C keeps artist_primary="Y", gains artist_aliases=["Z"].
+   *
+   * The audit finding is a FALSE ALARM: the early-exit guard at aliases.ts:263
+   * only fires when the same alias surface form keys to TWO OR MORE distinct
+   * canonicals in aliasMap. In this scenario normalize("Y") keys to exactly
+   * ONE canonical (X), so canonicalSet.size === 1, collidingKeys never receives
+   * normalize("Y"), and the bare record C falls through to the
+   * aliasesByCanonical branch which correctly treats it as a known canonical.
+   * The collision guard is alias-keyed, not canonical-keyed — there is no bug.
+   */
+  it('bare "Y" is treated as known canonical (not blocked) when Y is canonical in "Y|Z" and alias in "X|Y"', () => {
+    const recA = record({
+      id: 'blog-A',
+      artist_primary: 'X｜Y',
+    });
+    const recB = record({
+      id: 'blog-B',
+      artist_primary: 'Y｜Z',
+    });
+    const recC = record({
+      id: 'tj-C',
+      artist_primary: 'Y',
+    });
+
+    const { records, warnings } = resolveArtistAliases([recA, recB, recC]);
+
+    // No collision warnings — normalize("Y") keys to only one canonical (X).
+    expect(warnings).toHaveLength(0);
+
+    // Record A: pipe-split as normal.
+    const aOut = records.find((r) => r.id === 'blog-A');
+    expect(aOut?.artist_primary).toBe('X');
+    expect(aOut?.artist_aliases).toEqual(['Y']);
+
+    // Record B: pipe-split as normal.
+    const bOut = records.find((r) => r.id === 'blog-B');
+    expect(bOut?.artist_primary).toBe('Y');
+    expect(bOut?.artist_aliases).toEqual(['Z']);
+
+    // Record C: bare "Y" is a known canonical (aliasesByCanonical has it).
+    // It should NOT be re-keyed to X (the collidingKeys guard is irrelevant here
+    // because Y is not a colliding alias). It should stay as artist_primary="Y"
+    // and gain artist_aliases=["Z"] for search coverage — exactly the
+    // aliasesByCanonical propagation branch (aliases.ts:277-294).
+    const cOut = records.find((r) => r.id === 'tj-C');
+    expect(cOut?.artist_primary).toBe('Y');
+    expect(cOut?.artist_aliases).toEqual(['Z']);
+  });
+});
+
 describe('resolveArtistAliases — input immutability', () => {
   it('does not mutate the input records', () => {
     const r = record({
