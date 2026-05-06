@@ -55,14 +55,24 @@ committing.
 
 ## Running the orchestrator's tests
 
-The repo doesn't have a root-level vitest config; the script's tests are
-runnable via the package-anchored invocation:
+The repo doesn't have a root-level vitest config — vitest is hoisted into per-package `node_modules` only. To run the orchestrator's tests, invoke vitest from one of the workspace packages with `--root` pointing at the repo root.
 
-```
-cd packages/crawler
-corepack pnpm exec vitest run \
-  --root="$(realpath ..)" \
+PowerShell (this host's default):
+
+```powershell
+Set-Location packages/crawler
+corepack pnpm exec vitest run `
+  --root=(Resolve-Path ..\..).Path `
   scripts/translate_title_ko_via_agents.test.mjs
 ```
 
-(On Windows: substitute the absolute repo root for `$(realpath ..)`.)
+bash / WSL / macOS / Linux:
+
+```bash
+cd packages/crawler
+corepack pnpm exec vitest run \
+  --root="$(realpath ../..)" \
+  scripts/translate_title_ko_via_agents.test.mjs
+```
+
+Note the path math: starting from `packages/crawler`, the repo root is two parents up (`../..`), not one. Vitest resolves the positional path argument relative to `--root`, so `scripts/translate_title_ko_via_agents.test.mjs` ends up correctly pointing at `<repo-root>/scripts/translate_title_ko_via_agents.test.mjs`.
