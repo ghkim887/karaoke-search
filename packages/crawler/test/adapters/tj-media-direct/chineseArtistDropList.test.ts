@@ -4,9 +4,126 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CHINESE_ARTIST_DROP_LIST,
+  CHINESE_DROP_KEY_SET,
+  CHINESE_DROP_LIST,
   isInChineseDropList,
 } from '../../../src/adapters/tj-media-direct/chineseArtistDropList.js';
 import { normalizeForMatch } from '../../../src/adapters/tj-media-direct/normalize.js';
+
+// ---------------------------------------------------------------------------
+// Structured-entry shape tests (parity with koreanArtistDropList.test.ts)
+// ---------------------------------------------------------------------------
+
+describe('chineseArtistDropList — structured DropListEntry schema', () => {
+  it('exports at least 9 canonical entries (one per distinct Cantopop/Mandopop act)', () => {
+    expect(CHINESE_DROP_LIST.length).toBeGreaterThanOrEqual(9);
+  });
+
+  it('every entry has the required fields: canonical, variants, lastReviewed', () => {
+    for (const entry of CHINESE_DROP_LIST) {
+      expect(typeof entry.canonical).toBe('string');
+      expect(entry.canonical.length).toBeGreaterThan(0);
+      expect(Array.isArray(entry.variants)).toBe(true);
+      expect(entry.variants.length).toBeGreaterThan(0);
+      expect(typeof entry.lastReviewed).toBe('string');
+    }
+  });
+
+  it('every entry has a `lastReviewed` ISO date (YYYY-MM-DD)', () => {
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    for (const entry of CHINESE_DROP_LIST) {
+      expect(
+        isoDate.test(entry.lastReviewed),
+        `entry ${entry.canonical} has malformed lastReviewed: ${entry.lastReviewed}`,
+      ).toBe(true);
+      const parsed = Date.parse(entry.lastReviewed);
+      expect(Number.isFinite(parsed)).toBe(true);
+    }
+  });
+
+  it('every variant in every entry normalizes to a non-empty key', () => {
+    for (const entry of CHINESE_DROP_LIST) {
+      for (const variant of entry.variants) {
+        const key = normalizeForMatch(variant);
+        expect(
+          key,
+          `variant "${variant}" in entry "${entry.canonical}" normalizes to empty string`,
+        ).not.toBe('');
+      }
+    }
+  });
+
+  it('CHINESE_DROP_KEY_SET contains the normalized form of every variant', () => {
+    for (const entry of CHINESE_DROP_LIST) {
+      for (const variant of entry.variants) {
+        const key = normalizeForMatch(variant);
+        expect(
+          CHINESE_DROP_KEY_SET.has(key),
+          `variant "${variant}" (key="${key}") from entry "${entry.canonical}" missing from CHINESE_DROP_KEY_SET`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('CHINESE_DROP_KEY_SET has one entry per distinct normalized variant key (no cross-canonical collisions)', () => {
+    // Within-entry collisions are expected (BEYOND/Beyond/beyond all → "beyond").
+    // Cross-entry collisions (two distinct canonicals sharing a key) are data errors.
+    const keyToCanonicals = new Map<string, Set<string>>();
+    const keyToEntryStrings = new Map<string, string[]>();
+    for (const entry of CHINESE_DROP_LIST) {
+      for (const variant of entry.variants) {
+        const key = normalizeForMatch(variant);
+        let canonSet = keyToCanonicals.get(key);
+        if (!canonSet) {
+          canonSet = new Set<string>();
+          keyToCanonicals.set(key, canonSet);
+        }
+        canonSet.add(entry.canonical);
+        const arr = keyToEntryStrings.get(key);
+        if (arr) arr.push(`${entry.canonical}/${variant}`);
+        else keyToEntryStrings.set(key, [`${entry.canonical}/${variant}`]);
+      }
+    }
+    const collisions: string[] = [];
+    for (const [key, canonSet] of keyToCanonicals) {
+      if (canonSet.size > 1) {
+        collisions.push(`  - "${key}": [${keyToEntryStrings.get(key)?.join(', ')}]`);
+      }
+    }
+    if (collisions.length > 0) {
+      throw new Error(
+        `Drop-list cross-canonical variant collisions detected — each normalized key must come from ONE canonical entry:\n${collisions.join('\n')}`,
+      );
+    }
+    expect(CHINESE_DROP_KEY_SET.size).toBe(keyToCanonicals.size);
+  });
+
+  it('non-blocking warning for entries older than 90 days (3-month review cadence)', () => {
+    const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const stale: string[] = [];
+    for (const entry of CHINESE_DROP_LIST) {
+      const reviewedMs = Date.parse(entry.lastReviewed);
+      if (!Number.isFinite(reviewedMs)) continue;
+      if (nowMs - reviewedMs > NINETY_DAYS_MS) {
+        const ageDays = Math.floor((nowMs - reviewedMs) / (24 * 60 * 60 * 1000));
+        stale.push(`${entry.canonical} (lastReviewed=${entry.lastReviewed}, ${ageDays}d ago)`);
+      }
+    }
+    if (stale.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[chineseArtistDropList] ${stale.length} entries are older than 90 days — re-probe against tj-search-cache.json and bump lastReviewed:\n  ${stale.join('\n  ')}`,
+      );
+    }
+    // Soft warning, not a hard failure. Same policy as koreanArtistDropList.
+    expect(true).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Original surface-form coverage tests (preserved from flat-schema version)
+// ---------------------------------------------------------------------------
 
 describe('chineseArtistDropList — Cantopop / Mandopop seed list', () => {
   // Every observed surface form from the 2026-05-06 audit. Three of these

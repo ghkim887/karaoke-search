@@ -1,4 +1,9 @@
 import { normalizeForMatch } from './normalize.js';
+import type { DropListEntry } from './koreanArtistDropList.js';
+
+// Re-export the shared type so callers can import it from here without
+// reaching into the Korean module directly.
+export type { DropListEntry };
 
 /**
  * Hand-curated drop list of Cantopop / Mandopop artists incorrectly tagged as
@@ -17,6 +22,11 @@ import { normalizeForMatch } from './normalize.js';
  *     (`classifyRecord` step 0) — any-component scan, applied BEFORE every
  *     admit path including the blog rescue.
  *
+ * Schema: `DropListEntry` (same as `koreanArtistDropList.ts`) — shared type,
+ * not duplicated. Each entry has `canonical` (primary display name), `variants`
+ * (all observed surface forms), `lastReviewed` (ISO date, 3-month cadence),
+ * and an optional `note`.
+ *
  * Maintenance policy:
  *   - **Bias toward keeping entries.** Removing an entry is only correct when
  *     the act has shifted to a Japan-only career.
@@ -27,38 +37,82 @@ import { normalizeForMatch } from './normalize.js';
  *           three cases, Twins in three cases — the case-sensitive Set means
  *           every variant must be listed explicitly),
  *       (3) add a regression case to
- *           `packages/crawler/test/adapters/tj-media-direct/parser.test.ts`.
+ *           `packages/crawler/test/adapters/tj-media-direct/parser.test.ts`,
+ *       (4) set `lastReviewed` to today's UTC date (`YYYY-MM-DD`).
+ *   - **3-month review cadence.** Re-probe every entry against
+ *     `apps/web/public/data/tj-search-cache.json`. Bump `lastReviewed` after
+ *     each probe. Initial review date `2026-05-08` set during the structured-
+ *     schema promotion (architect audit finding M2, 2026-05-08).
  *
  * Hot-path performance: `CHINESE_ARTIST_DROP_LIST` is a `ReadonlySet<string>`
  * built once at module load. The parser hot path is a single `Set.has()` per
- * collab component. Lookups are EXACT-MATCH (no normalization beyond what the
- * parser already applies via `normalizeForMatch`); the variants below are
- * pre-normalized at module load.
+ * collab component. Lookups are EXACT-MATCH on pre-normalized keys.
  */
 
 /**
- * Raw seed list of Cantopop / Mandopop artist surface forms observed in the
- * leaked corpus (2026-05-06 audit). Case-sensitive observed variants are all
- * listed — `BEYOND` / `Beyond` / `beyond`, `Twins` / `twins` / `TWINS` —
- * because the audit fixed-point caught all three of each on different records.
+ * Seed list of confirmed Cantopop / Mandopop leakers (2026-05-06 audit,
+ * structured schema added 2026-05-08).
  *
- * Pre-normalized at module load via `normalizeForMatch` (the parser's hot-path
- * key shape) so the lookup is a single `Set.has()` per collab component.
+ * Case variants (BEYOND / Beyond / beyond, Twins / twins / TWINS) are all
+ * listed because the audit fixed-point caught all three of each on different
+ * TJ records. They collapse to the same normalized key at lookup time, but
+ * the `variants` array documents exactly what was observed in the wild.
  */
-const CHINESE_ARTIST_DROP_LIST_RAW: readonly string[] = [
-  'BEYOND',
-  'Beyond',
-  'beyond',
-  'F4',
-  'S.H.E',
-  'Twins',
-  'twins',
-  'TWINS',
-  'R1SE',
-  'B.A.D',
-  'F.I.R.',
-  'Marry-M',
-  'NZBZ',
+export const CHINESE_DROP_LIST: readonly DropListEntry[] = [
+  {
+    canonical: 'BEYOND',
+    variants: ['BEYOND', 'Beyond', 'beyond'],
+    lastReviewed: '2026-05-08',
+    note: 'Hong Kong rock band. Three case-sensitive variants observed on different TJ records (2026-05-06 audit).',
+  },
+  {
+    canonical: 'F4',
+    variants: ['F4'],
+    lastReviewed: '2026-05-08',
+    note: 'Taiwanese Mandopop group (Meteor Garden tie-in). Single observed surface form.',
+  },
+  {
+    canonical: 'S.H.E',
+    variants: ['S.H.E'],
+    lastReviewed: '2026-05-08',
+    note: 'Taiwanese Mandopop girl group.',
+  },
+  {
+    canonical: 'Twins',
+    variants: ['Twins', 'twins', 'TWINS'],
+    lastReviewed: '2026-05-08',
+    note: 'Cantopop duo. Three case-sensitive variants observed (2026-05-06 audit).',
+  },
+  {
+    canonical: 'R1SE',
+    variants: ['R1SE'],
+    lastReviewed: '2026-05-08',
+    note: 'Chinese boy group (Idol Producer 2019).',
+  },
+  {
+    canonical: 'B.A.D',
+    variants: ['B.A.D'],
+    lastReviewed: '2026-05-08',
+    note: 'Chinese act. Observed in leaked corpus records.',
+  },
+  {
+    canonical: 'F.I.R.',
+    variants: ['F.I.R.'],
+    lastReviewed: '2026-05-08',
+    note: 'Taiwanese Mandopop band (Fairyland In Reality).',
+  },
+  {
+    canonical: 'Marry-M',
+    variants: ['Marry-M'],
+    lastReviewed: '2026-05-08',
+    note: 'Chinese act. Observed in leaked corpus records.',
+  },
+  {
+    canonical: 'NZBZ',
+    variants: ['NZBZ'],
+    lastReviewed: '2026-05-08',
+    note: 'Chinese act (牛仔很忙组合). Observed in leaked corpus records.',
+  },
 ];
 
 /**
@@ -71,12 +125,22 @@ const CHINESE_ARTIST_DROP_LIST_RAW: readonly string[] = [
  */
 export const CHINESE_ARTIST_DROP_LIST: ReadonlySet<string> = (() => {
   const set = new Set<string>();
-  for (const variant of CHINESE_ARTIST_DROP_LIST_RAW) {
-    const key = normalizeForMatch(variant);
-    if (key !== '') set.add(key);
+  for (const entry of CHINESE_DROP_LIST) {
+    for (const variant of entry.variants) {
+      const key = normalizeForMatch(variant);
+      if (key !== '') set.add(key);
+    }
   }
   return set;
 })();
+
+/**
+ * Alias for `CHINESE_ARTIST_DROP_LIST` using the same naming convention as the
+ * Korean module's `DROP_KEY_SET`. Prefer `CHINESE_ARTIST_DROP_LIST` in parser
+ * hot-path code (keeps the original name stable); prefer `CHINESE_DROP_KEY_SET`
+ * in test code that iterates structured entries (symmetric with Korean tests).
+ */
+export const CHINESE_DROP_KEY_SET: ReadonlySet<string> = CHINESE_ARTIST_DROP_LIST;
 
 /**
  * Drop-list membership check. Input MUST already be normalized via
