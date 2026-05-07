@@ -38,7 +38,7 @@ Behavior
    If yes, drop. Categorical matching mirrors the parser's behaviour exactly
    so re-running this script after a re-crawl produces zero deletions.
 4. Atomic-write the result back via `<file>.tmp` + `os.replace()` (mirrors the
-   pattern used by `ingest-anisong-pdf.py` and the JS crawler workflow). When
+   pattern used by `ingest_anisong_pdf.py` and the JS crawler workflow). When
    no records match the drop list, the corpus file is NOT rewritten — the
    existing on-disk bytes survive untouched, preserving mtime and avoiding
    spurious diffs.
@@ -50,7 +50,7 @@ no mtime change).
 
 Usage
 -----
-    python scripts/drop-kpop-leaks.py
+    python scripts/drop_kpop_leaks.py
 """
 
 from __future__ import annotations

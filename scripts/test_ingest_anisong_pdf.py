@@ -1,4 +1,4 @@
-"""Regression tests for `scripts/ingest-anisong-pdf.py`.
+"""Regression tests for `scripts/ingest_anisong_pdf.py`.
 
 Stdlib-only (`unittest`, no extra deps). Covers the three helpers most prone to
 silent regression: category exclusivity, anchor extraction (false-positive
@@ -7,9 +7,6 @@ floor + rightmost-pick), and Hangul→non-Hangul transition splitting.
 Also includes fixture-based end-to-end tests for `parse_pdf()` against synthetic
 PDF-text snippets (TestParsePdfFixtures) and an idempotency round-trip test
 (TestIngestIdempotent).
-
-The script's filename contains a hyphen, so it is loaded via `importlib`
-rather than a normal `import` statement.
 
 Run:
     python -m unittest scripts/test_ingest_anisong_pdf.py
@@ -27,7 +24,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-_SCRIPT_PATH = Path(__file__).resolve().parent / 'ingest-anisong-pdf.py'
+_SCRIPT_PATH = Path(__file__).resolve().parent / 'ingest_anisong_pdf.py'
 _spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _SCRIPT_PATH)
 assert _spec is not None and _spec.loader is not None
 ingest = importlib.util.module_from_spec(_spec)

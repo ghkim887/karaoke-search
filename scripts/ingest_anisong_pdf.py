@@ -28,7 +28,7 @@ row at L8281 of the cached text, marked by a left-column `보컬로이드,` cell
 are tagged 'vocaloid'. See `_SECTION_DIVIDERS` for the full map.
 
 NOT a recurring crawler — schema-equivalent to a side-channel monthly enrichment.
-Run from repo root: `python scripts/ingest-anisong-pdf.py`
+Run from repo root: `python scripts/ingest_anisong_pdf.py`
 
 Regenerate the source text with:
   pdftotext -table -enc UTF-8 -nopgbrk anisong_2026-02.pdf scripts/data/anisong_utf8.txt

@@ -8,7 +8,7 @@
  * sidecar JSON at `packages/schema/category-priority.json` — tracked in git,
  * co-located with the schema package it describes.
  *
- * Why this matters: `scripts/ingest-anisong-pdf.py` contains
+ * Why this matters: `scripts/ingest_anisong_pdf.py` contains
  * `_apply_category_exclusivity` which hard-codes the same
  * `('vocaloid', 'anime', 'jpop')` priority order. Previously sync was
  * test-only; now it is mechanical — Python reads the priority array from this
@@ -62,7 +62,7 @@ async function main() {
   };
 
   // Atomic write: <file>.tmp then rename, matching the project's atomic-write
-  // convention (see `scripts/ingest-anisong-pdf.py::_atomic_write_corpus`).
+  // convention (see `scripts/ingest_anisong_pdf.py::_atomic_write_corpus`).
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   const tmpPath = `${OUT_PATH}.tmp`;
   writeFileSync(tmpPath, `${JSON.stringify(sidecar, null, 2)}\n`, 'utf-8');

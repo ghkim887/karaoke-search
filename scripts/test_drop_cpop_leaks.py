@@ -312,7 +312,7 @@ class TestDropCpopLeaksIdempotent(unittest.TestCase):
 
 
 class TestDropCpopLeaksMissingSidecar(unittest.TestCase):
-    """Missing sidecar → exit 2 (mirrors drop-kpop-leaks.py behavior)."""
+    """Missing sidecar → exit 2 (mirrors drop_kpop_leaks.py behavior)."""
 
     def test_missing_sidecar_returns_2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

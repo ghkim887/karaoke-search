@@ -1,4 +1,4 @@
-"""Regression tests for `scripts/retag-blog-vocaloid-mistags.py`.
+"""Regression tests for `scripts/retag_blog_vocaloid_mistags.py`.
 
 Stdlib-only (`unittest`, no extra deps). Mirrors the shape of
 `scripts/test_ingest_anisong_pdf.py`. Covers the override-map helper, the
@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-_SCRIPT_PATH = Path(__file__).resolve().parent / 'retag-blog-vocaloid-mistags.py'
+_SCRIPT_PATH = Path(__file__).resolve().parent / 'retag_blog_vocaloid_mistags.py'
 _spec = importlib.util.spec_from_file_location('retag_blog_vocaloid_mistags', _SCRIPT_PATH)
 assert _spec is not None and _spec.loader is not None
 retag = importlib.util.module_from_spec(_spec)

@@ -9,7 +9,7 @@
  * `packages/crawler/src/clustering-rules.json` — tracked in git, co-located
  * with the module it describes.
  *
- * Why this matters: `scripts/ingest-anisong-pdf.py` contains `_DROP_SPLIT_RE`
+ * Why this matters: `scripts/ingest_anisong_pdf.py` contains `_DROP_SPLIT_RE`
  * which is a superset of `SPLIT_RE` (it prepends the feat-paren alt so Python's
  * `re.split()` can capture group 1). The delimiter alternations in that regex
  * MUST stay in sync with `SPLIT_RE_SOURCE`. Previously sync was test-only; now
@@ -71,7 +71,7 @@ async function main() {
   };
 
   // Atomic write: <file>.tmp then rename, matching the project's atomic-write
-  // convention (see `scripts/ingest-anisong-pdf.py::_atomic_write_corpus`).
+  // convention (see `scripts/ingest_anisong_pdf.py::_atomic_write_corpus`).
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   const tmpPath = `${OUT_PATH}.tmp`;
   writeFileSync(tmpPath, `${JSON.stringify(sidecar, null, 2)}\n`, 'utf-8');

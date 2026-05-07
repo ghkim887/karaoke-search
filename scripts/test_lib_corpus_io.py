@@ -75,7 +75,7 @@ class TestAtomicWriteCorpus(unittest.TestCase):
 
     def test_uses_indent_2_and_trailing_newline(self) -> None:
         """Format must be indent=2 + trailing newline for byte-idempotency with
-        the rest of the pipeline (e.g. ingest-anisong-pdf.py, the TS crawler).
+        the rest of the pipeline (e.g. ingest_anisong_pdf.py, the TS crawler).
         """
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / 'songs.json'

@@ -1,11 +1,8 @@
-"""Regression tests for `scripts/drop-kpop-leaks.py` (Fix 5, 2026-05-01).
+"""Regression tests for `scripts/drop_kpop_leaks.py` (Fix 5, 2026-05-01).
 
 Stdlib-only (`unittest`, no extra deps). Covers idempotency: the cleanup
 script must produce a no-op on a corpus that's already clean — same
 record count, no rewrite of the on-disk file (no mtime change).
-
-The script's filename contains a hyphen, so it is loaded via `importlib`
-rather than a normal `import` statement.
 
 Run:
     python -m unittest scripts/test_drop_kpop_leaks.py
@@ -23,7 +20,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-_SCRIPT_PATH = Path(__file__).resolve().parent / 'drop-kpop-leaks.py'
+_SCRIPT_PATH = Path(__file__).resolve().parent / 'drop_kpop_leaks.py'
 _spec = importlib.util.spec_from_file_location('drop_kpop_leaks', _SCRIPT_PATH)
 assert _spec is not None and _spec.loader is not None
 script = importlib.util.module_from_spec(_spec)
@@ -211,7 +208,7 @@ class TestDropKpopLeaksIdempotent(unittest.TestCase):
 
 
 class TestDropKpopLeaksMissingSidecar(unittest.TestCase):
-    """When the sidecar is absent, drop-kpop-leaks.py must error out (exit 2).
+    """When the sidecar is absent, drop_kpop_leaks.py must error out (exit 2).
 
     Unlike the PDF ingest (which gracefully degrades), this script's whole job
     is the drop-list filter — running without a sidecar would be a silent

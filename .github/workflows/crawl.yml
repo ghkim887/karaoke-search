@@ -103,13 +103,13 @@ jobs:
         run: python -m unittest scripts/test_splitter_parity.py
 
       - name: Apply TJ anisong PDF section tags
-        run: python scripts/ingest-anisong-pdf.py
+        run: python scripts/ingest_anisong_pdf.py
 
       - name: Replay merger after anisong PDF ingest
         run: node scripts/replay-merger.mjs
 
       - name: Apply blog post-id category overrides
-        run: python scripts/retag-blog-vocaloid-mistags.py
+        run: python scripts/retag_blog_vocaloid_mistags.py
 
       - name: Prune stale tj-search-cache entries
         run: node scripts/prune-artist-nationality-cache.mjs

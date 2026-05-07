@@ -1,6 +1,6 @@
 """Shared corpus I/O helpers for the karaoke data pipeline.
 
-Extracted from `scripts/ingest-anisong-pdf.py` so that all pipeline scripts
+Extracted from `scripts/ingest_anisong_pdf.py` so that all pipeline scripts
 share identical write formatting (indent=2, trailing newline, UTF-8, no BOM)
 and UTF-8 stdio initialisation without the importlib hack.
 

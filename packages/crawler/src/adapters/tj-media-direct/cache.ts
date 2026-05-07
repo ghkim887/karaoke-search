@@ -37,7 +37,7 @@ import { isPlainObject } from './normalize.js';
  * the per-artist scanner, the parser's filter, and any future consumer.
  *
  * Atomic writes: write to `<file>.tmp`, then rename. Mirrors the
- * `scripts/ingest-anisong-pdf.py` pattern.
+ * `scripts/ingest_anisong_pdf.py` pattern.
  *
  * 90-day staleness: entries with `lastSeen` older than 90 days are treated
  * as missing by the freshness helpers so they get re-fetched. Catalog-mutation

@@ -73,7 +73,7 @@ async function main() {
   };
 
   // Atomic write: <file>.tmp then rename, matching the project's atomic-write
-  // convention (see `scripts/ingest-anisong-pdf.py::_atomic_write_corpus`).
+  // convention (see `scripts/ingest_anisong_pdf.py::_atomic_write_corpus`).
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   const tmpPath = `${OUT_PATH}.tmp`;
   writeFileSync(tmpPath, `${JSON.stringify(sidecar, null, 2)}\n`, 'utf-8');

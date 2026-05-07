@@ -1,6 +1,6 @@
 """Shared category-exclusivity helper for the karaoke data pipeline.
 
-Extracted from `scripts/ingest-anisong-pdf.py`. Mirrors
+Extracted from `scripts/ingest_anisong_pdf.py`. Mirrors
 `applyCategoryExclusivity` in `packages/schema/src/index.ts` and
 `packages/crawler/src/merge.ts` so all Python pipeline scripts apply the
 same mutual-exclusivity rule: at most one of {jpop, vocaloid, anime} per

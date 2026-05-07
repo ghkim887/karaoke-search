@@ -11,7 +11,7 @@ already-crawled `apps/web/public/data/songs.json` so a maintainer who adds
 new entries to the drop list can clean the corpus without paying the
 re-crawl cost.
 
-Mirrors `scripts/drop-kpop-leaks.py` exactly — only the sidecar path and
+Mirrors `scripts/drop_kpop_leaks.py` exactly — only the sidecar path and
 the additional ID drop-list differ.
 
 Catalog-anomaly IDs

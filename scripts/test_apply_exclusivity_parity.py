@@ -5,17 +5,13 @@ implemented twice:
 
   - TS source-of-truth: `packages/schema/src/index.ts` exporting
     `applyCategoryExclusivity(Set<Category>): void` (mutates in place).
-  - Python hand-port: `scripts/ingest-anisong-pdf.py` defining
+  - Python hand-port: `scripts/ingest_anisong_pdf.py` defining
     `_apply_category_exclusivity(list[str]) -> list[str]` (returns sorted list).
 
 If either implementation drifts, downstream corpora diverge between the
 JS crawler/merger pipeline and the Python PDF ingest. This test enumerates
 all 2**3 = 8 input subsets of {jpop, vocaloid, anime} and asserts the two
 implementations produce identical sorted-list outputs for every subset.
-
-The Python implementation lives in a hyphenated filename
-(`ingest-anisong-pdf.py`) which is not a valid Python module identifier,
-so we load it via `runpy.run_path()` rather than `import`.
 
 Run:
     python -m unittest scripts/test_apply_exclusivity_parity.py
@@ -35,7 +31,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TS_DIST = REPO_ROOT / 'packages' / 'schema' / 'dist' / 'index.js'
 SIDECAR = REPO_ROOT / 'packages' / 'schema' / 'category-priority.json'
-PY_SCRIPT = REPO_ROOT / 'scripts' / 'ingest-anisong-pdf.py'
+PY_SCRIPT = REPO_ROOT / 'scripts' / 'ingest_anisong_pdf.py'
 
 CATEGORIES = ('jpop', 'vocaloid', 'anime')
 EXPECTED_PRIORITY = ['vocaloid', 'anime', 'jpop']

@@ -13,17 +13,17 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 
 | Script | Role | Frequency | Invocation context |
 |---|---|---|---|
-| `ingest-anisong-pdf.py` | CI / data ingest | Weekly | After JS crawl, in `crawl.yml` |
+| `ingest_anisong_pdf.py` | CI / data ingest | Weekly | After JS crawl, in `crawl.yml` |
 | `validate-songs-json.mjs` | CI / data quality gate | Per crawl | After ingest, in `crawl.yml` |
 | `replay-merger.mjs` | CI / merger replay | Per crawl | After ingest, before validate |
 | `export-drop-list.mjs` | Build chain | On every `pnpm build` | Auto-invoked by `package.json` `build` script |
-| `drop-kpop-leaks.py` | Ad-hoc cleanup | As-needed | Manual, after drop-list updates |
+| `drop_kpop_leaks.py` | Ad-hoc cleanup | As-needed | Manual, after drop-list updates |
 | `test_ingest_anisong_pdf.py` | Tests | CI / local | `python -m unittest scripts/test_ingest_anisong_pdf.py` |
 | `test_drop_kpop_leaks.py` | Tests | CI / local | `python -m unittest scripts/test_drop_kpop_leaks.py` |
 
 ## Operational notes
 
-- **Atomic writes everywhere.** `ingest-anisong-pdf.py` and `replay-merger.mjs`
+- **Atomic writes everywhere.** `ingest_anisong_pdf.py` and `replay-merger.mjs`
   both write to a `<file>.tmp` then `os.replace()` / `renameSync()` — partial
   writes never reach `apps/web/public/data/songs.json`.
 - **`replay-merger.mjs` is gated by safety thresholds.** Refuses to write

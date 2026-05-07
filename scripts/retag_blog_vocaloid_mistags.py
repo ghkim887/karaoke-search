@@ -10,8 +10,8 @@ however, takes hours of HTTP. This script re-applies the same override map
 against an already-crawled `apps/web/public/data/songs.json` so the existing
 22 mistagged records can be fixed without paying the re-crawl cost.
 
-Mirrors the pattern of `scripts/drop-kpop-leaks.py` (filter-and-rewrite-corpus
-with sidecar config) and `scripts/ingest-anisong-pdf.py` (atomic write +
+Mirrors the pattern of `scripts/drop_kpop_leaks.py` (filter-and-rewrite-corpus
+with sidecar config) and `scripts/ingest_anisong_pdf.py` (atomic write +
 `_apply_category_exclusivity` reuse).
 
 Scope (TODO 2 of 2026-05-04 vocaloid-mistag audit)
@@ -35,7 +35,7 @@ Behavior
    replace `categories` with `['jpop']`. The fix is gated on the presence of
    `vocaloid` because PDF-derived `anime` tags on the same blog posts (e.g.
    Aimer's anime tie-in tracks like `六等星の夜 (NO.6 ED)` from
-   `scripts/ingest-anisong-pdf.py`) encode a real, cross-validated signal
+   `scripts/ingest_anisong_pdf.py`) encode a real, cross-validated signal
    that must NOT be clobbered. The audit's bug is confined to the `vocaloid`
    mistag.
 3. Run `_apply_category_exclusivity` on each rewritten record's categories
@@ -52,7 +52,7 @@ no mtime change).
 
 Usage
 -----
-    python scripts/retag-blog-vocaloid-mistags.py
+    python scripts/retag_blog_vocaloid_mistags.py
 """
 
 from __future__ import annotations

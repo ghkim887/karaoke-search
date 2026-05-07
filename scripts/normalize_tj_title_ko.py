@@ -6,7 +6,7 @@ parenthetical media-context tag (e.g. `(진격의 거인 OP)`) into the new
 `media_context_ko` field. Tags blog records' `title_ko_source` as 'blog'.
 
 Idempotent: re-running on unchanged input produces no diff. Atomic write
-via the shared `_atomic_write_corpus` helper from `ingest-anisong-pdf.py`
+via the shared `_atomic_write_corpus` helper from `ingest_anisong_pdf.py`
 (indent=2 + trailing newline) so output stays byte-compatible with the
 rest of the pipeline.
 
