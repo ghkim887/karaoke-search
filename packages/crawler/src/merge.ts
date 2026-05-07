@@ -334,6 +334,41 @@ function mergeArtistAliases(
   return out.length > 0 ? out : undefined;
 }
 
+/**
+ * Pick the cluster member whose `title_ko` was selected by `pickByOwnership`
+ * walking `koChain`. Both passes walk the chain in identical order so the
+ * chosen donor is always the same record whose `title_ko` wins the merge —
+ * keeping the trio (`title_ko`, `title_ko_source`, `title_ko_confidence`) and
+ * `media_context_ko` coherent on a single record.
+ *
+ * Two-pass strategy:
+ *   1. Prefer a record that has a non-null `title_ko` AND matches a chain slug.
+ *   2. Latin-titled fallback: `title_ko` may be null but `media_context_ko`
+ *      may be set (e.g. an anime track with a Latin title whose only Korean
+ *      signal is the media-context parenthetical).
+ *
+ * Returns `null` when the cluster has no KO signal at all (all fields absent).
+ */
+function pickKoDonor(cluster: SongRecord[], koChain: string[]): SongRecord | null {
+  // Pass 1: record whose title_ko was selected.
+  for (const slug of koChain) {
+    for (const r of cluster) {
+      if (sourceSlug(r) === slug && r.title_ko !== null) return r;
+    }
+  }
+  // Pass 2: Latin-titled fallback — title_ko is null but media_context_ko set.
+  for (const slug of koChain) {
+    for (const r of cluster) {
+      if (sourceSlug(r) === slug && r.media_context_ko !== undefined) return r;
+    }
+  }
+  // Fallback: any record in the cluster with a media_context_ko (non-listed source).
+  for (const r of cluster) {
+    if (r.media_context_ko !== undefined) return r;
+  }
+  return null;
+}
+
 function mergeCluster(
   cluster: SongRecord[],
   wasTierB: boolean,
@@ -366,6 +401,13 @@ function mergeCluster(
     cluster[0]?.artist_primary ??
     '';
   const mergedAliases = mergeArtistAliases(cluster, mergedArtistPrimary);
+  // Pick the single donor record for the KO optional-field trio so that
+  // title_ko_source, title_ko_confidence, and media_context_ko stay paired
+  // with the record whose title_ko was selected. This preserves the schema
+  // cross-field constraint (title_ko_confidence valid only when
+  // title_ko_source === 'llm-translated') because both fields travel together
+  // from a donor that already satisfied the constraint.
+  const koDonor = pickKoDonor(cluster, koChain);
   const merged: SongRecord = {
     id: pickByPriority(cluster, (r) => r.id),
     source_url: pickByPriority(cluster, (r) => r.source_url),
@@ -386,6 +428,12 @@ function mergeCluster(
     karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
     categories: mergeCategories(cluster),
     crawled_at: latestCrawledAt,
+    // Optional KO-pipeline fields: spread from the single donor so the trio
+    // (media_context_ko, title_ko_source, title_ko_confidence) stays coherent.
+    // Absence is preferred over undefined/null (schema uses optional, not nullable).
+    ...(koDonor?.media_context_ko !== undefined ? { media_context_ko: koDonor.media_context_ko } : {}),
+    ...(koDonor?.title_ko_source !== undefined ? { title_ko_source: koDonor.title_ko_source } : {}),
+    ...(koDonor?.title_ko_confidence !== undefined ? { title_ko_confidence: koDonor.title_ko_confidence } : {}),
   };
 
   // Tier C: emit one structured warning per cluster (NOT per record-pair) so

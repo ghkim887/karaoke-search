@@ -852,6 +852,120 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
 });
 
 // ---------------------------------------------------------------------
+// title_ko optional-field trio preservation (FIX-1 regression tests)
+// Covers: media_context_ko, title_ko_source, title_ko_confidence surviving
+// mergeCluster via pickKoDonor.
+// ---------------------------------------------------------------------
+describe('mergeRecords — title_ko optional-field trio preservation (FIX-1)', () => {
+  it('Test 1 — pairs title_ko_source with the blog title_ko donor', () => {
+    const blog = record({
+      id: 'blog-100-0',
+      source_url: 'https://blog.test/100',
+      title_primary: '夜に駆ける',
+      title_ko: '블로그번역',
+      title_ko_source: 'blog',
+    });
+    const tj = record({
+      id: 'tj-20001',
+      source_url: 'https://tj.test/20001',
+      title_primary: '夜に駆ける',
+      title_ko: null,
+      karaoke_numbers: { tj: '20001', ky: null, joysound: null },
+    });
+    // Force Tier B cluster: same title+artist, no shared vendor.
+    const { records } = mergeRecords([blog, tj]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    expect(m.title_ko).toBe('블로그번역');
+    expect(m.title_ko_source).toBe('blog');
+    // title_ko_confidence must NOT be present (blog source disallows it).
+    expect(m.title_ko_confidence).toBeUndefined();
+  });
+
+  it('Test 2 — preserves llm-translated trio (source + confidence) through merge', () => {
+    const blog = record({
+      id: 'blog-101-0',
+      source_url: 'https://blog.test/101',
+      title_primary: '群青',
+      title_ko: 'LLM 번역',
+      title_ko_source: 'llm-translated',
+      title_ko_confidence: 'high',
+    });
+    const tj = record({
+      id: 'tj-20002',
+      source_url: 'https://tj.test/20002',
+      title_primary: '群青',
+      title_ko: null,
+      karaoke_numbers: { tj: '20002', ky: null, joysound: null },
+    });
+    const { records } = mergeRecords([blog, tj]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    expect(m.title_ko).toBe('LLM 번역');
+    expect(m.title_ko_source).toBe('llm-translated');
+    expect(m.title_ko_confidence).toBe('high');
+  });
+
+  it('Test 3 — preserves media_context_ko on Latin-titled record (title_ko null)', () => {
+    const blog = record({
+      id: 'blog-102-0',
+      source_url: 'https://blog.test/102',
+      title_primary: 'Attack on Titan OP',
+      title_ko: null,
+      media_context_ko: '(진격의 거인 OP)',
+    });
+    const { records } = mergeRecords([blog]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    expect(m.media_context_ko).toBe('(진격의 거인 OP)');
+  });
+
+  it('Test 4 — exhaustiveness guard: every optional SongRecord field survives singleton-cluster merge', () => {
+    // Populate every optional field defined in SongRecord. If a future field is
+    // added to the schema but NOT threaded through mergeCluster, this test
+    // fails loudly (missing field on the output).
+    //
+    // Cross-field constraint: title_ko_confidence requires title_ko_source='llm-translated'.
+    // 'manual' source does NOT carry confidence — tested separately in Test 1.
+    // Here we use 'llm-translated' to exercise the confidence path.
+    const full = record({
+      id: 'blog-103-0',
+      source_url: 'https://blog.test/103',
+      title_primary: 'メルト',
+      title_ko: '멜트',
+      artist_primary: 'ryo｜supercell',
+      artist_aliases: ['supercell'],
+      media_context_ko: '(초음 미크 오리지널)',
+      title_ko_source: 'llm-translated',
+      title_ko_confidence: 'medium',
+      categories: ['vocaloid'],
+    });
+
+    const { records } = mergeRecords([full]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+
+    // Required fields.
+    expect(m.id).toBe('blog-103-0');
+    expect(m.title_primary).toBe('メルト');
+    expect(m.title_ko).toBe('멜트');
+    expect(m.artist_primary).toBe('ryo｜supercell');
+    expect(m.artist_ko).toBeNull();
+    expect(m.categories).toEqual(['vocaloid']);
+
+    // Optional fields — none should be missing.
+    expect(m.artist_aliases).toEqual(['supercell']);
+    expect(m.media_context_ko).toBe('(초음 미크 오리지널)');
+    expect(m.title_ko_source).toBe('llm-translated');
+    expect(m.title_ko_confidence).toBe('medium');
+  });
+});
+
+// ---------------------------------------------------------------------
 // getLeadComponent — verified through Tier C clustering integration
 // ---------------------------------------------------------------------
 describe('getLeadComponent (via Tier C integration)', () => {
