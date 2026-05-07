@@ -5,7 +5,6 @@ import {
   type KaraokeNumbers,
   type RawSongRecord,
   type SongRecord,
-  applyCategoryExclusivity,
   validateSongRecord,
 } from './index.js';
 
@@ -235,57 +234,6 @@ describe('categories mutual-exclusivity', () => {
     expect(() =>
       validateSongRecord(recordWithCategories(['jpop', 'anime', 'vocaloid'])),
     ).toThrowError(/categories/);
-  });
-});
-
-describe('applyCategoryExclusivity — priority vocaloid > anime > jpop', () => {
-  function asSet(cats: Category[]): Set<Category> {
-    return new Set(cats);
-  }
-  function asSorted(s: Set<Category>): Category[] {
-    return [...s].sort();
-  }
-
-  it('leaves [jpop] unchanged', () => {
-    const s = asSet(['jpop']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['jpop']);
-  });
-
-  it('leaves [anime] unchanged', () => {
-    const s = asSet(['anime']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['anime']);
-  });
-
-  it('leaves [vocaloid] unchanged', () => {
-    const s = asSet(['vocaloid']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['vocaloid']);
-  });
-
-  it('drops jpop from [jpop, anime] -> [anime]', () => {
-    const s = asSet(['jpop', 'anime']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['anime']);
-  });
-
-  it('drops jpop from [jpop, vocaloid] -> [vocaloid]', () => {
-    const s = asSet(['jpop', 'vocaloid']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['vocaloid']);
-  });
-
-  it('drops anime from [anime, vocaloid] -> [vocaloid] (vocaloid wins)', () => {
-    const s = asSet(['anime', 'vocaloid']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['vocaloid']);
-  });
-
-  it('collapses [jpop, anime, vocaloid] -> [vocaloid]', () => {
-    const s = asSet(['jpop', 'anime', 'vocaloid']);
-    applyCategoryExclusivity(s);
-    expect(asSorted(s)).toEqual(['vocaloid']);
   });
 });
 

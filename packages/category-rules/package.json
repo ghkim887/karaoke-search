@@ -1,6 +1,6 @@
 {
-  "name": "@karaoke/schema",
-  "version": "0.1.0",
+  "name": "@karaoke/category-rules",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -14,16 +14,14 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node ../../scripts/export-category-priority.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
+    "@karaoke/schema": "workspace:*"
   },
   "devDependencies": {
-    "expect-type": "^1.1.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
   }

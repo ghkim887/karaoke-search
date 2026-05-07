@@ -3,7 +3,7 @@
 The category mutual-exclusivity rule (priority: vocaloid > anime > jpop) is
 implemented twice:
 
-  - TS source-of-truth: `packages/schema/src/index.ts` exporting
+  - TS source-of-truth: `packages/category-rules/src/index.ts` exporting
     `applyCategoryExclusivity(Set<Category>): void` (mutates in place).
   - Python hand-port: `scripts/ingest_anisong_pdf.py` defining
     `_apply_category_exclusivity(list[str]) -> list[str]` (returns sorted list).
@@ -29,7 +29,7 @@ from itertools import combinations
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-TS_DIST = REPO_ROOT / 'packages' / 'schema' / 'dist' / 'index.js'
+TS_DIST = REPO_ROOT / 'packages' / 'category-rules' / 'dist' / 'index.js'
 SIDECAR = REPO_ROOT / 'packages' / 'schema' / 'category-priority.json'
 PY_SCRIPT = REPO_ROOT / 'scripts' / 'ingest_anisong_pdf.py'
 
@@ -73,7 +73,7 @@ class CategoryPrioritySidecarTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         if not SIDECAR.is_file():
             raise unittest.SkipTest(
-                'Run `corepack pnpm --filter @karaoke/schema build` first to '
+                'Run `corepack pnpm --filter @karaoke/category-rules build` first to '
                 f'populate {SIDECAR.relative_to(REPO_ROOT).as_posix()}'
             )
         if not PY_SCRIPT.is_file():
@@ -128,7 +128,7 @@ class ApplyCategoryExclusivityParityTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         if not TS_DIST.is_file():
             raise unittest.SkipTest(
-                'Run `corepack pnpm -r build` first to populate '
+                'Run `corepack pnpm --filter @karaoke/category-rules build` first to populate '
                 f'{TS_DIST.relative_to(REPO_ROOT).as_posix()}'
             )
         if not PY_SCRIPT.is_file():

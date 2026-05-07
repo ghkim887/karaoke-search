@@ -1,4 +1,5 @@
-import { type Category, type SongRecord, applyCategoryExclusivity } from '@karaoke/schema';
+import { applyCategoryExclusivity } from '@karaoke/category-rules';
+import { type Category, type SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { parseIndexPage } from './index-parser.js';

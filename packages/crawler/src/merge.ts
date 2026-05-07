@@ -1,9 +1,5 @@
-import {
-  type Category,
-  type KaraokeNumbers,
-  type SongRecord,
-  applyCategoryExclusivity as applyCategoryExclusivitySet,
-} from '@karaoke/schema';
+import { applyCategoryExclusivity as applyCategoryExclusivitySet } from '@karaoke/category-rules';
+import { type Category, type KaraokeNumbers, type SongRecord } from '@karaoke/schema';
 import { getLeadComponent } from './clustering.js';
 import { normalize } from './normalize.js';
 

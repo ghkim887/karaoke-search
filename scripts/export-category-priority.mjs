@@ -2,9 +2,9 @@
 /**
  * Export the CATEGORY_PRIORITY array as a JSON sidecar consumable from Python.
  *
- * The TS source of truth is `packages/schema/src/index.ts` which exports
+ * The TS source of truth is `packages/category-rules/src/index.ts` which exports
  * `CATEGORY_PRIORITY` as a named constant. This script reads that constant
- * from the built dist (`packages/schema/dist/index.js`) and writes it to a
+ * from the built dist (`packages/category-rules/dist/index.js`) and writes it to a
  * sidecar JSON at `packages/schema/category-priority.json` — tracked in git,
  * co-located with the schema package it describes.
  *
@@ -14,6 +14,12 @@
  * test-only; now it is mechanical — Python reads the priority array from this
  * sidecar and uses it at import time. Drift → sidecar diverges from committed
  * file → `git diff --exit-code` fails in CI.
+ *
+ * Note: `CATEGORY_PRIORITY` was moved from `@karaoke/schema` to
+ * `@karaoke/category-rules` (refactor: split schema concerns). This script
+ * now reads from `packages/category-rules/dist/index.js` but writes to
+ * the same sidecar path (`packages/schema/category-priority.json`) so CI
+ * gates and Python loader paths remain unchanged.
  *
  * Output schema:
  *   {
@@ -38,7 +44,7 @@ import { writeJsonAtomic } from './lib/atomic-write.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
-const DIST_MODULE = resolve(REPO_ROOT, 'packages/schema/dist/index.js');
+const DIST_MODULE = resolve(REPO_ROOT, 'packages/category-rules/dist/index.js');
 // Sidecar lives next to the schema package root and is tracked in git.
 // Co-locating means a TS edit without a sidecar regen surfaces as a
 // one-of-two-files diff at code review (the staleness footgun is visible).
@@ -47,6 +53,8 @@ const OUT_PATH = resolve(REPO_ROOT, 'packages/schema/category-priority.json');
 async function main() {
   // dynamic import via file URL: the dist path is absolute on disk and not
   // resolvable as a bare specifier from this script.
+  // Reads from packages/category-rules/dist/index.js (CATEGORY_PRIORITY was
+  // moved there from packages/schema/src/index.ts).
   const mod = await import(pathToFileURL(DIST_MODULE).href);
 
   const { CATEGORY_PRIORITY } = mod;
