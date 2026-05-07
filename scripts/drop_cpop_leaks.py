@@ -88,6 +88,7 @@ DROP_LIST_SIDECAR = (
 #     Chinese, confirmed Mandopop).
 _CATALOG_ANOMALY_IDS: frozenset[str] = frozenset({
     'tj-72638',
+    'tj-71365',
 })
 
 
