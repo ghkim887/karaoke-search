@@ -1147,5 +1147,221 @@ class TestIsoUtcNow(unittest.TestCase):
         self.assertGreater(result, past_ref, f"{result!r} should sort after {past_ref!r}")
 
 
+class TestExtractTitleFromPrefix(unittest.TestCase):
+    """Unit tests for `_extract_title_from_prefix`."""
+
+    def test_basic_jp_title(self) -> None:
+        # Normal case: pure JP chunk after a Hangul anime-name chunk.
+        # Column gap >= 4 spaces separates them.
+        title, sort_idx = ingest._extract_title_from_prefix('진격의 거인         紅蓮の弓矢')
+        self.assertEqual(title, '紅蓮の弓矢')
+        self.assertIsNone(sort_idx)
+
+    def test_no_sort_index_always_none(self) -> None:
+        # The PDF does not encode a sort index; second return value is always None.
+        _, sort_idx = ingest._extract_title_from_prefix('마법소녀          千本桜')
+        self.assertIsNone(sort_idx)
+
+    def test_pure_jp_no_anime_column(self) -> None:
+        # No anime-name prefix at all — just the title.
+        title, _ = ingest._extract_title_from_prefix('夜に駆ける')
+        self.assertEqual(title, '夜に駆ける')
+
+    def test_latin_title(self) -> None:
+        title, _ = ingest._extract_title_from_prefix('앤씨아         UNION')
+        self.assertEqual(title, 'UNION')
+
+    def test_hangul_fused_with_jp_split_at_transition(self) -> None:
+        # Residual #1b: column gap < 4 spaces, anime-name and title fuse.
+        # '그리드맨 유니버스 UNION' — Hangul prefix, then Latin title.
+        title, _ = ingest._extract_title_from_prefix('그리드맨 유니버스 UNION')
+        self.assertEqual(title, 'UNION')
+
+    def test_hangul_fused_with_kana_split_at_transition(self) -> None:
+        # Deeper residual #1b: fused chunk contains Hangul + JP kana.
+        # The function should split and return the non-Hangul tail.
+        title, _ = ingest._extract_title_from_prefix('돌아가는 펭귄드럼  少年よ我に帰れ')
+        self.assertEqual(title, '少年よ我に帰れ')
+
+    def test_empty_prefix(self) -> None:
+        title, sort_idx = ingest._extract_title_from_prefix('')
+        self.assertEqual(title, '')
+        self.assertIsNone(sort_idx)
+
+    def test_whitespace_only_prefix(self) -> None:
+        title, _ = ingest._extract_title_from_prefix('   ')
+        self.assertEqual(title, '')
+
+    def test_pure_hangul_prefix_no_transition(self) -> None:
+        # Pure Hangul, no kana/han, no ASCII alpha → no transition possible.
+        # Result is empty because there's no non-Hangul chunk.
+        title, _ = ingest._extract_title_from_prefix('그리드맨 유니버스')
+        self.assertEqual(title, '')
+
+    def test_multiple_chunks_takes_last(self) -> None:
+        # Three chunks separated by >=4 spaces: last non-Hangul wins.
+        title, _ = ingest._extract_title_from_prefix('아니메명    中間タイトル    最終タイトル')
+        self.assertEqual(title, '最終タイトル')
+
+
+class TestCollectArtistWraps(unittest.TestCase):
+    """Unit tests for `_collect_artist_wraps`."""
+
+    def _lines(self, *raw: str) -> list[str]:
+        """Wrap each string in a list entry with a newline."""
+        return [s + '\n' for s in raw]
+
+    def test_single_line_no_wrap(self) -> None:
+        # Anchor at index 0; next line is a new anchor — no wraps collected.
+        lines = self._lines(
+            '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon',
+            '마법소녀          千本桜                       28500  黒うさP',
+        )
+        pieces, j = ingest._collect_artist_wraps(lines, 0, None)
+        self.assertEqual(pieces, [])
+        self.assertEqual(j, 1)
+
+    def test_single_wrap_line(self) -> None:
+        # A wrap row with deep indent (no anchor, non-Hangul content).
+        # artist_col_on_anchor=None triggers legacy indent threshold.
+        lines = self._lines(
+            '진격의 거인         紅蓮の弓矢                   68001  Fear, and Loathing',
+            '                                                       in Las Vegas',
+            '마법소녀          千本桜                       28500  黒うさP',
+        )
+        pieces, j = ingest._collect_artist_wraps(lines, 0, None)
+        self.assertEqual(pieces, ['in Las Vegas'])
+        self.assertEqual(j, 2)
+
+    def test_blank_line_gap_tolerated(self) -> None:
+        # One blank line between anchor and wrap row is allowed (tjpdf-27708).
+        lines = self._lines(
+            '진격의 거인         紅蓮の弓矢                   68001  Fear, and Loathing',
+            '',
+            '                                                       in Las Vegas',
+            '마법소녀          千本桜                       28500  黒うさP',
+        )
+        pieces, j = ingest._collect_artist_wraps(lines, 0, None)
+        self.assertEqual(pieces, ['in Las Vegas'])
+        self.assertEqual(j, 3)
+
+    def test_two_blank_lines_stops(self) -> None:
+        # Second blank line: loop breaks, no wraps.
+        lines = self._lines(
+            '진격의 거인         紅蓮の弓矢                   68001  Artist',
+            '',
+            '',
+            '                                                       continuation',
+            '마법소녀          千本桜                       28500  黒うさP',
+        )
+        pieces, j = ingest._collect_artist_wraps(lines, 0, None)
+        self.assertEqual(pieces, [])
+        self.assertEqual(j, 1)
+
+    def test_artist_col_anchor_aware_picks_right_chunk(self) -> None:
+        # Wrap row has two chunks: Hangul at col 0, JP at col 55.
+        # artist_col_on_anchor=55 → picks the JP chunk.
+        wrap_row = ' ' * 55 + '竹達彩奈'
+        lines = self._lines(
+            '오버런!                     タイトル                   28238  CV.',
+            wrap_row,
+            '마법소녀          千本桜                       28500  黒うさP',
+        )
+        pieces, j = ingest._collect_artist_wraps(lines, 0, 55)
+        self.assertEqual(pieces, ['竹達彩奈'])
+        self.assertEqual(j, 2)
+
+    def test_artist_col_anchor_aware_rejects_distant_chunk(self) -> None:
+        # Wrap row has only a chunk at col 0, but artist_col is 55 → too far → no wrap.
+        wrap_row = 'アニメ名続き'
+        lines = self._lines(
+            'タイトル                   28238  Artist',
+            wrap_row,
+            '次のタイトル               28500  黒うさP',
+        )
+        pieces, j = ingest._collect_artist_wraps(lines, 0, 55)
+        self.assertEqual(pieces, [])
+        self.assertEqual(j, 1)
+
+
+class TestCollectTranslitLines(unittest.TestCase):
+    """Unit tests for `_collect_translit_lines`."""
+
+    def _lines(self, *raw: str) -> list[str]:
+        return [s + '\n' for s in raw]
+
+    def test_single_translit_line(self) -> None:
+        lines = self._lines(
+            '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon',
+            '                   홍련의 궁시                          링크드 호라이즌',
+            '마법소녀          千本桜                       28500  黒うさP',
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(len(result), 1)
+        self.assertIn('홍련의 궁시', result[0])
+
+    def test_two_translit_lines(self) -> None:
+        # title_ko on line 1, artist_ko on line 2 (e.g. tjpdf-68560 / tjpdf-28458).
+        lines = self._lines(
+            '타이틀행         タイトル                   68560  アーティスト',
+            '                 타이틀코',
+            '                                                  아티스트코',
+            '다음행           次の曲                      28458  別アーティスト',
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(len(result), 2)
+
+    def test_absent_translit_returns_empty(self) -> None:
+        lines = self._lines(
+            'タイトル                   68001  Artist',
+            '次のタイトル               28500  黒うさP',
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(result, [])
+
+    def test_blank_lines_skipped(self) -> None:
+        # A blank line between anchor and translit is ignored.
+        lines = self._lines(
+            '타이틀         タイトル                   68001  Artist',
+            '',
+            '               한국어 제목                        아티스트',
+            '다음           次の曲                      28500  黒うさP',
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(len(result), 1)
+        self.assertIn('한국어 제목', result[0])
+
+    def test_non_translit_interim_skipped_before_first(self) -> None:
+        # A JP title-wrap row (non-Hangul) before the translit is skipped
+        # when no translit has been found yet (e.g. tjpdf-28260).
+        lines = self._lines(
+            '타이틀         良いメロン                   28260  アーティスト',
+            '               ~',          # non-translit JP wrap row
+            '               한국어 제목                        아티스트',
+            '다음           次の曲                      28500  黒うさP',
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(len(result), 1)
+        self.assertIn('한국어 제목', result[0])
+
+    def test_stops_at_next_anchor(self) -> None:
+        lines = self._lines(
+            'タイトル                   68001  Artist',
+            '다음タイトル               28500  黒うさP',  # anchor on next line
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(result, [])
+
+    def test_window_limit_six_lines(self) -> None:
+        # Translit at position i+7 (out of window) is not collected.
+        lines = (
+            ['タイトル                   68001  Artist\n']
+            + ['               途中行\n'] * 6      # 6 non-translit, non-anchor lines
+            + ['               한국어\n']           # at i+7, out of window
+        )
+        result = ingest._collect_translit_lines(lines, 0, len(lines))
+        self.assertEqual(result, [])
+
+
 if __name__ == '__main__':
     unittest.main()
