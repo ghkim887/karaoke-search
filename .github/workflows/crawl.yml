@@ -105,6 +105,9 @@ jobs:
       - name: Apply TJ anisong PDF section tags
         run: python scripts/ingest_anisong_pdf.py
 
+      - name: Strip transliteration title_ko from tj-/tjpdf- records (Stage 1)
+        run: python scripts/normalize_tj_title_ko.py apps/web/public/data/songs.json
+
       - name: Replay merger after anisong PDF ingest
         run: node scripts/replay-merger.mjs
 
