@@ -139,6 +139,38 @@ class TestProcessRecord(unittest.TestCase):
         self.assertEqual(out['title_ko_confidence'], 'high')
         self.assertNotIn('media_context_ko', out)  # not added because we short-circuit
 
+    def test_tj_record_with_manual_source_preserved(self):
+        # Regression: bf1a819 destroyed 3 hand-curated 'manual' records because the
+        # guard only checked for 'llm-translated'. Now any non-null title_ko_source
+        # short-circuits — 'manual', 'llm-translated', and future enums alike.
+        rec = {
+            'id': 'tj-800',
+            'title_primary': '特者生存ワンダラダ-!!',
+            'title_ko': '특자생존 완다라다-!!',
+            'title_ko_source': 'manual',
+        }
+        out = process_record(rec)
+        self.assertEqual(out['title_ko'], '특자생존 완다라다-!!')
+        self.assertEqual(out['title_ko_source'], 'manual')
+        self.assertNotIn('title_ko_confidence', out)
+        self.assertNotIn('media_context_ko', out)
+
+    def test_blog_record_with_llm_translated_source_preserved(self):
+        # Blog records already tagged 'llm-translated' must not be overwritten to 'blog'.
+        # The blog branch guard `not out.get('title_ko_source')` already covers this,
+        # but an explicit test pins the contract for future refactors.
+        rec = {
+            'id': 'blog-3-0',
+            'title_primary': '逆光オーケストラ',
+            'title_ko': '역광의 오케스트라',
+            'title_ko_source': 'llm-translated',
+            'title_ko_confidence': 'high',
+        }
+        out = process_record(rec)
+        self.assertEqual(out['title_ko'], '역광의 오케스트라')
+        self.assertEqual(out['title_ko_source'], 'llm-translated')
+        self.assertEqual(out['title_ko_confidence'], 'high')
+
 
 class TestMainAtomicWrite(unittest.TestCase):
     def test_main_rewrites_corpus_atomically(self):

@@ -86,10 +86,13 @@ def process_record(rec: dict) -> dict:
     rec_id = out.get('id') or ''
 
     if rec_id.startswith('tj-') or rec_id.startswith('tjpdf-'):
-        # Preserve Stage-2 (llm-translated) work on TJ records. Without this guard,
-        # re-running Stage 1 after Stage 2 would null the translated title_ko and
-        # drop the source/confidence tags — exactly the work Stage 2 just did.
-        if out.get('title_ko_source') == 'llm-translated':
+        # Preserve any recognised provenance-tagged title_ko on TJ records. Without
+        # this guard, re-running Stage 1 after Stage 2 would null the translated
+        # title_ko and drop the source/confidence tags. The allowlist covers every
+        # valid title_ko_source value defined by the schema; unknown/stale strings
+        # (e.g. 'legacy-stale') fall through and get stripped as before.
+        _KEEP_SOURCES = {'llm-translated', 'manual', 'blog'}
+        if out.get('title_ko_source') in _KEEP_SOURCES:
             return out
         salvaged = extract_media_context_paren(out.get('title_ko'))
         out['title_ko'] = None
