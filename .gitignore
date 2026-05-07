@@ -48,3 +48,7 @@ CLAUDE.md
 apps/web/.playwright-mcp/
 phase4-*.png
 .superpowers/
+.tmp_namu/
+scripts/data/medium-chunk-*.json
+scripts/data/medium-retry-*.json
+scripts/data/medium-review*.csv
