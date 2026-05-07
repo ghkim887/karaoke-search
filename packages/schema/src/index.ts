@@ -161,9 +161,9 @@ export const songRecordSchema = {
       format: 'uri',
     },
     title_primary: { type: 'string', minLength: 1 },
-    title_ko: { type: ['string', 'null'] },
+    title_ko: { type: ['string', 'null'], minLength: 1 },
     artist_primary: { type: 'string', minLength: 1 },
-    artist_ko: { type: ['string', 'null'] },
+    artist_ko: { type: ['string', 'null'], minLength: 1 },
     artist_aliases: {
       type: 'array',
       uniqueItems: true,
@@ -202,7 +202,7 @@ export const songRecordSchema = {
       type: 'string',
       format: 'date-time',
     },
-    media_context_ko: { type: 'string', minLength: 1 },
+    media_context_ko: { type: 'string', minLength: 1, pattern: '^\\(.*\\)$' },
     title_ko_source: {
       type: 'string',
       enum: ['blog', 'llm-translated', 'manual'],
