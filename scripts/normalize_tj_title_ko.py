@@ -97,7 +97,7 @@ def process_record(rec: dict) -> dict:
             out['media_context_ko'] = salvaged
         out.pop('title_ko_source', None)
         out.pop('title_ko_confidence', None)
-    elif rec_id.startswith('blog-') and out.get('title_ko'):
+    elif rec_id.startswith('blog-') and out.get('title_ko') and not out.get('title_ko_source'):
         out['title_ko_source'] = 'blog'
 
     return out
