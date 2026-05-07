@@ -15,9 +15,11 @@
  * Claude Code session — see scripts/title_ko_stage2_howto.md.
  */
 
-import { mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { writeJsonAtomic, writeTextAtomic } from './lib/atomic-write.mjs';
+import { writeCorpusAtomic } from './lib/corpus.mjs';
 
 const CJK_RE = /[぀-ゟ゠-ヿ一-鿿]/;
 
@@ -57,9 +59,7 @@ export function writeChunkInputs(outDir, chunks) {
   chunks.forEach((chunk, idx) => {
     const nn = String(idx).padStart(2, '0');
     const finalPath = join(outDir, `llm-translations-chunk-${nn}-input.json`);
-    const tmpPath = `${finalPath}.tmp`;
-    writeFileSync(tmpPath, JSON.stringify(chunk, null, 2), 'utf-8');
-    renameSync(tmpPath, finalPath);
+    writeJsonAtomic(finalPath, chunk);
   });
 }
 
@@ -177,9 +177,7 @@ export function writeReviewCsv(path, decisions) {
   }
   // UTF-8 BOM prefix so Excel on Korean Windows (default CP949 codepage) opens
   // the file decoded as UTF-8 instead of mojibake.
-  const tmp = `${path}.tmp`;
-  writeFileSync(tmp, `﻿${lines.join('\n')}\n`, 'utf-8');
-  renameSync(tmp, path);
+  writeTextAtomic(path, `﻿${lines.join('\n')}\n`);
 }
 
 /**
@@ -191,9 +189,7 @@ export function runMerge({ corpusPath, chunksDir, reviewCsvPath }) {
   const decisions = loadAndValidateChunkOutputs(chunksDir);
   const records = JSON.parse(readFileSync(corpusPath, 'utf-8'));
   const updated = applyDecisionsToCorpus(records, decisions);
-  const tmp = `${corpusPath}.tmp`;
-  writeFileSync(tmp, `${JSON.stringify(updated, null, 2)}\n`, 'utf-8');
-  renameSync(tmp, corpusPath);
+  writeCorpusAtomic(corpusPath, updated);
   if (reviewCsvPath) writeReviewCsv(reviewCsvPath, decisions);
   return {
     decisionCount: decisions.size,

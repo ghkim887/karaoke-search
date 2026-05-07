@@ -21,10 +21,11 @@
 //
 // Output is UTF-8 on Windows: stdout is reset to utf8 explicitly.
 
-import { execSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { writeCorpusAtomic } from './lib/corpus.mjs';
 
 // Force UTF-8 output on Windows so kanji/hangul render correctly in the report.
 if (process.stdout.setDefaultEncoding) process.stdout.setDefaultEncoding('utf8');
@@ -274,10 +275,7 @@ if (delta === 0 && aliasSplits === 0 && aliasReKeys === 0) {
 }
 
 // --- Step 7: atomic write ------------------------------------------------
-const tmpPath = `${songsPath}.tmp`;
-const json = `${JSON.stringify(after, null, 2)}\n`;
-writeFileSync(tmpPath, json, { encoding: 'utf8' });
-renameSync(tmpPath, songsPath);
+writeCorpusAtomic(songsPath, after);
 
 console.log('');
 console.log(`[replay-merger] wrote ${afterCount} records to ${songsPath}`);

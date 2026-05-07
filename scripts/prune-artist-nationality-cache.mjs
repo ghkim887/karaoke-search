@@ -40,9 +40,10 @@
  *   node scripts/prune-artist-nationality-cache.mjs
  */
 
-import { readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeJsonAtomic } from './lib/atomic-write.mjs';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -175,9 +176,7 @@ const totalDropped = totalIn - totalKept;
 // round-trips any unrecognized fields — we preserve everything here too.
 const out = { ...cache, artistNationalityMap: prunedMap };
 
-const tmp = `${CACHE_PATH}.tmp`;
-writeFileSync(tmp, `${JSON.stringify(out, null, 2)}\n`, 'utf8');
-renameSync(tmp, CACHE_PATH);
+writeJsonAtomic(CACHE_PATH, out);
 
 const sizeAfter = statSync(CACHE_PATH).size;
 

@@ -3,13 +3,12 @@
 // validateSongRecord asserts function. Exits non-zero on the first 5+ failures.
 // Used by .github/workflows/crawl.yml after the Python PDF ingest writes the JSON.
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { loadCorpus, loadValidator } from './lib/corpus.mjs';
 
 const target = process.argv[2] ?? 'apps/web/public/data/songs.json';
-const { validateSongRecord } = await import('../packages/schema/dist/index.js');
+const validateSongRecord = await loadValidator();
 
-const records = JSON.parse(readFileSync(resolve(target), 'utf8'));
+const records = loadCorpus(target);
 let invalid = 0;
 // Aggregate failure types by message-prefix so triage shows category-level
 // signal beyond just the first-5 sample IDs. Keyed by the first 80 chars of

@@ -36,9 +36,9 @@
  *   node scripts/export-chinese-drop-list.mjs
  */
 
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { writeJsonAtomic } from './lib/atomic-write.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -72,12 +72,7 @@ async function main() {
     keys,
   };
 
-  // Atomic write: <file>.tmp then rename, matching the project's atomic-write
-  // convention (see `scripts/ingest_anisong_pdf.py::_atomic_write_corpus`).
-  mkdirSync(dirname(OUT_PATH), { recursive: true });
-  const tmpPath = `${OUT_PATH}.tmp`;
-  writeFileSync(tmpPath, `${JSON.stringify(sidecar, null, 2)}\n`, 'utf-8');
-  renameSync(tmpPath, OUT_PATH);
+  writeJsonAtomic(OUT_PATH, sidecar);
   console.log(`wrote ${keys.length} chinese drop-list keys to ${OUT_PATH}`);
 }
 

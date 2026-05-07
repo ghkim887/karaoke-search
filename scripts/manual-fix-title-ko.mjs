@@ -9,9 +9,9 @@
 // the patched record against @karaoke/schema before writing. Atomic write
 // via .tmp + rename.
 
-import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadCorpus, loadValidator, writeCorpusAtomic } from './lib/corpus.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CORPUS_PATH =
@@ -33,17 +33,9 @@ if (!recordId || !titleArg) usage();
 const isNull = titleArg === '--null';
 const newTitleKo = isNull ? null : titleArg;
 
-let validateSongRecord;
-try {
-  ({ validateSongRecord } = await import('../packages/schema/dist/index.js'));
-} catch {
-  process.stderr.write(
-    'Cannot load @karaoke/schema. Run `corepack pnpm --filter @karaoke/schema build` first.\n',
-  );
-  process.exit(1);
-}
+const validateSongRecord = await loadValidator();
 
-const records = JSON.parse(readFileSync(CORPUS_PATH, 'utf-8'));
+const records = loadCorpus(CORPUS_PATH);
 
 const matches = records.filter((r) => r.id === recordId);
 
@@ -77,8 +69,6 @@ if (before === after) {
   process.exit(0);
 }
 
-const tmpPath = `${CORPUS_PATH}.tmp`;
-writeFileSync(tmpPath, `${JSON.stringify(records, null, 2)}\n`, 'utf-8');
-renameSync(tmpPath, CORPUS_PATH);
+writeCorpusAtomic(CORPUS_PATH, records);
 
 process.stdout.write(`updated: ${recordId} title_ko=${JSON.stringify(newTitleKo)}\n`);
