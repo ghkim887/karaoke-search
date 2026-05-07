@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic, writeTextAtomic } from './lib/atomic-write.mjs';
 import { loadCorpus, loadValidator } from './lib/corpus.mjs';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const REPO_ROOT = resolve(__dirname, '..');
+const CLUSTERING_DIST = resolve(REPO_ROOT, 'packages/crawler/dist/clustering.js');
 
 // ---------------------------------------------------------------------------
 // writeJsonAtomic
@@ -201,5 +207,70 @@ describe('loadValidator', () => {
   it('throws on an invalid record (missing required field)', async () => {
     const validate = await loadValidator();
     assert.throws(() => validate({ id: 'tj-1' }), /Invalid SongRecord|required property/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// prune-artist-nationality-cache import wiring
+// ---------------------------------------------------------------------------
+// Regression guard: prune-artist-nationality-cache.mjs now imports
+// normalizeForMatch and splitArtistCollab from the built crawler dist rather
+// than maintaining inlined copies. These tests confirm the import resolves
+// and the functions behave correctly on a shared fixture set — ensuring the
+// prune script's import is wired correctly (not that the canonical functions
+// themselves work, which is already tested by the crawler's own test suite).
+
+describe('prune-cache dist import — normalizeForMatch', () => {
+  it('resolves from dist and returns a function', async () => {
+    const mod = await import(pathToFileURL(CLUSTERING_DIST).href);
+    assert.equal(typeof mod.normalizeForMatch, 'function', 'normalizeForMatch must be exported from dist');
+  });
+
+  it('strips whitespace, lowercases, and applies NFKC', async () => {
+    const { normalizeForMatch } = await import(pathToFileURL(CLUSTERING_DIST).href);
+    assert.equal(normalizeForMatch('スピッツ'), 'スピッツ');
+    assert.equal(normalizeForMatch('  ABC  '), 'abc');
+    assert.equal(normalizeForMatch('Ａ Ｂ Ｃ'), 'abc'); // NFKC full-width → ASCII
+    assert.equal(normalizeForMatch('初音 ミク'), '初音ミク');
+  });
+});
+
+describe('prune-cache dist import — splitArtistCollab', () => {
+  it('resolves from dist and returns a function', async () => {
+    const mod = await import(pathToFileURL(CLUSTERING_DIST).href);
+    assert.equal(typeof mod.splitArtistCollab, 'function', 'splitArtistCollab must be exported from dist');
+  });
+
+  it('whole string is always element 0', async () => {
+    const { splitArtistCollab } = await import(pathToFileURL(CLUSTERING_DIST).href);
+    const parts = splitArtistCollab('スピッツ');
+    assert.equal(parts[0], 'スピッツ');
+  });
+
+  it('splits feat paren into a separate component', async () => {
+    const { splitArtistCollab } = await import(pathToFileURL(CLUSTERING_DIST).href);
+    const parts = splitArtistCollab('ハチ(Feat.初音ミク)');
+    assert.ok(parts.includes('ハチ'), 'lead artist must be a component');
+    assert.ok(parts.includes('初音ミク'), 'feat content must be a component');
+  });
+
+  it('splits collab with & delimiter', async () => {
+    const { splitArtistCollab } = await import(pathToFileURL(CLUSTERING_DIST).href);
+    const parts = splitArtistCollab('ArtistA & ArtistB');
+    assert.ok(parts.includes('ArtistA'));
+    assert.ok(parts.includes('ArtistB'));
+  });
+
+  it('preserves BUMP OF CHICKEN (bare "of" outside feat paren does not split)', async () => {
+    const { splitArtistCollab } = await import(pathToFileURL(CLUSTERING_DIST).href);
+    const parts = splitArtistCollab('BUMP OF CHICKEN');
+    assert.equal(parts[0], 'BUMP OF CHICKEN', 'whole string must be preserved as-is');
+    // There should be no spurious split producing "BUMP" and "CHICKEN".
+    assert.ok(!parts.includes('BUMP'), '"BUMP" must not appear as a split component');
+  });
+
+  it('returns empty array for empty string', async () => {
+    const { splitArtistCollab } = await import(pathToFileURL(CLUSTERING_DIST).href);
+    assert.deepEqual(splitArtistCollab(''), []);
   });
 });
