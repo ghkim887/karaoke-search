@@ -911,6 +911,60 @@ def is_artist_in_pdf_vocaloid_denylist(artist: str) -> bool:
     return False
 
 
+# PDF vocaloid-section skip-list (2026-05-07): mainstream J-pop artists the
+# May 2026 PDF erroneously placed in its vocaloid section. Unlike the denylist
+# above (which downgrades vocaloid→anime for anime-tied acts), these artists'
+# tracks are NOT anime tie-ins — forcing them to `anime` would also be wrong.
+# The correct action is to skip section-tagging entirely and preserve whatever
+# categories the corpus record already carries.
+#
+# Checked BEFORE the denylist in `main()`. Skip-list match → no section tag
+# applied to the matched corpus record. Denylist match → downgrade to anime.
+# Non-match → normal section tag applied.
+#
+# Artists confirmed as all-mistakes from the May 2026 run:
+#   米津玄師: 9 vocaloid records (all jpop in corpus pre-PDF)
+#   ずっと真夜中でいいのに。: 11 vocaloid records (all jpop pre-PDF)
+#   Aimer: 2 vocaloid records (jpop pre-PDF; ポラリス/After Rain are My Hero
+#          Academia OPs but blog missed OP context — jpop is less wrong than
+#          vocaloid; anime-context detection for Aimer is a separate follow-up)
+_PDF_VOCALOID_SKIP_RAW: tuple[str, ...] = (
+    '米津玄師',
+    'ずっと真夜中でいいのに。',
+    'Aimer',
+)
+
+_PDF_VOCALOID_SKIP_LIST: frozenset[str] = frozenset(
+    _normalize_for_match(name) for name in _PDF_VOCALOID_SKIP_RAW
+)
+
+
+def is_artist_in_pdf_vocaloid_skip_list(artist: str) -> bool:
+    """Return True if any component of `artist` is in the PDF vocaloid skip-list.
+
+    Used by `main()` to suppress section-tagging entirely for mainstream artists
+    the PDF mistakenly placed in its vocaloid section, whose tracks are NOT
+    anime tie-ins (so vocaloid→anime would also be wrong). Checked BEFORE
+    `is_artist_in_pdf_vocaloid_denylist` in the main loop.
+
+    Also strips trailing `(+co-vocalist)` / `（+co-vocalist）` parentheticals
+    from each component before matching — the blog adapter uses `+` notation for
+    co-vocalists (e.g. `米津玄師(+菅田将暉)`) which `_DROP_SPLIT_RE` does not
+    split, so without this strip the lead artist would not be extracted and the
+    skip-list match would silently fail.
+    """
+    if not _PDF_VOCALOID_SKIP_LIST:  # defensive — empty set means filter off
+        return False
+    _co_vocalist_re = re.compile(r'\s*[（(]\+[^()（）]+[)）]\s*$')
+    for component in _artist_components_for_drop_check(artist):
+        # Try the component as-is first, then with trailing (+co) stripped.
+        for candidate in (component, _co_vocalist_re.sub('', component)):
+            key = _normalize_for_match(candidate)
+            if key and key in _PDF_VOCALOID_SKIP_LIST:
+                return True
+    return False
+
+
 def _apply_category_exclusivity(cats: list[str]) -> list[str]:
     """Apply the v2 category mutual-exclusivity rule: at most one of
     {jpop, vocaloid, anime} per record. Priority: vocaloid > anime > jpop.
@@ -1014,6 +1068,7 @@ def main() -> int:
     already_tagged = 0  # corpus rows that already had the section's tag
     dropped_kpop = 0  # PDF rows skipped because the artist matched the drop list
     vocaloid_downgraded = 0  # rows downgraded from vocaloid->anime by the PDF denylist
+    vocaloid_skipped = 0  # rows skipped entirely (skip-list: preserve original categories)
     section_counts: dict[str, int] = {'anime': 0, 'vocaloid': 0}
     new_records: list[dict] = []
     title_fallbacks: list[str] = []  # codes where title_primary fell back to artist
@@ -1027,6 +1082,29 @@ def main() -> int:
                 file=sys.stderr,
             )
             section = 'anime'
+        # PDF vocaloid-section skip-list (2026-05-07): mainstream artists the
+        # PDF mistakenly placed in its vocaloid section whose tracks are NOT
+        # anime tie-ins. Skip section-tagging entirely and scrub any stale
+        # `vocaloid` tag the corpus record may carry from a prior ingest run
+        # that fired before this skip-list existed. Checked BEFORE the denylist.
+        #
+        # Two-path handling (mirrors drop-list):
+        #   - Existing corpus row: scrub stale `vocaloid` if present, then skip
+        #     further processing (no new section tag added, no new record created).
+        #   - New record (code not in corpus): skip entirely — don't insert.
+        if section == 'vocaloid' and is_artist_in_pdf_vocaloid_skip_list(r['artist']):
+            vocaloid_skipped += 1
+            if code in tj_to_idx:
+                rec = corpus[tj_to_idx[code]]
+                cats = list(rec.get('categories', []))
+                if 'vocaloid' in cats:
+                    # Scrub the stale vocaloid tag and restore jpop if the record
+                    # would otherwise be left with an empty categories list.
+                    cats = [c for c in cats if c != 'vocaloid']
+                    if not cats:
+                        cats = ['jpop']
+                    rec['categories'] = cats
+            continue
         # PDF vocaloid-section denylist (Fix 1, 2026-05-04): the PDF's
         # `보컬로이드,` section header is trusted by parse_pdf(), but the
         # section actually mixes Vocaloid producers with non-Vocaloid bands
@@ -1138,6 +1216,7 @@ def main() -> int:
         f.write(f'  Dropped (artist matched Korean-artist drop list): {dropped_kpop}\n')
         f.write(f'  Drop-list keys loaded: {len(drop_keys)}\n')
         f.write(f'  Vocaloid->anime downgrades (PDF vocaloid-section denylist): {vocaloid_downgraded}\n')
+        f.write(f'  Vocaloid section skipped (skip-list, preserve original categories): {vocaloid_skipped}\n')
         f.write(f'Caveats / skipped: {len(caveats)}\n')
         for c in caveats:
             f.write(f'  - {c}\n')
@@ -1150,6 +1229,7 @@ def main() -> int:
         f'dropped_old_tjpdf={dropped_old_tjpdf} matched={matched} '
         f'new={len(new_records)} dropped_kpop={dropped_kpop} '
         f'voc_downgraded={vocaloid_downgraded} '
+        f'voc_skipped={vocaloid_skipped} '
         f'skipped={len(caveats)}'
     )
     print(f'report: {log_path}')

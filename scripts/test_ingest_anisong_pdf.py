@@ -717,6 +717,189 @@ class TestPdfVocaloidDenylist(unittest.TestCase):
             )
 
 
+class TestPdfVocaloidSkipList(unittest.TestCase):
+    """PDF vocaloid-section skip-list (2026-05-07).
+
+    Mainstream artists the PDF erroneously placed in its vocaloid section whose
+    tracks are NOT anime tie-ins. Skip-list rows skip section-tagging entirely —
+    the corpus record's existing categories are preserved unchanged.
+
+    Processed BEFORE the denylist: skip-list match suppresses both vocaloid AND
+    anime tagging; denylist match (non-skip) downgrades vocaloid→anime.
+    """
+
+    def test_helper_matches_skip_list_artists(self) -> None:
+        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('米津玄師'))
+        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('ずっと真夜中でいいのに。'))
+        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('Aimer'))
+
+    def test_helper_matches_co_vocalist_form(self) -> None:
+        # Blog adapter emits `米津玄師(+菅田将暉)` for co-vocalist tracks.
+        # The `(+X)` parenthetical is not split by _DROP_SPLIT_RE, so the helper
+        # must strip it before the key lookup to get `米津玄師` as the lead.
+        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('米津玄師(+菅田将暉)'))
+
+    def test_helper_misses_denylist_artist(self) -> None:
+        # HoneyWorks is on the denylist, NOT the skip-list.
+        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('HoneyWorks'))
+
+    def test_helper_misses_yonezu_vocaloid_alias(self) -> None:
+        # ハチ is Yonezu's Vocaloid alias — a different artist_primary string.
+        # The skip-list matches `米津玄師` only, not `ハチ`.
+        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('ハチ'))
+
+    def test_helper_misses_unrelated_artist(self) -> None:
+        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('YOASOBI'))
+        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('黒うさP'))
+
+    def test_main_skips_section_tag_for_skip_list_artist(self) -> None:
+        """End-to-end: a parsed PDF row with section='vocaloid' AND a skip-list
+        artist must NOT modify the existing corpus record's categories, AND must
+        NOT insert a new tjpdf-* record.
+
+        Fixture: one existing corpus record (tj 98001) for 米津玄師 with
+        categories=['jpop']. One vocaloid-section PDF row for the same code.
+        After ingest, the record must still have categories=['jpop'].
+
+        Co-tested: a normal vocaloid row in the same batch (黒うさP / tj 28500)
+        still gets its vocaloid tag — skip-list is not a blanket suppressor.
+        """
+        existing_song = {
+            'id': 'tj-98001',
+            'source_url': 'https://www.tjmedia.com/legacy/api/newSongOfMonth',
+            'title_primary': 'Lemon',
+            'title_ko': None,
+            'artist_primary': '米津玄師',
+            'artist_ko': None,
+            'karaoke_numbers': {'tj': '98001', 'ky': None, 'joysound': None},
+            'categories': ['jpop'],
+            'crawled_at': '2026-01-01T00:00:00+00:00',
+        }
+        fake_parse_result = (
+            [
+                {
+                    'tj': '98001',
+                    'title': 'Lemon',
+                    'artist': '米津玄師',
+                    'title_ko': None,
+                    'artist_ko': None,
+                    'source_line': 0,
+                    'section': 'vocaloid',  # PDF said vocaloid — but skip-list match
+                },
+                {
+                    'tj': '28500',
+                    'title': '千本桜',
+                    'artist': '黒うさP',
+                    'title_ko': '센본자쿠라',
+                    'artist_ko': '쿠로우사P',
+                    'source_line': 1,
+                    'section': 'vocaloid',  # normal vocaloid row — must stay vocaloid
+                },
+            ],
+            [],
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            pdf_path.write_text('dummy\n', encoding='utf-8')
+            songs_path.write_text(
+                json.dumps([existing_song], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            by_id = {r['id']: r for r in corpus}
+
+            # 米津玄師 record must be unchanged — still jpop, no vocaloid added.
+            self.assertIn('tj-98001', by_id)
+            self.assertEqual(
+                by_id['tj-98001']['categories'],
+                ['jpop'],
+                f"米津玄師 should keep jpop, got {by_id['tj-98001']['categories']!r}",
+            )
+
+            # No new tjpdf-98001 record should have been created (skip continues).
+            self.assertNotIn('tjpdf-98001', by_id,
+                'skip-list match must not insert a new tjpdf-* record')
+
+            # Normal vocaloid row must still be inserted with vocaloid tag.
+            self.assertIn('tjpdf-28500', by_id)
+            self.assertEqual(
+                by_id['tjpdf-28500']['categories'],
+                ['vocaloid'],
+                f"黒うさP should stay vocaloid, got {by_id['tjpdf-28500']['categories']!r}",
+            )
+
+    def test_main_scrubs_stale_vocaloid_on_skip_list_artist(self) -> None:
+        """Stale-vocaloid scrub: an existing corpus row carrying `vocaloid` from
+        a prior ingest that ran BEFORE the skip-list existed must have that tag
+        removed when the current ingest's PDF row triggers the skip-list.
+
+        Without the scrub, re-running the ingest after a prior bad run would
+        leave the stale vocaloid tag in place forever (the `continue` alone only
+        prevents NEW section tags — it can't retroactively clean prior runs).
+        """
+        existing_song_stale = {
+            'id': 'tj-98001',
+            'source_url': 'https://www.tjmedia.com/legacy/api/newSongOfMonth',
+            'title_primary': 'Lemon',
+            'title_ko': None,
+            'artist_primary': '米津玄師',
+            'artist_ko': None,
+            'karaoke_numbers': {'tj': '98001', 'ky': None, 'joysound': None},
+            'categories': ['vocaloid'],  # stale tag from a prior bad ingest run
+            'crawled_at': '2026-01-01T00:00:00+00:00',
+        }
+        fake_parse_result = (
+            [
+                {
+                    'tj': '98001',
+                    'title': 'Lemon',
+                    'artist': '米津玄師',
+                    'title_ko': None,
+                    'artist_ko': None,
+                    'source_line': 0,
+                    'section': 'vocaloid',
+                },
+            ],
+            [],
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            pdf_path.write_text('dummy\n', encoding='utf-8')
+            songs_path.write_text(
+                json.dumps([existing_song_stale], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            by_id = {r['id']: r for r in corpus}
+
+            self.assertIn('tj-98001', by_id)
+            cats = by_id['tj-98001']['categories']
+            self.assertNotIn(
+                'vocaloid', cats,
+                f"stale vocaloid must be scrubbed for skip-list artist, got {cats!r}",
+            )
+            # After scrubbing vocaloid the record must have a valid non-empty category.
+            self.assertTrue(len(cats) > 0, f"categories must not be empty after scrub, got {cats!r}")
+
+
 class TestDropSplitReContents(unittest.TestCase):
     """Parity-protection tests for `_DROP_SPLIT_RE` character contents."""
 
