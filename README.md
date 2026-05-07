@@ -4,7 +4,7 @@ A bilingual web app for discovering Japanese and Vocaloid karaoke songs availabl
 
 ## What is this?
 
-Karaoke Search lets you find ~25,755 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, light + dark themes (auto via OS preference), no sign-up required.
+Karaoke Search lets you find ~25,754 Japanese karaoke songs by title (Japanese or Korean), artist name, and karaoke system (TJ, 금영, JOYSOUND). Click any result to copy its karaoke number straight to your clipboard. Mobile-first, light + dark themes (auto via OS preference), no sign-up required.
 
 **Live:** https://ghkim887.github.io/karaoke-search/
 
@@ -14,7 +14,7 @@ Karaoke Search lets you find ~25,755 Japanese karaoke songs by title (Japanese o
 - **Multi-system support** — TJ Media (TJ), 금영 (KY), JOYSOUND karaoke numbers in one place
 - **Click-to-copy** — Copy karaoke numbers with a single tap
 - **Mobile-first, light + dark themes** — Optimized for phone screens with single-line horizontal-scroll chip rows; auto-switches via OS preference (`prefers-color-scheme`); works offline after first load. Self-hosted Geist + Inter + Pretendard fonts.
-- **~25,755 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced. Korean titles populated by a two-stage backfill pipeline: ~15,278 from the Korean blog source, plus ~2,791 agent-translated Korean titles for TJ-only Japanese records (with confidence tags + a human-review CSV for medium/low-confidence calls). 1,064 records additionally carry a salvaged Korean rendering of their parenthetical anime/OST/OP/ED context
+- **~25,754 songs live** — blog + TJ Media + anime songbook combined corpus; 250+ artists indexed and cross-referenced. Korean titles populated by a two-stage backfill pipeline: ~15,278 from the Korean blog source, plus ~2,791 agent-translated Korean titles for TJ-only Japanese records (with confidence tags + a human-review CSV for medium/low-confidence calls). 1,064 records additionally carry a salvaged Korean rendering of their parenthetical anime/OST/OP/ED context
 - **Device-local favorites** — star songs and find them instantly on a dedicated `즐겨찾기` tab (`검색` / `즐겨찾기`); stored in your browser, no account needed
 
 ## Data Sources & Attribution
