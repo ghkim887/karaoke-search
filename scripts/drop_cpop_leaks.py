@@ -109,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         action='store_true',
         help='Report what would be dropped without modifying the corpus file.',
     )
-    args = parser.parse_args([] if argv is None else argv)
+    args = parser.parse_args(argv)
 
     if not SONGS_JSON.exists():
         print(f'ERROR: missing corpus at {SONGS_JSON}', file=sys.stderr)

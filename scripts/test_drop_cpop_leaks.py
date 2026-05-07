@@ -134,7 +134,7 @@ class TestDropCpopLeaksArtistPath(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0)
 
             after = json.loads(songs_path.read_text(encoding='utf-8'))
@@ -161,7 +161,7 @@ class TestDropCpopLeaksArtistPath(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0)
 
             after = json.loads(songs_path.read_text(encoding='utf-8'))
@@ -194,7 +194,7 @@ class TestDropCpopLeaksIdPath(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0)
 
             after = json.loads(songs_path.read_text(encoding='utf-8'))
@@ -227,7 +227,7 @@ class TestDropCpopLeaksCombined(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0)
 
             after = json.loads(songs_path.read_text(encoding='utf-8'))
@@ -260,7 +260,7 @@ class TestDropCpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0)
 
             mtime_after = songs_path.stat().st_mtime_ns
@@ -289,7 +289,7 @@ class TestDropCpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                self.assertEqual(script.main(), 0)
+                self.assertEqual(script.main([]), 0)
             self.assertEqual(len(json.loads(songs_path.read_text(encoding='utf-8'))), 2)
 
             mtime_after_first = songs_path.stat().st_mtime_ns
@@ -300,7 +300,7 @@ class TestDropCpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                self.assertEqual(script.main(), 0)
+                self.assertEqual(script.main([]), 0)
 
             content_after_second = songs_path.read_bytes()
             mtime_after_second = songs_path.stat().st_mtime_ns
@@ -390,7 +390,7 @@ class TestDropCpopLeaksMissingSidecar(unittest.TestCase):
                 patch.object(script, 'DROP_LIST_SIDECAR', missing),
                 patch('sys.stderr', stderr_buf),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 2)
             self.assertIn('drop-list sidecar', stderr_buf.getvalue())
 

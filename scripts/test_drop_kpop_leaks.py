@@ -108,7 +108,7 @@ class TestDropKpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0, 'first run should succeed')
 
             after = json.loads(songs_path.read_text(encoding='utf-8'))
@@ -145,7 +145,7 @@ class TestDropKpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 0, 'no-op run should succeed')
 
             mtime_after = songs_path.stat().st_mtime_ns
@@ -180,7 +180,7 @@ class TestDropKpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code_1 = script.main()
+                exit_code_1 = script.main([])
             self.assertEqual(exit_code_1, 0)
             self.assertEqual(len(json.loads(songs_path.read_text(encoding='utf-8'))), 2,
                 'first run should leave 2 records')
@@ -194,7 +194,7 @@ class TestDropKpopLeaksIdempotent(unittest.TestCase):
                 patch.object(script, 'SONGS_JSON', songs_path),
                 patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
             ):
-                exit_code_2 = script.main()
+                exit_code_2 = script.main([])
             self.assertEqual(exit_code_2, 0)
 
             content_after_second = songs_path.read_bytes()
@@ -292,7 +292,7 @@ class TestDropKpopLeaksMissingSidecar(unittest.TestCase):
                 patch.object(script, 'DROP_LIST_SIDECAR', missing),
                 patch('sys.stderr', stderr_buf),
             ):
-                exit_code = script.main()
+                exit_code = script.main([])
             self.assertEqual(exit_code, 2)
             self.assertIn('drop-list sidecar', stderr_buf.getvalue())
 
