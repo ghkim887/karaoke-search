@@ -1,4 +1,5 @@
 import type { SongRecord } from '@karaoke/schema';
+import { canonicalizeArtistName } from './artistCanonicalization.js';
 import { normalize } from './normalize.js';
 
 /**
@@ -340,5 +341,30 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
     };
   });
 
-  return { records: phase3, warnings };
+  // Phase 4: NFKC-variant canonicalization. Runs after Phase 3 re-keying so
+  // any pipe-form alias rewrites have already settled. Applied only to bare
+  // records (pipe-form records were canonicalized in Phase 1 and never reach
+  // this branch). When a record's `artist_primary` matches a
+  // CanonicalizationRule `from`, it is rewritten to `to`, and the original
+  // surface form is added to `artist_aliases` (deduped, excluding the new
+  // canonical) so search recall is preserved.
+  const phase4 = phase3.map((r) => {
+    // Skip pipe-form records — they were already handled in Phase 1.
+    if (r.artist_primary.includes(FULLWIDTH_PIPE)) return r;
+    const canonical = canonicalizeArtistName(r.artist_primary);
+    if (canonical === r.artist_primary) return r; // no rule matched
+
+    const originalForm = r.artist_primary;
+    const existing = r.artist_aliases ?? [];
+    const nextAliases = dedupePreserveOrder([...existing, originalForm]).filter(
+      (a) => a !== canonical,
+    );
+    return {
+      ...r,
+      artist_primary: canonical,
+      ...(nextAliases.length > 0 ? { artist_aliases: nextAliases } : {}),
+    };
+  });
+
+  return { records: phase4, warnings };
 }
