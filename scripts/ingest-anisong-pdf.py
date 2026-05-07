@@ -118,6 +118,18 @@ CLUSTERING_RULES_SIDECAR = (
     / 'clustering-rules.json'
 )
 
+# Category-priority JSON sidecar produced by `scripts/export-category-priority.mjs`
+# (which reads `CATEGORY_PRIORITY` from the built dist of
+# `packages/schema/src/index.ts`). Tracked in git alongside the schema package.
+# Treated as graceful-degradation when missing or malformed: fall back to a
+# hardcoded copy of the priority tuple with a stderr warning.
+CATEGORY_PRIORITY_SIDECAR = (
+    REPO_ROOT
+    / 'packages'
+    / 'schema'
+    / 'category-priority.json'
+)
+
 # Anchor: a 4-or-5 digit number not adjacent to other digits or a decimal point.
 # (Most codes are 5 digits; ~33 legacy codes are 4 digits like 6479, 6899, 6943.)
 # Note: lookbehind also excludes '.' to defend against decimal-like patterns.
@@ -755,6 +767,11 @@ def _normalize_for_match(s: str) -> str:
 # of truth. Update alongside clustering.ts if the sidecar mechanism ever breaks.
 _SPLIT_RE_SOURCE_FALLBACK = r'\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*'
 
+# Hardcoded fallback for `_load_category_priority()` — mirrors CATEGORY_PRIORITY
+# in `packages/schema/src/index.ts`. Kept in sync by the sidecar mechanism;
+# this fallback is only used when the sidecar is absent (partial-build state).
+_CATEGORY_PRIORITY_FALLBACK: tuple[str, ...] = ('vocaloid', 'anime', 'jpop')
+
 
 def _load_splitter_pattern() -> str:
     """Load `splitterPattern` from the clustering-rules sidecar.
@@ -791,6 +808,47 @@ def _load_splitter_pattern() -> str:
         )
         return _SPLIT_RE_SOURCE_FALLBACK
     return pattern
+
+
+def _load_category_priority() -> tuple[str, ...]:
+    """Load `priority` from the category-priority sidecar.
+
+    Returns the priority tuple on success. On any failure (missing file,
+    malformed JSON, wrong schema) logs a stderr warning and returns the
+    hardcoded fallback so the module remains functional in a partial-build
+    state (e.g. a developer runs the script before rebuilding the schema).
+    """
+    sidecar_path = CATEGORY_PRIORITY_SIDECAR
+    if not sidecar_path.exists():
+        print(
+            f'WARN: category-priority sidecar not found at {sidecar_path} — '
+            'falling back to hardcoded category priority '
+            '(run `node scripts/export-category-priority.mjs` after building the schema)',
+            file=sys.stderr,
+        )
+        return _CATEGORY_PRIORITY_FALLBACK
+    try:
+        data = json.loads(sidecar_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(
+            f'WARN: failed to read category-priority sidecar {sidecar_path}: {exc} — '
+            'falling back to hardcoded category priority',
+            file=sys.stderr,
+        )
+        return _CATEGORY_PRIORITY_FALLBACK
+    priority = data.get('priority')
+    if not isinstance(priority, list) or not priority:
+        print(
+            f'WARN: category-priority sidecar at {sidecar_path} missing `priority` — '
+            'falling back to hardcoded category priority',
+            file=sys.stderr,
+        )
+        return _CATEGORY_PRIORITY_FALLBACK
+    return tuple(priority)
+
+
+# Priority loaded from sidecar at import time (graceful fallback if absent).
+_CATEGORY_PRIORITY: tuple[str, ...] = _load_category_priority()
 
 
 # The feat-paren prefix is Python-specific: `re.split()` with a capturing group
@@ -1040,6 +1098,11 @@ def _apply_category_exclusivity(cats: list[str]) -> list[str]:
     `packages/crawler/src/merge.ts` so this script's output matches what the
     JS pipeline would produce. Returns a new sorted list (does not mutate).
 
+    The priority order is data-driven via `_CATEGORY_PRIORITY` (loaded from
+    `packages/schema/category-priority.json` at import time). The algorithm
+    iterates the priority array; the first entry present in `cats` wins and
+    all other known categories are removed.
+
     Examples:
       ['jpop']                       -> ['jpop']      (unchanged)
       ['jpop', 'anime']              -> ['anime']
@@ -1048,11 +1111,11 @@ def _apply_category_exclusivity(cats: list[str]) -> list[str]:
       ['jpop', 'anime', 'vocaloid']  -> ['vocaloid']
     """
     s = set(cats)
-    if 'vocaloid' in s:
-        s.discard('anime')
-        s.discard('jpop')
-    elif 'anime' in s:
-        s.discard('jpop')
+    for winner in _CATEGORY_PRIORITY:
+        if winner in s:
+            s -= set(_CATEGORY_PRIORITY) - {winner}
+            return sorted(s)
+    # No known category found — return sorted as-is (unknown values preserved).
     return sorted(s)
 
 

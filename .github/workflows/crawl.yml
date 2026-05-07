@@ -52,7 +52,7 @@ jobs:
         run: pnpm -r build
 
       - name: Verify all sidecars are in sync
-        # Four JSON sidecars are auto-generated from their TS sources during
+        # Five JSON sidecars are auto-generated from their TS sources during
         # `pnpm -r build` (above). After the build, each sidecar must be
         # byte-identical to its committed version. If it isn't, a maintainer
         # edited the TS source without re-running the build / forgot to commit
@@ -64,12 +64,14 @@ jobs:
         #   chinese-artist-drop-list.json — from chineseArtistDropList.ts
         #   post-category-overrides.json  — from crawler.ts POST_CATEGORY_OVERRIDES
         #   clustering-rules.json         — from clustering.ts SPLIT_RE_SOURCE/FLAGS
+        #   category-priority.json        — from schema/index.ts CATEGORY_PRIORITY
         run: |
           for sidecar in \
             packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json \
             packages/crawler/src/adapters/tj-media-direct/chinese-artist-drop-list.json \
             packages/crawler/src/adapters/jpop-playlist-blog/post-category-overrides.json \
-            packages/crawler/src/clustering-rules.json; do
+            packages/crawler/src/clustering-rules.json \
+            packages/schema/category-priority.json; do
             git diff --exit-code -- "$sidecar" || { echo "Sidecar drift detected: $sidecar"; exit 1; }
           done
 

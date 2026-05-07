@@ -34,9 +34,11 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TS_DIST = REPO_ROOT / 'packages' / 'schema' / 'dist' / 'index.js'
+SIDECAR = REPO_ROOT / 'packages' / 'schema' / 'category-priority.json'
 PY_SCRIPT = REPO_ROOT / 'scripts' / 'ingest-anisong-pdf.py'
 
 CATEGORIES = ('jpop', 'vocaloid', 'anime')
+EXPECTED_PRIORITY = ['vocaloid', 'anime', 'jpop']
 
 
 def _all_subsets() -> list[list[str]]:
@@ -66,6 +68,57 @@ def _ts_apply(subset: list[str]) -> list[str]:
         cwd=str(REPO_ROOT),
     )
     return json.loads(proc.stdout)
+
+
+class CategoryPrioritySidecarTest(unittest.TestCase):
+    """Validate the category-priority.json sidecar content and the Python loader."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if not SIDECAR.is_file():
+            raise unittest.SkipTest(
+                'Run `corepack pnpm --filter @karaoke/schema build` first to '
+                f'populate {SIDECAR.relative_to(REPO_ROOT).as_posix()}'
+            )
+        if not PY_SCRIPT.is_file():
+            raise unittest.SkipTest(f'Missing Python source: {PY_SCRIPT}')
+        cls._ns = runpy.run_path(str(PY_SCRIPT), run_name='__sidecar_test__')
+
+    def test_sidecar_priority_equals_expected(self) -> None:
+        """The committed sidecar must carry exactly ['vocaloid', 'anime', 'jpop']."""
+        data = json.loads(SIDECAR.read_text(encoding='utf-8'))
+        self.assertEqual(
+            data.get('priority'),
+            EXPECTED_PRIORITY,
+            msg=f'Sidecar priority mismatch: got {data.get("priority")!r}',
+        )
+
+    def test_sidecar_version_is_1(self) -> None:
+        data = json.loads(SIDECAR.read_text(encoding='utf-8'))
+        self.assertEqual(data.get('version'), 1)
+
+    def test_loader_returns_expected_priority(self) -> None:
+        """_load_category_priority() must return the sidecar's priority tuple."""
+        loader = self._ns.get('_load_category_priority')
+        if loader is None:
+            self.skipTest('_load_category_priority not found in Python source')
+        result = loader()
+        self.assertEqual(
+            list(result),
+            EXPECTED_PRIORITY,
+            msg=f'_load_category_priority() returned {list(result)!r}',
+        )
+
+    def test_module_level_priority_constant(self) -> None:
+        """_CATEGORY_PRIORITY module constant must equal the sidecar value."""
+        priority = self._ns.get('_CATEGORY_PRIORITY')
+        if priority is None:
+            self.skipTest('_CATEGORY_PRIORITY not found in Python source')
+        self.assertEqual(
+            list(priority),
+            EXPECTED_PRIORITY,
+            msg=f'_CATEGORY_PRIORITY = {list(priority)!r}',
+        )
 
 
 class ApplyCategoryExclusivityParityTest(unittest.TestCase):
