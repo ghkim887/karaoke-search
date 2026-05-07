@@ -71,7 +71,16 @@ export function normalizeForMatch(s: string): string {
  *    2026-05-01). See the call site for full rationale.
  */
 const FEAT_PAREN_RE = /\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*/gi;
-export const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*/i;
+/**
+ * Exported string constants so the build-time exporter
+ * (`scripts/export-clustering-rules.mjs`) can read the canonical pattern and
+ * flags, write them to a sidecar JSON, and let Python consume that sidecar
+ * instead of hand-mirroring the regex. Edit SPLIT_RE_SOURCE here — nowhere
+ * else — and rebuild; the sidecar regenerates automatically.
+ */
+export const SPLIT_RE_SOURCE = String.raw`\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*`;
+export const SPLIT_RE_FLAGS = 'i';
+export const SPLIT_RE = new RegExp(SPLIT_RE_SOURCE, SPLIT_RE_FLAGS);
 const OF_RE = /\s+of\s+/i;
 
 /**

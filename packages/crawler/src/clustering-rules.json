@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "splitterPattern": "\\s*[&＆,×｜]\\s*|\\s+with\\s+|\\s+meets\\s+|\\s*feat\\.\\s*",
+  "splitterFlags": "i"
+}

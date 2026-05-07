@@ -105,6 +105,19 @@ DROP_LIST_SIDECAR = (
     / 'korean-artist-drop-list.json'
 )
 
+# Clustering-rules JSON sidecar produced by `scripts/export-clustering-rules.mjs`
+# (which reads `SPLIT_RE_SOURCE` / `SPLIT_RE_FLAGS` from the built dist of
+# `packages/crawler/src/clustering.ts`). Tracked in git alongside the TS source.
+# Treated as graceful-degradation when missing or malformed: fall back to a
+# hardcoded copy of the delimiter alternations with a stderr warning.
+CLUSTERING_RULES_SIDECAR = (
+    REPO_ROOT
+    / 'packages'
+    / 'crawler'
+    / 'src'
+    / 'clustering-rules.json'
+)
+
 # Anchor: a 4-or-5 digit number not adjacent to other digits or a decimal point.
 # (Most codes are 5 digits; ~33 legacy codes are 4 digits like 6479, 6899, 6943.)
 # Note: lookbehind also excludes '.' to defend against decimal-like patterns.
@@ -731,8 +744,62 @@ def _normalize_for_match(s: str) -> str:
 # returns the inner content, which `_artist_components_for_drop_check` then
 # re-splits on ` of ` via `_FEAT_INNER_OF_RE` — that's the only place ` of `
 # fires.
+#
+# The delimiter alternations (everything after the feat-paren alt) are loaded
+# from the `clustering-rules.json` sidecar at module import time so they stay
+# mechanically in sync with the TS `SPLIT_RE_SOURCE` constant. If the sidecar
+# is missing or malformed a hardcoded fallback is used with a stderr warning.
+
+# Hardcoded fallback used when the sidecar is unavailable. Must match the TS
+# SPLIT_RE_SOURCE value exactly — this is the last resort copy, not the source
+# of truth. Update alongside clustering.ts if the sidecar mechanism ever breaks.
+_SPLIT_RE_SOURCE_FALLBACK = r'\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*'
+
+
+def _load_splitter_pattern() -> str:
+    """Load `splitterPattern` from the clustering-rules sidecar.
+
+    Returns the pattern string on success. On any failure (missing file,
+    malformed JSON, wrong schema) logs a stderr warning and returns the
+    hardcoded fallback so the module remains functional in a partial-build
+    state (e.g. a developer runs the script before rebuilding the crawler).
+    """
+    sidecar_path = CLUSTERING_RULES_SIDECAR
+    if not sidecar_path.exists():
+        print(
+            f'WARN: clustering-rules sidecar not found at {sidecar_path} — '
+            'falling back to hardcoded splitter pattern '
+            '(run `node scripts/export-clustering-rules.mjs` after building the crawler)',
+            file=sys.stderr,
+        )
+        return _SPLIT_RE_SOURCE_FALLBACK
+    try:
+        data = json.loads(sidecar_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(
+            f'WARN: failed to read clustering-rules sidecar {sidecar_path}: {exc} — '
+            'falling back to hardcoded splitter pattern',
+            file=sys.stderr,
+        )
+        return _SPLIT_RE_SOURCE_FALLBACK
+    pattern = data.get('splitterPattern')
+    if not isinstance(pattern, str) or not pattern:
+        print(
+            f'WARN: clustering-rules sidecar at {sidecar_path} missing `splitterPattern` — '
+            'falling back to hardcoded splitter pattern',
+            file=sys.stderr,
+        )
+        return _SPLIT_RE_SOURCE_FALLBACK
+    return pattern
+
+
+# The feat-paren prefix is Python-specific: `re.split()` with a capturing group
+# returns the captured text as an element in the result list, so prepending the
+# feat/prod paren pattern here lets `_artist_components_for_drop_check` receive
+# the inner text of every `(Feat. X)` / `(Prod. X)` as its own split piece.
+# The delimiter alts that follow come from the sidecar (TS source of truth).
 _DROP_SPLIT_RE = re.compile(
-    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*',
+    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|' + _load_splitter_pattern(),
     re.IGNORECASE,
 )
 
