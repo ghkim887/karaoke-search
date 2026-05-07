@@ -111,6 +111,12 @@ jobs:
       - name: Apply blog post-id category overrides
         run: python scripts/retag_blog_vocaloid_mistags.py
 
+      - name: Drop Korean-artist (KPOP) leak records
+        run: python scripts/drop_kpop_leaks.py
+
+      - name: Drop Chinese-artist (Cpop) leak records
+        run: python scripts/drop_cpop_leaks.py
+
       - name: Prune stale tj-search-cache entries
         run: node scripts/prune-artist-nationality-cache.mjs
 

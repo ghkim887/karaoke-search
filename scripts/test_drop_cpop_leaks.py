@@ -311,6 +311,67 @@ class TestDropCpopLeaksIdempotent(unittest.TestCase):
                 'second run must not rewrite the file')
 
 
+class TestDropCpopLeaksDryRun(unittest.TestCase):
+    """--dry-run: reports what would be dropped without modifying the corpus."""
+
+    def test_dry_run_does_not_modify_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            sidecar_path = Path(tmpdir) / 'drop-list.json'
+            _write_synthetic_sidecar(sidecar_path)
+
+            corpus = _make_synthetic_corpus(include_cpop=True, include_anomaly=True)
+            original_bytes = (
+                json.dumps(corpus, ensure_ascii=False, indent=2) + '\n'
+            ).encode('utf-8')
+            songs_path.write_bytes(original_bytes)
+
+            mtime_before = songs_path.stat().st_mtime_ns
+            time.sleep(0.05)
+
+            stderr_buf = io.StringIO()
+            with (
+                patch.object(script, 'SONGS_JSON', songs_path),
+                patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
+                patch('sys.stderr', stderr_buf),
+            ):
+                exit_code = script.main(['--dry-run'])
+            self.assertEqual(exit_code, 0)
+
+            # Corpus must be byte-stable — no rewrite.
+            self.assertEqual(songs_path.read_bytes(), original_bytes,
+                'dry-run must not modify the corpus file')
+            self.assertEqual(songs_path.stat().st_mtime_ns, mtime_before,
+                'dry-run must not touch the file (mtime unchanged)')
+
+    def test_dry_run_reports_would_drop_count(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            sidecar_path = Path(tmpdir) / 'drop-list.json'
+            _write_synthetic_sidecar(sidecar_path)
+
+            corpus = _make_synthetic_corpus(include_cpop=True, include_anomaly=True)
+            songs_path.write_text(
+                json.dumps(corpus, ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            stdout_buf = io.StringIO()
+            stderr_buf = io.StringIO()
+            with (
+                patch.object(script, 'SONGS_JSON', songs_path),
+                patch.object(script, 'DROP_LIST_SIDECAR', sidecar_path),
+                patch('sys.stdout', stdout_buf),
+                patch('sys.stderr', stderr_buf),
+            ):
+                exit_code = script.main(['--dry-run'])
+            self.assertEqual(exit_code, 0)
+            self.assertIn('would drop', stdout_buf.getvalue(),
+                'dry-run stdout should mention "would drop"')
+            self.assertIn('dry-run, no changes written', stderr_buf.getvalue(),
+                'dry-run should print sentinel to stderr')
+
+
 class TestDropCpopLeaksMissingSidecar(unittest.TestCase):
     """Missing sidecar → exit 2 (mirrors drop_kpop_leaks.py behavior)."""
 

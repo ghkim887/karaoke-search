@@ -51,10 +51,12 @@ no mtime change).
 Usage
 -----
     python scripts/drop_kpop_leaks.py
+    python scripts/drop_kpop_leaks.py --dry-run   # report without modifying
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -88,8 +90,16 @@ DROP_LIST_SIDECAR = (
 ensure_utf8_stdio()
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     _ensure_utf8_stdio()
+
+    parser = argparse.ArgumentParser(description='Drop Korean-artist leak records from corpus.')
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Report what would be dropped without modifying the corpus file.',
+    )
+    args = parser.parse_args([] if argv is None else argv)
 
     if not SONGS_JSON.exists():
         print(f'ERROR: missing corpus at {SONGS_JSON}', file=sys.stderr)
@@ -132,6 +142,14 @@ def main() -> int:
 
     if dropped_count == 0:
         print('no records matched the drop list — corpus already clean (no-op)')
+        return 0
+
+    if args.dry_run:
+        print(f'dry-run — would drop: {dropped_count} (before={total_before} after={total_after})')
+        print('sample (first 10 would-drop):')
+        for rec_id, artist in dropped_samples:
+            print(f'  {rec_id}  {artist!r}')
+        print('dry-run, no changes written', file=sys.stderr)
         return 0
 
     # Atomic write via shared helper (songs.json.tmp -> os.replace).
