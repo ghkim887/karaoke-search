@@ -15,25 +15,18 @@ Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
 import sys
 from pathlib import Path
 from typing import Optional
 
-# Reuse `_atomic_write_corpus` from the anisong ingest so output formatting
-# (indent=2 + trailing newline) matches the rest of the pipeline. Without
-# this, a minified write here would produce a ~25k-line diff in CI on the
-# next non-Stage-1 step. Importing via importlib because the filename
-# contains a hyphen (Python identifier rules).
+# Make `scripts/lib/` importable regardless of invocation cwd.
 _HERE = Path(__file__).resolve().parent
-_INGEST_PATH = _HERE / 'ingest-anisong-pdf.py'
-_spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _INGEST_PATH)
-assert _spec is not None and _spec.loader is not None
-_ingest = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_ingest)
-_atomic_write_corpus = _ingest._atomic_write_corpus
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
+
+from lib.corpus_io import atomic_write_corpus as _atomic_write_corpus
 
 # Korean (Hangul Syllables block) detection.
 _HANGUL_RE = re.compile(r'[가-힯]')

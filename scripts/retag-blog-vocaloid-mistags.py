@@ -57,23 +57,18 @@ Usage
 
 from __future__ import annotations
 
-import importlib.util
 import json
-import os
 import re
 import sys
 from pathlib import Path
 
-# Reuse `_apply_category_exclusivity` from the anisong ingest so this script
-# applies the SAME priority rule (vocaloid > anime > jpop) the JS pipeline
-# uses. Importing via importlib because the filename contains a hyphen
-# (Python identifier rules).
+# Make `scripts/lib/` importable regardless of invocation cwd.
 _HERE = Path(__file__).resolve().parent
-_INGEST_PATH = _HERE / 'ingest-anisong-pdf.py'
-_spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _INGEST_PATH)
-assert _spec is not None and _spec.loader is not None
-_ingest = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_ingest)
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
+
+from lib.corpus_io import atomic_write_corpus, ensure_utf8_stdio
+from lib.category_exclusivity import apply_category_exclusivity
 
 REPO_ROOT = _HERE.parent
 SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
@@ -130,14 +125,13 @@ _ID_PREFIX_PATTERN = re.compile(
 )
 
 
-# Shared helpers from the ingest script — `_ensure_utf8_stdio()` and
-# `_atomic_write_corpus()` (M1 + M2, 2026-05-04). Re-exported as module-level
-# names so consumers and tests can keep the existing call sites.
-_ensure_utf8_stdio = _ingest._ensure_utf8_stdio
-_atomic_write_corpus = _ingest._atomic_write_corpus
+# Private aliases kept for backward-compat with existing tests that reference
+# these names via the `retag` module handle.
+_ensure_utf8_stdio = ensure_utf8_stdio
+_atomic_write_corpus = atomic_write_corpus
 
 # Apply UTF-8 stdio at module load (idempotent — also re-applied in main()).
-_ensure_utf8_stdio()
+ensure_utf8_stdio()
 
 
 def get_post_override(record_id: str) -> str | None:
@@ -181,7 +175,7 @@ def retag_record(record: dict) -> bool:
     # Replace the vocaloid mistag with the override category. Run the canonical
     # exclusivity rule (vocaloid > anime > jpop) afterward so the result still
     # passes the schema's `maxItems: 1` constraint.
-    desired = _ingest._apply_category_exclusivity([override])  # ['jpop'] -> ['jpop']
+    desired = apply_category_exclusivity([override])  # ['jpop'] -> ['jpop']
     if current == desired:
         return False
     record['categories'] = desired

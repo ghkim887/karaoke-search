@@ -55,21 +55,22 @@ Usage
 
 from __future__ import annotations
 
-import importlib.util
 import json
-import os
 import sys
 from pathlib import Path
 
-# Reuse the helpers from the anisong ingest so both scripts apply the SAME
-# normalization + splitter. Importing via importlib because the filename
-# contains a hyphen (Python identifier rules).
+# Make `scripts/lib/` importable regardless of invocation cwd.
 _HERE = Path(__file__).resolve().parent
-_INGEST_PATH = _HERE / 'ingest-anisong-pdf.py'
-_spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _INGEST_PATH)
-assert _spec is not None and _spec.loader is not None
-_ingest = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_ingest)
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
+
+from lib.corpus_io import atomic_write_corpus, ensure_utf8_stdio
+from lib.artist_split import is_artist_in_drop_list, load_drop_keys
+
+# Private aliases kept for backward-compat with existing tests that reference
+# these names via the `script` module handle.
+_ensure_utf8_stdio = ensure_utf8_stdio
+_atomic_write_corpus = atomic_write_corpus
 
 REPO_ROOT = _HERE.parent
 SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
@@ -83,15 +84,8 @@ DROP_LIST_SIDECAR = (
     / 'korean-artist-drop-list.json'
 )
 
-
-# Shared helpers from the ingest script — `_ensure_utf8_stdio()` and
-# `_atomic_write_corpus()` (M1 + M2, 2026-05-04). Re-exported as module-level
-# names so consumers and tests can keep the existing call sites.
-_ensure_utf8_stdio = _ingest._ensure_utf8_stdio
-_atomic_write_corpus = _ingest._atomic_write_corpus
-
 # Apply UTF-8 stdio at module load (idempotent — also re-applied in main()).
-_ensure_utf8_stdio()
+ensure_utf8_stdio()
 
 
 def main() -> int:
@@ -110,7 +104,7 @@ def main() -> int:
         )
         return 2
 
-    drop_keys = _ingest.load_drop_keys(DROP_LIST_SIDECAR)
+    drop_keys = load_drop_keys(DROP_LIST_SIDECAR)
     if not drop_keys:
         print(
             f'ERROR: drop-list sidecar at {DROP_LIST_SIDECAR} loaded zero keys',
@@ -128,7 +122,7 @@ def main() -> int:
     dropped_count = 0
     for rec in corpus:
         artist = rec.get('artist_primary') or ''
-        if _ingest.is_artist_in_drop_list(artist, drop_keys):
+        if is_artist_in_drop_list(artist, drop_keys):
             dropped_count += 1
             if len(dropped_samples) < 10:
                 dropped_samples.append((str(rec.get('id', '<no-id>')), artist))

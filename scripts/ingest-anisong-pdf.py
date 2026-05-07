@@ -36,50 +36,48 @@ Regenerate the source text with:
 
 from __future__ import annotations
 
-import datetime as _dt
 import json
 import os
 import re
 import sys
-import unicodedata
 from pathlib import Path
 
-def _ensure_utf8_stdio() -> None:
-    """Force stdout/stderr to UTF-8 so emoji/Hangul/kana log output doesn't trip cp949.
+# Make `scripts/lib/` importable regardless of invocation cwd.
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
 
-    Safe on POSIX (already UTF-8). Idempotent. Shared with `drop-kpop-leaks.py`
-    and `retag-blog-vocaloid-mistags.py` which import this script via importlib
-    and call this helper from their own module-load time.
-    """
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-    if hasattr(sys.stderr, 'reconfigure'):
-        sys.stderr.reconfigure(encoding='utf-8')
+from lib.corpus_io import (  # noqa: E402
+    atomic_write_corpus,
+    ensure_utf8_stdio,
+    iso_utc_now,
+)
+from lib.artist_split import (  # noqa: E402
+    DROP_SPLIT_RE,
+    FEAT_INNER_OF_RE,
+    FEAT_PAREN_FINDALL_RE,
+    artist_components_for_drop_check,
+    is_artist_in_drop_list,
+    load_drop_keys,
+    normalize_for_match,
+)
+from lib.category_exclusivity import apply_category_exclusivity  # noqa: E402
 
-
-def _atomic_write_corpus(path: Path, records: list) -> None:
-    """Atomic-write `records` to `path` as pretty-printed UTF-8 JSON.
-
-    Writes to `<path>.tmp` then `os.replace()` swaps it onto `path`. Mirrors
-    the TS pipeline's `songs.json.tmp` + rename pattern in
-    `.github/workflows/crawl.yml` so a crash mid-write can never leave a
-    truncated/corrupt songs.json on disk. Load-bearing on Windows where
-    `os.replace()` is the only cross-filesystem atomic rename guaranteed.
-
-    Format: `ensure_ascii=False`, `indent=2`, trailing newline — matches the
-    existing on-disk shape so re-running on an unchanged corpus is byte-
-    idempotent.
-    """
-    tmp_path = path.with_suffix(path.suffix + '.tmp')
-    tmp_path.write_text(
-        json.dumps(records, ensure_ascii=False, indent=2) + '\n',
-        encoding='utf-8',
-    )
-    os.replace(tmp_path, path)
-
+# Private aliases kept for backward-compat with existing tests and consumers
+# that reference these names via the `ingest` module handle (e.g.
+# `ingest._apply_category_exclusivity`, `ingest._atomic_write_corpus`).
+_ensure_utf8_stdio = ensure_utf8_stdio
+_atomic_write_corpus = atomic_write_corpus
+_iso_utc_now = iso_utc_now
+_normalize_for_match = normalize_for_match
+_DROP_SPLIT_RE = DROP_SPLIT_RE
+_FEAT_INNER_OF_RE = FEAT_INNER_OF_RE
+_FEAT_PAREN_FINDALL_RE = FEAT_PAREN_FINDALL_RE
+_artist_components_for_drop_check = artist_components_for_drop_check
+_apply_category_exclusivity = apply_category_exclusivity
 
 # Force stdout/stderr to UTF-8 at module load (idempotent).
-_ensure_utf8_stdio()
+ensure_utf8_stdio()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PDF_TEXT = REPO_ROOT / 'scripts' / 'data' / 'anisong_utf8.txt'
@@ -181,15 +179,6 @@ _SECTION_DIVIDER_RE = re.compile(
     r'^(보컬로이드|특촬물),?\s{2,}\S'
 )
 
-
-def _iso_utc_now() -> str:
-    """ISO-8601 UTC with millisecond precision and Z suffix.
-
-    Byte-identical to JS `new Date().toISOString()` so cross-source
-    lexicographic compare in merge.ts:393 is safe.
-    """
-    now = _dt.datetime.now(_dt.timezone.utc)
-    return now.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
 
 def detect_section_divider(line: str) -> str | None:
@@ -729,247 +718,6 @@ def _assign_translit(
     return title_ko, artist_ko
 
 
-def _normalize_for_match(s: str) -> str:
-    """Mirror of `normalizeForMatch` in `packages/crawler/src/adapters/
-    tj-media-direct/normalize.ts`: strip every whitespace char, lowercase, NFKC.
-
-    Cache keys + drop-list keys are produced by the TS rule; matching by hand
-    in Python requires the exact same transform or membership tests miss.
-    """
-    return unicodedata.normalize('NFKC', re.sub(r'\s+', '', s).lower())
-
-
-# Mirrors the TS `splitArtistCollab` enough for the drop-list filter to spot
-# Korean-act components inside collab strings. Python-side we only need
-# membership lookup (no admit-path scoring), so a coarser splitter is fine.
-#
-# Splits on: ` & `, ` ＆ `, ` × `, ` with `, `,`, `(Feat. X)`,
-# `(FEAT. X)`, `(Prod. X)` parentheticals — same primary delimiters the TS
-# source is built around.
-#
-# Note on ` of ` scope (Fix 1, 2026-05-01): bare ` of ` is intentionally
-# EXCLUDED from this regex. The TS `splitArtistCollab` only sub-splits ` of `
-# inside captured `(Feat. X)` / `(Prod. X)` parenthetical content because the
-# bare token is a common English word in real artist names (`Bump of Chicken`,
-# `Out of the Blue`, etc.). Cross-language parity: if the TS rule wouldn't
-# split it, the Python rule mustn't either. The feat/prod paren capture below
-# returns the inner content, which `_artist_components_for_drop_check` then
-# re-splits on ` of ` via `_FEAT_INNER_OF_RE` — that's the only place ` of `
-# fires.
-#
-# The delimiter alternations (everything after the feat-paren alt) are loaded
-# from the `clustering-rules.json` sidecar at module import time so they stay
-# mechanically in sync with the TS `SPLIT_RE_SOURCE` constant. If the sidecar
-# is missing or malformed a hardcoded fallback is used with a stderr warning.
-
-# Hardcoded fallback used when the sidecar is unavailable. Must match the TS
-# SPLIT_RE_SOURCE value exactly — this is the last resort copy, not the source
-# of truth. Update alongside clustering.ts if the sidecar mechanism ever breaks.
-_SPLIT_RE_SOURCE_FALLBACK = r'\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*'
-
-# Hardcoded fallback for `_load_category_priority()` — mirrors CATEGORY_PRIORITY
-# in `packages/schema/src/index.ts`. Kept in sync by the sidecar mechanism;
-# this fallback is only used when the sidecar is absent (partial-build state).
-_CATEGORY_PRIORITY_FALLBACK: tuple[str, ...] = ('vocaloid', 'anime', 'jpop')
-
-
-def _load_splitter_pattern() -> str:
-    """Load `splitterPattern` from the clustering-rules sidecar.
-
-    Returns the pattern string on success. On any failure (missing file,
-    malformed JSON, wrong schema) logs a stderr warning and returns the
-    hardcoded fallback so the module remains functional in a partial-build
-    state (e.g. a developer runs the script before rebuilding the crawler).
-    """
-    sidecar_path = CLUSTERING_RULES_SIDECAR
-    if not sidecar_path.exists():
-        print(
-            f'WARN: clustering-rules sidecar not found at {sidecar_path} — '
-            'falling back to hardcoded splitter pattern '
-            '(run `node scripts/export-clustering-rules.mjs` after building the crawler)',
-            file=sys.stderr,
-        )
-        return _SPLIT_RE_SOURCE_FALLBACK
-    try:
-        data = json.loads(sidecar_path.read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError) as exc:
-        print(
-            f'WARN: failed to read clustering-rules sidecar {sidecar_path}: {exc} — '
-            'falling back to hardcoded splitter pattern',
-            file=sys.stderr,
-        )
-        return _SPLIT_RE_SOURCE_FALLBACK
-    pattern = data.get('splitterPattern')
-    if not isinstance(pattern, str) or not pattern:
-        print(
-            f'WARN: clustering-rules sidecar at {sidecar_path} missing `splitterPattern` — '
-            'falling back to hardcoded splitter pattern',
-            file=sys.stderr,
-        )
-        return _SPLIT_RE_SOURCE_FALLBACK
-    return pattern
-
-
-def _load_category_priority() -> tuple[str, ...]:
-    """Load `priority` from the category-priority sidecar.
-
-    Returns the priority tuple on success. On any failure (missing file,
-    malformed JSON, wrong schema) logs a stderr warning and returns the
-    hardcoded fallback so the module remains functional in a partial-build
-    state (e.g. a developer runs the script before rebuilding the schema).
-    """
-    sidecar_path = CATEGORY_PRIORITY_SIDECAR
-    if not sidecar_path.exists():
-        print(
-            f'WARN: category-priority sidecar not found at {sidecar_path} — '
-            'falling back to hardcoded category priority '
-            '(run `node scripts/export-category-priority.mjs` after building the schema)',
-            file=sys.stderr,
-        )
-        return _CATEGORY_PRIORITY_FALLBACK
-    try:
-        data = json.loads(sidecar_path.read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError) as exc:
-        print(
-            f'WARN: failed to read category-priority sidecar {sidecar_path}: {exc} — '
-            'falling back to hardcoded category priority',
-            file=sys.stderr,
-        )
-        return _CATEGORY_PRIORITY_FALLBACK
-    priority = data.get('priority')
-    if not isinstance(priority, list) or not priority:
-        print(
-            f'WARN: category-priority sidecar at {sidecar_path} missing `priority` — '
-            'falling back to hardcoded category priority',
-            file=sys.stderr,
-        )
-        return _CATEGORY_PRIORITY_FALLBACK
-    return tuple(priority)
-
-
-# Priority loaded from sidecar at import time (graceful fallback if absent).
-_CATEGORY_PRIORITY: tuple[str, ...] = _load_category_priority()
-
-
-# The feat-paren prefix is Python-specific: `re.split()` with a capturing group
-# returns the captured text as an element in the result list, so prepending the
-# feat/prod paren pattern here lets `_artist_components_for_drop_check` receive
-# the inner text of every `(Feat. X)` / `(Prod. X)` as its own split piece.
-# The delimiter alts that follow come from the sidecar (TS source of truth).
-_DROP_SPLIT_RE = re.compile(
-    r'\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*|' + _load_splitter_pattern(),
-    re.IGNORECASE,
-)
-
-# Inside a captured `(Feat. X)` / `(Prod. X)` group ONLY, ` of ` reliably means
-# "member-of-group" (e.g. `(Feat. SUGA of BTS)` → SUGA + BTS). This regex is
-# applied to the captured inner string in `_artist_components_for_drop_check`
-# — never to the bare top-level artist text.
-_FEAT_INNER_OF_RE = re.compile(r'\s+of\s+', re.IGNORECASE)
-
-# Detect feat/prod parentheticals so we can identify which sub-pieces came from
-# inside one (only those should get the ` of ` sub-split). We use the same
-# pattern as `_DROP_SPLIT_RE` but as a finditer source (not a split source).
-_FEAT_PAREN_FINDALL_RE = re.compile(
-    r'\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)',
-    re.IGNORECASE,
-)
-
-
-def _artist_components_for_drop_check(artist: str) -> list[str]:
-    """Yield every component of `artist` that should be checked against the drop set.
-
-    Includes the original whole string plus every sub-token produced by the
-    coarse splitter above. ` of ` member-of-group sub-splitting is SCOPED
-    (Fix 1, 2026-05-01) to text captured inside a `(Feat. X)` / `(Prod. X)`
-    parenthetical — bare ` of ` outside any feat/prod paren does NOT split,
-    matching the TS `splitArtistCollab` contract so legitimate names like
-    `Bump of Chicken` round-trip unchanged.
-
-    Empty tokens are dropped; output is deduped while preserving first-seen
-    order.
-    """
-    whole = artist.strip()
-    if not whole:
-        return []
-    out: list[str] = []
-    seen: set[str] = set()
-
-    def _add(piece: str) -> None:
-        norm = piece.strip()
-        if not norm:
-            return
-        if norm in seen:
-            return
-        seen.add(norm)
-        out.append(norm)
-
-    # 1. The whole input always rounds-trips as the first component.
-    _add(whole)
-
-    # 2. Capture every feat/prod parenthetical and emit (a) the inner string
-    #    and (b) the inner string sub-split on ` of `. Only inner content gets
-    #    the ` of ` sub-split — bare ` of ` at the top level is excluded.
-    for inner in _FEAT_PAREN_FINDALL_RE.findall(whole):
-        inner_trim = inner.strip()
-        if not inner_trim:
-            continue
-        _add(inner_trim)
-        if _FEAT_INNER_OF_RE.search(inner_trim):
-            for sub in _FEAT_INNER_OF_RE.split(inner_trim):
-                _add(sub)
-
-    # 3. Top-level split on the primary delimiters (no ` of ` here). The split
-    #    runs across the original string; feat/prod parens contribute their
-    #    captured inner content to the split output (same as the TS source).
-    for sub in _DROP_SPLIT_RE.split(whole):
-        if sub is None:
-            continue
-        _add(sub)
-
-    return out
-
-
-def load_drop_keys(sidecar_path: Path) -> set[str]:
-    """Load the drop-list JSON sidecar; return a set of normalized keys.
-
-    On any failure (missing file, malformed JSON, schema mismatch) returns an
-    empty set and logs a stderr warning — graceful degradation per spec.
-    """
-    if not sidecar_path.exists():
-        print(
-            f'WARN: drop-list sidecar not found at {sidecar_path} — '
-            'running without the KPOP filter (run `node scripts/export-drop-list.mjs` after building the crawler)',
-            file=sys.stderr,
-        )
-        return set()
-    try:
-        data = json.loads(sidecar_path.read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError) as exc:
-        print(f'WARN: failed to read drop-list sidecar {sidecar_path}: {exc}', file=sys.stderr)
-        return set()
-    keys = data.get('keys')
-    if not isinstance(keys, list):
-        print(f'WARN: drop-list sidecar at {sidecar_path} missing `keys` array', file=sys.stderr)
-        return set()
-    # Re-normalize defensively: the TS exporter already pre-normalizes, but a
-    # mismatch in normalization rules would silently miss everything.
-    return {_normalize_for_match(k) for k in keys if isinstance(k, str) and k}
-
-
-def is_artist_in_drop_list(artist: str, drop_keys: set[str]) -> bool:
-    """Return True if any component of `artist` matches the drop set.
-
-    `drop_keys` is the normalized set returned by `load_drop_keys()`. Empty set
-    (graceful-degradation case) always returns False — the filter is disabled.
-    """
-    if not drop_keys:
-        return False
-    for component in _artist_components_for_drop_check(artist):
-        key = _normalize_for_match(component)
-        if key and key in drop_keys:
-            return True
-    return False
 
 
 # PDF vocaloid-section denylist (Fix 1, 2026-05-04 — see audit memory
@@ -1089,34 +837,6 @@ def is_artist_in_pdf_vocaloid_skip_list(artist: str) -> bool:
                 return True
     return False
 
-
-def _apply_category_exclusivity(cats: list[str]) -> list[str]:
-    """Apply the v2 category mutual-exclusivity rule: at most one of
-    {jpop, vocaloid, anime} per record. Priority: vocaloid > anime > jpop.
-
-    Mirrors `applyCategoryExclusivity` in `packages/schema/src/index.ts` and
-    `packages/crawler/src/merge.ts` so this script's output matches what the
-    JS pipeline would produce. Returns a new sorted list (does not mutate).
-
-    The priority order is data-driven via `_CATEGORY_PRIORITY` (loaded from
-    `packages/schema/category-priority.json` at import time). The algorithm
-    iterates the priority array; the first entry present in `cats` wins and
-    all other known categories are removed.
-
-    Examples:
-      ['jpop']                       -> ['jpop']      (unchanged)
-      ['jpop', 'anime']              -> ['anime']
-      ['jpop', 'vocaloid']           -> ['vocaloid']
-      ['anime', 'vocaloid']          -> ['vocaloid']  (vocaloid wins)
-      ['jpop', 'anime', 'vocaloid']  -> ['vocaloid']
-    """
-    s = set(cats)
-    for winner in _CATEGORY_PRIORITY:
-        if winner in s:
-            s -= set(_CATEGORY_PRIORITY) - {winner}
-            return sorted(s)
-    # No known category found — return sorted as-is (unknown values preserved).
-    return sorted(s)
 
 
 def main() -> int:
