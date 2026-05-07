@@ -319,7 +319,12 @@ describe('writeReviewCsv', () => {
     const path = join(workdir, 'llm-review.csv');
     writeReviewCsv(path, decisions);
     const csv = readFileSync(path, 'utf-8');
-    expect(csv.split('\n')[0]).toBe('id,title_primary,title_ko,confidence,reasoning');
+    // writeReviewCsv intentionally emits a UTF-8 BOM (U+FEFF) so Korean Excel
+    // (default CP949 codepage) opens the file without mojibake. Assert the BOM
+    // is present explicitly so future regressions (accidental BOM removal) fail
+    // loudly rather than being masked by a strip-before-compare approach.
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+    expect(csv.split('\n')[0]).toBe('﻿id,title_primary,title_ko,confidence,reasoning');
     expect(csv).toContain('tj-2');
     expect(csv).not.toContain('tj-1'); // high-confidence excluded
   });
