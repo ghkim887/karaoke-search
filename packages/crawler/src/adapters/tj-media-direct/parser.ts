@@ -1,8 +1,7 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import type { SearchSongCache } from './cache.js';
-import { isInChineseDropList } from './chineseArtistDropList.js';
-import { isInDropList } from './koreanArtistDropList.js';
-import { isPlainObject, normalizeForMatch, splitArtistCollab } from './normalize.js';
+import { FILTER_STEPS, buildFilterContext } from './filterSteps.js';
+import { isPlainObject } from './normalize.js';
 
 /**
  * Parse a TJ Media catalog JSON response into `RawSongRecord`s.
@@ -181,29 +180,16 @@ export function parseCatalogResponse(
  * Exported for unit tests so we can exercise the filter logic directly
  * without going through the JSON-extraction wrapper.
  *
- * Filter chain order (post Phase 1 KPOP-leak fix, spec §2.E):
- *   0. **Drop list (any-component).** Hand-curated Korean acts that leak
- *      despite the cache signal — `방탄소년단` JPN 3/0/0, `防弾少年団` JPN
- *      13/0/0, etc. Applies to EVERY collab component (inverse of path 2's
- *      lead-only admit rule): a Japanese-led record featuring SUGA of BTS
- *      still drops.
- *   1. **Per-pro KOR-reject (§2.C).** If `proEnrichmentMap[pro]` carries
- *      `nationalcode === 'KOR'`, drop — even when the blog rescue path
- *      would have admitted. A hand-validated blog mention can lag a TJ
- *      catalog metadata correction.
- *   2. **Per-artist JPN tag (lead-component-only, §2.B).** Admit when the
- *      LEAD component (first split chunk, before any feat/with/&) carries
- *      `code: 'JPN'` in `artistNationalityMap`. Featured-artist components
- *      do NOT contribute to admission — `Charlie Puth(Feat.宇多田ヒカル)`
- *      now drops because the lead is non-JPN, where pre-fix it admitted on
- *      the `宇多田ヒカル` component.
- *   3. **Per-pro JPN tag.** Admit when `proEnrichmentMap[pro].nationalcode
- *      === 'JPN'`. Catches the case where the artist scan was AMBIGUOUS
- *      but the specific `pro` is JPN.
- *   4. **Blog-whitelist rescue.** Admit when the TJ# is in the blog
- *      whitelist. Safety net for residual TJ-search index gaps.
+ * Filter chain order (post Phase 1 KPOP-leak fix, spec §2.E) — implemented
+ * as a typed FilterStep[] reducer in filterSteps.ts. CLAUDE.md gotcha: this
+ * order is LOAD-BEARING; do not reorder FILTER_STEPS.
+ *   0. drop-list-reject  — drop-list check, any-component (§2.E)
+ *   1. kor-reject        — per-pro KOR-reject (§2.C)
+ *   2. jpn-admit-artist  — per-artist JPN tag, lead-component-only (§2.B)
+ *   3. jpn-admit-pro     — per-pro JPN tag
+ *   4. blog-rescue       — blog-whitelist rescue (safety net, NOT dead code)
  *
- * If no path admits, drop.
+ * If no step admits, drop.
  */
 export type KeepVerdict = 'artist' | 'pro' | 'rescue' | 'drop';
 
@@ -213,55 +199,13 @@ export function classifyRecord(
   cache: SearchSongCache,
   force?: ReadonlySet<string>,
 ): KeepVerdict {
-  // Compute the component split once — used by the drop list (any-component
-  // scan) AND the lead-component admit rule.
-  const components = splitArtistCollab(artist);
-
-  // Step 0: drop-list check (any-component). The drop list is the strongest
-  // negative signal — it overrides every admit path including the blog
-  // rescue, because a hand-validated blog mention can lag a Korean act's
-  // entry into the JP market. The Chinese (Cantopop / Mandopop) drop list
-  // applies the same any-component rule for acts that have NO Japan presence
-  // at all — the cache vote-tally signal can't demote them, so the drop list
-  // is the only deterministic gate.
-  for (const component of components) {
-    const key = normalizeForMatch(component);
-    if (isInDropList(key)) return 'drop';
-    if (isInChineseDropList(key)) return 'drop';
+  const ctx = buildFilterContext(tj, artist, cache, force);
+  for (const step of FILTER_STEPS) {
+    const verdict = step.evaluate(ctx);
+    if (verdict.decision === 'admit') return verdict.via;
+    if (verdict.decision === 'reject') return 'drop';
+    // 'pass' → continue to next step
   }
-
-  // Step 1: per-pro KOR-reject. An explicit KOR `nationalcode` from the
-  // searchSong enrichment overrules every admit path (including the blog
-  // rescue). Defense against TJ catalog metadata corrections that lag the
-  // blog corpus.
-  const proEntry = cache.proEnrichmentMap[tj];
-  if (proEntry?.nationalcode === 'KOR') return 'drop';
-
-  // Step 2: per-artist JPN tag (lead-component-only). The "lead" is index 1
-  // when `splitArtistCollab` produced ≥2 elements (index 0 is the whole
-  // string), else index 0 (single-artist input round-trips through the
-  // splitter unchanged at index 0). Featured-artist components are NOT
-  // checked — that admit rule was the path that leaked the
-  // `Charlie Puth(Feat.宇多田ヒカル)` case pre-fix.
-  if (components.length > 0) {
-    const lead = components.length >= 2 ? components[1] : components[0];
-    if (lead !== undefined) {
-      const leadKey = normalizeForMatch(lead);
-      if (leadKey !== '') {
-        const entry = cache.artistNationalityMap[leadKey];
-        if (entry?.code === 'JPN') return 'artist';
-      }
-    }
-  }
-
-  // Step 3: per-pro JPN tag. Catches the case where the artist scan was
-  // AMBIGUOUS or UNKNOWN but the specific `pro` is JPN.
-  if (proEntry?.nationalcode === 'JPN') return 'pro';
-
-  // Step 4: blog-whitelist rescue. Safety net for residual TJ-search index
-  // gaps. Already gated by step 1's KOR-reject above.
-  if (force?.has(tj)) return 'rescue';
-
   return 'drop';
 }
 
