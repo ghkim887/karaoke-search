@@ -1054,6 +1054,7 @@ def main() -> int:
 
     # Report.
     log_path = REPO_ROOT / '.omc' / 'anisong_ingest_report.txt'
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, 'w', encoding='utf-8') as f:
         f.write(f'Total PDF anchor lines parsed: {len(parsed)}\n')
         f.write(f'Unique TJ codes after dedupe: {len(unique)}\n')
