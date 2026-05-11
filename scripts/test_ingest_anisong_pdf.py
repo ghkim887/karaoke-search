@@ -402,6 +402,65 @@ class TestIngestIdempotent(unittest.TestCase):
             self.assertEqual(blog_rec['categories'], ['anime'],  # type: ignore[index]
                 f"blog-68001 categories should be ['anime'], got {blog_rec['categories']!r}")  # type: ignore[index]
 
+    def test_tjpdf_record_artist_aliases_preserved_across_runs(self) -> None:
+        """Regression: the pre-pass drops every tjpdf-* row and the new-record
+        insert path re-creates them from PDF data; without explicit carry-forward
+        of artist_aliases the alias list was silently stripped every run (data
+        loss + byte-instability). This test seeds a tjpdf-28500 row with
+        artist_aliases, runs the ingest, and asserts the aliases survive in the
+        canonical key position (after artist_ko, before karaoke_numbers).
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            pdf_path.write_text(self._SYNTHETIC_PDF, encoding='utf-8')
+            corpus = self._make_corpus()
+            # Seed the tjpdf-28500 row (matches the synthetic PDF's TJ code) with
+            # an alias list at the canonical position.
+            tjpdf_rec = next(r for r in corpus if r['id'] == 'tjpdf-28500')
+            # Rebuild dict in canonical key order with artist_aliases injected
+            # between artist_ko and karaoke_numbers.
+            canonical = {}
+            for k in ('id', 'source_url', 'title_primary', 'title_ko',
+                      'artist_primary', 'artist_ko'):
+                canonical[k] = tjpdf_rec[k]
+            canonical['artist_aliases'] = ['黒うさ', '黒うさＰ']
+            for k in ('karaoke_numbers', 'categories', 'crawled_at'):
+                canonical[k] = tjpdf_rec[k]
+            corpus[corpus.index(tjpdf_rec)] = canonical
+            songs_path.write_text(
+                json.dumps(corpus, ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+            after = json.loads(songs_path.read_text(encoding='utf-8'))
+            re_inserted = next((r for r in after if r['id'] == 'tjpdf-28500'), None)
+            self.assertIsNotNone(re_inserted)
+            assert re_inserted is not None  # for type narrowing
+            self.assertEqual(
+                re_inserted.get('artist_aliases'), ['黒うさ', '黒うさＰ'],
+                'artist_aliases must survive the drop-and-recreate cycle',
+            )
+            # Canonical position: artist_aliases sits between artist_ko and
+            # karaoke_numbers (matches the merger output and the alias-resolver
+            # emission pattern). Insertion-order serialization makes this
+            # observable on the dict's key list.
+            keys = list(re_inserted.keys())
+            self.assertEqual(
+                keys.index('artist_aliases'), keys.index('artist_ko') + 1,
+                f'artist_aliases must immediately follow artist_ko, got keys={keys!r}',
+            )
+            self.assertLess(
+                keys.index('artist_aliases'), keys.index('karaoke_numbers'),
+                f'artist_aliases must precede karaoke_numbers, got keys={keys!r}',
+            )
+
 
 class TestDropListFilter(unittest.TestCase):
     """Drop-list filter (post-Phase-2 Gap 3): a parsed PDF row whose artist

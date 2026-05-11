@@ -291,6 +291,81 @@ describe('applyDecisionsToCorpus', () => {
     expect(out[0]).not.toHaveProperty('title_ko_source');
     expect(out[0]).not.toHaveProperty('title_ko_confidence');
   });
+
+  it('emits optional KO fields in canonical key order (media_context_ko before source/confidence)', () => {
+    // Regression: prior implementation set title_ko_source + title_ko_confidence
+    // before media_context_ko, producing
+    //   …crawled_at, title_ko_source, title_ko_confidence, media_context_ko
+    // which differed from the merger's canonical
+    //   …crawled_at, media_context_ko, title_ko_source, title_ko_confidence
+    // — 520 records re-shuffled into the non-canonical bucket every pipeline run.
+    const records = [
+      {
+        id: 'tj-1',
+        source_url: 'https://x.test/1',
+        title_primary: '愛',
+        title_ko: null,
+        artist_primary: 'A',
+        artist_ko: null,
+        karaoke_numbers: { tj: '1', ky: null, joysound: null },
+        categories: ['jpop'],
+        crawled_at: '2026-05-06T00:00:00.000Z',
+      },
+    ];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: '愛',
+          title_ko: '사랑',
+          media_context_ko: '(진격의 거인 OP)',
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const out = applyDecisionsToCorpus(records, decisions);
+    const keys = Object.keys(out[0]);
+    const crawledAtIdx = keys.indexOf('crawled_at');
+    const mediaIdx = keys.indexOf('media_context_ko');
+    const sourceIdx = keys.indexOf('title_ko_source');
+    const confIdx = keys.indexOf('title_ko_confidence');
+    expect(crawledAtIdx).toBeGreaterThanOrEqual(0);
+    expect(mediaIdx).toBe(crawledAtIdx + 1);
+    expect(sourceIdx).toBe(mediaIdx + 1);
+    expect(confIdx).toBe(sourceIdx + 1);
+  });
+
+  it('preserves pre-existing title_ko_source when decision nulls title_ko', () => {
+    // Records previously tagged title_ko_source='blog' (from Stage 1) must not
+    // lose that tag when a Stage 2 decision marks title_ko as untranslatable.
+    const records = [
+      {
+        id: 'blog-1',
+        title_primary: 'X',
+        title_ko: '엑스',
+        title_ko_source: 'blog',
+      },
+    ];
+    const decisions = new Map([
+      [
+        'blog-1',
+        {
+          id: 'blog-1',
+          title_primary: 'X',
+          title_ko: null,
+          media_context_ko: null,
+          confidence: 'low',
+          reasoning: 'unknown',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const out = applyDecisionsToCorpus(records, decisions);
+    expect(out[0].title_ko_source).toBe('blog');
+  });
 });
 
 describe('writeReviewCsv', () => {

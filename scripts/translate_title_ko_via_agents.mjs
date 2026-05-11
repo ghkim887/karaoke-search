@@ -139,16 +139,50 @@ export function applyDecisionsToCorpus(records, decisions) {
   return records.map((rec) => {
     const d = decisions.get(rec.id);
     if (!d) return rec;
-    const next = { ...rec };
+    // Rebuild `next` so the optional KO-pipeline fields land in the canonical
+    // key order emitted by the merger (packages/crawler/src/merge.ts:430-436):
+    //   …crawled_at, media_context_ko, title_ko_source, title_ko_confidence
+    // Earlier versions assigned title_ko_source + title_ko_confidence before
+    // media_context_ko, which placed media_context_ko AFTER the confidence tag
+    // on Stage-2-touched records. The value-level diff was zero but every
+    // re-run of the pipeline silently churned ~520 records into a different
+    // JSON key order, polluting crawl-PR diffs. To produce canonical order we
+    // strip the optional trio off `rec` first and re-attach in canonical order.
+    // Preserve unrelated fields (e.g. title_ko_source='blog' on a record whose
+    // decision happens to be null) by re-spreading the prior values when the
+    // decision does not overwrite them.
+    const {
+      // eslint-disable-next-line no-unused-vars
+      media_context_ko: prevMcKo,
+      // eslint-disable-next-line no-unused-vars
+      title_ko_source: prevSrc,
+      // eslint-disable-next-line no-unused-vars
+      title_ko_confidence: prevConf,
+      ...base
+    } = rec;
+    const next = { ...base };
     if (d.title_ko != null) {
       next.title_ko = d.title_ko;
-      next.title_ko_source = 'llm-translated';
-      next.title_ko_confidence = d.confidence;
     } else {
       next.title_ko = null;
     }
+    // media_context_ko: prefer decision's value; fall back to the record's
+    // prior value so callers don't lose context when the decision omits it.
     if (d.media_context_ko != null) {
       next.media_context_ko = d.media_context_ko;
+    } else if (prevMcKo !== undefined) {
+      next.media_context_ko = prevMcKo;
+    }
+    if (d.title_ko != null) {
+      next.title_ko_source = 'llm-translated';
+      next.title_ko_confidence = d.confidence;
+    } else {
+      // Decision nulled title_ko: leave the trio's source/confidence to
+      // whatever the record previously carried (preserves pre-existing tags
+      // like 'blog' that the schema cross-field constraint allows without
+      // confidence).
+      if (prevSrc !== undefined) next.title_ko_source = prevSrc;
+      if (prevConf !== undefined) next.title_ko_confidence = prevConf;
     }
     return next;
   });

@@ -883,6 +883,26 @@ def main() -> int:
         and r.get('karaoke_numbers', {}).get('tj')
         and r.get('crawled_at')
     }
+    # Harvest artist_aliases + artist_primary from existing tjpdf-* rows
+    # alongside crawled_at (same idempotency rationale: the new-record-insert
+    # path below otherwise drops the alias list every run). artist_primary is
+    # retained so the re-insert path can detect a semantic artist change and
+    # decline to forward stale aliases.
+    tj_to_old_aliases: dict[str, list[str]] = {
+        r['karaoke_numbers']['tj']: list(r['artist_aliases'])
+        for r in corpus
+        if str(r.get('id', '')).startswith('tjpdf-')
+        and r.get('karaoke_numbers', {}).get('tj')
+        and isinstance(r.get('artist_aliases'), list)
+        and r['artist_aliases']
+    }
+    tj_to_old_artist_primary: dict[str, str] = {
+        r['karaoke_numbers']['tj']: r['artist_primary']
+        for r in corpus
+        if str(r.get('id', '')).startswith('tjpdf-')
+        and r.get('karaoke_numbers', {}).get('tj')
+        and r.get('artist_primary')
+    }
 
     # Idempotent pre-pass: drop any existing tjpdf-* records so re-running the
     # script always produces the same final corpus instead of accumulating.
@@ -1008,7 +1028,20 @@ def main() -> int:
             # (byte-idempotency: unchanged inputs produce an identical file).
             # Fall back to a fresh timestamp only for genuinely new tj codes.
             crawled_at_for_record = tj_to_old_crawled_at.get(code) or iso_utc_now()
-            new_record = {
+            # Preserve artist_aliases from the prior tjpdf-* row when the artist
+            # identity is unchanged. The pre-pass drops the old row, so without
+            # this carry-forward every pipeline run silently strips aliases from
+            # tjpdf-* records (byte-instability + data loss). We compare on
+            # `normalize_for_match` of the canonical artist string so trivial
+            # surface differences (case, whitespace, full-width/ASCII variants)
+            # don't trigger a false-positive drop; if the PDF emits a genuinely
+            # different artist we decline to forward potentially-stale aliases.
+            preserved_aliases = tj_to_old_aliases.get(code)
+            if preserved_aliases is not None:
+                prior_artist = tj_to_old_artist_primary.get(code, '')
+                if normalize_for_match(prior_artist) != normalize_for_match(artist):
+                    preserved_aliases = None
+            new_record: dict = {
                 'id': f'tjpdf-{code}',
                 'source_url': SOURCE_URL,
                 'title_primary': title,
@@ -1021,6 +1054,13 @@ def main() -> int:
                 'title_ko': r['title_ko'],
                 'artist_primary': artist,
                 'artist_ko': r['artist_ko'],
+            }
+            # Inject artist_aliases at the canonical position (after artist_ko,
+            # before karaoke_numbers — matches the merger's emission order in
+            # packages/crawler/src/merge.ts and the alias-resolver output).
+            if preserved_aliases:
+                new_record['artist_aliases'] = preserved_aliases
+            new_record.update({
                 'karaoke_numbers': {
                     'tj': code,
                     'ky': None,
@@ -1028,7 +1068,7 @@ def main() -> int:
                 },
                 'categories': [section],
                 'crawled_at': crawled_at_for_record,
-            }
+            })
             new_records.append(new_record)
 
     corpus.extend(new_records)
