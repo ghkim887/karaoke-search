@@ -88,3 +88,110 @@ export function coerceProString(v: unknown): string | null {
   if (typeof v === 'string' && v.trim() !== '') return v.trim();
   return null;
 }
+
+/**
+ * Coerce a JSON value into a non-empty string. Returns `null` for anything
+ * that is not a string, and for strings that are empty (or — when `trim` is
+ * `true` — whitespace-only).
+ *
+ * `searchSong.ts` calls this with `{ trim: false }` to preserve untrimmed
+ * `indexTitle` / `indexSong` content (the TJ payload occasionally pads these
+ * values with intentional internal whitespace we must round-trip verbatim
+ * downstream). `bootstrapCharts.ts` uses the default `{ trim: true }` because
+ * chart items are display-bound and benefit from whitespace normalization.
+ *
+ * Centralised here so both `searchSong.ts` and `bootstrapCharts.ts` share one
+ * definition for the empty-string coercion they both performed locally.
+ */
+export function coerceNonEmptyString(
+  v: unknown,
+  opts: { trim?: boolean } = { trim: true },
+): string | null {
+  if (typeof v !== 'string') return null;
+  const s = opts.trim ? v.trim() : v;
+  return s === '' ? null : s;
+}
+
+/**
+ * Pull the per-item objects out of a `resultData` payload, tolerating both
+ * the flat `{ itemsTotalCount, items }` shape and the 6-bucket array shape
+ * (`[{ items1TotalCount, items1: [...] }, { items2: ... }, ...]`).
+ *
+ * Failure-mode contract is selectable via `opts.onUnknownShape`:
+ *  - `'throw'`: throws on a completely unrecognized envelope. Used by
+ *    `searchSong.ts` because the endpoint is the authoritative source for
+ *    nationalcode + translit — a silent `[]` could persist a wrong verdict in
+ *    the 90-day cache.
+ *  - `'tolerate'`: returns `[]` on unrecognized shape. Used by
+ *    `bootstrapCharts.ts` because the chart endpoint is best-effort signal —
+ *    losing one window's votes self-heals on the next sweep.
+ *
+ * Do not collapse these two semantics without also revisiting the cache /
+ * audit consequences — see the historical docblocks on `collectItems` in
+ * both files for the reasoning trail.
+ */
+export function collectTjItems(
+  data: unknown,
+  opts: { onUnknownShape: 'throw' | 'tolerate'; errorPrefix?: string },
+): Record<string, unknown>[] {
+  if (data === null || data === undefined) return [];
+
+  // Flat shape: { itemsTotalCount, items: [...] }
+  if (isPlainObject(data) && Array.isArray(data.items)) {
+    return data.items.filter(isPlainObject);
+  }
+
+  // 6-bucket array shape: [{ items1TotalCount, items1: [...] }, ...]
+  if (Array.isArray(data)) {
+    const merged: Record<string, unknown>[] = [];
+    for (const bucket of data) {
+      if (!isPlainObject(bucket)) continue;
+      for (const key of Object.keys(bucket)) {
+        if (!key.startsWith('items')) continue;
+        if (key.endsWith('TotalCount')) continue;
+        const value = bucket[key];
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            if (isPlainObject(item)) merged.push(item);
+          }
+        }
+      }
+    }
+    return merged;
+  }
+
+  // Some empty responses are `resultData: ""` or absent entirely.
+  if (typeof data === 'string') return [];
+
+  if (opts.onUnknownShape === 'throw') {
+    const prefix = opts.errorPrefix ? `${opts.errorPrefix} ` : '';
+    throw new Error(`${prefix}resultData has unexpected shape`);
+  }
+  return [];
+}
+
+/**
+ * Pull the items array out of a TJ catalog response envelope. Pre-filters
+ * via `isPlainObject` so callers can iterate without re-validating each
+ * entry's shape.
+ *
+ * Throws on malformed envelope shapes — `crawler.ts` and `parser.ts` both
+ * surface identical error semantics so the pipeline aborts deterministically
+ * on a server-side schema change. The `label` is woven into each error
+ * message so call-site provenance is preserved in logs.
+ */
+export function extractCatalogItems(json: unknown, label?: string): Record<string, unknown>[] {
+  const prefix = label ? `${label}: ` : '';
+  if (!isPlainObject(json)) {
+    throw new Error(`${prefix}response is not a JSON object`);
+  }
+  const data = json.resultData;
+  if (!isPlainObject(data)) {
+    throw new Error(`${prefix}response.resultData missing or not an object`);
+  }
+  const items = data.items;
+  if (!Array.isArray(items)) {
+    throw new Error(`${prefix}response.resultData.items is not an array`);
+  }
+  return items.filter(isPlainObject);
+}

@@ -5,10 +5,11 @@ import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
+import type { SearchSongCache } from './cache.js';
 import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
 import { enrichArtistMap } from './enrichArtistMap.js';
 import { enrichWithTranslit } from './enrichTranslit.js';
-import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA, isPlainObject } from './normalize.js';
+import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA, extractCatalogItems } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { parseCatalogResponse } from './parser.js';
 
@@ -170,7 +171,7 @@ export class TJDirectCrawler implements Crawler {
     // catalog, not just the ones already cached as JPN) AND the input to
     // the parser filter. Re-using the records as a flat list avoids a
     // second JSON walk; the in-memory cost is the same as before.
-    const allItems = extractCatalogItems(json);
+    const allItems = extractCatalogItems(json, 'tj-media-direct');
 
     // Step 3: bootstrap (Option C) if stale.
     // Step 4: per-artist scan.
@@ -236,12 +237,9 @@ export class TJDirectCrawler implements Crawler {
     // + artist-scan + translit fetches. The `finally` block remains as a
     // safety net for any further mutations during yield (currently none).
     if (cacheMutated) {
-      try {
-        await saveCache(this.cachePath, cache);
+      const saved = await this.trySaveCache(cache, 'pre-yield');
+      if (saved) {
         cacheMutated = false; // saved successfully; finally won't re-save.
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn(`[tj-search] cache save failed at ${this.cachePath}: ${msg}`);
       }
     }
 
@@ -261,39 +259,39 @@ export class TJDirectCrawler implements Crawler {
       throw err;
     } finally {
       if (!errored && cacheMutated) {
-        try {
-          await saveCache(this.cachePath, cache);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.warn(`[tj-search] cache save failed at ${this.cachePath}: ${msg}`);
-        }
+        await this.trySaveCache(cache, 'finally');
       }
+    }
+  }
+
+  /**
+   * Wrap `saveCache` with a label-tagged warn-on-failure so both the
+   * pre-yield and post-yield save sites share one error-handling path.
+   *
+   * Returns `true` when the cache was persisted, `false` when the save threw
+   * (the caller decides whether a failed pre-yield save should still let the
+   * finally block retry). Failures are non-fatal — the next crawler run will
+   * re-do the enrichment work; we surface them as warnings so they're visible
+   * in CI logs without aborting the pipeline.
+   */
+  private async trySaveCache(cache: SearchSongCache, label: string): Promise<boolean> {
+    try {
+      await saveCache(this.cachePath, cache);
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[tj-search] cache save failed at ${this.cachePath} (${label}): ${msg}`,
+      );
+      return false;
     }
   }
 }
 
-/**
- * Pull the items array out of the catalog JSON envelope. Mirrors
- * `parseCatalogResponse`'s extraction but returns the raw item objects so the
- * artist-scanner step can iterate them without parser-level filtering.
- *
- * Throws on malformed envelope shapes — same failure semantics as
- * `parseCatalogResponse`.
- */
-function extractCatalogItems(json: unknown): ReadonlyArray<Record<string, unknown>> {
-  if (!isPlainObject(json)) {
-    throw new Error('tj-media-direct: response is not a JSON object');
-  }
-  const data = json.resultData;
-  if (!isPlainObject(data)) {
-    throw new Error('tj-media-direct: response.resultData missing or not an object');
-  }
-  const items = data.items;
-  if (!Array.isArray(items)) {
-    throw new Error('tj-media-direct: response.resultData.items is not an array');
-  }
-  return items.filter(isPlainObject);
-}
+// `extractCatalogItems` previously lived here as a near-duplicate of the
+// version in `parser.ts`. Both now share the implementation in `normalize.ts`
+// (imported above), which `isPlainObject`-filters the returned items so the
+// callers can iterate without re-validating each entry's shape.
 
 /**
  * Build a minimal `RawSongRecord`-shaped shell from a catalog item — only

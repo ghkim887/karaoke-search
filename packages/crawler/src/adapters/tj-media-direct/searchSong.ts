@@ -1,5 +1,11 @@
 import type { HttpClient } from '../../http.js';
-import { coerceProString, isPlainObject, sanitizeSearchTxt } from './normalize.js';
+import {
+  coerceNonEmptyString,
+  coerceProString,
+  collectTjItems,
+  isPlainObject,
+  sanitizeSearchTxt,
+} from './normalize.js';
 
 /**
  * `/legacy/api/searchSong` HTTP helper.
@@ -185,7 +191,14 @@ export function parseSearchSongResponse(json: unknown): SearchSongItem[] {
   }
 
   const data = json.resultData;
-  const rawItems: unknown[] = collectItems(data);
+  // `collectTjItems` (in normalize.ts) centralises both envelope shapes
+  // (flat `{ items }` and the 6-bucket array). The `throw` mode preserves
+  // the failure-loud contract this endpoint needs: a silent `[]` could let
+  // a per-artist scan classify a real Japanese act as UNKNOWN just because
+  // TJ briefly served a malformed envelope, which would persist in the
+  // cache for 90 days. The chart endpoint uses `tolerate` for the inverse
+  // reason — see `bootstrapCharts.ts:parseChartResponse`.
+  const rawItems = collectTjItems(data, { onUnknownShape: 'throw', errorPrefix: '[tj-search]' });
   const out: SearchSongItem[] = [];
   for (const raw of rawItems) {
     const item = mapItem(raw);
@@ -194,83 +207,27 @@ export function parseSearchSongResponse(json: unknown): SearchSongItem[] {
   return out;
 }
 
-/**
- * Pull the per-item objects out of a `resultData` payload, tolerating both
- * the flat `{ itemsTotalCount, items }` shape and the 6-bucket array shape.
- *
- * Failure-mode contract: this helper THROWS on an unrecognized response shape.
- * That intentionally diverges from `bootstrapCharts.ts:parseChartResponse`,
- * which TOLERATES weird shapes and returns `[]`. The rationale is that the
- * `searchSong` endpoint is the authoritative source for nationalcode + translit
- * — every caller depends on the result, so failing loud is correct (a silent
- * `[]` would let a per-artist scan classify a real Japanese act as UNKNOWN
- * just because TJ briefly served a malformed envelope, which would persist in
- * the cache for 90 days). The chart endpoint is best-effort signal only;
- * skipping a borked window costs us a few JPN votes and self-heals next sweep.
- * Do not unify these two helpers without preserving the divergent semantics.
- */
-function collectItems(data: unknown): unknown[] {
-  if (data === null || data === undefined) return [];
-
-  // Flat shape: { itemsTotalCount, items: [...] }
-  if (isPlainObject(data) && Array.isArray(data.items)) {
-    return data.items;
-  }
-
-  // 6-bucket array shape: [{ items1TotalCount, items1: [...] }, { items2: ... }, ...]
-  if (Array.isArray(data)) {
-    const merged: unknown[] = [];
-    for (const bucket of data) {
-      if (!isPlainObject(bucket)) continue;
-      // Each bucket has one items<N> array; inspect every key to find it.
-      for (const key of Object.keys(bucket)) {
-        if (!key.startsWith('items')) continue;
-        if (key.endsWith('TotalCount')) continue;
-        const value = bucket[key];
-        if (Array.isArray(value)) {
-          merged.push(...value);
-        }
-      }
-    }
-    return merged;
-  }
-
-  // Some empty responses are `resultData: ""` or absent entirely.
-  if (typeof data === 'string') return [];
-
-  throw new Error('[tj-search] resultData has unexpected shape');
-}
-
 function mapItem(raw: unknown): SearchSongItem | null {
   if (!isPlainObject(raw)) return null;
 
   const pro = coerceProString(raw.pro);
   // `indexTitle` and `indexSong` are required identifiers — empty strings are
   // treated as missing (the catalog occasionally returns rows with one of
-  // these blank that are unusable downstream).
-  const indexTitle = emptyToNull(coerceString(raw.indexTitle));
-  const indexSong = emptyToNull(coerceString(raw.indexSong));
+  // these blank that are unusable downstream). `trim: false` preserves the
+  // original (un-trimmed) string content, matching the legacy local helper
+  // (`coerceString` + `emptyToNull`) byte-for-byte.
+  const indexTitle = coerceNonEmptyString(raw.indexTitle, { trim: false });
+  const indexSong = coerceNonEmptyString(raw.indexSong, { trim: false });
   if (pro === null || indexTitle === null || indexSong === null) return null;
 
   return {
     pro,
     indexTitle,
     indexSong,
-    subTitle: emptyToNull(coerceString(raw.subTitle)),
-    sortTitleKo: emptyToNull(coerceString(raw.sortTitleKo)),
-    sortSongKo: emptyToNull(coerceString(raw.sortSongKo)),
-    nationalcode: emptyToNull(coerceString(raw.nationalcode)),
-    publishdate: emptyToNull(coerceString(raw.publishdate)),
+    subTitle: coerceNonEmptyString(raw.subTitle, { trim: false }),
+    sortTitleKo: coerceNonEmptyString(raw.sortTitleKo, { trim: false }),
+    sortSongKo: coerceNonEmptyString(raw.sortSongKo, { trim: false }),
+    nationalcode: coerceNonEmptyString(raw.nationalcode, { trim: false }),
+    publishdate: coerceNonEmptyString(raw.publishdate, { trim: false }),
   };
-}
-
-function coerceString(v: unknown): string | null {
-  if (typeof v === 'string') return v;
-  return null;
-}
-
-function emptyToNull(v: string | null): string | null {
-  if (v === null) return null;
-  if (v === '') return null;
-  return v;
 }

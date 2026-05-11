@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CHINESE_ARTIST_DROP_LIST,
-  CHINESE_DROP_KEY_SET,
   CHINESE_DROP_LIST,
   isInChineseDropList,
 } from '../../../src/adapters/tj-media-direct/chineseArtistDropList.js';
@@ -53,19 +52,19 @@ describe('chineseArtistDropList — structured DropListEntry schema', () => {
     }
   });
 
-  it('CHINESE_DROP_KEY_SET contains the normalized form of every variant', () => {
+  it('CHINESE_ARTIST_DROP_LIST contains the normalized form of every variant', () => {
     for (const entry of CHINESE_DROP_LIST) {
       for (const variant of entry.variants) {
         const key = normalizeForMatch(variant);
         expect(
-          CHINESE_DROP_KEY_SET.has(key),
-          `variant "${variant}" (key="${key}") from entry "${entry.canonical}" missing from CHINESE_DROP_KEY_SET`,
+          CHINESE_ARTIST_DROP_LIST.has(key),
+          `variant "${variant}" (key="${key}") from entry "${entry.canonical}" missing from CHINESE_ARTIST_DROP_LIST`,
         ).toBe(true);
       }
     }
   });
 
-  it('CHINESE_DROP_KEY_SET has one entry per distinct normalized variant key (no cross-canonical collisions)', () => {
+  it('CHINESE_ARTIST_DROP_LIST has one entry per distinct normalized variant key (no cross-canonical collisions)', () => {
     // Within-entry collisions are expected (BEYOND/Beyond/beyond all → "beyond").
     // Cross-entry collisions (two distinct canonicals sharing a key) are data errors.
     const keyToCanonicals = new Map<string, Set<string>>();
@@ -95,7 +94,7 @@ describe('chineseArtistDropList — structured DropListEntry schema', () => {
         `Drop-list cross-canonical variant collisions detected — each normalized key must come from ONE canonical entry:\n${collisions.join('\n')}`,
       );
     }
-    expect(CHINESE_DROP_KEY_SET.size).toBe(keyToCanonicals.size);
+    expect(CHINESE_ARTIST_DROP_LIST.size).toBe(keyToCanonicals.size);
   });
 
   it('non-blocking warning for entries older than 90 days (3-month review cadence)', () => {

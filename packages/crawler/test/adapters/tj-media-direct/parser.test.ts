@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
-import { parseCatalogResponse, shouldKeep } from '../../../src/adapters/tj-media-direct/parser.js';
+import { classifyRecord, parseCatalogResponse } from '../../../src/adapters/tj-media-direct/parser.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const FIXTURE_PATH = resolve(HERE, '../../fixtures/tj-media-direct/catalog-sample.json');
@@ -467,8 +467,8 @@ describe('parseCatalogResponse — direct unit cases', () => {
   });
 });
 
-describe('shouldKeep — direct unit', () => {
-  it('returns true on path-1 hit (per-record JPN)', () => {
+describe('classifyRecord — direct unit (keep/drop verdict)', () => {
+  it('returns non-drop on path-1 hit (per-record JPN)', () => {
     const cache = emptyCache();
     cache.proEnrichmentMap['1'] = {
       nationalcode: 'JPN',
@@ -478,22 +478,22 @@ describe('shouldKeep — direct unit', () => {
       publishdate: null,
       lastSeen: '2026-04-29T00:00:00.000Z',
     };
-    expect(shouldKeep('1', 'whatever', cache)).toBe(true);
+    expect(classifyRecord('1', 'whatever', cache) !== 'drop').toBe(true);
   });
 
-  it('returns true on path-2 hit (per-artist JPN) even without path-1 entry', () => {
+  it('returns non-drop on path-2 hit (per-artist JPN) even without path-1 entry', () => {
     const cache = emptyCache();
     cache.artistNationalityMap.yoasobi = jpnArtist();
-    expect(shouldKeep('1', 'YOASOBI', cache)).toBe(true);
+    expect(classifyRecord('1', 'YOASOBI', cache) !== 'drop').toBe(true);
   });
 
-  it('returns true on path-3 hit (whitelist) even without path-1/2', () => {
+  it('returns non-drop on path-3 hit (whitelist) even without path-1/2', () => {
     const cache = emptyCache();
-    expect(shouldKeep('1', 'whatever', cache, new Set(['1']))).toBe(true);
+    expect(classifyRecord('1', 'whatever', cache, new Set(['1'])) !== 'drop').toBe(true);
   });
 
-  it('returns false when all three paths miss', () => {
-    expect(shouldKeep('1', 'whatever', emptyCache())).toBe(false);
+  it('returns drop when all three paths miss', () => {
+    expect(classifyRecord('1', 'whatever', emptyCache()) === 'drop').toBe(true);
   });
 });
 

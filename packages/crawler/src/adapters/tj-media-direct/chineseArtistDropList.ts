@@ -1,5 +1,5 @@
-import { normalizeForMatch } from './normalize.js';
 import type { DropListEntry } from './koreanArtistDropList.js';
+import { normalizeForMatch } from './normalize.js';
 
 // Re-export the shared type so callers can import it from here without
 // reaching into the Korean module directly.
@@ -133,14 +133,6 @@ export const CHINESE_ARTIST_DROP_LIST: ReadonlySet<string> = (() => {
   }
   return set;
 })();
-
-/**
- * Alias for `CHINESE_ARTIST_DROP_LIST` using the same naming convention as the
- * Korean module's `DROP_KEY_SET`. Prefer `CHINESE_ARTIST_DROP_LIST` in parser
- * hot-path code (keeps the original name stable); prefer `CHINESE_DROP_KEY_SET`
- * in test code that iterates structured entries (symmetric with Korean tests).
- */
-export const CHINESE_DROP_KEY_SET: ReadonlySet<string> = CHINESE_ARTIST_DROP_LIST;
 
 /**
  * Drop-list membership check. Input MUST already be normalized via

@@ -1,7 +1,7 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import type { SearchSongCache } from './cache.js';
 import { FILTER_STEPS, buildFilterContext } from './filterSteps.js';
-import { isPlainObject } from './normalize.js';
+import { extractCatalogItems } from './normalize.js';
 
 /**
  * Parse a TJ Media catalog JSON response into `RawSongRecord`s.
@@ -117,7 +117,9 @@ export function parseCatalogResponse(
   sourceUrl: string,
   options: ParseOptions,
 ): ParseResult {
-  const items = extractItems(json);
+  // Shared envelope walker (in normalize.ts) — pre-filters non-object items
+  // via `isPlainObject` so the per-item loop can drop its own guard.
+  const items = extractCatalogItems(json, 'tj-media-direct parser');
   const records: RawSongRecord[] = [];
   const force = options.forceIncludeTjNumbers;
   const cache = options.cache;
@@ -130,7 +132,6 @@ export function parseCatalogResponse(
   };
 
   for (const item of items) {
-    if (!isPlainObject(item)) continue;
     const proRaw = item.pro;
     const title = typeof item.indexTitle === 'string' ? item.indexTitle.trim() : '';
     const artist = typeof item.indexSong === 'string' ? item.indexSong.trim() : '';
@@ -209,36 +210,13 @@ export function classifyRecord(
   return 'drop';
 }
 
-/**
- * Boolean wrapper kept for callers that just want a yes/no verdict. The
- * production parser uses `classifyRecord` directly so it can record per-path
- * admit counters.
- *
- * Exported for unit tests written before `classifyRecord` was split out.
- */
-export function shouldKeep(
-  tj: string,
-  artist: string,
-  cache: SearchSongCache,
-  force?: ReadonlySet<string>,
-): boolean {
-  return classifyRecord(tj, artist, cache, force) !== 'drop';
-}
+// `shouldKeep` was removed in the cleanup wave — call sites use
+// `classifyRecord(...) !== 'drop'` directly. The thin boolean wrapper had no
+// production caller (the parser uses `classifyRecord` directly so it can
+// record per-path admit counters) and only existed for tests written before
+// `classifyRecord` was split out.
 
-function extractItems(json: unknown): unknown[] {
-  // Note: the live API returns `resultCode: "99"` for successful catalog
-  // responses (not "00" as one might expect). We do not check `resultCode` —
-  // only that `resultData.items` is an array.
-  if (!isPlainObject(json)) {
-    throw new Error('tj-media-direct parser: response is not a JSON object');
-  }
-  const data = json.resultData;
-  if (!isPlainObject(data)) {
-    throw new Error('tj-media-direct parser: response.resultData missing or not an object');
-  }
-  const items = data.items;
-  if (!Array.isArray(items)) {
-    throw new Error('tj-media-direct parser: response.resultData.items is not an array');
-  }
-  return items;
-}
+// Note on response shape: the live API returns `resultCode: "99"` for
+// successful catalog responses (not "00" as one might expect). We do not check
+// `resultCode` — `extractCatalogItems` (in normalize.ts) only validates that
+// `resultData.items` is an array.

@@ -1,7 +1,13 @@
 import type { HttpClient } from '../../http.js';
 import type { ArtistNationalityEntry, SearchSongCache } from './cache.js';
 import { DROP_LIST } from './koreanArtistDropList.js';
-import { coerceProString, isPlainObject, normalizeForMatch } from './normalize.js';
+import {
+  coerceNonEmptyString,
+  coerceProString,
+  collectTjItems,
+  isPlainObject,
+  normalizeForMatch,
+} from './normalize.js';
 import { searchSongByArtist } from './searchSong.js';
 
 /**
@@ -510,57 +516,30 @@ export function parseChartResponse(json: unknown): ChartItem[] {
     throw new Error(`[tj-bootstrap] resultCode=${String(code)} (${msg})`);
   }
   const data = json.resultData;
+  // `collectTjItems` (in normalize.ts) centralises both envelope shapes.
+  // `'tolerate'` returns `[]` on unrecognized shape because the chart
+  // endpoint is best-effort signal — losing one window's votes self-heals
+  // on the next sweep. `searchSong.ts` uses `'throw'` for the inverse
+  // reason (authoritative + 90-day cache). Do not unify the modes without
+  // preserving the divergent semantics.
   const out: ChartItem[] = [];
-  for (const raw of collectItems(data)) {
+  for (const raw of collectTjItems(data, { onUnknownShape: 'tolerate' })) {
     const item = mapChartItem(raw);
     if (item !== null) out.push(item);
   }
   return out;
 }
 
-/**
- * Failure-mode contract: this helper TOLERATES unrecognized shapes by
- * returning `[]`. That intentionally diverges from
- * `searchSong.ts:collectItems`, which THROWS. The chart endpoint is
- * best-effort signal — losing one window's votes self-heals on the next
- * sweep, so the right behavior is to log+skip rather than abort the entire
- * bootstrap. The searchSong endpoint, by contrast, is authoritative and
- * cached for 90 days, so a silent `[]` there could persist a wrong verdict.
- * Do not unify these two helpers without preserving the divergent semantics.
- */
-function collectItems(data: unknown): unknown[] {
-  if (data === null || data === undefined) return [];
-  if (isPlainObject(data) && Array.isArray(data.items)) return data.items;
-  if (Array.isArray(data)) {
-    const merged: unknown[] = [];
-    for (const bucket of data) {
-      if (!isPlainObject(bucket)) continue;
-      for (const key of Object.keys(bucket)) {
-        if (!key.startsWith('items')) continue;
-        if (key.endsWith('TotalCount')) continue;
-        const value = bucket[key];
-        if (Array.isArray(value)) merged.push(...value);
-      }
-    }
-    return merged;
-  }
-  if (typeof data === 'string') return [];
-  return [];
-}
-
 function mapChartItem(raw: unknown): ChartItem | null {
   if (!isPlainObject(raw)) return null;
   const pro = coerceProString(raw.pro);
-  const indexTitle = coerceNonEmpty(raw.indexTitle);
-  const indexSong = coerceNonEmpty(raw.indexSong);
+  // Default `{ trim: true }` matches the previous local `coerceNonEmpty`
+  // behavior byte-for-byte (chart items are display-bound and benefit from
+  // whitespace normalization).
+  const indexTitle = coerceNonEmptyString(raw.indexTitle);
+  const indexSong = coerceNonEmptyString(raw.indexSong);
   if (pro === null || indexTitle === null || indexSong === null) return null;
   return { pro, indexTitle, indexSong };
-}
-
-function coerceNonEmpty(v: unknown): string | null {
-  if (typeof v !== 'string') return null;
-  const trimmed = v.trim();
-  return trimmed === '' ? null : trimmed;
 }
 
 /**

@@ -247,6 +247,57 @@ describe('parseArtistPage — number-cell defensive guards', () => {
     expect(recs[0]?.karaoke_numbers.tj).toBeNull();
   });
 
+  // Boundary check: a single 7-digit TJ value is one digit over the 6-digit
+  // cap. Distinct from the 11-digit test above — verifies the cap rejects
+  // the smallest illegal value, not just an obvious outlier.
+  it('length-cap drops a single 7-digit TJ value (cap 6) and warns', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml('<tr><td>Title</td><td>1234567</td><td>1</td><td>2</td></tr>');
+      const recs = parseArtistPage(html, 'https://x.test/tj7');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping malformed TJ#/);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/exceeds digit cap 6/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  // Same boundary check for the KY column — cap is also 6 digits.
+  it('length-cap drops a single 7-digit KY value (cap 6) and warns', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml('<tr><td>Title</td><td>1</td><td>1234567</td><td>2</td></tr>');
+      const recs = parseArtistPage(html, 'https://x.test/ky7');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.ky).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping malformed KY#/);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/exceeds digit cap 6/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  // JOY cap is 7 digits (joysound numbers run longer than TJ/KY); 8 digits
+  // is one over the boundary.
+  it('length-cap drops a single 8-digit JOY value (cap 7) and warns', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml('<tr><td>Title</td><td>1</td><td>2</td><td>12345678</td></tr>');
+      const recs = parseArtistPage(html, 'https://x.test/joy8');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.joysound).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping malformed JOYSOUND#/);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/exceeds digit cap 7/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
   // extractNumberCell must bail early (null + warn) on HTML longer than 64 KB.
   it('extractNumberCell returns null and warns when cell HTML exceeds 64KB', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
