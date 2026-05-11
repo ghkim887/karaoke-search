@@ -102,7 +102,7 @@ describe('fetchWithRetry', () => {
       .mockResolvedValue(makeResponse(200));
     vi.stubGlobal('fetch', fetchMock);
 
-    const promise = fetchWithRetry('https://example.com/', undefined, 1000, { maxAttempts: 3 });
+    const promise = fetchWithRetry('https://example.com/', undefined, { maxAttempts: 3 });
     await flushMicrotasks();
 
     // First attempt fired; backoff delay = backoffMs(0) = 1000ms
@@ -128,7 +128,7 @@ describe('fetchWithRetry', () => {
     const fetchMock = vi.fn().mockResolvedValue(makeResponse(503));
     vi.stubGlobal('fetch', fetchMock);
 
-    const promise = fetchWithRetry('https://example.com/', undefined, 1000, { maxAttempts: 3 });
+    const promise = fetchWithRetry('https://example.com/', undefined, { maxAttempts: 3 });
     // Attach rejection handler BEFORE advancing timers so it's registered before the
     // promise can settle, preventing an unhandled rejection warning.
     const assertion = expect(promise).rejects.toThrow('fetch failed after retry:');
@@ -141,7 +141,7 @@ describe('fetchWithRetry', () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError('network error'));
     vi.stubGlobal('fetch', fetchMock);
 
-    const promise = fetchWithRetry('https://example.com/', undefined, 1000, { maxAttempts: 3 });
+    const promise = fetchWithRetry('https://example.com/', undefined, { maxAttempts: 3 });
     const assertion = expect(promise).rejects.toThrow('fetch failed after retry:');
     await vi.runAllTimersAsync();
     await assertion;

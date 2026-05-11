@@ -41,7 +41,7 @@ type RenderMode = 'error' | 'loading' | 'favorites-empty' | 'favorites' | 'brows
  * `categoryFilter` changes. Results are capped at 50 (spec §UI).
  *
  * `inputValue` is the controlled value shown in the `<input>` — it updates
- * immediately on every keystroke (or when a featured-chip is clicked).
+ * immediately on every keystroke (or when a featured chip is clicked).
  * `query` is the debounced value that actually drives `index.search()`.
  */
 export function App({ songCount }: AppProps) {
@@ -171,7 +171,7 @@ export function App({ songCount }: AppProps) {
 
   // Memoized count exposed via aria-live so screen readers announce only when
   // the result count changes — not on every keystroke before debounce settles.
-  const resultCount = useMemo(() => results.length, [results]);
+  const resultCount = results.length;
 
   // Build-time record count, formatted with thousands separators (en-US to
   // match the prior hard-coded "26,401" format).

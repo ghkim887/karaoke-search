@@ -48,7 +48,7 @@ export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
             }}
             type="button"
             role="tab"
-            class={`tab-button ${isActive ? 'tab-button-active' : ''}`}
+            class="tab-button"
             aria-selected={isActive}
             disabled={disabled}
             onClick={() => handleClick(tab.id)}

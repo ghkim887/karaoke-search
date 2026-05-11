@@ -123,6 +123,56 @@ function buildFixtureBundle() {
   return { index: fakeIndex, byId };
 }
 
+describe('App RenderMode loading→browse-empty transition', () => {
+  let host: HTMLElement;
+
+  beforeEach(() => {
+    localStorage.removeItem('karaoke-favorites:v1');
+  });
+
+  afterEach(() => {
+    if (host?.parentNode) host.parentNode.removeChild(host);
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    localStorage.removeItem('karaoke-favorites:v1');
+  });
+
+  it('co-renders <EmptyState> alongside <loading> during the loading window, then drops <loading> after loadIndex resolves while <empty-state> remains', async () => {
+    // Hold the loadIndex promise open so we can observe the loading window.
+    let resolveLoad: (bundle: { index: unknown; byId: Map<string, SongRecord> }) => void = () => {};
+    const pending = new Promise<{ index: unknown; byId: Map<string, SongRecord> }>((resolve) => {
+      resolveLoad = resolve;
+    });
+    // biome-ignore lint/suspicious/noExplicitAny: minimal IndexBundle stub for tests
+    vi.spyOn(searchModule, 'loadIndex').mockReturnValue(pending as any);
+
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<App songCount={26401} />, host);
+
+    // During the loading window: BOTH .loading and .empty-state are present.
+    await flushMicrotasks();
+    expect(host.querySelector('.loading')).not.toBeNull();
+    expect(host.querySelector('.empty-state')).not.toBeNull();
+
+    // Resolve loadIndex with an empty-corpus bundle.
+    const byId = new Map<string, SongRecord>();
+    const fakeIndex = {
+      search: () => [],
+      // biome-ignore lint/suspicious/noExplicitAny: minimal MiniSearch stub for tests
+    } as any;
+    resolveLoad({ index: fakeIndex, byId });
+    await waitFor(() => {
+      const input = host.querySelector<HTMLInputElement>('.search-input');
+      return input && input.disabled === false ? input : null;
+    });
+
+    // After resolve: .loading is gone, .empty-state remains (browse-empty mode).
+    expect(host.querySelector('.loading')).toBeNull();
+    expect(host.querySelector('.empty-state')).not.toBeNull();
+  });
+});
+
 describe('App tab behavior', () => {
   let host: HTMLElement;
 

@@ -46,7 +46,6 @@ function sleep(ms: number): Promise<void> {
 export async function fetchWithRetry(
   input: RequestInfo | URL,
   init?: RequestInit,
-  _delayMs = 1000, // kept for backwards-compat; ignored — backoff drives timing now
   options?: { maxAttempts?: number },
 ): Promise<Response> {
   const maxAttempts = options?.maxAttempts ?? MAX_ATTEMPTS;

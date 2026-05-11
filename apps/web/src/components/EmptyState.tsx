@@ -22,20 +22,13 @@ export function EmptyState({ onPickArtist }: EmptyStateProps) {
         const artists = featured[section.key];
         return (
           <section key={section.key} class="empty-section">
-            <h2 class={`empty-section-title empty-section-title-${section.key}`}>
-              {section.label}
-            </h2>
+            <h2 class="empty-section-title">{section.label}</h2>
             {artists.length === 0 ? (
               <p class="empty-section-placeholder">아직 없음 / Not yet</p>
             ) : (
               <div class="empty-section-chips">
                 {artists.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    class="featured-chip"
-                    onClick={() => onPickArtist(name)}
-                  >
+                  <button key={name} type="button" class="chip" onClick={() => onPickArtist(name)}>
                     {name}
                   </button>
                 ))}

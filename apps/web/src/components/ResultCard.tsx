@@ -92,10 +92,9 @@ export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardP
       </button>
       <h2 class="result-title">
         {titleText}
-        {record.media_context_ko &&
-          !(record.title_ko ?? '').includes(record.media_context_ko) && (
-            <span class="result-media-context">{` ${record.media_context_ko}`}</span>
-          )}
+        {record.media_context_ko && !(record.title_ko ?? '').includes(record.media_context_ko) && (
+          <span class="result-media-context">{` ${record.media_context_ko}`}</span>
+        )}
       </h2>
       <div class="result-artist">{artistText}</div>
       <div class="result-tags">
