@@ -12,7 +12,7 @@ against an already-crawled `apps/web/public/data/songs.json` so the existing
 
 Mirrors the pattern of `scripts/drop_kpop_leaks.py` (filter-and-rewrite-corpus
 with sidecar config) and `scripts/ingest_anisong_pdf.py` (atomic write +
-`_apply_category_exclusivity` reuse).
+`apply_category_exclusivity` reuse).
 
 Scope (TODO 2 of 2026-05-04 vocaloid-mistag audit)
 --------------------------------------------------
@@ -38,7 +38,7 @@ Behavior
    `scripts/ingest_anisong_pdf.py`) encode a real, cross-validated signal
    that must NOT be clobbered. The audit's bug is confined to the `vocaloid`
    mistag.
-3. Run `_apply_category_exclusivity` on each rewritten record's categories
+3. Run `apply_category_exclusivity` on each rewritten record's categories
    (defense-in-depth — it's a no-op for `['jpop']` but matches the canonical
    pipeline shape).
 4. If at least one record was retagged, atomic-write the result back via
@@ -125,11 +125,6 @@ _ID_PREFIX_PATTERN = re.compile(
 )
 
 
-# Private aliases kept for backward-compat with existing tests that reference
-# these names via the `retag` module handle.
-_ensure_utf8_stdio = ensure_utf8_stdio
-_atomic_write_corpus = atomic_write_corpus
-
 # Apply UTF-8 stdio at module load (idempotent — also re-applied in main()).
 ensure_utf8_stdio()
 
@@ -183,7 +178,7 @@ def retag_record(record: dict) -> bool:
 
 
 def main() -> int:
-    _ensure_utf8_stdio()
+    ensure_utf8_stdio()
 
     if not SONGS_JSON.exists():
         print(f'ERROR: missing corpus at {SONGS_JSON}', file=sys.stderr)
@@ -208,7 +203,7 @@ def main() -> int:
         return 0
 
     # Atomic write via shared helper (songs.json.tmp -> os.replace).
-    _atomic_write_corpus(SONGS_JSON, corpus)
+    atomic_write_corpus(SONGS_JSON, corpus)
 
     print(f'total records: {total}')
     print(f'retagged:      {retagged_count}')

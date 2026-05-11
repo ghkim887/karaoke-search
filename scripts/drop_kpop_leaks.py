@@ -69,11 +69,6 @@ if str(_HERE) not in sys.path:
 from lib.corpus_io import atomic_write_corpus, ensure_utf8_stdio
 from lib.artist_split import is_artist_in_drop_list, load_drop_keys
 
-# Private aliases kept for backward-compat with existing tests that reference
-# these names via the `script` module handle.
-_ensure_utf8_stdio = ensure_utf8_stdio
-_atomic_write_corpus = atomic_write_corpus
-
 REPO_ROOT = _HERE.parent
 SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
 DROP_LIST_SIDECAR = (
@@ -91,7 +86,7 @@ ensure_utf8_stdio()
 
 
 def main(argv: list[str] | None = None) -> int:
-    _ensure_utf8_stdio()
+    ensure_utf8_stdio()
 
     parser = argparse.ArgumentParser(description='Drop Korean-artist leak records from corpus.')
     parser.add_argument(
@@ -153,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # Atomic write via shared helper (songs.json.tmp -> os.replace).
-    _atomic_write_corpus(SONGS_JSON, kept)
+    atomic_write_corpus(SONGS_JSON, kept)
 
     print(f'total before: {total_before}')
     print(f'total after:  {total_after}')

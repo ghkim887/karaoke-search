@@ -12,27 +12,43 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 const CLUSTERING_DIST = resolve(REPO_ROOT, 'packages/crawler/dist/clustering.js');
 
+/**
+ * Run `body(dir)` with a freshly-mkdtemp'd directory; always cleans up.
+ * Supports sync and async bodies. Avoids the 11x duplicated try/finally
+ * boilerplate that previously wrapped each tmpdir-using `it()` block.
+ */
+function withTmpDir(label, body) {
+  const dir = mkdtempSync(join(tmpdir(), label));
+  try {
+    const result = body(dir);
+    if (result && typeof result.then === 'function') {
+      return result.finally(() => rmSync(dir, { recursive: true, force: true }));
+    }
+    rmSync(dir, { recursive: true, force: true });
+    return result;
+  } catch (err) {
+    rmSync(dir, { recursive: true, force: true });
+    throw err;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // writeJsonAtomic
 // ---------------------------------------------------------------------------
 
 describe('writeJsonAtomic — round-trip', () => {
   it('writes JSON and reads it back intact', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.json');
       const value = { version: 1, keys: ['a', 'b', 'c'] };
       writeJsonAtomic(dest, value);
       const read = JSON.parse(readFileSync(dest, 'utf-8'));
       assert.deepEqual(read, value);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('byte-stable on identical input (trailing newline)', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.json');
       const value = [{ id: 'tj-1', title_primary: '愛' }];
       writeJsonAtomic(dest, value);
@@ -40,45 +56,34 @@ describe('writeJsonAtomic — round-trip', () => {
       writeJsonAtomic(dest, value);
       const second = readFileSync(dest);
       assert.ok(first.equals(second), 'second write should be byte-identical');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('appends trailing newline by default', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.json');
       writeJsonAtomic(dest, { x: 1 });
       const raw = readFileSync(dest, 'utf-8');
       assert.ok(raw.endsWith('\n'), 'file should end with newline');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('omits trailing newline when trailingNewline=false', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.json');
       writeJsonAtomic(dest, { x: 1 }, { trailingNewline: false });
       const raw = readFileSync(dest, 'utf-8');
       assert.ok(!raw.endsWith('\n'), 'file should NOT end with newline');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('respects custom indent', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.json');
       writeJsonAtomic(dest, { a: 1 }, { indent: 4 });
       const raw = readFileSync(dest, 'utf-8');
       assert.ok(raw.includes('    "a"'), 'should use 4-space indent');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('atomicity: no partial write at destination on failure', () => {
@@ -86,8 +91,7 @@ describe('writeJsonAtomic — round-trip', () => {
     // path whose .tmp file we pre-populate but whose rename would fail (we
     // check that the destination is not modified mid-write by verifying the
     // .tmp file is never left behind on a successful write).
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'corpus.json');
       const original = [{ id: 'tj-1' }];
       writeJsonAtomic(dest, original);
@@ -95,20 +99,15 @@ describe('writeJsonAtomic — round-trip', () => {
       // Confirm .tmp is cleaned up after a successful write.
       const tmpPath = `${dest}.tmp`;
       assert.ok(!existsSync(tmpPath), '.tmp file should be gone after successful write');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('creates parent directories if they do not exist', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'nested', 'deep', 'out.json');
       writeJsonAtomic(dest, [1, 2, 3]);
       assert.ok(existsSync(dest), 'file should exist after mkdirSync');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 });
 
@@ -118,26 +117,20 @@ describe('writeJsonAtomic — round-trip', () => {
 
 describe('writeTextAtomic — round-trip', () => {
   it('writes text and reads it back intact', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.txt');
       const text = 'hello\nworld\n';
       writeTextAtomic(dest, text);
       assert.equal(readFileSync(dest, 'utf-8'), text);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('cleans up .tmp after successful write', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'out.txt');
       writeTextAtomic(dest, 'data');
       assert.ok(!existsSync(`${dest}.tmp`), '.tmp should be gone');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 });
 
@@ -154,27 +147,21 @@ describe('loadCorpus — error paths', () => {
   });
 
   it('throws on malformed JSON', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'bad.json');
       writeFileSync(dest, '{ not valid json', 'utf-8');
       assert.throws(() => loadCorpus(dest), /SyntaxError|Unexpected/i);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it('returns the parsed array for a valid file', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'atomic-write-test-'));
-    try {
+    withTmpDir('atomic-write-test-', (dir) => {
       const dest = join(dir, 'songs.json');
       const data = [{ id: 'tj-1' }, { id: 'tj-2' }];
       writeFileSync(dest, JSON.stringify(data), 'utf-8');
       const result = loadCorpus(dest);
       assert.deepEqual(result, data);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    });
   });
 });
 

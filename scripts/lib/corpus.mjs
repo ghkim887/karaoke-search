@@ -35,10 +35,11 @@ export async function loadValidator() {
   try {
     const { validateSongRecord } = await import(pathToFileURL(SCHEMA_DIST).href);
     return validateSongRecord;
-  } catch {
+  } catch (err) {
     process.stderr.write(
       'Cannot load @karaoke/schema. Run `corepack pnpm --filter @karaoke/schema build` first.\n',
     );
+    process.stderr.write(`${err.message}\n`);
     process.exit(1);
   }
 }

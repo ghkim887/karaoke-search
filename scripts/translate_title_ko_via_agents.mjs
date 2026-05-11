@@ -20,6 +20,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { writeJsonAtomic, writeTextAtomic } from './lib/atomic-write.mjs';
 import { writeCorpusAtomic } from './lib/corpus.mjs';
+import { csvEscape } from './lib/csv.mjs';
 
 const CJK_RE = /[぀-ゟ゠-ヿ一-鿿]/;
 
@@ -151,14 +152,6 @@ export function applyDecisionsToCorpus(records, decisions) {
     }
     return next;
   });
-}
-
-function csvEscape(field) {
-  const s = String(field ?? '');
-  if (/[",\n]/.test(s)) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
 }
 
 /**

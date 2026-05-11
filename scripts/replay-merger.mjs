@@ -27,10 +27,6 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeCorpusAtomic } from './lib/corpus.mjs';
 
-// Force UTF-8 output on Windows so kanji/hangul render correctly in the report.
-if (process.stdout.setDefaultEncoding) process.stdout.setDefaultEncoding('utf8');
-if (process.stderr.setDefaultEncoding) process.stderr.setDefaultEncoding('utf8');
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, '..');

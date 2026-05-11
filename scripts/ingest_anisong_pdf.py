@@ -17,7 +17,7 @@ Behavior:
   3. For TJ codes already in the corpus (non-tjpdf-* rows), adds the section
      ('anime' or 'vocaloid') to categories. Mutual-exclusivity rule (priority
      vocaloid > anime > jpop): every record ends with at most one of
-     {jpop, vocaloid, anime}. See `_apply_category_exclusivity()` below.
+     {jpop, vocaloid, anime}. See `apply_category_exclusivity()` below.
   4. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}' and
      categories=[section].
 
@@ -62,19 +62,6 @@ from lib.artist_split import (  # noqa: E402
     normalize_for_match,
 )
 from lib.category_exclusivity import apply_category_exclusivity  # noqa: E402
-
-# Private aliases kept for backward-compat with existing tests and consumers
-# that reference these names via the `ingest` module handle (e.g.
-# `ingest._apply_category_exclusivity`, `ingest._atomic_write_corpus`).
-_ensure_utf8_stdio = ensure_utf8_stdio
-_atomic_write_corpus = atomic_write_corpus
-_iso_utc_now = iso_utc_now
-_normalize_for_match = normalize_for_match
-_DROP_SPLIT_RE = DROP_SPLIT_RE
-_FEAT_INNER_OF_RE = FEAT_INNER_OF_RE
-_FEAT_PAREN_FINDALL_RE = FEAT_PAREN_FINDALL_RE
-_artist_components_for_drop_check = artist_components_for_drop_check
-_apply_category_exclusivity = apply_category_exclusivity
 
 # Force stdout/stderr to UTF-8 at module load (idempotent).
 ensure_utf8_stdio()
@@ -740,7 +727,7 @@ def _assign_translit(
 # in one place. Python is the only consumer of this list (it never escapes
 # the PDF ingest path), so no JSON sidecar is needed.
 #
-# Membership uses `_artist_components_for_drop_check()` so collab forms hit
+# Membership uses `artist_components_for_drop_check()` so collab forms hit
 # too (e.g. `HoneyWorks(Feat.GUMI)` → component `HoneyWorks` matches even
 # when the featured act is a real Vocaloid). This is intentional per spec:
 # every PDF-section HoneyWorks row is a human-vocal mistag; legitimate
@@ -748,7 +735,7 @@ def _assign_translit(
 # this filter does NOT touch — blog-path mistags are a separate vector).
 #
 # IMPLICIT COUPLING: `CHiCOwithHoneyWorks` denylist matching depends on
-# `_DROP_SPLIT_RE` containing `\s+meets\s+` so the corpus surface form
+# `DROP_SPLIT_RE` containing `\s+meets\s+` so the corpus surface form
 # `CHiCO with HoneyWorks meets 中川翔子` decomposes to a `HoneyWorks`
 # component that hits this set. Removing the `meets` token from the splitter
 # silently breaks the denylist; do not unhook one without the other.
@@ -763,11 +750,11 @@ _PDF_VOCALOID_DENYLIST_RAW: tuple[str, ...] = (
 )
 
 # Normalized at module-load time so the hot path is a single set membership
-# test per parsed PDF row. Matches `_normalize_for_match` so PDF surface
+# test per parsed PDF row. Matches `normalize_for_match` so PDF surface
 # forms (`CHiCOwithHoneyWorks`) and corpus surface forms (`CHiCO with
 # HoneyWorks`) collapse to the same key.
 _PDF_VOCALOID_DENYLIST: frozenset[str] = frozenset(
-    _normalize_for_match(name) for name in _PDF_VOCALOID_DENYLIST_RAW
+    normalize_for_match(name) for name in _PDF_VOCALOID_DENYLIST_RAW
 )
 
 
@@ -781,8 +768,8 @@ def is_artist_in_pdf_vocaloid_denylist(artist: str) -> bool:
     """
     if not _PDF_VOCALOID_DENYLIST:  # defensive — empty set means filter off
         return False
-    for component in _artist_components_for_drop_check(artist):
-        key = _normalize_for_match(component)
+    for component in artist_components_for_drop_check(artist):
+        key = normalize_for_match(component)
         if key and key in _PDF_VOCALOID_DENYLIST:
             return True
     return False
@@ -812,7 +799,7 @@ _PDF_VOCALOID_SKIP_RAW: tuple[str, ...] = (
 )
 
 _PDF_VOCALOID_SKIP_LIST: frozenset[str] = frozenset(
-    _normalize_for_match(name) for name in _PDF_VOCALOID_SKIP_RAW
+    normalize_for_match(name) for name in _PDF_VOCALOID_SKIP_RAW
 )
 
 
@@ -826,17 +813,17 @@ def is_artist_in_pdf_vocaloid_skip_list(artist: str) -> bool:
 
     Also strips trailing `(+co-vocalist)` / `（+co-vocalist）` parentheticals
     from each component before matching — the blog adapter uses `+` notation for
-    co-vocalists (e.g. `米津玄師(+菅田将暉)`) which `_DROP_SPLIT_RE` does not
+    co-vocalists (e.g. `米津玄師(+菅田将暉)`) which `DROP_SPLIT_RE` does not
     split, so without this strip the lead artist would not be extracted and the
     skip-list match would silently fail.
     """
     if not _PDF_VOCALOID_SKIP_LIST:  # defensive — empty set means filter off
         return False
     _co_vocalist_re = re.compile(r'\s*[（(]\+[^()（）]+[)）]\s*$')
-    for component in _artist_components_for_drop_check(artist):
+    for component in artist_components_for_drop_check(artist):
         # Try the component as-is first, then with trailing (+co) stripped.
         for candidate in (component, _co_vocalist_re.sub('', component)):
-            key = _normalize_for_match(candidate)
+            key = normalize_for_match(candidate)
             if key and key in _PDF_VOCALOID_SKIP_LIST:
                 return True
     return False
@@ -1007,8 +994,8 @@ def main() -> int:
                 cats.append(section)
             # Apply v2 mutual-exclusivity rule (priority vocaloid > anime > jpop):
             # records tagged 'vocaloid' lose 'anime' and 'jpop'; records tagged
-            # 'anime' lose 'jpop'. See `_apply_category_exclusivity()`.
-            rec['categories'] = _apply_category_exclusivity(cats)
+            # 'anime' lose 'jpop'. See `apply_category_exclusivity()`.
+            rec['categories'] = apply_category_exclusivity(cats)
             matched += 1
         else:
             # New record. Need non-empty title_primary; fall back to artist if title missing.
@@ -1020,7 +1007,7 @@ def main() -> int:
             # Preserve the original crawled_at for codes already in the corpus
             # (byte-idempotency: unchanged inputs produce an identical file).
             # Fall back to a fresh timestamp only for genuinely new tj codes.
-            crawled_at_for_record = tj_to_old_crawled_at.get(code) or _iso_utc_now()
+            crawled_at_for_record = tj_to_old_crawled_at.get(code) or iso_utc_now()
             new_record = {
                 'id': f'tjpdf-{code}',
                 'source_url': SOURCE_URL,
@@ -1050,7 +1037,7 @@ def main() -> int:
     # indent=2 + trailing newline to match the existing on-disk pretty-printed
     # shape). Helper writes to `<path>.tmp` and `os.replace()`s onto the final
     # path so a crash mid-write can never leave a truncated/corrupt songs.json.
-    _atomic_write_corpus(SONGS_JSON, corpus)
+    atomic_write_corpus(SONGS_JSON, corpus)
 
     # Report.
     log_path = REPO_ROOT / '.omc' / 'anisong_ingest_report.txt'

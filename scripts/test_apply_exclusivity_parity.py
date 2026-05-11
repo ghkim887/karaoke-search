@@ -6,7 +6,7 @@ implemented twice:
   - TS source-of-truth: `packages/category-rules/src/index.ts` exporting
     `applyCategoryExclusivity(Set<Category>): void` (mutates in place).
   - Python hand-port: `scripts/ingest_anisong_pdf.py` defining
-    `_apply_category_exclusivity(list[str]) -> list[str]` (returns sorted list).
+    `apply_category_exclusivity(list[str]) -> list[str]` (returns sorted list).
 
 If either implementation drifts, downstream corpora diverge between the
 JS crawler/merger pipeline and the Python PDF ingest. This test enumerates
@@ -135,10 +135,10 @@ class ApplyCategoryExclusivityParityTest(unittest.TestCase):
             raise unittest.SkipTest(f'Missing Python source: {PY_SCRIPT}')
         # Load the hyphenated Python file via runpy and pull out the helper.
         ns = runpy.run_path(str(PY_SCRIPT), run_name='__parity_oracle__')
-        fn = ns.get('_apply_category_exclusivity')
+        fn = ns.get('apply_category_exclusivity')
         if fn is None:
             raise unittest.SkipTest(
-                '_apply_category_exclusivity not found in '
+                'apply_category_exclusivity not found in '
                 f'{PY_SCRIPT.relative_to(REPO_ROOT).as_posix()}'
             )
         cls._py_apply = staticmethod(fn)  # type: ignore[attr-defined]

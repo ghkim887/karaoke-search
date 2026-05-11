@@ -40,30 +40,30 @@ class TestApplyCategoryExclusivity(unittest.TestCase):
     """
 
     def test_jpop_alone_unchanged(self) -> None:
-        self.assertEqual(ingest._apply_category_exclusivity(['jpop']), ['jpop'])
+        self.assertEqual(ingest.apply_category_exclusivity(['jpop']), ['jpop'])
 
     def test_anime_alone_unchanged(self) -> None:
-        self.assertEqual(ingest._apply_category_exclusivity(['anime']), ['anime'])
+        self.assertEqual(ingest.apply_category_exclusivity(['anime']), ['anime'])
 
     def test_vocaloid_alone_unchanged(self) -> None:
-        self.assertEqual(ingest._apply_category_exclusivity(['vocaloid']), ['vocaloid'])
+        self.assertEqual(ingest.apply_category_exclusivity(['vocaloid']), ['vocaloid'])
 
     def test_jpop_anime_collapses_to_anime(self) -> None:
-        self.assertEqual(ingest._apply_category_exclusivity(['jpop', 'anime']), ['anime'])
+        self.assertEqual(ingest.apply_category_exclusivity(['jpop', 'anime']), ['anime'])
 
     def test_jpop_vocaloid_collapses_to_vocaloid(self) -> None:
         self.assertEqual(
-            ingest._apply_category_exclusivity(['jpop', 'vocaloid']), ['vocaloid']
+            ingest.apply_category_exclusivity(['jpop', 'vocaloid']), ['vocaloid']
         )
 
     def test_anime_vocaloid_collapses_to_vocaloid(self) -> None:
         self.assertEqual(
-            ingest._apply_category_exclusivity(['anime', 'vocaloid']), ['vocaloid']
+            ingest.apply_category_exclusivity(['anime', 'vocaloid']), ['vocaloid']
         )
 
     def test_all_three_collapse_to_vocaloid(self) -> None:
         self.assertEqual(
-            ingest._apply_category_exclusivity(['jpop', 'anime', 'vocaloid']),
+            ingest.apply_category_exclusivity(['jpop', 'anime', 'vocaloid']),
             ['vocaloid'],
         )
 
@@ -414,24 +414,24 @@ class TestDropListFilter(unittest.TestCase):
 
     def test_normalize_for_match_matches_ts_rule(self) -> None:
         # Whitespace-strip, case-fold, NFKC. Mirrors the TS source's rule.
-        self.assertEqual(ingest._normalize_for_match('  BTS  '), 'bts')
-        self.assertEqual(ingest._normalize_for_match('Le Sserafim'), 'lesserafim')
+        self.assertEqual(ingest.normalize_for_match('  BTS  '), 'bts')
+        self.assertEqual(ingest.normalize_for_match('Le Sserafim'), 'lesserafim')
         # Full-width Latin should NFKC-collapse to ASCII.
-        self.assertEqual(ingest._normalize_for_match('ＴＶＸＱ'), 'tvxq')
+        self.assertEqual(ingest.normalize_for_match('ＴＶＸＱ'), 'tvxq')
 
     def test_artist_components_for_drop_check_splits_collabs(self) -> None:
         # Bare single artist: round-trips.
         self.assertEqual(
-            ingest._artist_components_for_drop_check('YOASOBI'),
+            ingest.artist_components_for_drop_check('YOASOBI'),
             ['YOASOBI'],
         )
         # Feat parenthetical: emits whole + lead + featured.
-        comps = ingest._artist_components_for_drop_check('imase(Feat.IU)')
+        comps = ingest.artist_components_for_drop_check('imase(Feat.IU)')
         self.assertIn('imase', comps)
         self.assertIn('IU', comps)
         # `of` INSIDE a feat parenthetical: produces head + tail tokens
         # (Fix 1, 2026-05-01 — `of` sub-split is scoped to feat/prod parens).
-        comps = ingest._artist_components_for_drop_check('MAX(Feat.SUGA of BTS)')
+        comps = ingest.artist_components_for_drop_check('MAX(Feat.SUGA of BTS)')
         self.assertIn('SUGA', comps,
             f'feat-paren `of` sub-split should yield SUGA, got {comps}')
         self.assertIn('BTS', comps,
@@ -442,14 +442,14 @@ class TestDropListFilter(unittest.TestCase):
         # split. Cross-language parity with the TS `splitArtistCollab` rule —
         # `Bump of Chicken` (real Japanese rock band) and similar names must
         # round-trip unchanged so they don't get falsely flagged as collabs.
-        comps = ingest._artist_components_for_drop_check('Bump of Chicken')
+        comps = ingest.artist_components_for_drop_check('Bump of Chicken')
         # Only the whole string should appear.
         self.assertEqual(comps, ['Bump of Chicken'],
             f'bare `of` must not sub-split, got {comps}')
         # Bare `SUGA of BTS` (no feat/prod paren) similarly does not split —
         # the parser-side drop-list catches the whole string via the
         # `SUGA of BTS` variant key directly.
-        comps = ingest._artist_components_for_drop_check('SUGA of BTS')
+        comps = ingest.artist_components_for_drop_check('SUGA of BTS')
         self.assertEqual(comps, ['SUGA of BTS'],
             f'bare `SUGA of BTS` must not sub-split, got {comps}')
 
@@ -898,11 +898,11 @@ class TestPdfVocaloidSkipList(unittest.TestCase):
 
 
 class TestDropSplitReContents(unittest.TestCase):
-    """Parity-protection tests for `_DROP_SPLIT_RE` character contents."""
+    """Parity-protection tests for `DROP_SPLIT_RE` character contents."""
 
     def test_drop_split_re_contains_full_width_pipe_for_ts_parity(self):
         """U+FF5C parity with TS SPLIT_RE — protects against future regex tidying."""
-        self.assertIn('｜', ingest._DROP_SPLIT_RE.pattern)
+        self.assertIn('｜', ingest.DROP_SPLIT_RE.pattern)
 
     def test_main_downgrades_collab_lead_match(self) -> None:
         """A `HoneyWorks(Feat.GUMI)` row in section='vocaloid' must downgrade
@@ -1113,33 +1113,33 @@ class TestDropSplitReContents(unittest.TestCase):
 
 
 class TestIsoUtcNow(unittest.TestCase):
-    """Verify _iso_utc_now() output is byte-compatible with JS toISOString()."""
+    """Verify iso_utc_now() output is byte-compatible with JS toISOString()."""
 
     def test_ends_with_z(self) -> None:
-        result = ingest._iso_utc_now()
+        result = ingest.iso_utc_now()
         self.assertTrue(result.endswith('Z'), f"Expected Z suffix, got {result!r}")
 
     def test_length_is_24(self) -> None:
-        result = ingest._iso_utc_now()
+        result = ingest.iso_utc_now()
         self.assertEqual(len(result), 24, f"Expected length 24, got {len(result)} for {result!r}")
 
     def test_parses_as_datetime(self) -> None:
         import datetime as _dt
-        result = ingest._iso_utc_now()
+        result = ingest.iso_utc_now()
         # Strip Z and parse — fromisoformat accepts ISO-8601 without timezone suffix
         parsed = _dt.datetime.fromisoformat(result[:-1])
         self.assertIsNotNone(parsed)
 
     def test_has_millisecond_precision(self) -> None:
         # Format: YYYY-MM-DDTHH:MM:SS.mmmZ — the last 4 chars before Z are .mmm
-        result = ingest._iso_utc_now()
+        result = ingest.iso_utc_now()
         ms_part = result[-4:-1]
         self.assertEqual(len(ms_part), 3, f"Expected 3-digit ms, got {ms_part!r} from {result!r}")
         self.assertTrue(ms_part.isdigit(), f"ms part not digits: {ms_part!r}")
 
     def test_lex_compare_compatible_with_js_format(self) -> None:
         # A timestamp well in the past must sort before a far-future JS-format reference.
-        result = ingest._iso_utc_now()
+        result = ingest.iso_utc_now()
         future_ref = '2099-12-31T23:59:59.999Z'
         self.assertLess(result, future_ref, f"{result!r} should sort before {future_ref!r}")
         # A far-past reference must sort before our result.
