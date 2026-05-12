@@ -237,7 +237,7 @@ describe('applyDecisionsToCorpus', () => {
         },
       ],
     ]);
-    const out = applyDecisionsToCorpus(records, decisions);
+    const { records: out } = applyDecisionsToCorpus(records, decisions);
     expect(out[0].title_ko).toBe('사랑');
     expect(out[0].media_context_ko).toBe('(진격의 거인 OP)');
     expect(out[0].title_ko_source).toBe('llm-translated');
@@ -246,7 +246,7 @@ describe('applyDecisionsToCorpus', () => {
 
   it('skips records the decisions Map does not cover', () => {
     const records = [{ id: 'blog-1', title_ko: '엑스', title_primary: 'X' }];
-    const out = applyDecisionsToCorpus(records, new Map());
+    const { records: out } = applyDecisionsToCorpus(records, new Map());
     expect(out[0]).toEqual({ id: 'blog-1', title_ko: '엑스', title_primary: 'X' });
   });
 
@@ -266,7 +266,7 @@ describe('applyDecisionsToCorpus', () => {
         },
       ],
     ]);
-    const out = applyDecisionsToCorpus(records, decisions);
+    const { records: out } = applyDecisionsToCorpus(records, decisions);
     expect(out[0]).not.toHaveProperty('media_context_ko');
   });
 
@@ -286,7 +286,7 @@ describe('applyDecisionsToCorpus', () => {
         },
       ],
     ]);
-    const out = applyDecisionsToCorpus(records, decisions);
+    const { records: out } = applyDecisionsToCorpus(records, decisions);
     expect(out[0].title_ko).toBe(null);
     expect(out[0]).not.toHaveProperty('title_ko_source');
     expect(out[0]).not.toHaveProperty('title_ko_confidence');
@@ -326,7 +326,7 @@ describe('applyDecisionsToCorpus', () => {
         },
       ],
     ]);
-    const out = applyDecisionsToCorpus(records, decisions);
+    const { records: out } = applyDecisionsToCorpus(records, decisions);
     const keys = Object.keys(out[0]);
     const crawledAtIdx = keys.indexOf('crawled_at');
     const mediaIdx = keys.indexOf('media_context_ko');
@@ -336,6 +336,30 @@ describe('applyDecisionsToCorpus', () => {
     expect(mediaIdx).toBe(crawledAtIdx + 1);
     expect(sourceIdx).toBe(mediaIdx + 1);
     expect(confIdx).toBe(sourceIdx + 1);
+  });
+
+  it('skips records whose title_primary no longer matches the cached decision', () => {
+    // Cache is keyed by id; if the TJ title was edited between Stage 2 runs the
+    // stale translation must not be applied to the new title.
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: 'New Title' }];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: 'Old Title',
+          title_ko: '낡은 제목',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const { records: out, skipped } = applyDecisionsToCorpus(records, decisions);
+    expect(out[0]).toEqual({ id: 'tj-1', title_ko: null, title_primary: 'New Title' });
+    expect(out[0]).not.toHaveProperty('title_ko_source');
+    expect(skipped.titleMismatch).toBe(1);
   });
 
   it('preserves pre-existing title_ko_source when decision nulls title_ko', () => {
@@ -363,8 +387,66 @@ describe('applyDecisionsToCorpus', () => {
         },
       ],
     ]);
-    const out = applyDecisionsToCorpus(records, decisions);
+    const { records: out } = applyDecisionsToCorpus(records, decisions);
     expect(out[0].title_ko_source).toBe('blog');
+  });
+
+  it('applies decisions across NFKC-equivalent CJK Compatibility Ideographs', () => {
+    // Bug history: tj-27589 has '白金ディスコ' with U+F90A (CJK Compatibility
+    // Ideograph for 金) in the corpus, while the cached decision uses U+91D1.
+    // These render identically and NFKC-normalize equal, but `===` returns
+    // false — silently dropping ~translation on every CI run before the fix.
+    const corpusTitle = `白\u{F90A}ディスコ`;
+    const cacheTitle = `白\u{91D1}ディスコ`;
+    const records = [{ id: 'tj-1', title_ko: null, title_primary: corpusTitle }];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: cacheTitle,
+          title_ko: '백금 디스코',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const { records: out, skipped } = applyDecisionsToCorpus(records, decisions);
+    expect(out[0].title_ko).toBe('백금 디스코');
+    expect(out[0].title_ko_source).toBe('llm-translated');
+    expect(skipped.titleMismatch).toBe(0);
+  });
+
+  it('preserves records with title_ko_source=manual (cache never overwrites manual fixes)', () => {
+    const records = [
+      {
+        id: 'tj-1',
+        title_primary: 'matching title',
+        title_ko: 'manual translation',
+        title_ko_source: 'manual',
+      },
+    ];
+    const decisions = new Map([
+      [
+        'tj-1',
+        {
+          id: 'tj-1',
+          title_primary: 'matching title',
+          title_ko: 'llm translation',
+          media_context_ko: null,
+          confidence: 'high',
+          reasoning: 'r',
+          web_sources: [],
+        },
+      ],
+    ]);
+    const { records: out, skipped } = applyDecisionsToCorpus(records, decisions);
+    expect(out[0].title_ko).toBe('manual translation');
+    expect(out[0].title_ko_source).toBe('manual');
+    expect(out[0]).not.toHaveProperty('title_ko_confidence');
+    expect(skipped.manualProtected).toBe(1);
   });
 });
 

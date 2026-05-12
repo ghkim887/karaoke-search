@@ -120,6 +120,17 @@ jobs:
       - name: Drop Chinese-artist (Cpop) leak records
         run: python scripts/drop_cpop_leaks.py
 
+      # Stage 2 LLM cache replay is a nice-to-have enhancement layer — if a
+      # malformed cache file slips into a PR, we still want the weekly crawl
+      # PR to open with the unsealed (un-translated) corpus. The next Stage 2
+      # operator run fixes the cache.
+      - name: Apply cached LLM title_ko translations (Stage 2 replay)
+        continue-on-error: true
+        run: node scripts/translate_title_ko_via_agents.mjs merge apps/web/public/data/songs.json scripts/data
+
+      - name: Apply manual title_ko fixes
+        run: node scripts/apply-manual-title-ko-fixes.mjs apps/web/public/data/songs.json scripts/data/title-ko-manual-fixes.json
+
       - name: Prune stale tj-search-cache entries
         run: node scripts/prune-artist-nationality-cache.mjs
 

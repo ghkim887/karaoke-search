@@ -136,9 +136,24 @@ export function loadAndValidateChunkOutputs(chunksDir) {
  * tag.
  */
 export function applyDecisionsToCorpus(records, decisions) {
-  return records.map((rec) => {
+  const skipped = { titleMismatch: 0, manualProtected: 0 };
+  const out = records.map((rec) => {
     const d = decisions.get(rec.id);
     if (!d) return rec;
+    // Cache is keyed by id; a TJ title edit between Stage 2 runs would silently
+    // apply a stale translation to a different title. Skip on title mismatch.
+    // Compare NFKC-normalized strings so CJK Compatibility Ideographs (e.g.
+    // U+F90A vs U+91D1 for 金) match — they render identically but `===`
+    // returns false, silently dropping translations on every run.
+    if (d.title_primary.normalize('NFKC') !== rec.title_primary.normalize('NFKC')) {
+      skipped.titleMismatch += 1;
+      return rec;
+    }
+    // Don't overwrite manual fixes — they take precedence over the LLM cache.
+    if (rec.title_ko_source === 'manual') {
+      skipped.manualProtected += 1;
+      return rec;
+    }
     // Rebuild `next` so the optional KO-pipeline fields land in the canonical
     // key order emitted by the merger (packages/crawler/src/merge.ts:430-436):
     //   …crawled_at, media_context_ko, title_ko_source, title_ko_confidence
@@ -186,6 +201,7 @@ export function applyDecisionsToCorpus(records, decisions) {
     }
     return next;
   });
+  return { records: out, skipped };
 }
 
 /**
@@ -215,12 +231,13 @@ export function writeReviewCsv(path, decisions) {
 export function runMerge({ corpusPath, chunksDir, reviewCsvPath }) {
   const decisions = loadAndValidateChunkOutputs(chunksDir);
   const records = JSON.parse(readFileSync(corpusPath, 'utf-8'));
-  const updated = applyDecisionsToCorpus(records, decisions);
+  const { records: updated, skipped } = applyDecisionsToCorpus(records, decisions);
   writeCorpusAtomic(corpusPath, updated);
   if (reviewCsvPath) writeReviewCsv(reviewCsvPath, decisions);
   return {
     decisionCount: decisions.size,
     recordCount: records.length,
+    skipped,
   };
 }
 
@@ -249,7 +266,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     }
     const stats = runMerge({ corpusPath, chunksDir, reviewCsvPath });
     console.log(
-      `merge: ${stats.decisionCount} decisions applied to ${stats.recordCount}-record corpus`,
+      `merge: ${stats.decisionCount} decisions applied to ${stats.recordCount}-record corpus ` +
+        `(skipped: ${stats.skipped.titleMismatch} title-mismatch, ` +
+        `${stats.skipped.manualProtected} manual-protected)`,
     );
   } else {
     console.error(`unknown subcommand: ${cmd}`);
