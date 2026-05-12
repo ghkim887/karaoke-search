@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-01T08:59:42.840Z",
+  "generatedAt": "2026-05-12T09:59:10.759Z",
   "proEnrichmentMap": {
     "6101": {
       "nationalcode": "JPN",
@@ -30050,6 +30050,30 @@
       "publishdate": "2026-04-30",
       "lastSeen": "2026-04-30T03:29:50.479Z"
     },
+    "52502": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "메디아노오체",
+      "sortSongKo": "즛토마요나카데이이노니",
+      "subTitle": null,
+      "publishdate": "2026-05-07",
+      "lastSeen": "2026-05-12T09:59:10.759Z"
+    },
+    "52503": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "뷔란",
+      "sortSongKo": "테니오하",
+      "subTitle": null,
+      "publishdate": "2026-05-07",
+      "lastSeen": "2026-05-12T09:59:10.759Z"
+    },
+    "52504": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "치도리",
+      "sortSongKo": "요루시카",
+      "subTitle": null,
+      "publishdate": "2026-05-12",
+      "lastSeen": "2026-05-12T09:59:10.759Z"
+    },
     "52565": {
       "nationalcode": "JPN",
       "sortTitleKo": "코이오 시테이루 미타이나노",
@@ -35612,7 +35636,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "優里": {
       "code": "JPN",
@@ -35621,7 +35645,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "vaundy": {
       "code": "JPN",
@@ -35630,7 +35654,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "backnumber": {
       "code": "JPN",
@@ -35639,7 +35663,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "米津玄師": {
       "code": "JPN",
@@ -35648,7 +35672,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "spyair": {
       "code": "JPN",
@@ -35657,7 +35681,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "novelbright": {
       "code": "JPN",
@@ -35666,7 +35690,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "ado": {
       "code": "JPN",
@@ -35675,7 +35699,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "mrs.greenapple": {
       "code": "JPN",
@@ -35684,7 +35708,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "yoasobi": {
       "code": "JPN",
@@ -35693,7 +35717,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "あいみょん": {
       "code": "JPN",
@@ -35702,7 +35726,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "radwimps": {
       "code": "JPN",
@@ -35711,16 +35735,16 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "kinggnu": {
       "code": "JPN",
       "votes": {
-        "JPN": 3,
+        "JPN": 4,
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "ヨルシカ": {
       "code": "JPN",
@@ -35729,7 +35753,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "lisa": {
       "code": "JPN",
@@ -35738,7 +35762,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "aimer": {
       "code": "JPN",
@@ -35747,7 +35771,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "linkedhorizon": {
       "code": "JPN",
@@ -35756,7 +35780,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "ずっと真夜中でいいのに。": {
       "code": "JPN",
@@ -35981,7 +36005,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-01T04:27:05.785Z"
+      "lastSeen": "2026-05-12T06:17:18.845Z"
     },
     "ゆこぴ(feat.歌愛ユキ)": {
       "code": "UNKNOWN",
@@ -37082,15 +37106,6 @@
       "lastSeen": "2026-04-29T18:54:13.741Z"
     },
     "メガテラ・ゼロ(feat.夢ノ結唱popy)": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-04-29T18:54:13.741Z"
-    },
-    "정한(feat.omoinotake)": {
       "code": "UNKNOWN",
       "votes": {
         "JPN": 0,
@@ -52057,15 +52072,6 @@
       },
       "lastSeen": "2026-04-29T23:32:10.873Z"
     },
-    "정한": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-04-29T23:32:10.873Z"
-    },
     "rats": {
       "code": "UNKNOWN",
       "votes": {
@@ -55350,7 +55356,43 @@
         "ENG": 0
       },
       "lastSeen": "2026-05-01T08:56:17.041Z"
+    },
+    "いよわ": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-05-12T06:30:24.978Z"
+    },
+    "てにをは(feat.flower)": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-05-12T06:30:24.978Z"
+    },
+    "maisondes(feat.美波,sakuramoti)": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-05-12T06:30:24.978Z"
+    },
+    "美波,sakuramoti": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-05-12T06:30:24.978Z"
     }
   },
-  "bootstrappedAt": "2026-05-01T04:27:05.785Z"
+  "bootstrappedAt": "2026-05-12T06:17:18.845Z"
 }

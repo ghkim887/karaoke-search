@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tj-26908",
+    "title_primary": "Don’t say “lazy” (けいおん! ED)",
+    "title_ko": null,
+    "media_context_ko": "(케이온! ED)",
+    "confidence": "high",
+    "reasoning": "title_primary is pure-Latin English so title_ko stays null; K-On! has the canonical Korean rendering 케이온! used across Korean anime fandom (no web search needed).",
+    "web_sources": []
+  },
+  {
+    "id": "tj-27589",
+    "title_primary": "白金ディスコ(偽物語 OP)",
+    "title_ko": "백금 디스코",
+    "media_context_ko": "(니세모노가타리 OP)",
+    "confidence": "high",
+    "reasoning": "Web search confirmed 백금 디스코 is the canonical Korean title used by Melon (official MONOGATARI Series release), Namuwiki, and multiple Korean cover/lyric sites; standardized media-context spacing to 니세모노가타리 OP.",
+    "web_sources": [
+      "https://namu.wiki/w/%E7%99%BD%E9%87%91%E3%83%87%E3%82%A3%E3%82%B9%E3%82%B3",
+      "https://www.melon.com/song/detail.htm?songId=31395156",
+      "https://www.lyrics.co.kr/?p=825634"
+    ]
+  },
+  {
+    "id": "tjpdf-28487",
+    "title_primary": "サヨナラ嘘ツキ",
+    "title_ko": "안녕 거짓말쟁이",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Web search found Japanese lyric sites and the Blade & Soul anime OP credit but no stable Korean canonical title; produced a natural literal translation (サヨナラ=안녕, 嘘ツキ=거짓말쟁이).",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%B5%E3%83%A8%E3%83%8A%E3%83%A9%E5%98%98%E3%83%84%E3%82%AD",
+      "https://www.uta-net.com/song/164350/"
+    ]
+  },
+  {
+    "id": "blog-274-1",
+    "title_primary": "AIZO(TVアニメ '呪術廻戦' 第3期 '死滅回游 前編' OP)",
+    "title_ko": null,
+    "media_context_ko": "(TV애니메이션 '주술회전' 3기 '사멸회유 전편' OP)",
+    "confidence": "high",
+    "reasoning": "title_primary AIZO is pure-Latin (English spelling of 愛憎) so title_ko stays null; Namuwiki has a dedicated AIZO entry and multiple Korean fansub channels render the arc as 주술회전 3기 사멸회유 전편 (confirmed via web search).",
+    "web_sources": [
+      "https://namu.wiki/w/AIZO",
+      "https://www.youtube.com/watch?v=V_FjK49CIj8",
+      "https://www.youtube.com/watch?v=SJTNx5lCrdk"
+    ]
+  },
+  {
+    "id": "tj-52503",
+    "title_primary": "ヴィラン",
+    "title_ko": "빌런",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Web search confirmed 빌런 is the canonical Korean fan-canon title on Namuwiki (dedicated entry) and Vocaro Wiki (Korean Vocaloid lyric wiki), with a Korean YouTube fansub titled '빌런 | ヴィラン | villain' — multiple independent Korean sources converge.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%B9%8C%EB%9F%B0(VOCALOID%20%EC%98%A4%EB%A6%AC%EC%A7%80%EB%84%90%20%EA%B3%A1)",
+      "http://vocaro.wikidot.com/villain",
+      "https://www.youtube.com/watch?v=emfzwQQgj_Y"
+    ]
+  }
+]

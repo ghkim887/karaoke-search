@@ -1,0 +1,88 @@
+[
+  {
+    "id": "tj-26908",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "Don’t say “lazy” (けいおん! ED)",
+    "title_ko": null,
+    "artist_primary": "桜高軽音部",
+    "artist_ko": null,
+    "karaoke_numbers": {
+      "tj": "26908",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "anime"
+    ],
+    "crawled_at": "2026-05-12T06:17:10.832Z"
+  },
+  {
+    "id": "tj-27589",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "白金ディスコ(偽物語 OP)",
+    "title_ko": null,
+    "artist_primary": "井口裕香",
+    "artist_ko": "이구치 유카",
+    "karaoke_numbers": {
+      "tj": "27589",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "anime"
+    ],
+    "crawled_at": "2026-05-12T06:17:10.832Z",
+    "media_context_ko": "(니세모노가타리OP)"
+  },
+  {
+    "id": "tjpdf-28487",
+    "source_url": "https://www.tjmedia.com/support/poster?cate_cd=P06",
+    "title_primary": "サヨナラ嘘ツキ",
+    "title_ko": null,
+    "artist_primary": "みみめめMIMI",
+    "artist_ko": "미미메메MIMI",
+    "karaoke_numbers": {
+      "tj": "28487",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "anime"
+    ],
+    "crawled_at": "2026-05-12T10:14:23.335Z"
+  },
+  {
+    "id": "blog-274-1",
+    "source_url": "https://j-pop-playlist.tistory.com/274",
+    "title_primary": "AIZO(TVアニメ '呪術廻戦' 第3期 '死滅回游 前編' OP)",
+    "title_ko": null,
+    "artist_primary": "King Gnu",
+    "artist_ko": "킹 누",
+    "karaoke_numbers": {
+      "tj": "52501",
+      "ky": null,
+      "joysound": "644290"
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-12T06:17:10.832Z"
+  },
+  {
+    "id": "tj-52503",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "ヴィラン",
+    "title_ko": null,
+    "artist_primary": "てにをは(Feat.Flower)",
+    "artist_ko": "테니오하",
+    "karaoke_numbers": {
+      "tj": "52503",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-12T06:17:10.832Z"
+  }
+]
