@@ -6,13 +6,19 @@ import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { resolveCrawlLimit } from '../limit.js';
 import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
-import type { SearchSongCache } from './cache.js';
-import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
+import {
+  type EnrichmentEntry,
+  type SearchSongCache,
+  isBootstrapFresh,
+  loadCache,
+  saveCache,
+} from './cache.js';
 import { enrichArtistMap } from './enrichArtistMap.js';
 import { enrichWithTranslit } from './enrichTranslit.js';
 import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA, extractCatalogItems } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
-import { parseCatalogResponse } from './parser.js';
+import { classifyRecord, parseCatalogResponse } from './parser.js';
+import { type SearchSongItem, searchSongByTitle } from './searchSong.js';
 
 const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 /** "all songs since 2000-01" — returns the full historical TJ catalog (~67k). */
@@ -200,10 +206,29 @@ export class TJDirectCrawler implements Crawler {
     }
 
     // Step 5: parse + filter.
-    const { records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+    let { records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
       cache,
       forceIncludeTjNumbers,
     });
+
+    if (!this.disableEnrichment) {
+      const rescueStats = await rescueJpLikelyDroppedRecords(
+        this.http,
+        allItems,
+        cache,
+        forceIncludeTjNumbers,
+      );
+      if (rescueStats.fetches > 0) cacheMutated = true;
+      if (rescueStats.admitted > 0) {
+        ({ records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+          cache,
+          forceIncludeTjNumbers,
+        }));
+      }
+      console.log(
+        `[tj-rescue] checked ${rescueStats.candidates} JP-likely drops — fetches ${rescueStats.fetches}, admitted ${rescueStats.admitted}, misses ${rescueStats.misses}, errors ${rescueStats.errors}, skipped-cached ${rescueStats.skippedCached}`,
+      );
+    }
 
     // Step 6: translit pass (PR-1).
     let enrichmentByPro: Map<string, TranslitEnrichment> | null = null;
@@ -305,6 +330,26 @@ function asArtistShell(item: Record<string, unknown>): {
   karaoke_numbers: { tj: string | null; ky: null; joysound: null };
   categories: ['jpop'];
 } | null {
+  const parsed = parseCatalogShell(item);
+  if (parsed === null) return null;
+  return {
+    source_url: CATALOG_URL,
+    title_primary: parsed.title,
+    title_ko: null,
+    artist_primary: parsed.artist,
+    artist_ko: null,
+    karaoke_numbers: { tj: parsed.tj, ky: null, joysound: null },
+    categories: ['jpop'],
+  };
+}
+
+interface CatalogShell {
+  tj: string;
+  title: string;
+  artist: string;
+}
+
+function parseCatalogShell(item: Record<string, unknown>): CatalogShell | null {
   const proRaw = item.pro;
   const title = typeof item.indexTitle === 'string' ? item.indexTitle.trim() : '';
   const artist = typeof item.indexSong === 'string' ? item.indexSong.trim() : '';
@@ -312,15 +357,85 @@ function asArtistShell(item: Record<string, unknown>): {
   if (typeof proRaw === 'number' && Number.isFinite(proRaw)) tj = String(proRaw);
   else if (typeof proRaw === 'string' && proRaw.trim() !== '') tj = proRaw.trim();
   if (!tj || !title || !artist) return null;
-  return {
-    source_url: CATALOG_URL,
-    title_primary: title,
-    title_ko: null,
-    artist_primary: artist,
-    artist_ko: null,
-    karaoke_numbers: { tj, ky: null, joysound: null },
-    categories: ['jpop'],
+  return { tj, title, artist };
+}
+
+interface JpLikelyRescueStats {
+  candidates: number;
+  fetches: number;
+  admitted: number;
+  misses: number;
+  skippedCached: number;
+  errors: number;
+}
+
+async function rescueJpLikelyDroppedRecords(
+  http: Pick<HttpClient, 'postForm'>,
+  items: ReadonlyArray<Record<string, unknown>>,
+  cache: SearchSongCache,
+  force?: ReadonlySet<string>,
+): Promise<JpLikelyRescueStats> {
+  const stats: JpLikelyRescueStats = {
+    candidates: 0,
+    fetches: 0,
+    admitted: 0,
+    misses: 0,
+    skippedCached: 0,
+    errors: 0,
   };
+
+  const now = new Date().toISOString();
+  for (const item of items) {
+    const shell = parseCatalogShell(item);
+    if (shell === null) continue;
+    if (classifyRecord(shell.tj, shell.artist, cache, force) !== 'drop') continue;
+    if (!isStrongJpLikelyCandidate(shell)) continue;
+
+    stats.candidates++;
+    const cached = cache.proEnrichmentMap[shell.tj];
+    if (cached?.nationalcode) {
+      stats.skippedCached++;
+      continue;
+    }
+
+    let matches: SearchSongItem[];
+    try {
+      matches = await searchSongByTitle(http, shell.title, 'JPN');
+      stats.fetches++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[tj-rescue] title-search failed for pro=${shell.tj}: ${msg}`);
+      stats.errors++;
+      continue;
+    }
+    const match = matches.find((candidate) => candidate.pro === shell.tj);
+    if (match?.nationalcode === 'JPN') {
+      const entry: EnrichmentEntry = {
+        nationalcode: match.nationalcode,
+        sortTitleKo: match.sortTitleKo,
+        sortSongKo: match.sortSongKo,
+        subTitle: match.subTitle,
+        publishdate: match.publishdate,
+        lastSeen: now,
+      };
+      cache.proEnrichmentMap[shell.tj] = entry;
+      stats.admitted++;
+    } else {
+      stats.misses++;
+    }
+  }
+
+  if (stats.fetches > 0) cache.generatedAt = now;
+  return stats;
+}
+
+function isStrongJpLikelyCandidate(shell: CatalogShell): boolean {
+  const text = `${shell.title} ${shell.artist}`;
+  if (RE_HIRAGANA.test(text) || RE_KATAKANA.test(text)) return true;
+  return (
+    /\b(OP|ED|OST)\b/.test(shell.title) &&
+    /[犬夜叉銀魂進撃名探偵図書館戦争地獄少女最遊記]/.test(shell.title)
+  );
 }
 
 /**
