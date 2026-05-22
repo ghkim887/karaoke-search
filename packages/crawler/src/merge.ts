@@ -129,6 +129,12 @@ export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
 
 // --- Union-Find ----------------------------------------------------------
 
+const VENDORS = ['tj', 'ky', 'joysound'] as const satisfies readonly (keyof KaraokeNumbers)[];
+
+type Vendor = (typeof VENDORS)[number];
+
+type VendorIndexes = Record<Vendor, Map<string, number[]>>;
+
 class UnionFind {
   private parent: number[];
 
@@ -157,6 +163,45 @@ class UnionFind {
     const ra = this.find(a);
     const rb = this.find(b);
     if (ra !== rb) this.parent[ra] = rb;
+  }
+}
+
+function addToIndex(index: Map<string, number[]>, key: string, recordIndex: number): void {
+  const existing = index.get(key);
+  if (existing) existing.push(recordIndex);
+  else index.set(key, [recordIndex]);
+}
+
+function buildVendorIndexes(records: SongRecord[]): VendorIndexes {
+  const indexes: VendorIndexes = {
+    tj: new Map<string, number[]>(),
+    ky: new Map<string, number[]>(),
+    joysound: new Map<string, number[]>(),
+  };
+
+  for (let i = 0; i < records.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const r = records[i]!;
+    for (const vendor of VENDORS) {
+      const value = r.karaoke_numbers[vendor];
+      if (value !== null) addToIndex(indexes[vendor], value, i);
+    }
+  }
+
+  return indexes;
+}
+
+function unionIndexedDuplicates(uf: UnionFind, indexes: Iterable<Map<string, number[]>>): void {
+  for (const index of indexes) {
+    for (const idxs of index.values()) {
+      if (idxs.length < 2) continue;
+      // biome-ignore lint/style/noNonNullAssertion: length >= 2
+      const first = idxs[0]!;
+      for (let k = 1; k < idxs.length; k++) {
+        // biome-ignore lint/style/noNonNullAssertion: k in bounds
+        uf.union(first, idxs[k]!);
+      }
+    }
   }
 }
 
@@ -226,10 +271,9 @@ function mergeKaraokeNumbers(
   tierBClusterKey: string | null,
   conflicts: MergeConflict[],
 ): KaraokeNumbers {
-  const vendors: ('tj' | 'ky' | 'joysound')[] = ['tj', 'ky', 'joysound'];
   const result: KaraokeNumbers = { tj: null, ky: null, joysound: null };
 
-  for (const vendor of vendors) {
+  for (const vendor of VENDORS) {
     // Collect (slug, value) pairs of non-null contributions.
     const contributions: { slug: string; value: string }[] = [];
     for (const r of cluster) {
@@ -507,41 +551,11 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   // --- Tier A: per-vendor union-find ---
   // Three separate index maps. TJ and KY values that happen to match
   // numerically must NOT cluster.
-  const tjIndex = new Map<string, number[]>();
-  const kyIndex = new Map<string, number[]>();
-  const joyIndex = new Map<string, number[]>();
-
-  for (let i = 0; i < n; i++) {
-    // biome-ignore lint/style/noNonNullAssertion: i in bounds
-    const r = records[i]!;
-    if (r.karaoke_numbers.tj !== null) {
-      const arr = tjIndex.get(r.karaoke_numbers.tj);
-      if (arr) arr.push(i);
-      else tjIndex.set(r.karaoke_numbers.tj, [i]);
-    }
-    if (r.karaoke_numbers.ky !== null) {
-      const arr = kyIndex.get(r.karaoke_numbers.ky);
-      if (arr) arr.push(i);
-      else kyIndex.set(r.karaoke_numbers.ky, [i]);
-    }
-    if (r.karaoke_numbers.joysound !== null) {
-      const arr = joyIndex.get(r.karaoke_numbers.joysound);
-      if (arr) arr.push(i);
-      else joyIndex.set(r.karaoke_numbers.joysound, [i]);
-    }
-  }
-
-  for (const indexes of [tjIndex, kyIndex, joyIndex]) {
-    for (const idxs of indexes.values()) {
-      if (idxs.length < 2) continue;
-      // biome-ignore lint/style/noNonNullAssertion: length >= 2
-      const first = idxs[0]!;
-      for (let k = 1; k < idxs.length; k++) {
-        // biome-ignore lint/style/noNonNullAssertion: k in bounds
-        uf.union(first, idxs[k]!);
-      }
-    }
-  }
+  const vendorIndexes = buildVendorIndexes(records);
+  unionIndexedDuplicates(
+    uf,
+    VENDORS.map((vendor) => vendorIndexes[vendor]),
+  );
 
   // --- Tier B: fallback for records still in singleton clusters ---
   // A record is "still alone" iff its UF root only points to itself among
