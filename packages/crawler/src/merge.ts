@@ -15,6 +15,16 @@ const SOURCE_RANK: Record<string, number> = {
   tj: 3,
 };
 
+const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'namu'] as const;
+
+// `tj` is an explicit member of the Korean-fields chain (lowest priority)
+// because the TJ-direct adapter's `searchSong` translit pass (PR-1) writes
+// `title_ko` / `artist_ko`. Pre-PR-1 the field fell through `pickByOwnership`'s
+// unlisted-source fallback, which is order-dependent and silently ambiguous if
+// a future source also writes Korean fields. Listing `tj` here makes the
+// priority `blog > namu > tj` explicit.
+const KO_CHAIN = ['blog', 'namu', 'tj'] as const;
+
 /**
  * Source slug derived from the `id` prefix (everything before the first `-`).
  * The schema's `id` pattern is `^[a-z0-9-]+-\d+$`, so the slug may itself
@@ -294,7 +304,7 @@ function collectClusters(uf: UnionFind, size: number): Map<number, number[]> {
  */
 function pickByOwnership<T>(
   cluster: SongRecord[],
-  ownerOrder: string[],
+  ownerOrder: readonly string[],
   field: (r: SongRecord) => T | null,
 ): T | null {
   for (const slug of ownerOrder) {
@@ -473,7 +483,7 @@ function mergeArtistAliases(
  *
  * Returns `null` when the cluster has no KO signal at all (all fields absent).
  */
-function pickKoDonor(cluster: SongRecord[], koChain: string[]): SongRecord | null {
+function pickKoDonor(cluster: SongRecord[], koChain: readonly string[]): SongRecord | null {
   // Pass 1: record whose title_ko was selected.
   for (const slug of koChain) {
     for (const r of cluster) {
@@ -493,65 +503,16 @@ function pickKoDonor(cluster: SongRecord[], koChain: string[]): SongRecord | nul
   return null;
 }
 
-function mergeCluster(
-  cluster: SongRecord[],
-  wasTierB: boolean,
-  wasTierC: boolean,
-  conflicts: MergeConflict[],
-): SongRecord {
-  if (cluster.length === 0) throw new Error('empty cluster');
-
-  const titleArtistChain = ['tj', 'blog', 'namu'];
-  // `tj` is an explicit member of the Korean-fields chain (lowest priority)
-  // because the TJ-direct adapter's `searchSong` translit pass (PR-1) writes
-  // `title_ko` / `artist_ko`. Pre-PR-1 the field fell through `pickByOwnership`'s
-  // unlisted-source fallback, which is order-dependent and silently
-  // ambiguous if a future source also writes Korean fields. Listing `tj`
-  // here makes the priority `blog > namu > tj` explicit.
-  const koChain = ['blog', 'namu', 'tj'];
-
-  // Tier C clusters reuse Tier B's vendor-conflict reporting under the same
-  // `tierBKey` shape so existing PR-body aggregation continues to work.
-  const tierBClusterKey = wasTierB || wasTierC ? tierBKey(cluster[0] as SongRecord) : null;
-
-  // `crawled_at`: take the LATEST timestamp across the cluster (max).
-  let latestCrawledAt = cluster[0]?.crawled_at ?? '';
+function latestCrawledAt(cluster: SongRecord[]): string {
+  let latest = cluster[0]?.crawled_at ?? '';
   for (const r of cluster) {
-    if (r.crawled_at > latestCrawledAt) latestCrawledAt = r.crawled_at;
+    if (r.crawled_at > latest) latest = r.crawled_at;
   }
+  return latest;
+}
 
-  const mergedArtistPrimary =
-    pickByOwnership(cluster, titleArtistChain, (r) => r.artist_primary) ??
-    cluster[0]?.artist_primary ??
-    '';
-  const mergedAliases = mergeArtistAliases(cluster, mergedArtistPrimary);
-  // Pick the single donor record for the KO optional-field trio so that
-  // title_ko_source, title_ko_confidence, and media_context_ko stay paired
-  // with the record whose title_ko was selected. This preserves the schema
-  // cross-field constraint (title_ko_confidence valid only when
-  // title_ko_source === 'llm-translated') because both fields travel together
-  // from a donor that already satisfied the constraint.
-  const koDonor = pickKoDonor(cluster, koChain);
-  const merged: SongRecord = {
-    id: pickByPriority(cluster, (r) => r.id),
-    source_url: pickByPriority(cluster, (r) => r.source_url),
-    title_primary:
-      pickByOwnership(cluster, titleArtistChain, (r) => r.title_primary) ??
-      // Field is non-null in the schema; this fallback should be unreachable
-      // but is kept type-safe.
-      cluster[0]?.title_primary ??
-      '',
-    title_ko: pickByOwnership(cluster, koChain, (r) => r.title_ko),
-    artist_primary: mergedArtistPrimary,
-    artist_ko: pickByOwnership(cluster, koChain, (r) => r.artist_ko),
-    // Spec 2026-05-04: union artist_aliases across the cluster, filtering out
-    // any alias that equals the merged canonical (defense-in-depth — the
-    // resolver already excludes this case, but a Tier C cluster could pick a
-    // non-resolver-emitted canonical via `pickByOwnership`).
-    ...(mergedAliases !== undefined ? { artist_aliases: mergedAliases } : {}),
-    karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
-    categories: mergeCategories(cluster),
-    crawled_at: latestCrawledAt,
+function optionalKoFields(koDonor: SongRecord | null): Partial<SongRecord> {
+  return {
     // Optional KO-pipeline fields: spread from the single donor so the trio
     // (media_context_ko, title_ko_source, title_ko_confidence) stays coherent.
     // Absence is preferred over undefined/null (schema uses optional, not nullable).
@@ -563,18 +524,73 @@ function mergeCluster(
       ? { title_ko_confidence: koDonor.title_ko_confidence }
       : {}),
   };
+}
 
+function recordTierCConflict(
+  conflicts: MergeConflict[],
+  cluster: SongRecord[],
+  winner: string,
+  tierBClusterKey: string | null,
+): void {
   // Tier C: emit one structured warning per cluster (NOT per record-pair) so
   // the cross-source merge surfaces in the crawl PR body. Sunset per §3.C.
-  if (wasTierC) {
-    const cKey = tierCKey(cluster[0] as SongRecord) ?? tierBClusterKey ?? '';
-    conflicts.push({
-      cluster_key: cKey,
-      field: 'tier_c_merge',
-      values: cluster.map((r) => ({ source: sourceSlug(r), value: r.id })),
-      winner: merged.id,
-    });
-  }
+  const cKey = tierCKey(cluster[0] as SongRecord) ?? tierBClusterKey ?? '';
+  conflicts.push({
+    cluster_key: cKey,
+    field: 'tier_c_merge',
+    values: cluster.map((r) => ({ source: sourceSlug(r), value: r.id })),
+    winner,
+  });
+}
+
+function mergeCluster(
+  cluster: SongRecord[],
+  wasTierB: boolean,
+  wasTierC: boolean,
+  conflicts: MergeConflict[],
+): SongRecord {
+  if (cluster.length === 0) throw new Error('empty cluster');
+
+  // Tier C clusters reuse Tier B's vendor-conflict reporting under the same
+  // `tierBKey` shape so existing PR-body aggregation continues to work.
+  const tierBClusterKey = wasTierB || wasTierC ? tierBKey(cluster[0] as SongRecord) : null;
+
+  const mergedArtistPrimary =
+    pickByOwnership(cluster, TITLE_ARTIST_CHAIN, (r) => r.artist_primary) ??
+    cluster[0]?.artist_primary ??
+    '';
+  const mergedAliases = mergeArtistAliases(cluster, mergedArtistPrimary);
+  // Pick the single donor record for the KO optional-field trio so that
+  // title_ko_source, title_ko_confidence, and media_context_ko stay paired
+  // with the record whose title_ko was selected. This preserves the schema
+  // cross-field constraint (title_ko_confidence valid only when
+  // title_ko_source === 'llm-translated') because both fields travel together
+  // from a donor that already satisfied the constraint.
+  const koDonor = pickKoDonor(cluster, KO_CHAIN);
+  const merged: SongRecord = {
+    id: pickByPriority(cluster, (r) => r.id),
+    source_url: pickByPriority(cluster, (r) => r.source_url),
+    title_primary:
+      pickByOwnership(cluster, TITLE_ARTIST_CHAIN, (r) => r.title_primary) ??
+      // Field is non-null in the schema; this fallback should be unreachable
+      // but is kept type-safe.
+      cluster[0]?.title_primary ??
+      '',
+    title_ko: pickByOwnership(cluster, KO_CHAIN, (r) => r.title_ko),
+    artist_primary: mergedArtistPrimary,
+    artist_ko: pickByOwnership(cluster, KO_CHAIN, (r) => r.artist_ko),
+    // Spec 2026-05-04: union artist_aliases across the cluster, filtering out
+    // any alias that equals the merged canonical (defense-in-depth — the
+    // resolver already excludes this case, but a Tier C cluster could pick a
+    // non-resolver-emitted canonical via `pickByOwnership`).
+    ...(mergedAliases !== undefined ? { artist_aliases: mergedAliases } : {}),
+    karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
+    categories: mergeCategories(cluster),
+    crawled_at: latestCrawledAt(cluster),
+    ...optionalKoFields(koDonor),
+  };
+
+  if (wasTierC) recordTierCConflict(conflicts, cluster, merged.id, tierBClusterKey);
 
   return merged;
 }
