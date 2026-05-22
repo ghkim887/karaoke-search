@@ -140,10 +140,7 @@ describe('writeTextAtomic — round-trip', () => {
 
 describe('loadCorpus — error paths', () => {
   it('throws on missing file', () => {
-    assert.throws(
-      () => loadCorpus('/nonexistent/path/songs.json'),
-      /ENOENT/,
-    );
+    assert.throws(() => loadCorpus('/nonexistent/path/songs.json'), /ENOENT/);
   });
 
   it('throws on malformed JSON', () => {
@@ -210,7 +207,11 @@ describe('loadValidator', () => {
 describe('prune-cache dist import — normalizeForMatch', () => {
   it('resolves from dist and returns a function', async () => {
     const mod = await import(pathToFileURL(CLUSTERING_DIST).href);
-    assert.equal(typeof mod.normalizeForMatch, 'function', 'normalizeForMatch must be exported from dist');
+    assert.equal(
+      typeof mod.normalizeForMatch,
+      'function',
+      'normalizeForMatch must be exported from dist',
+    );
   });
 
   it('strips whitespace, lowercases, and applies NFKC', async () => {
@@ -225,7 +226,11 @@ describe('prune-cache dist import — normalizeForMatch', () => {
 describe('prune-cache dist import — splitArtistCollab', () => {
   it('resolves from dist and returns a function', async () => {
     const mod = await import(pathToFileURL(CLUSTERING_DIST).href);
-    assert.equal(typeof mod.splitArtistCollab, 'function', 'splitArtistCollab must be exported from dist');
+    assert.equal(
+      typeof mod.splitArtistCollab,
+      'function',
+      'splitArtistCollab must be exported from dist',
+    );
   });
 
   it('whole string is always element 0', async () => {

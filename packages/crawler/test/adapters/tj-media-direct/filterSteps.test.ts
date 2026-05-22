@@ -11,8 +11,8 @@ import { describe, expect, it } from 'vitest';
 import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
 import {
   FILTER_STEPS,
-  buildFilterContext,
   type FilterContext,
+  buildFilterContext,
 } from '../../../src/adapters/tj-media-direct/filterSteps.js';
 import { splitArtistCollab } from '../../../src/adapters/tj-media-direct/normalize.js';
 
@@ -32,7 +32,11 @@ function makeCtx(overrides: Partial<FilterContext> = {}): FilterContext {
 }
 
 function jpnArtistEntry() {
-  return { code: 'JPN' as const, votes: { JPN: 3, KOR: 0, ENG: 0 }, lastSeen: '2026-04-29T00:00:00.000Z' };
+  return {
+    code: 'JPN' as const,
+    votes: { JPN: 3, KOR: 0, ENG: 0 },
+    lastSeen: '2026-04-29T00:00:00.000Z',
+  };
 }
 
 function enrichmentEntry(nationalcode: string) {
@@ -179,7 +183,11 @@ describe('jpn-admit-artist step', () => {
     // lead = components[1] = 'imase'
     const cache = emptyCache();
     cache.artistNationalityMap.imase = jpnArtistEntry();
-    const ctx = makeCtx({ artist: 'imase & なとり', components: splitArtistCollab('imase & なとり'), cache });
+    const ctx = makeCtx({
+      artist: 'imase & なとり',
+      components: splitArtistCollab('imase & なとり'),
+      cache,
+    });
     const v = step.evaluate(ctx);
     expect(v.decision).toBe('admit');
     if (v.decision === 'admit') expect(v.via).toBe('artist');
@@ -188,7 +196,7 @@ describe('jpn-admit-artist step', () => {
   it('returns pass when only the featured artist is JPN-tagged (lead is non-JPN)', () => {
     // Charlie Puth(Feat.宇多田ヒカル) — lead is 'charlie puth', not JPN
     const cache = emptyCache();
-    cache.artistNationalityMap['宇多田ヒカル'] = jpnArtistEntry();
+    cache.artistNationalityMap.宇多田ヒカル = jpnArtistEntry();
     const artist = 'Charlie Puth(Feat.宇多田ヒカル)';
     const ctx = makeCtx({ artist, components: splitArtistCollab(artist), cache });
     expect(step.evaluate(ctx).decision).toBe('pass');
@@ -376,7 +384,10 @@ describe('reducer short-circuit semantics', () => {
     let allPass = true;
     for (const step of FILTER_STEPS) {
       const v = step.evaluate(ctx);
-      if (v.decision !== 'pass') { allPass = false; break; }
+      if (v.decision !== 'pass') {
+        allPass = false;
+        break;
+      }
     }
     expect(allPass).toBe(true);
   });

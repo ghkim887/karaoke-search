@@ -32,8 +32,8 @@ describe('applyManualFixesToCorpus', () => {
   it('applies a fix across NFKC-equivalent CJK Compatibility Ideographs', () => {
     // Same render, different code point: U+F90A (compat) vs U+91D1 (canonical)
     // for 金. `===` returns false but NFKC normalizes them equal.
-    const corpusTitle = `白\u{F90A}ディスコ`;
-    const fixTitle = `白\u{91D1}ディスコ`;
+    const corpusTitle = '白\u{F90A}ディスコ';
+    const fixTitle = '白\u{91D1}ディスコ';
     const records = [baseRecord({ title_primary: corpusTitle })];
     const fixes = [{ id: 'tj-1', title_primary: fixTitle, title_ko: '백금 디스코' }];
     const result = applyManualFixesToCorpus(records, fixes);

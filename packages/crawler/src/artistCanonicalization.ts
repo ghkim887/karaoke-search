@@ -57,7 +57,11 @@ export const CANONICALIZATION_RULES: CanonicalizationRule[] = [
   { from: 'Ano', to: 'ano', reason: '30 vs 3 records' },
   { from: 'Chemistry', to: 'CHEMISTRY', reason: '14 vs 1 record' },
   { from: 'Luna Sea', to: 'Luna sea', reason: '12 vs 1 record' },
-  { from: 'タッキー&翼', to: 'タッキー＆翼', reason: '11 vs 1 record (full-width & normalization)' },
+  {
+    from: 'タッキー&翼',
+    to: 'タッキー＆翼',
+    reason: '11 vs 1 record (full-width & normalization)',
+  },
   { from: 'Lia', to: 'LIA', reason: '3 vs 3 records — alphabetical tiebreak' },
   { from: 'Hitomi', to: 'hitomi', reason: '4 vs 1 record' },
   { from: 'TK from 凛として時雨', to: 'TK From 凛として時雨', reason: '2 vs 1 record' },
@@ -69,9 +73,7 @@ export const CANONICALIZATION_RULES: CanonicalizationRule[] = [
  * Exact-string lookup map built from CANONICALIZATION_RULES for O(1) lookup.
  * Key = `from` surface form (exact, case-sensitive); value = `to` form.
  */
-const _ruleMap = new Map<string, string>(
-  CANONICALIZATION_RULES.map((r) => [r.from, r.to]),
-);
+const _ruleMap = new Map<string, string>(CANONICALIZATION_RULES.map((r) => [r.from, r.to]));
 
 /**
  * Returns the canonical surface form for `name` when it matches a

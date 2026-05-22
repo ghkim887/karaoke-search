@@ -16,7 +16,11 @@
       "**/*.tsbuildinfo",
       "**/songs.json",
       "apps/web/public/data/**",
-      "**/test/fixtures/**"
+      "**/test/fixtures/**",
+      "scripts/data/llm-translations-chunk-*.json",
+      "scripts/data/.stage2-stale/**",
+      "packages/schema/category-priority.json",
+      "packages/crawler/src/adapters/tj-media-direct/chinese-artist-drop-list.json"
     ]
   },
   "organizeImports": {

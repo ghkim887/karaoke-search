@@ -3,7 +3,10 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
-import { classifyRecord, parseCatalogResponse } from '../../../src/adapters/tj-media-direct/parser.js';
+import {
+  classifyRecord,
+  parseCatalogResponse,
+} from '../../../src/adapters/tj-media-direct/parser.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const FIXTURE_PATH = resolve(HERE, '../../fixtures/tj-media-direct/catalog-sample.json');
@@ -644,7 +647,9 @@ describe('parseCatalogResponse — Chinese-artist drop-list reject', () => {
     const json = {
       resultCode: '99',
       resultData: {
-        items: [{ pro: 12345, indexTitle: 'Lemon', indexSong: '米津玄師', publishdate: '2018-03-14' }],
+        items: [
+          { pro: 12345, indexTitle: 'Lemon', indexSong: '米津玄師', publishdate: '2018-03-14' },
+        ],
       },
     };
     const cache = emptyCache();

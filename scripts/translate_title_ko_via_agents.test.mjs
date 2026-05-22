@@ -396,8 +396,8 @@ describe('applyDecisionsToCorpus', () => {
     // Ideograph for 金) in the corpus, while the cached decision uses U+91D1.
     // These render identically and NFKC-normalize equal, but `===` returns
     // false — silently dropping ~translation on every CI run before the fix.
-    const corpusTitle = `白\u{F90A}ディスコ`;
-    const cacheTitle = `白\u{91D1}ディスコ`;
+    const corpusTitle = '白\u{F90A}ディスコ';
+    const cacheTitle = '白\u{91D1}ディスコ';
     const records = [{ id: 'tj-1', title_ko: null, title_primary: corpusTitle }];
     const decisions = new Map([
       [

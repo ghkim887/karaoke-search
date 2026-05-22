@@ -128,19 +128,16 @@ describe('categories — rejection cases', () => {
     [['jpop', 'vocaloid']], // maxItems violation
     [['jpop', 'anime', 'vocaloid']], // maxItems violation
   ])('rejects categories=%j', (cats) => {
-    expect(() =>
-      validateSongRecord(makeRecord({ categories: cats as Category[] })),
-    ).toThrowError(/categories/);
+    expect(() => validateSongRecord(makeRecord({ categories: cats as Category[] }))).toThrowError(
+      /categories/,
+    );
   });
 });
 
 describe('categories — accepted single-tag values', () => {
-  it.each<[Category]>([['jpop'], ['anime'], ['vocaloid']])(
-    'accepts categories: [%j]',
-    (cat) => {
-      expect(() => validateSongRecord(makeRecord({ categories: [cat] }))).not.toThrow();
-    },
-  );
+  it.each<[Category]>([['jpop'], ['anime'], ['vocaloid']])('accepts categories: [%j]', (cat) => {
+    expect(() => validateSongRecord(makeRecord({ categories: [cat] }))).not.toThrow();
+  });
 });
 
 describe('artist_aliases — optional field (spec 2026-05-04)', () => {
@@ -202,9 +199,9 @@ describe('SongRecord — media_context_ko', () => {
   });
 
   it('rejects media_context_ko with unclosed paren', () => {
-    expect(() =>
-      validateSongRecord(makeRecord({ media_context_ko: '(unclosed' })),
-    ).toThrowError(/media_context_ko/);
+    expect(() => validateSongRecord(makeRecord({ media_context_ko: '(unclosed' }))).toThrowError(
+      /media_context_ko/,
+    );
   });
 });
 
@@ -267,9 +264,7 @@ describe('SongRecord — title_ko_confidence', () => {
   // title_ko_source: 'manual' cross-field tests — cross-field rule says
   // title_ko_confidence is ONLY valid with title_ko_source === 'llm-translated'.
   it('accepts title_ko_source = manual with no confidence', () => {
-    expect(() =>
-      validateSongRecord(makeRecord({ title_ko_source: 'manual' })),
-    ).not.toThrow();
+    expect(() => validateSongRecord(makeRecord({ title_ko_source: 'manual' }))).not.toThrow();
   });
 
   it('rejects title_ko_source = manual paired with confidence', () => {

@@ -193,6 +193,7 @@ export const songRecordSchema = {
         },
         required: ['title_ko_confidence'],
       },
+      // biome-ignore lint/suspicious/noThenProperty: JSON Schema conditional keyword, not a Promise-like object.
       then: {
         properties: {
           title_ko_source: { const: 'llm-translated' },

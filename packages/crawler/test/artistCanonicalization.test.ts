@@ -1,10 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import type { SongRecord } from '@karaoke/schema';
-import {
-  CANONICALIZATION_RULES,
-  canonicalizeArtistName,
-} from '../src/artistCanonicalization.js';
+import { describe, expect, it } from 'vitest';
 import { resolveArtistAliases } from '../src/aliases.js';
+import { CANONICALIZATION_RULES, canonicalizeArtistName } from '../src/artistCanonicalization.js';
 
 // ---------------------------------------------------------------------------
 // canonicalizeArtistName — pure function unit tests

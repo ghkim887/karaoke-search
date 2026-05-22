@@ -1,5 +1,5 @@
 import { applyCategoryExclusivity as applyCategoryExclusivitySet } from '@karaoke/category-rules';
-import { type Category, type KaraokeNumbers, type SongRecord } from '@karaoke/schema';
+import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { getLeadComponent } from './clustering.js';
 import { normalize } from './normalize.js';
 
@@ -431,9 +431,13 @@ function mergeCluster(
     // Optional KO-pipeline fields: spread from the single donor so the trio
     // (media_context_ko, title_ko_source, title_ko_confidence) stays coherent.
     // Absence is preferred over undefined/null (schema uses optional, not nullable).
-    ...(koDonor?.media_context_ko !== undefined ? { media_context_ko: koDonor.media_context_ko } : {}),
+    ...(koDonor?.media_context_ko !== undefined
+      ? { media_context_ko: koDonor.media_context_ko }
+      : {}),
     ...(koDonor?.title_ko_source !== undefined ? { title_ko_source: koDonor.title_ko_source } : {}),
-    ...(koDonor?.title_ko_confidence !== undefined ? { title_ko_confidence: koDonor.title_ko_confidence } : {}),
+    ...(koDonor?.title_ko_confidence !== undefined
+      ? { title_ko_confidence: koDonor.title_ko_confidence }
+      : {}),
   };
 
   // Tier C: emit one structured warning per cluster (NOT per record-pair) so

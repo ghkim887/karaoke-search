@@ -9,9 +9,9 @@
   "scripts": {
     "lint": "biome check .",
     "format": "biome format --write .",
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "build": "corepack pnpm -r build",
+    "test": "corepack pnpm -r test",
+    "typecheck": "corepack pnpm -r typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4"

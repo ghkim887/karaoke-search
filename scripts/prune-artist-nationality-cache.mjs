@@ -124,7 +124,7 @@ async function main() {
 
   const sizeAfter = statSync(CACHE_PATH).size;
 
-  console.log(`prune-artist-nationality-cache:`);
+  console.log('prune-artist-nationality-cache:');
   console.log(`  total_in:          ${totalIn}`);
   console.log(`  total_kept:        ${totalKept}`);
   console.log(`  total_dropped:     ${totalDropped}`);

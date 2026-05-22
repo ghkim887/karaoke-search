@@ -280,9 +280,7 @@ export class TJDirectCrawler implements Crawler {
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(
-        `[tj-search] cache save failed at ${this.cachePath} (${label}): ${msg}`,
-      );
+      console.warn(`[tj-search] cache save failed at ${this.cachePath} (${label}): ${msg}`);
       return false;
     }
   }
