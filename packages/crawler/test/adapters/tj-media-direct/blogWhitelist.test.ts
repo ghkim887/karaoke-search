@@ -42,8 +42,12 @@ describe('shouldAdmitArtistToWhitelist (PR-3 script-signal trim)', () => {
 });
 
 describe('buildBlogWhitelist (PR-3 trim)', () => {
-  function rec(artist: string | null, tj: string | null): BlogWhitelistRecord {
-    return { artist_primary: artist, karaoke_numbers: { tj } };
+  function rec(
+    artist: string | null,
+    tj: string | null,
+    overrides: Partial<BlogWhitelistRecord> = {},
+  ): BlogWhitelistRecord {
+    return { id: 'blog-test', artist_primary: artist, karaoke_numbers: { tj }, ...overrides };
   }
 
   it('admits genuine JP records and skips Han-only / Hangul-only entries', () => {
@@ -91,6 +95,26 @@ describe('buildBlogWhitelist (PR-3 trim)', () => {
       const msg = log.mock.calls[0]?.[0] as string;
       expect(msg).toMatch(/kept 1 of 3 records/);
       expect(msg).toMatch(/skipped 2/);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('only admits records that actually originate from the blog corpus', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        rec('YOASOBI', '11111', { id: 'blog-1-0' }),
+        rec('Ado', '22222', { source_url: 'https://j-pop-playlist.tistory.com/123' }),
+        rec('LISA', '33333', { id: 'tj-33333' }),
+        rec('GUMI', '44444', { id: 'tjpdf-44444' }),
+      ]);
+
+      expect(set.has('11111')).toBe(true);
+      expect(set.has('22222')).toBe(true);
+      expect(set.has('33333')).toBe(false);
+      expect(set.has('44444')).toBe(false);
+      expect(set.size).toBe(2);
     } finally {
       log.mockRestore();
     }

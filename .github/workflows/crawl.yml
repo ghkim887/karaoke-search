@@ -172,4 +172,6 @@ jobs:
           title: "data: weekly crawl ${{ github.run_id }}"
           body-path: ${{ runner.temp }}/pr_body.md
           labels: crawl-output
-          add-paths: apps/web/public/data/songs.json
+          add-paths: |
+            apps/web/public/data/songs.json
+            apps/web/public/data/tj-search-cache.json

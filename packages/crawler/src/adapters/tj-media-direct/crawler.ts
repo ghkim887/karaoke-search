@@ -330,6 +330,8 @@ function asArtistShell(item: Record<string, unknown>): {
  * accepting a narrower interface keeps the unit tests trivial to set up.
  */
 export interface BlogWhitelistRecord {
+  id?: string | null | undefined;
+  source_url?: string | null | undefined;
   artist_primary: string | null | undefined;
   karaoke_numbers: { tj?: string | null };
 }
@@ -370,6 +372,13 @@ export function shouldAdmitArtistToWhitelist(artist: string | null | undefined):
   return true;
 }
 
+function isBlogOriginRecord(rec: BlogWhitelistRecord): boolean {
+  if (typeof rec.id === 'string' && rec.id.startsWith('blog-')) return true;
+  return (
+    typeof rec.source_url === 'string' && rec.source_url.includes('j-pop-playlist.tistory.com')
+  );
+}
+
 /**
  * Build the rescue-path TJ# whitelist from an in-memory blog-corpus record
  * array. Extracted from `defaultBlogWhitelistSource` so unit tests can
@@ -385,9 +394,14 @@ export function buildBlogWhitelist(
   const tjs = new Set<string>();
   let kept = 0;
   let skipped = 0;
+  let skippedNonBlogOrigin = 0;
   for (const rec of records) {
     const tj = rec.karaoke_numbers?.tj;
     if (typeof tj !== 'string' || tj === '') continue;
+    if (!isBlogOriginRecord(rec)) {
+      skippedNonBlogOrigin++;
+      continue;
+    }
     if (!shouldAdmitArtistToWhitelist(rec.artist_primary)) {
       skipped++;
       continue;
@@ -396,7 +410,7 @@ export function buildBlogWhitelist(
     kept++;
   }
   console.log(
-    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped} records (skipped ${skipped} with Han-only / Hangul artist names)`,
+    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped + skippedNonBlogOrigin} records (skipped ${skipped} with Han-only / Hangul artist names, ${skippedNonBlogOrigin} non-blog-origin)`,
   );
   return tjs;
 }
@@ -422,6 +436,11 @@ function defaultBlogWhitelistSource(): ReadonlySet<string> {
       const tjRaw = (numbersRaw as { tj?: unknown }).tj;
       const artistRaw = (rec as { artist_primary?: unknown }).artist_primary;
       records.push({
+        id: typeof (rec as { id?: unknown }).id === 'string' ? (rec as { id: string }).id : null,
+        source_url:
+          typeof (rec as { source_url?: unknown }).source_url === 'string'
+            ? (rec as { source_url: string }).source_url
+            : null,
         artist_primary: typeof artistRaw === 'string' ? artistRaw : null,
         karaoke_numbers: { tj: typeof tjRaw === 'string' ? tjRaw : null },
       });
