@@ -205,6 +205,86 @@ function unionIndexedDuplicates(uf: UnionFind, indexes: Iterable<Map<string, num
   }
 }
 
+function countRoots(uf: UnionFind, size: number): Map<number, number> {
+  const sizeByRoot = new Map<number, number>();
+  for (let i = 0; i < size; i++) {
+    const root = uf.find(i);
+    sizeByRoot.set(root, (sizeByRoot.get(root) ?? 0) + 1);
+  }
+  return sizeByRoot;
+}
+
+function groupSingletonsByKey(
+  records: SongRecord[],
+  uf: UnionFind,
+  sizeByRoot: Map<number, number>,
+  keyForRecord: (record: SongRecord) => string | null,
+): Map<string, number[]> {
+  const groups = new Map<string, number[]>();
+  for (let i = 0; i < records.length; i++) {
+    const root = uf.find(i);
+    if (sizeByRoot.get(root) !== 1) continue;
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const key = keyForRecord(records[i]!);
+    if (key === null) continue;
+    addToIndex(groups, key, i);
+  }
+  return groups;
+}
+
+function unionIndexGroups(uf: UnionFind, groups: Iterable<number[]>): Set<number> {
+  const roots = new Set<number>();
+  for (const idxs of groups) {
+    if (idxs.length < 2) continue;
+    // biome-ignore lint/style/noNonNullAssertion: length >= 2
+    const first = idxs[0]!;
+    for (let k = 1; k < idxs.length; k++) {
+      // biome-ignore lint/style/noNonNullAssertion: k in bounds
+      uf.union(first, idxs[k]!);
+    }
+    roots.add(uf.find(first));
+  }
+  return roots;
+}
+
+function hasMultipleSourceSlugs(records: SongRecord[], idxs: number[]): boolean {
+  const slugs = new Set<string>();
+  for (const i of idxs) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    slugs.add(sourceSlug(records[i]!));
+  }
+  return slugs.size >= 2;
+}
+
+function hasVocaloidFeatAsymmetry(records: SongRecord[], idxs: number[]): boolean {
+  let withFeat = 0;
+  let withoutFeat = 0;
+  let allVocaloid = true;
+  for (const i of idxs) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const r = records[i]!;
+    if (hasFeatParen(r.artist_primary)) withFeat++;
+    else withoutFeat++;
+    if (!r.categories.includes('vocaloid')) allVocaloid = false;
+  }
+  return withFeat === 1 && withoutFeat >= 1 && allVocaloid;
+}
+
+function shouldUnionTierCGroup(records: SongRecord[], idxs: number[]): boolean {
+  return hasMultipleSourceSlugs(records, idxs) || hasVocaloidFeatAsymmetry(records, idxs);
+}
+
+function collectClusters(uf: UnionFind, size: number): Map<number, number[]> {
+  const clusters = new Map<number, number[]>();
+  for (let i = 0; i < size; i++) {
+    const root = uf.find(i);
+    const arr = clusters.get(root);
+    if (arr) arr.push(i);
+    else clusters.set(root, [i]);
+  }
+  return clusters;
+}
+
 // --- Per-field ownership ------------------------------------------------
 
 /**
@@ -561,36 +641,12 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   // A record is "still alone" iff its UF root only points to itself among
   // the input set. Compute cluster sizes first, then group singletons by
   // tierBKey and union them.
-  const sizeByRoot = new Map<number, number>();
-  for (let i = 0; i < n; i++) {
-    const root = uf.find(i);
-    sizeByRoot.set(root, (sizeByRoot.get(root) ?? 0) + 1);
-  }
-
-  const tierBGroups = new Map<string, number[]>();
-  for (let i = 0; i < n; i++) {
-    const root = uf.find(i);
-    if (sizeByRoot.get(root) !== 1) continue;
-    // biome-ignore lint/style/noNonNullAssertion: i in bounds
-    const key = tierBKey(records[i]!);
-    const arr = tierBGroups.get(key);
-    if (arr) arr.push(i);
-    else tierBGroups.set(key, [i]);
-  }
+  const sizeByRoot = countRoots(uf, n);
+  const tierBGroups = groupSingletonsByKey(records, uf, sizeByRoot, tierBKey);
 
   // Track which roots were formed via Tier B so we can scope conflict
   // detection to those clusters only.
-  const tierBRoots = new Set<number>();
-  for (const idxs of tierBGroups.values()) {
-    if (idxs.length < 2) continue;
-    // biome-ignore lint/style/noNonNullAssertion: length >= 2
-    const first = idxs[0]!;
-    for (let k = 1; k < idxs.length; k++) {
-      // biome-ignore lint/style/noNonNullAssertion: k in bounds
-      uf.union(first, idxs[k]!);
-    }
-    tierBRoots.add(uf.find(first));
-  }
+  const tierBRoots = unionIndexGroups(uf, tierBGroups.values());
 
   // --- Tier C: cross-source residual-singleton clustering ---
   // After Tier B, compute cluster sizes; records still in singletons go
@@ -605,88 +661,20 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   // was 3 × O(n) where one pass would suffice. This still does TWO passes
   // because `sizeAfterB.get(root)` requires every root to be counted before
   // any singleton is filtered — so we count, then group.
-  const sizeAfterB = new Map<number, number>();
-  for (let i = 0; i < n; i++) {
-    const root = uf.find(i);
-    sizeAfterB.set(root, (sizeAfterB.get(root) ?? 0) + 1);
-  }
-
-  const tierCGroups = new Map<string, number[]>();
-  for (let i = 0; i < n; i++) {
-    const root = uf.find(i);
-    if (sizeAfterB.get(root) !== 1) continue;
-    // biome-ignore lint/style/noNonNullAssertion: i in bounds
-    const key = tierCKey(records[i]!);
-    if (key === null) continue;
-    const arr = tierCGroups.get(key);
-    if (arr) arr.push(i);
-    else tierCGroups.set(key, [i]);
-  }
-
+  const sizeAfterB = countRoots(uf, n);
+  const tierCGroups = groupSingletonsByKey(records, uf, sizeAfterB, tierCKey);
   const tierCRoots = new Set<number>();
   for (const idxs of tierCGroups.values()) {
     if (idxs.length < 2) continue;
     // Cross-source gate: clusters where ≥2 distinct source prefixes are
     // represented always admit. Same-source clusters require an additional
     // signal of duplication.
-    const slugs = new Set<string>();
-    for (const i of idxs) {
-      // biome-ignore lint/style/noNonNullAssertion: i in bounds
-      slugs.add(sourceSlug(records[i]!));
-    }
-    if (slugs.size < 2) {
-      // Feat-asymmetry exception (Bug 3 fix, 2026-05-03): admit a same-source
-      // cluster when ALL of:
-      //   1. EXACTLY ONE member carries a `(Feat. X)`/`(Prod. X)` paren and
-      //      the other(s) do not (feat-decoration asymmetry).
-      //   2. ALL members are tagged `vocaloid`.
-      //
-      // Condition 1 identifies the 40mP-class pattern: the same source
-      // publishes the song twice, once crediting the voicebank feat. and once
-      // without. Condition 2 is the BTS-IDOL discriminator: BTS-IDOL is
-      // `jpop`, so it fails condition 2 and stays unmerged even though it
-      // shares the same feat-decoration asymmetry. ナユタン星人 太陽系デスコ is
-      // `vocaloid` + feat-asymmetric, so it now correctly merges (the prior
-      // behavior was a false negative documenting the original bug).
-      //
-      // Why vocaloid-only (not vocaloid+anime): anime collab features are
-      // sometimes genuinely distinct releases (guest vocalists for OP/ED
-      // singles). Conservative scope; broaden if a similar class surfaces.
-      // Vocaloid is also occasionally a distinct-release surface (a producer
-      // publishing a `(Feat.鏡音リン)` Rin variant alongside a `(Feat.初音ミク)`
-      // Miku variant is two different tracks), so the vocaloid scope is itself
-      // a conservative bound — if a regression case surfaces in a future
-      // replay-merger run, tighten further (e.g. require the lead component to
-      // be a known-Vocaloid-producer alias).
-      let withFeat = 0;
-      let withoutFeat = 0;
-      let allVocaloid = true;
-      for (const i of idxs) {
-        // biome-ignore lint/style/noNonNullAssertion: i in bounds
-        const r = records[i]!;
-        if (hasFeatParen(r.artist_primary)) withFeat++;
-        else withoutFeat++;
-        if (!r.categories.includes('vocaloid')) allVocaloid = false;
-      }
-      if (!(withFeat === 1 && withoutFeat >= 1 && allVocaloid)) continue;
-    }
-    // biome-ignore lint/style/noNonNullAssertion: length >= 2
-    const first = idxs[0]!;
-    for (let k = 1; k < idxs.length; k++) {
-      // biome-ignore lint/style/noNonNullAssertion: k in bounds
-      uf.union(first, idxs[k]!);
-    }
-    tierCRoots.add(uf.find(first));
+    if (!shouldUnionTierCGroup(records, idxs)) continue;
+    for (const root of unionIndexGroups(uf, [idxs])) tierCRoots.add(root);
   }
 
   // --- Materialize clusters ---
-  const clusters = new Map<number, number[]>();
-  for (let i = 0; i < n; i++) {
-    const root = uf.find(i);
-    const arr = clusters.get(root);
-    if (arr) arr.push(i);
-    else clusters.set(root, [i]);
-  }
+  const clusters = collectClusters(uf, n);
 
   const merged: SongRecord[] = [];
   for (const [root, idxs] of clusters) {
