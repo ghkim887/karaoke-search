@@ -543,6 +543,34 @@ function recordTierCConflict(
   });
 }
 
+function compareNullableTj(a: string | null, b: string | null): number {
+  // Null TJ records sort last regardless of the other side's codepoint.
+  if (a === null && b !== null) return 1;
+  if (a !== null && b === null) return -1;
+  if (a !== null && b !== null) {
+    if (a < b) return -1;
+    if (a > b) return 1;
+  }
+  return 0;
+}
+
+function compareMergedRecords(a: SongRecord, b: SongRecord): number {
+  const tjOrder = compareNullableTj(a.karaoke_numbers.tj, b.karaoke_numbers.tj);
+  if (tjOrder !== 0) return tjOrder;
+
+  const an = normalize(a.title_primary);
+  const bn = normalize(b.title_primary);
+  if (an < bn) return -1;
+  if (an > bn) return 1;
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
+  return 0;
+}
+
+function sortMergedRecords(records: SongRecord[]): void {
+  records.sort(compareMergedRecords);
+}
+
 function mergeCluster(
   cluster: SongRecord[],
   wasTierB: boolean,
@@ -713,24 +741,7 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   // U+D800–DBFF, which is below U+FFFF. A future TJ vendor change to non-
   // ASCII codes (or a hostile fixture) would silently flip the sort. Explicit
   // null-handling removes the tripwire.
-  merged.sort((a, b) => {
-    const at = a.karaoke_numbers.tj;
-    const bt = b.karaoke_numbers.tj;
-    // Null TJ records sort last regardless of the other side's codepoint.
-    if (at === null && bt !== null) return 1;
-    if (at !== null && bt === null) return -1;
-    if (at !== null && bt !== null) {
-      if (at < bt) return -1;
-      if (at > bt) return 1;
-    }
-    const an = normalize(a.title_primary);
-    const bn = normalize(b.title_primary);
-    if (an < bn) return -1;
-    if (an > bn) return 1;
-    if (a.id < b.id) return -1;
-    if (a.id > b.id) return 1;
-    return 0;
-  });
+  sortMergedRecords(merged);
 
   return { records: merged, conflicts };
 }
