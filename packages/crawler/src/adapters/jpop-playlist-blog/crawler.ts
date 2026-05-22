@@ -2,6 +2,7 @@ import { applyCategoryExclusivity } from '@karaoke/category-rules';
 import type { Category, SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
+import { resolveCrawlLimit } from '../limit.js';
 import { parseIndexPage } from './index-parser.js';
 import { normalizeRawRecords } from './normalizer.js';
 import { parseArtistPage } from './parser.js';
@@ -101,10 +102,7 @@ export class BlogCrawler implements Crawler {
   constructor(private http: HttpClient) {}
 
   async *crawl(options?: CrawlOptions): AsyncIterable<SongRecord> {
-    const limit =
-      options?.limit !== undefined && Number.isFinite(options.limit) && options.limit > 0
-        ? options.limit
-        : Number.POSITIVE_INFINITY;
+    const limit = resolveCrawlLimit(options);
 
     // 1. Fetch and parse each index page. Index failures are critical.
     const pathToCategories = new Map<string, Set<Category>>();

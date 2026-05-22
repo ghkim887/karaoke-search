@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
+import { resolveCrawlLimit } from '../limit.js';
 import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
 import type { SearchSongCache } from './cache.js';
 import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
@@ -131,10 +132,7 @@ export class TJDirectCrawler implements Crawler {
   }
 
   async *crawl(options?: CrawlOptions): AsyncIterable<SongRecord> {
-    const limit =
-      options?.limit !== undefined && Number.isFinite(options.limit) && options.limit > 0
-        ? options.limit
-        : Number.POSITIVE_INFINITY;
+    const limit = resolveCrawlLimit(options);
 
     const crawledAt = new Date().toISOString();
 
