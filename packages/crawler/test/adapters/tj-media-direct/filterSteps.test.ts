@@ -64,7 +64,7 @@ function getStep(name: string) {
 describe('FILTER_STEPS — pipeline shape', () => {
   const EXPECTED_NAMES = [
     'drop-list-reject',
-    'kor-reject',
+    'non-jpn-pro-reject',
     'jpn-admit-artist',
     'jpn-admit-pro',
     'blog-rescue',
@@ -127,11 +127,11 @@ describe('drop-list-reject step', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Step 1: kor-reject
+// Step 1: non-jpn-pro-reject
 // ---------------------------------------------------------------------------
 
-describe('kor-reject step', () => {
-  const step = getStep('kor-reject');
+describe('non-jpn-pro-reject step', () => {
+  const step = getStep('non-jpn-pro-reject');
 
   it('returns reject when proEnrichmentMap[tj] has nationalcode KOR', () => {
     const cache = emptyCache();
@@ -139,7 +139,16 @@ describe('kor-reject step', () => {
     const ctx = makeCtx({ tj: '99', cache });
     const v = step.evaluate(ctx);
     expect(v.decision).toBe('reject');
-    if (v.decision === 'reject') expect(v.reason).toBe('pro-kor');
+    if (v.decision === 'reject') expect(v.reason).toBe('pro-non-jpn');
+  });
+
+  it('returns reject when proEnrichmentMap[tj] has an explicit non-JPN nationalcode', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['99'] = enrichmentEntry('ENG');
+    const ctx = makeCtx({ tj: '99', cache, force: new Set(['99']) });
+    const v = step.evaluate(ctx);
+    expect(v.decision).toBe('reject');
+    if (v.decision === 'reject') expect(v.reason).toBe('pro-non-jpn');
   });
 
   it('returns pass when proEnrichmentMap[tj] has nationalcode JPN', () => {
@@ -319,10 +328,10 @@ describe('reducer short-circuit semantics', () => {
     expect(stepsReached).toBe(1);
   });
 
-  it('stops at kor-reject and does NOT continue to admit steps', () => {
-    // KOR-tagged pro should stop at step 1.
+  it('stops at non-jpn-pro-reject and does NOT continue to admit steps', () => {
+    // Non-JPN-tagged pro should stop at step 1.
     const cache = emptyCache();
-    cache.proEnrichmentMap['99'] = enrichmentEntry('KOR');
+    cache.proEnrichmentMap['99'] = enrichmentEntry('ENG');
     cache.artistNationalityMap.yoasobi = jpnArtistEntry();
     const ctx = buildFilterContext('99', 'YOASOBI', cache, new Set(['99']));
 
@@ -332,7 +341,7 @@ describe('reducer short-circuit semantics', () => {
       const v = step.evaluate(ctx);
       if (v.decision !== 'pass') break;
     }
-    // Should stop after step 1 (kor-reject)
+    // Should stop after step 1 (non-jpn-pro-reject)
     expect(stepsReached).toBe(2);
   });
 
