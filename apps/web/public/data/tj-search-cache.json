@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-12T09:59:10.759Z",
+  "generatedAt": "2026-05-23T02:27:40.637Z",
   "proEnrichmentMap": {
     "6101": {
       "nationalcode": "JPN",
@@ -30073,6 +30073,54 @@
       "subTitle": null,
       "publishdate": "2026-05-12",
       "lastSeen": "2026-05-12T09:59:10.759Z"
+    },
+    "52509": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "킬 더 노이즈(TV애니 '용사형에 처함 징벌용사 9004부대 형무기록' OST)",
+      "sortSongKo": null,
+      "subTitle": null,
+      "publishdate": "2026-05-19",
+      "lastSeen": "2026-05-23T02:22:32.595Z"
+    },
+    "52510": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "세레나아데(TV애니 '최애의 아이' 3기 ED)",
+      "sortSongKo": "나토리",
+      "subTitle": null,
+      "publishdate": "2026-05-19",
+      "lastSeen": "2026-05-23T02:02:08.524Z"
+    },
+    "52511": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "고오스토",
+      "sortSongKo": null,
+      "subTitle": null,
+      "publishdate": "2026-05-19",
+      "lastSeen": "2026-05-23T02:22:32.595Z"
+    },
+    "52512": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "아후타아 페인",
+      "sortSongKo": "밀그램 무우(CV:코우리 아리사)",
+      "subTitle": null,
+      "publishdate": "2026-05-21",
+      "lastSeen": "2026-05-23T02:22:32.595Z"
+    },
+    "52513": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "레푸리칸토",
+      "sortSongKo": "요루시카",
+      "subTitle": null,
+      "publishdate": "2026-05-21",
+      "lastSeen": "2026-05-23T02:22:32.595Z"
+    },
+    "52514": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "시오리(영화 '14세의 책갈피' OST)",
+      "sortSongKo": "크리프하이프",
+      "subTitle": null,
+      "publishdate": "2026-05-21",
+      "lastSeen": "2026-05-23T02:22:32.595Z"
     },
     "52565": {
       "nationalcode": "JPN",

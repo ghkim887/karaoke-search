@@ -72352,6 +72352,91 @@
     "title_ko_source": "blog"
   },
   {
+    "id": "tj-52509",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "Kill the Noise(TVアニメ '勇者刑に処す 懲罰勇者9004隊刑務記録' OST)",
+    "title_ko": "킬 더 노이즈(TV애니 '용사형에 처함 징벌용사 9004부대 형무기록' OST)",
+    "artist_primary": "SPYAIR",
+    "artist_ko": null,
+    "karaoke_numbers": {
+      "tj": "52509",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-23T02:22:32.595Z"
+  },
+  {
+    "id": "tj-52511",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "ゴースト",
+    "title_ko": "고오스토",
+    "artist_primary": "amazarashi",
+    "artist_ko": null,
+    "karaoke_numbers": {
+      "tj": "52511",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-23T02:22:32.595Z"
+  },
+  {
+    "id": "tj-52512",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "アフターペイン",
+    "title_ko": "아후타아 페인",
+    "artist_primary": "MILGRAM ムウ(CV:香里有佐)",
+    "artist_ko": "밀그램 무우(CV:코우리 아리사)",
+    "karaoke_numbers": {
+      "tj": "52512",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-23T02:22:32.595Z"
+  },
+  {
+    "id": "tj-52513",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "レプリカント",
+    "title_ko": "레푸리칸토",
+    "artist_primary": "ヨルシカ",
+    "artist_ko": "요루시카",
+    "karaoke_numbers": {
+      "tj": "52513",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-23T02:22:32.595Z"
+  },
+  {
+    "id": "tj-52514",
+    "source_url": "https://www.tjmedia.com/legacy/api/newSongOfMonth",
+    "title_primary": "栞(映画 '14歳の栞' OST)",
+    "title_ko": "시오리(영화 '14세의 책갈피' OST)",
+    "artist_primary": "クリープハイプ",
+    "artist_ko": "크리프하이프",
+    "karaoke_numbers": {
+      "tj": "52514",
+      "ky": null,
+      "joysound": null
+    },
+    "categories": [
+      "jpop"
+    ],
+    "crawled_at": "2026-05-23T02:22:32.595Z"
+  },
+  {
     "id": "blog-148-10",
     "source_url": "https://j-pop-playlist.tistory.com/148",
     "title_primary": "恋をしているみたいなの",
@@ -290669,14 +290754,14 @@
     "artist_primary": "なとり",
     "artist_ko": "나토리",
     "karaoke_numbers": {
-      "tj": null,
+      "tj": "52510",
       "ky": null,
       "joysound": "644030"
     },
     "categories": [
       "jpop"
     ],
-    "crawled_at": "2026-05-12T06:11:43.711Z",
+    "crawled_at": "2026-05-23T02:02:08.524Z",
     "title_ko_source": "blog"
   },
   {
