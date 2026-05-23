@@ -441,13 +441,18 @@ function isStrongJpLikelyCandidate(shell: CatalogShell): boolean {
 /**
  * Minimal record shape consumed by `buildBlogWhitelist`. The default source
  * reads `apps/web/public/data/songs.json` whose entries match `SongRecord`,
- * but the builder only needs `karaoke_numbers.tj` and `artist_primary` —
- * accepting a narrower interface keeps the unit tests trivial to set up.
+ * but the builder only needs a narrow projection — accepting a small interface
+ * keeps the unit tests trivial to set up.
+ *
+ * `title_primary` and `categories` are read by the direct-origin baseline
+ * rescue policy (tj-* / tjpdf-*); they are unused for blog-origin records.
  */
 export interface BlogWhitelistRecord {
   id?: string | null | undefined;
   source_url?: string | null | undefined;
   artist_primary: string | null | undefined;
+  title_primary?: string | null | undefined;
+  categories?: ReadonlyArray<string> | null | undefined;
   karaoke_numbers: { tj?: string | null };
 }
 
@@ -494,6 +499,50 @@ function isBlogOriginRecord(rec: BlogWhitelistRecord): boolean {
   );
 }
 
+function isDirectAcceptedCorpusRecord(rec: BlogWhitelistRecord): boolean {
+  if (typeof rec.id !== 'string') return false;
+  return rec.id.startsWith('tj-') || rec.id.startsWith('tjpdf-');
+}
+
+/**
+ * Direct-origin baseline rescue policy for `tj-*` / `tjpdf-*` records.
+ *
+ * Background: the full-workflow replay showed 38 trusted baseline TJ numbers
+ * being silently dropped because the rescue whitelist admitted only blog-origin
+ * records. Restoring all direct-origin records would re-leak the featured-only
+ * cases (e.g. `HOME / Charlie Puth(Feat.宇多田ヒカル) / [jpop]`), so the rescue
+ * here is narrow: admit only when the record carries a concrete JP signal that
+ * the featured-artist leak shape cannot satisfy.
+ *
+ * Admit if:
+ *   - `categories` contains `anime` or `vocaloid` (load-bearing JP signal —
+ *     these tags are essentially never non-JPN despite Latin surface form), OR
+ *   - `title_primary` contains hiragana or katakana (kana on the title, not on
+ *     a featured artist, is a property of the song itself).
+ *
+ * Deliberately rejected: artist kana. The leak shape we are protecting against
+ * has kana on a featured-artist component while the title is Latin and the
+ * category is plain jpop — relying on full-artist kana would re-admit exactly
+ * those records.
+ *
+ * Explicit non-JPN pro entries are still vetoed by `nonJpnProRejectStep` in
+ * the filter chain — this rescue only lifts the per-record drop, it does not
+ * override pro-level non-JPN evidence.
+ */
+function shouldAdmitDirectOriginRecord(rec: BlogWhitelistRecord): boolean {
+  const categories = rec.categories;
+  if (Array.isArray(categories)) {
+    for (const cat of categories) {
+      if (cat === 'anime' || cat === 'vocaloid') return true;
+    }
+  }
+  const title = rec.title_primary;
+  if (typeof title === 'string' && (RE_HIRAGANA.test(title) || RE_KATAKANA.test(title))) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Build the rescue-path TJ# whitelist from an in-memory blog-corpus record
  * array. Extracted from `defaultBlogWhitelistSource` so unit tests can
@@ -509,23 +558,29 @@ export function buildBlogWhitelist(
   const tjs = new Set<string>();
   let kept = 0;
   let skipped = 0;
-  let skippedNonBlogOrigin = 0;
+  let keptDirect = 0;
+  let skippedUntrustedOrigin = 0;
   for (const rec of records) {
     const tj = rec.karaoke_numbers?.tj;
     if (typeof tj !== 'string' || tj === '') continue;
-    if (!isBlogOriginRecord(rec)) {
-      skippedNonBlogOrigin++;
+    if (isBlogOriginRecord(rec)) {
+      if (!shouldAdmitArtistToWhitelist(rec.artist_primary)) {
+        skipped++;
+        continue;
+      }
+      tjs.add(tj);
+      kept++;
       continue;
     }
-    if (!shouldAdmitArtistToWhitelist(rec.artist_primary)) {
-      skipped++;
+    if (isDirectAcceptedCorpusRecord(rec) && shouldAdmitDirectOriginRecord(rec)) {
+      tjs.add(tj);
+      keptDirect++;
       continue;
     }
-    tjs.add(tj);
-    kept++;
+    skippedUntrustedOrigin++;
   }
   console.log(
-    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped + skippedNonBlogOrigin} records (skipped ${skipped} with Han-only / Hangul artist names, ${skippedNonBlogOrigin} non-blog-origin)`,
+    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped + keptDirect + skippedUntrustedOrigin} records (skipped ${skipped} with Han-only / Hangul artist names, ${skippedUntrustedOrigin} non-blog-origin; direct-origin admits ${keptDirect})`,
   );
   return tjs;
 }
@@ -550,6 +605,11 @@ function defaultBlogWhitelistSource(): ReadonlySet<string> {
       if (!numbersRaw || typeof numbersRaw !== 'object') continue;
       const tjRaw = (numbersRaw as { tj?: unknown }).tj;
       const artistRaw = (rec as { artist_primary?: unknown }).artist_primary;
+      const titleRaw = (rec as { title_primary?: unknown }).title_primary;
+      const categoriesRaw = (rec as { categories?: unknown }).categories;
+      const categories = Array.isArray(categoriesRaw)
+        ? categoriesRaw.filter((c): c is string => typeof c === 'string')
+        : null;
       records.push({
         id: typeof (rec as { id?: unknown }).id === 'string' ? (rec as { id: string }).id : null,
         source_url:
@@ -557,6 +617,8 @@ function defaultBlogWhitelistSource(): ReadonlySet<string> {
             ? (rec as { source_url: string }).source_url
             : null,
         artist_primary: typeof artistRaw === 'string' ? artistRaw : null,
+        title_primary: typeof titleRaw === 'string' ? titleRaw : null,
+        categories,
         karaoke_numbers: { tj: typeof tjRaw === 'string' ? tjRaw : null },
       });
     }
