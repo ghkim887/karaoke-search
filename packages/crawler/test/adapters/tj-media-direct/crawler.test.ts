@@ -90,6 +90,25 @@ async function seedCacheForFixture(cachePath: string): Promise<void> {
   await writeFile(cachePath, `${JSON.stringify(seeded, null, 2)}\n`, 'utf8');
 }
 
+async function seedFreshEmptyCache(cachePath: string): Promise<void> {
+  const now = new Date().toISOString();
+  await writeFile(
+    cachePath,
+    `${JSON.stringify(
+      {
+        version: 2,
+        generatedAt: now,
+        bootstrappedAt: now,
+        proEnrichmentMap: {},
+        artistNationalityMap: {},
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
+}
+
 describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
   it('issues a single POST to the catalog endpoint with searchYm=200001 (disableEnrichment: empty cache drops everything except whitelist)', async () => {
     const captured: Captured[] = [];
@@ -260,6 +279,69 @@ describe('TJDirectCrawler.crawl — blog-whitelist rescue (path 3)', () => {
       expect(records.length).toBe(1);
       expect(records[0]?.karaoke_numbers.tj).toBe('11111');
       expect(records[0]?.artist_primary).toBe('GRANRODEO');
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('TJDirectCrawler.crawl — JP-likely drop rescue', () => {
+  it('rescues a kana-bearing dropped record when title-search confirms the exact pro as JPN', async () => {
+    const catalogBody = JSON.stringify({
+      resultCode: '99',
+      resultData: {
+        itemsTotalCount: 1,
+        items: [
+          {
+            pro: 68781,
+            indexTitle: 'アイドル',
+            indexSong: 'YOASOBI',
+            publishdate: '2023-05-24',
+          },
+        ],
+      },
+    });
+    const titleSearchBody = JSON.stringify({
+      resultCode: '99',
+      resultData: {
+        itemsTotalCount: 1,
+        items: [
+          {
+            pro: 68781,
+            indexTitle: 'アイドル',
+            indexSong: 'YOASOBI',
+            sortTitleKo: '아이도루',
+            sortSongKo: '요아소비',
+            nationalcode: 'JPN',
+            publishdate: '2023-05-24',
+          },
+        ],
+      },
+    });
+    const emptySearchBody = JSON.stringify({ resultCode: '98', resultData: { items: [] } });
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      postFormImpl: async (url, body) => {
+        if (url.includes('newSongOfMonth')) return { status: 200, body: catalogBody };
+        if (body.strType === '2') return { status: 200, body: emptySearchBody };
+        return { status: 200, body: titleSearchBody };
+      },
+    });
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      await seedFreshEmptyCache(cachePath);
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.karaoke_numbers.tj).toBe('68781');
+      expect(records[0]?.title_primary).toBe('アイドル');
+      expect(
+        captured.some((call) => call.body.strType === '1' && call.body.nationType === 'JPN'),
+      ).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

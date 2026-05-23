@@ -42,8 +42,12 @@ describe('shouldAdmitArtistToWhitelist (PR-3 script-signal trim)', () => {
 });
 
 describe('buildBlogWhitelist (PR-3 trim)', () => {
-  function rec(artist: string | null, tj: string | null): BlogWhitelistRecord {
-    return { artist_primary: artist, karaoke_numbers: { tj } };
+  function rec(
+    artist: string | null,
+    tj: string | null,
+    overrides: Partial<BlogWhitelistRecord> = {},
+  ): BlogWhitelistRecord {
+    return { id: 'blog-test', artist_primary: artist, karaoke_numbers: { tj }, ...overrides };
   }
 
   it('admits genuine JP records and skips Han-only / Hangul-only entries', () => {
@@ -91,6 +95,172 @@ describe('buildBlogWhitelist (PR-3 trim)', () => {
       const msg = log.mock.calls[0]?.[0] as string;
       expect(msg).toMatch(/kept 1 of 3 records/);
       expect(msg).toMatch(/skipped 2/);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('only admits records that actually originate from the blog corpus', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        rec('YOASOBI', '11111', { id: 'blog-1-0' }),
+        rec('Ado', '22222', { source_url: 'https://j-pop-playlist.tistory.com/123' }),
+        rec('LISA', '33333', { id: 'tj-33333' }),
+        rec('GUMI', '44444', { id: 'tjpdf-44444' }),
+      ]);
+
+      expect(set.has('11111')).toBe(true);
+      expect(set.has('22222')).toBe(true);
+      expect(set.has('33333')).toBe(false);
+      expect(set.has('44444')).toBe(false);
+      expect(set.size).toBe(2);
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
+
+describe('buildBlogWhitelist — direct-origin baseline rescue (tj-* / tjpdf-*)', () => {
+  function direct(
+    id: string,
+    tj: string,
+    title: string,
+    artist: string,
+    categories: string[],
+  ): BlogWhitelistRecord {
+    return {
+      id,
+      artist_primary: artist,
+      title_primary: title,
+      categories,
+      karaoke_numbers: { tj },
+    };
+  }
+
+  function rec(
+    artist: string | null,
+    tj: string | null,
+    overrides: Partial<BlogWhitelistRecord> = {},
+  ): BlogWhitelistRecord {
+    return { id: 'blog-test', artist_primary: artist, karaoke_numbers: { tj }, ...overrides };
+  }
+
+  it('admits a direct tj-* anime baseline record even when artist/title are Latin-only', () => {
+    // Real-corpus shape: tj-20142 family — Latin-only title/artist but
+    // categories=['anime'] is a load-bearing JP signal because anime OSTs
+    // are essentially never non-JPN despite Latin surface form.
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tj-12345', '12345', 'Cruel Angel Thesis', 'YOKO TAKAHASHI', ['anime']),
+      ]);
+      expect(set.has('12345')).toBe(true);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('admits a direct tjpdf-* vocaloid baseline record even when artist/title are Latin-only', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tjpdf-67890', '67890', 'World Is Mine', 'Hatsune Miku', ['vocaloid']),
+      ]);
+      expect(set.has('67890')).toBe(true);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('admits a direct tj-* jpop record when title_primary contains kana (hiragana)', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tj-11111', '11111', 'あいうえお', 'SomeJpAct', ['jpop']),
+      ]);
+      expect(set.has('11111')).toBe(true);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('admits a direct tj-* jpop record when title_primary contains kana (katakana)', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tj-22222', '22222', 'アイドル', 'YOASOBI', ['jpop']),
+      ]);
+      expect(set.has('22222')).toBe(true);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('does NOT admit a direct tj-* jpop record when only artist kana but title is Latin (featured-only leak shape: HOME / Charlie Puth(Feat.宇多田ヒカル))', () => {
+    // This is the precise shape we must NOT readmit:
+    //   title_primary = 'HOME'  (Latin, no kana)
+    //   artist_primary = 'Charlie Puth(Feat.宇多田ヒカル)'  (kana on the featured artist)
+    //   categories = ['jpop']
+    // Direct-origin rescue must NOT use artist kana as evidence — only
+    // title kana or anime/vocaloid category counts.
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tj-33333', '33333', 'HOME', 'Charlie Puth(Feat.宇多田ヒカル)', ['jpop']),
+      ]);
+      expect(set.has('33333')).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('does NOT admit a direct tj-* pure-jpop record with Latin-only title and no anime/vocaloid category', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tj-44444', '44444', 'Plain Latin Title', 'Latin Artist', ['jpop']),
+      ]);
+      expect(set.has('44444')).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('does NOT admit a direct tj-* record with no categories at all and no title kana', () => {
+    // Defensive: missing/empty categories must not count as anime/vocaloid.
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        direct('tj-55555', '55555', 'Plain Title', 'Plain Artist', []),
+      ]);
+      expect(set.has('55555')).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('preserves blog-origin behavior alongside direct-origin admits (mixed input)', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const set = buildBlogWhitelist([
+        // blog-origin: admitted via shouldAdmitArtistToWhitelist(artist) → kana
+        rec('YOASOBI', '10001'),
+        // blog-origin: skipped — Han-only artist
+        rec('王菲', '10002'),
+        // direct tj-* anime: admitted (Latin artist, anime category)
+        direct('tj-20001', '20001', 'Some Latin OP', 'Latin Artist', ['anime']),
+        // direct tj-* jpop + title kana: admitted
+        direct('tj-20002', '20002', 'カナタイトル', 'Latin Artist', ['jpop']),
+        // direct tj-* jpop + Latin title: NOT admitted (featured-only leak shape)
+        direct('tj-20003', '20003', 'HOME', 'Charlie Puth(Feat.宇多田ヒカル)', ['jpop']),
+      ]);
+      expect(set.has('10001')).toBe(true);
+      expect(set.has('10002')).toBe(false);
+      expect(set.has('20001')).toBe(true);
+      expect(set.has('20002')).toBe(true);
+      expect(set.has('20003')).toBe(false);
+      expect(set.size).toBe(3);
     } finally {
       log.mockRestore();
     }

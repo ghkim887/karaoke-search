@@ -1,8 +1,9 @@
 /**
  * Typed FilterStep[] reducer for the TJ-direct classifyRecord filter chain.
  *
- * CLAUDE.md gotcha: the filter chain ORDER IS LOAD-BEARING (spec §2.E / §2.C /
- * §2.B / per-pro JPN / blog-rescue). Do NOT reorder FILTER_STEPS.
+ * CLAUDE.md gotcha: the filter chain ORDER IS LOAD-BEARING (spec §2.E / explicit
+ * non-JPN pro reject / §2.B / per-pro JPN / blog-rescue). Do NOT reorder
+ * FILTER_STEPS.
  *
  * Each step returns a tagged FilterVerdict:
  *   - { decision: 'admit'; via: KeepVerdict }  → stop, keep the record
@@ -73,17 +74,19 @@ const dropListRejectStep: FilterStep = {
 };
 
 /**
- * Step 1 — Per-pro KOR-reject (§2.C).
+ * Step 1 — Explicit non-JPN pro reject.
  *
- * CLAUDE.md gotcha: an explicit KOR `nationalcode` from the searchSong
+ * CLAUDE.md gotcha: an explicit non-JPN `nationalcode` from the searchSong
  * enrichment overrules every admit path (including the blog rescue). Defense
- * against TJ catalog metadata corrections that lag the blog corpus.
+ * against stale or overly broad blog rescue data.
  */
-const korRejectStep: FilterStep = {
-  name: 'kor-reject',
+const nonJpnProRejectStep: FilterStep = {
+  name: 'non-jpn-pro-reject',
   evaluate({ tj, cache }): FilterVerdict {
     const proEntry = cache.proEnrichmentMap[tj];
-    if (proEntry?.nationalcode === 'KOR') return { decision: 'reject', reason: 'pro-kor' };
+    if (proEntry?.nationalcode && proEntry.nationalcode !== 'JPN') {
+      return { decision: 'reject', reason: 'pro-non-jpn' };
+    }
     return { decision: 'pass' };
   },
 };
@@ -129,8 +132,8 @@ const proJpnAdmitStep: FilterStep = {
  * Step 4 — Blog-whitelist rescue.
  *
  * CLAUDE.md gotcha: safety net for residual TJ-search index gaps. Already
- * gated by step 1's KOR-reject above. This is NOT dead code — a high
- * `admittedByRescue` count in KeepStats signals real JPN records the
+ * gated by step 1's explicit non-JPN pro reject above. This is NOT dead code —
+ * a high `admittedByRescue` count in KeepStats signals real JPN records the
  * searchSong index can't see.
  */
 const blogRescueStep: FilterStep = {
@@ -147,15 +150,15 @@ const blogRescueStep: FilterStep = {
 
 /**
  * Load-bearing filter step order per CLAUDE.md "TJ-direct filter chain" gotcha:
- *   0. drop-list-reject  — strongest negative signal, any-component
- *   1. kor-reject        — per-pro KOR overrides every admit path
- *   2. jpn-admit-artist  — lead-component-only JPN admit
- *   3. jpn-admit-pro     — per-pro JPN admit (catches AMBIGUOUS artists)
- *   4. blog-rescue       — safety net for TJ-search index gaps (NOT dead code)
+ *   0. drop-list-reject      — strongest negative signal, any-component
+ *   1. non-jpn-pro-reject    — explicit non-JPN pro overrides every admit path
+ *   2. jpn-admit-artist      — lead-component-only JPN admit
+ *   3. jpn-admit-pro         — per-pro JPN admit (catches AMBIGUOUS artists)
+ *   4. blog-rescue           — safety net for TJ-search index gaps (NOT dead code)
  */
 export const FILTER_STEPS: FilterStep[] = [
   dropListRejectStep,
-  korRejectStep,
+  nonJpnProRejectStep,
   jpnAdmitStep,
   proJpnAdmitStep,
   blogRescueStep,

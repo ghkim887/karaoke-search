@@ -6,13 +6,19 @@ import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { resolveCrawlLimit } from '../limit.js';
 import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
-import type { SearchSongCache } from './cache.js';
-import { isBootstrapFresh, loadCache, saveCache } from './cache.js';
+import {
+  type EnrichmentEntry,
+  type SearchSongCache,
+  isBootstrapFresh,
+  loadCache,
+  saveCache,
+} from './cache.js';
 import { enrichArtistMap } from './enrichArtistMap.js';
 import { enrichWithTranslit } from './enrichTranslit.js';
 import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA, extractCatalogItems } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
-import { parseCatalogResponse } from './parser.js';
+import { classifyRecord, parseCatalogResponse } from './parser.js';
+import { type SearchSongItem, searchSongByTitle } from './searchSong.js';
 
 const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 /** "all songs since 2000-01" — returns the full historical TJ catalog (~67k). */
@@ -200,10 +206,29 @@ export class TJDirectCrawler implements Crawler {
     }
 
     // Step 5: parse + filter.
-    const { records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+    let { records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
       cache,
       forceIncludeTjNumbers,
     });
+
+    if (!this.disableEnrichment) {
+      const rescueStats = await rescueJpLikelyDroppedRecords(
+        this.http,
+        allItems,
+        cache,
+        forceIncludeTjNumbers,
+      );
+      if (rescueStats.fetches > 0) cacheMutated = true;
+      if (rescueStats.admitted > 0) {
+        ({ records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+          cache,
+          forceIncludeTjNumbers,
+        }));
+      }
+      console.log(
+        `[tj-rescue] checked ${rescueStats.candidates} JP-likely drops — fetches ${rescueStats.fetches}, admitted ${rescueStats.admitted}, misses ${rescueStats.misses}, errors ${rescueStats.errors}, skipped-cached ${rescueStats.skippedCached}`,
+      );
+    }
 
     // Step 6: translit pass (PR-1).
     let enrichmentByPro: Map<string, TranslitEnrichment> | null = null;
@@ -305,6 +330,26 @@ function asArtistShell(item: Record<string, unknown>): {
   karaoke_numbers: { tj: string | null; ky: null; joysound: null };
   categories: ['jpop'];
 } | null {
+  const parsed = parseCatalogShell(item);
+  if (parsed === null) return null;
+  return {
+    source_url: CATALOG_URL,
+    title_primary: parsed.title,
+    title_ko: null,
+    artist_primary: parsed.artist,
+    artist_ko: null,
+    karaoke_numbers: { tj: parsed.tj, ky: null, joysound: null },
+    categories: ['jpop'],
+  };
+}
+
+interface CatalogShell {
+  tj: string;
+  title: string;
+  artist: string;
+}
+
+function parseCatalogShell(item: Record<string, unknown>): CatalogShell | null {
   const proRaw = item.pro;
   const title = typeof item.indexTitle === 'string' ? item.indexTitle.trim() : '';
   const artist = typeof item.indexSong === 'string' ? item.indexSong.trim() : '';
@@ -312,25 +357,102 @@ function asArtistShell(item: Record<string, unknown>): {
   if (typeof proRaw === 'number' && Number.isFinite(proRaw)) tj = String(proRaw);
   else if (typeof proRaw === 'string' && proRaw.trim() !== '') tj = proRaw.trim();
   if (!tj || !title || !artist) return null;
-  return {
-    source_url: CATALOG_URL,
-    title_primary: title,
-    title_ko: null,
-    artist_primary: artist,
-    artist_ko: null,
-    karaoke_numbers: { tj, ky: null, joysound: null },
-    categories: ['jpop'],
+  return { tj, title, artist };
+}
+
+interface JpLikelyRescueStats {
+  candidates: number;
+  fetches: number;
+  admitted: number;
+  misses: number;
+  skippedCached: number;
+  errors: number;
+}
+
+async function rescueJpLikelyDroppedRecords(
+  http: Pick<HttpClient, 'postForm'>,
+  items: ReadonlyArray<Record<string, unknown>>,
+  cache: SearchSongCache,
+  force?: ReadonlySet<string>,
+): Promise<JpLikelyRescueStats> {
+  const stats: JpLikelyRescueStats = {
+    candidates: 0,
+    fetches: 0,
+    admitted: 0,
+    misses: 0,
+    skippedCached: 0,
+    errors: 0,
   };
+
+  const now = new Date().toISOString();
+  for (const item of items) {
+    const shell = parseCatalogShell(item);
+    if (shell === null) continue;
+    if (classifyRecord(shell.tj, shell.artist, cache, force) !== 'drop') continue;
+    if (!isStrongJpLikelyCandidate(shell)) continue;
+
+    stats.candidates++;
+    const cached = cache.proEnrichmentMap[shell.tj];
+    if (cached?.nationalcode) {
+      stats.skippedCached++;
+      continue;
+    }
+
+    let matches: SearchSongItem[];
+    try {
+      matches = await searchSongByTitle(http, shell.title, 'JPN');
+      stats.fetches++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[tj-rescue] title-search failed for pro=${shell.tj}: ${msg}`);
+      stats.errors++;
+      continue;
+    }
+    const match = matches.find((candidate) => candidate.pro === shell.tj);
+    if (match?.nationalcode === 'JPN') {
+      const entry: EnrichmentEntry = {
+        nationalcode: match.nationalcode,
+        sortTitleKo: match.sortTitleKo,
+        sortSongKo: match.sortSongKo,
+        subTitle: match.subTitle,
+        publishdate: match.publishdate,
+        lastSeen: now,
+      };
+      cache.proEnrichmentMap[shell.tj] = entry;
+      stats.admitted++;
+    } else {
+      stats.misses++;
+    }
+  }
+
+  if (stats.fetches > 0) cache.generatedAt = now;
+  return stats;
+}
+
+function isStrongJpLikelyCandidate(shell: CatalogShell): boolean {
+  const text = `${shell.title} ${shell.artist}`;
+  if (RE_HIRAGANA.test(text) || RE_KATAKANA.test(text)) return true;
+  return (
+    /\b(OP|ED|OST)\b/.test(shell.title) &&
+    /[犬夜叉銀魂進撃名探偵図書館戦争地獄少女最遊記]/.test(shell.title)
+  );
 }
 
 /**
  * Minimal record shape consumed by `buildBlogWhitelist`. The default source
  * reads `apps/web/public/data/songs.json` whose entries match `SongRecord`,
- * but the builder only needs `karaoke_numbers.tj` and `artist_primary` —
- * accepting a narrower interface keeps the unit tests trivial to set up.
+ * but the builder only needs a narrow projection — accepting a small interface
+ * keeps the unit tests trivial to set up.
+ *
+ * `title_primary` and `categories` are read by the direct-origin baseline
+ * rescue policy (tj-* / tjpdf-*); they are unused for blog-origin records.
  */
 export interface BlogWhitelistRecord {
+  id?: string | null | undefined;
+  source_url?: string | null | undefined;
   artist_primary: string | null | undefined;
+  title_primary?: string | null | undefined;
+  categories?: ReadonlyArray<string> | null | undefined;
   karaoke_numbers: { tj?: string | null };
 }
 
@@ -370,6 +492,57 @@ export function shouldAdmitArtistToWhitelist(artist: string | null | undefined):
   return true;
 }
 
+function isBlogOriginRecord(rec: BlogWhitelistRecord): boolean {
+  if (typeof rec.id === 'string' && rec.id.startsWith('blog-')) return true;
+  return (
+    typeof rec.source_url === 'string' && rec.source_url.includes('j-pop-playlist.tistory.com')
+  );
+}
+
+function isDirectAcceptedCorpusRecord(rec: BlogWhitelistRecord): boolean {
+  if (typeof rec.id !== 'string') return false;
+  return rec.id.startsWith('tj-') || rec.id.startsWith('tjpdf-');
+}
+
+/**
+ * Direct-origin baseline rescue policy for `tj-*` / `tjpdf-*` records.
+ *
+ * Background: the full-workflow replay showed 38 trusted baseline TJ numbers
+ * being silently dropped because the rescue whitelist admitted only blog-origin
+ * records. Restoring all direct-origin records would re-leak the featured-only
+ * cases (e.g. `HOME / Charlie Puth(Feat.宇多田ヒカル) / [jpop]`), so the rescue
+ * here is narrow: admit only when the record carries a concrete JP signal that
+ * the featured-artist leak shape cannot satisfy.
+ *
+ * Admit if:
+ *   - `categories` contains `anime` or `vocaloid` (load-bearing JP signal —
+ *     these tags are essentially never non-JPN despite Latin surface form), OR
+ *   - `title_primary` contains hiragana or katakana (kana on the title, not on
+ *     a featured artist, is a property of the song itself).
+ *
+ * Deliberately rejected: artist kana. The leak shape we are protecting against
+ * has kana on a featured-artist component while the title is Latin and the
+ * category is plain jpop — relying on full-artist kana would re-admit exactly
+ * those records.
+ *
+ * Explicit non-JPN pro entries are still vetoed by `nonJpnProRejectStep` in
+ * the filter chain — this rescue only lifts the per-record drop, it does not
+ * override pro-level non-JPN evidence.
+ */
+function shouldAdmitDirectOriginRecord(rec: BlogWhitelistRecord): boolean {
+  const categories = rec.categories;
+  if (Array.isArray(categories)) {
+    for (const cat of categories) {
+      if (cat === 'anime' || cat === 'vocaloid') return true;
+    }
+  }
+  const title = rec.title_primary;
+  if (typeof title === 'string' && (RE_HIRAGANA.test(title) || RE_KATAKANA.test(title))) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Build the rescue-path TJ# whitelist from an in-memory blog-corpus record
  * array. Extracted from `defaultBlogWhitelistSource` so unit tests can
@@ -385,18 +558,29 @@ export function buildBlogWhitelist(
   const tjs = new Set<string>();
   let kept = 0;
   let skipped = 0;
+  let keptDirect = 0;
+  let skippedUntrustedOrigin = 0;
   for (const rec of records) {
     const tj = rec.karaoke_numbers?.tj;
     if (typeof tj !== 'string' || tj === '') continue;
-    if (!shouldAdmitArtistToWhitelist(rec.artist_primary)) {
-      skipped++;
+    if (isBlogOriginRecord(rec)) {
+      if (!shouldAdmitArtistToWhitelist(rec.artist_primary)) {
+        skipped++;
+        continue;
+      }
+      tjs.add(tj);
+      kept++;
       continue;
     }
-    tjs.add(tj);
-    kept++;
+    if (isDirectAcceptedCorpusRecord(rec) && shouldAdmitDirectOriginRecord(rec)) {
+      tjs.add(tj);
+      keptDirect++;
+      continue;
+    }
+    skippedUntrustedOrigin++;
   }
   console.log(
-    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped} records (skipped ${skipped} with Han-only / Hangul artist names)`,
+    `[tj-media-direct] blog whitelist trimmed: kept ${kept} of ${kept + skipped + keptDirect + skippedUntrustedOrigin} records (skipped ${skipped} with Han-only / Hangul artist names, ${skippedUntrustedOrigin} non-blog-origin; direct-origin admits ${keptDirect})`,
   );
   return tjs;
 }
@@ -421,8 +605,20 @@ function defaultBlogWhitelistSource(): ReadonlySet<string> {
       if (!numbersRaw || typeof numbersRaw !== 'object') continue;
       const tjRaw = (numbersRaw as { tj?: unknown }).tj;
       const artistRaw = (rec as { artist_primary?: unknown }).artist_primary;
+      const titleRaw = (rec as { title_primary?: unknown }).title_primary;
+      const categoriesRaw = (rec as { categories?: unknown }).categories;
+      const categories = Array.isArray(categoriesRaw)
+        ? categoriesRaw.filter((c): c is string => typeof c === 'string')
+        : null;
       records.push({
+        id: typeof (rec as { id?: unknown }).id === 'string' ? (rec as { id: string }).id : null,
+        source_url:
+          typeof (rec as { source_url?: unknown }).source_url === 'string'
+            ? (rec as { source_url: string }).source_url
+            : null,
         artist_primary: typeof artistRaw === 'string' ? artistRaw : null,
+        title_primary: typeof titleRaw === 'string' ? titleRaw : null,
+        categories,
         karaoke_numbers: { tj: typeof tjRaw === 'string' ? tjRaw : null },
       });
     }
