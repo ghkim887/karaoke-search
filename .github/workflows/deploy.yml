@@ -63,6 +63,7 @@ jobs:
           name: web-dist
           path: apps/web/dist
       - name: Install Playwright browsers
+        timeout-minutes: 10
         run: pnpm --filter @karaoke/web exec playwright install --with-deps chromium
       - name: Start preview server and wait until ready
         run: |
