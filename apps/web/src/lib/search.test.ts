@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
+import { featured, featuredArtistLabel, featuredArtistQuery } from '../data/featured.js';
 import { buildIndex } from './search.js';
 
 const fixtureUrl = new URL(
@@ -99,5 +100,25 @@ describe('search index — artist_aliases (spec 2026-05-04)', () => {
     const hits = index.search('Spitz');
     // No record carries the "Spitz" alias here — should NOT match.
     expect(hits.map((h) => h.id)).not.toContain('alias-4');
+  });
+});
+
+describe('featured artist chips against the production corpus', () => {
+  const productionRecords = JSON.parse(
+    readFileSync(fileURLToPath(new URL('../../public/data/songs.json', import.meta.url)), 'utf8'),
+  ) as SongRecord[];
+  it('keeps every featured artist pill wired to a query with real hits', () => {
+    const index = buildIndex(productionRecords);
+    for (const [section, artists] of Object.entries(featured)) {
+      for (const artist of artists) {
+        const query = featuredArtistQuery(artist);
+        const label = featuredArtistLabel(artist);
+        const hits = index.search(query);
+        expect(
+          hits.length,
+          `${section} featured artist ${label} should search via ${query}`,
+        ).toBeGreaterThan(0);
+      }
+    }
   });
 });

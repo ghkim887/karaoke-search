@@ -1,4 +1,4 @@
-import { featured } from '../data/featured.js';
+import { featured, featuredArtistLabel, featuredArtistQuery } from '../data/featured.js';
 
 interface EmptyStateProps {
   onPickArtist: (name: string) => void;
@@ -27,11 +27,20 @@ export function EmptyState({ onPickArtist }: EmptyStateProps) {
               <p class="empty-section-placeholder">아직 없음 / Not yet</p>
             ) : (
               <div class="empty-section-chips">
-                {artists.map((name) => (
-                  <button key={name} type="button" class="chip" onClick={() => onPickArtist(name)}>
-                    {name}
-                  </button>
-                ))}
+                {artists.map((artist) => {
+                  const label = featuredArtistLabel(artist);
+                  const query = featuredArtistQuery(artist);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      class="chip"
+                      onClick={() => onPickArtist(query)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </section>
