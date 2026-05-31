@@ -89,7 +89,9 @@ The app auto-deploys to GitHub Pages whenever you push to `main`. Weekly GitHub 
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later). See [LICENSE](LICENSE).
+
+If you modify this project and let users interact with it over a network, the AGPL requires you to offer those users access to the corresponding source code.
 
 ## Acknowledgments
 
