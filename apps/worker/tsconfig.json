@@ -8,5 +8,9 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../../packages/schema" }, { "path": "../../packages/search" }]
+  "references": [
+    { "path": "../../packages/schema" },
+    { "path": "../../packages/search" },
+    { "path": "../../packages/data-store" }
+  ]
 }

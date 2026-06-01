@@ -14,10 +14,10 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "corepack pnpm --filter @karaoke/search build && tsc -b",
-    "test": "corepack pnpm --filter @karaoke/data-store build && vitest run test/search.test.ts test/d1-workflow.test.ts && corepack pnpm run test:d1-runtime",
-    "typecheck": "corepack pnpm --filter @karaoke/search build && tsc --noEmit",
-    "test:d1-runtime": "corepack pnpm --filter @karaoke/data-store build && tsc -b && vitest run test/d1-runtime.test.ts",
+    "build": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && tsc -b",
+    "test": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && vitest run test/search.test.ts test/node-sqlite.test.ts test/node-server.test.ts test/build-sqlite-db.test.mjs test/d1-workflow.test.ts && corepack pnpm run test:d1-runtime",
+    "typecheck": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && tsc --noEmit",
+    "test:d1-runtime": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && tsc -b && vitest run test/d1-runtime.test.ts",
     "d1:export-sql": "corepack pnpm --filter @karaoke/data-store build && node scripts/export-d1-sql.mjs",
     "d1:migrate:local": "wrangler d1 migrations apply karaoke-songs --local",
     "d1:import:local": "corepack pnpm run d1:export-sql && wrangler d1 execute karaoke-songs --local --file .wrangler/import/songs-d1.sql",
@@ -25,14 +25,16 @@
     "d1:import:remote": "node scripts/guard-remote-d1.mjs && corepack pnpm run d1:export-sql && wrangler d1 execute karaoke-songs --remote --file .wrangler/import/songs-d1.sql",
     "d1:verify-sql": "corepack pnpm --filter @karaoke/data-store build && node scripts/export-d1-sql.mjs && node scripts/report-d1-sql-metrics.mjs .wrangler/import/songs-d1.sql",
     "deploy:dry-run": "wrangler deploy --dry-run",
-    "deploy:remote": "node scripts/guard-remote-d1.mjs && wrangler deploy"
+    "deploy:remote": "node scripts/guard-remote-d1.mjs && wrangler deploy",
+    "sqlite:build": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && node scripts/build-sqlite-db.mjs",
+    "serve:node": "node dist/node-server.js"
   },
   "dependencies": {
+    "@karaoke/data-store": "workspace:*",
     "@karaoke/schema": "workspace:*",
     "@karaoke/search": "workspace:*"
   },
   "devDependencies": {
-    "@karaoke/data-store": "workspace:*",
     "@types/node": "^24.12.4",
     "miniflare": "^4.20260526.0",
     "typescript": "^5.6.3",

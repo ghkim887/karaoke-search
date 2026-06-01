@@ -5,7 +5,7 @@ import { normalize } from './normalize.js';
 
 /**
  * Source priority (lower number = higher priority). Single source of truth
- * for tiebreaks across this file. The order blog > namu > tj > tjpdf > joysound
+ * for tiebreaks across this file. The order blog > tj > tjpdf > joysound
  * is retained for known active corpus sources, with unknown legacy or
  * experimental prefixes falling back to lowest priority instead of shaping
  * merge semantics.
@@ -17,21 +17,20 @@ import { normalize } from './normalize.js';
  */
 const SOURCE_RANK: Record<string, number> = {
   blog: 1,
-  namu: 2,
-  tj: 3,
-  tjpdf: 4,
-  joysound: 5,
+  tj: 2,
+  tjpdf: 3,
+  joysound: 4,
 };
 
-const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'namu'] as const;
+const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'tjpdf', 'joysound'] as const;
 
 // `tj` is an explicit member of the Korean-fields chain (lowest priority)
 // because the TJ-direct adapter's `searchSong` translit pass (PR-1) writes
 // `title_ko` / `artist_ko`. Pre-PR-1 the field fell through `pickByOwnership`'s
 // unlisted-source fallback, which is order-dependent and silently ambiguous if
 // a future source also writes Korean fields. Listing `tj` here makes the
-// priority `blog > namu > tj` explicit.
-const KO_CHAIN = ['blog', 'namu', 'tj'] as const;
+// priority `blog > tj > tjpdf > joysound` explicit.
+const KO_CHAIN = ['blog', 'tj', 'tjpdf', 'joysound'] as const;
 
 /**
  * Source slug derived from the `id` prefix (everything before the first `-`).
@@ -357,7 +356,7 @@ function pickByPriority(cluster: SongRecord[], field: (r: SongRecord) => string)
  *
  *  - For each vendor (tj/ky/joysound), union all non-null contributions.
  *  - When multiple records contribute DIFFERENT non-null values for the SAME
- *    vendor, the highest-priority source's value wins (chain blog→namu→tj).
+ *    vendor, the highest-priority source's value wins (chain blog→tj→tjpdf→joysound).
  *  - If `tierBClusterKey` is non-null AND disagreement is detected on a
  *    vendor field that was NOT the clustering key, emit a `MergeConflict`.
  *    (Tier A clusters can't disagree on the joining vendor — they share it

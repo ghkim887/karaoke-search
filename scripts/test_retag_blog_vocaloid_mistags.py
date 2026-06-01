@@ -74,10 +74,10 @@ class TestGetPostOverride(unittest.TestCase):
         self.assertIsNone(retag.get_post_override('blog-1-0'))
 
     def test_other_adapters_return_none(self) -> None:
-        # tj-direct, anisong-pdf, namu records must never match.
+        # non-blog records must never match.
         self.assertIsNone(retag.get_post_override('tj-101'))
         self.assertIsNone(retag.get_post_override('tjpdf-101'))
-        self.assertIsNone(retag.get_post_override('namu-101-0'))
+        self.assertIsNone(retag.get_post_override('tjpdf-101-0'))
 
     def test_malformed_ids_return_none(self) -> None:
         self.assertIsNone(retag.get_post_override(''))

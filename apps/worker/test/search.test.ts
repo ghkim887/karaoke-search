@@ -7,13 +7,11 @@ import {
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type D1DatabaseLike, handleRequest } from '../src/index.js';
+import { SqliteD1Database, type SqliteD1Options } from '../src/sqlite-adapter.js';
 
 const openDatabases: SongDatabase[] = [];
 
-interface NodeSqliteD1Options {
-  enforceD1SuffixLikePatternLimit?: boolean;
-  inspectStatement?: (sql: string, parameters: readonly unknown[]) => void;
-}
+interface NodeSqliteD1Options extends SqliteD1Options {}
 
 function createD1WithSongs(
   records: readonly SongRecord[],
@@ -23,7 +21,7 @@ function createD1WithSongs(
   openDatabases.push(sqlite);
   createSongDatabase(sqlite);
   importSongs(sqlite, records);
-  return new NodeSqliteD1(sqlite, options);
+  return new SqliteD1Database(sqlite, options);
 }
 
 afterEach(() => {
@@ -308,52 +306,4 @@ async function fetchJson(db: D1DatabaseLike, path: string): Promise<SearchRespon
 interface SearchResponseBody {
   items: SongRecord[];
   nextCursor: string | null;
-}
-
-class NodeSqliteD1 implements D1DatabaseLike {
-  constructor(
-    private readonly db: SongDatabase,
-    private readonly options: NodeSqliteD1Options = {},
-  ) {}
-
-  prepare(sql: string) {
-    const statement = this.db.prepare(sql);
-    let parameters: unknown[] = [];
-    return {
-      bind: (...values: unknown[]) => {
-        parameters = values;
-        return this.prepareBoundStatement(statement, parameters);
-      },
-      all: async <T>() => ({ results: statement.all() as T[] }),
-    };
-  }
-
-  private prepareBoundStatement(
-    statement: ReturnType<SongDatabase['prepare']>,
-    parameters: unknown[],
-  ) {
-    return {
-      bind: (...values: unknown[]) => this.prepareBoundStatement(statement, values),
-      all: async <T>() => {
-        this.options.inspectStatement?.(statement.sourceSQL, parameters);
-        this.assertD1SuffixLikePatterns(parameters);
-        return { results: statement.all(...parameters) as T[] };
-      },
-    };
-  }
-
-  private assertD1SuffixLikePatterns(parameters: readonly unknown[]): void {
-    if (this.options.enforceD1SuffixLikePatternLimit !== true) {
-      return;
-    }
-    for (const parameter of parameters) {
-      if (
-        typeof parameter === 'string' &&
-        parameter.endsWith('%') &&
-        new TextEncoder().encode(parameter).length > 50
-      ) {
-        throw new Error('D1 LIKE/GLOB pattern limit exceeded in test');
-      }
-    }
-  }
 }

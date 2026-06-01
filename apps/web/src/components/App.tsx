@@ -1,10 +1,10 @@
-import type { SongRecord } from '@karaoke/schema';
+import type { Category, SongRecord } from '@karaoke/schema';
 import type { JSX } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useFavorites } from '../lib/favorites.js';
 import { filterByCategory, filterByVendors } from '../lib/filter.js';
 import type { IndexBundle } from '../lib/search.js';
-import { loadIndex } from '../lib/search.js';
+import { type SearchVendor, getApiSearchBaseUrl, loadIndex, searchApi } from '../lib/search.js';
 import type { CategoryFilter } from './CategoryChips.js';
 import { CategoryChips } from './CategoryChips.js';
 import { EmptyState } from './EmptyState.js';
@@ -20,6 +20,11 @@ import { VendorChips } from './VendorChips.js';
 
 const RESULT_LIMIT = 50;
 const DEBOUNCE_MS = 150;
+
+interface ApiBrowseState {
+  key: string;
+  records: SongRecord[] | null;
+}
 
 interface AppProps {
   /** Build-time record count from `apps/web/public/data/songs.json`. Surfaces
@@ -44,6 +49,27 @@ type RenderMode = 'error' | 'loading' | 'favorites-empty' | 'favorites' | 'brows
  * immediately on every keystroke (or when a featured chip is clicked).
  * `query` is the debounced value that actually drives `index.search()`.
  */
+
+function selectedVendorForApi(selectedVendors: ReadonlySet<Vendor>): SearchVendor | undefined {
+  if (selectedVendors.size !== 1) {
+    return undefined;
+  }
+  return selectedVendors.values().next().value as SearchVendor | undefined;
+}
+
+function apiCategory(categoryFilter: CategoryFilter): Category | undefined {
+  return categoryFilter === 'all' ? undefined : categoryFilter;
+}
+
+function apiBrowseKey(
+  query: string,
+  categoryFilter: CategoryFilter,
+  selectedVendors: ReadonlySet<Vendor>,
+): string {
+  const vendorKey = Array.from(selectedVendors).sort().join(',');
+  return `${query}\u0000${categoryFilter}\u0000${vendorKey}`;
+}
+
 export function App({ songCount }: AppProps) {
   const [bundle, setBundle] = useState<IndexBundle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,8 +81,10 @@ export function App({ songCount }: AppProps) {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const [activeTab, setActiveTab] = useState<TabId>('browse');
+  const [apiBrowse, setApiBrowse] = useState<ApiBrowseState>({ key: '', records: null });
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
+  const apiBaseUrl = getApiSearchBaseUrl();
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +111,30 @@ export function App({ songCount }: AppProps) {
       if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (apiBaseUrl === null || activeTab !== 'browse' || query === '' || selectedVendors.size > 1) {
+      setApiBrowse({ key: '', records: null });
+      return;
+    }
+    let cancelled = false;
+    const key = apiBrowseKey(query, categoryFilter, selectedVendors);
+    const vendor = selectedVendorForApi(selectedVendors);
+    const category = apiCategory(categoryFilter);
+    const apiOptions = { query, limit: RESULT_LIMIT };
+    if (category !== undefined) Object.assign(apiOptions, { category });
+    if (vendor !== undefined) Object.assign(apiOptions, { vendor });
+    searchApi(apiBaseUrl, apiOptions)
+      .then((records) => {
+        if (!cancelled) setApiBrowse({ key, records });
+      })
+      .catch(() => {
+        if (!cancelled) setApiBrowse({ key, records: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, activeTab, query, categoryFilter, selectedVendors]);
 
   /** Called on every keystroke from SearchBox. Updates the visible input
    *  immediately and schedules a debounced search-query update. */
@@ -146,19 +198,35 @@ export function App({ songCount }: AppProps) {
         }
       }
     } else {
-      // Browse candidate set: full-corpus MiniSearch on a non-empty query.
+      // Browse candidate set: API-first when configured, MiniSearch fallback while
+      // the request is pending or if it fails. Favorites remain local because the
+      // favorite id set is user-local browser state.
       if (query === '') return [];
-      const hits = bundle.index.search(query);
-      const records: SongRecord[] = [];
-      for (const hit of hits) {
-        const rec = bundle.byId.get(String(hit.id));
-        if (rec !== undefined) records.push(rec);
+      const currentApiKey = apiBrowseKey(query, categoryFilter, selectedVendors);
+      if (apiBaseUrl !== null && apiBrowse.key === currentApiKey && apiBrowse.records !== null) {
+        candidates = apiBrowse.records;
+      } else {
+        const hits = bundle.index.search(query);
+        const records: SongRecord[] = [];
+        for (const hit of hits) {
+          const rec = bundle.byId.get(String(hit.id));
+          if (rec !== undefined) records.push(rec);
+        }
+        candidates = records;
       }
-      candidates = records;
     }
     const byCategory = filterByCategory(candidates, categoryFilter);
     return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
-  }, [bundle, query, activeTab, favoriteIds, categoryFilter, selectedVendors]);
+  }, [
+    bundle,
+    query,
+    activeTab,
+    favoriteIds,
+    categoryFilter,
+    selectedVendors,
+    apiBaseUrl,
+    apiBrowse,
+  ]);
 
   const toggleVendor = (v: Vendor) => {
     setSelectedVendors((prev) => {

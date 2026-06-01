@@ -218,6 +218,64 @@ describe('App tab behavior', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  it('uses API search for Browse queries when an API base URL is configured', async () => {
+    vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
+    const apiRecord = fixtureRecords[1];
+    if (apiRecord === undefined) throw new Error('fixture record missing');
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockResolvedValue([apiRecord]);
+    await mount();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    await waitFor(() => (apiSpy.mock.calls.length > 0 ? true : null));
+    await waitFor(() => {
+      const card = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return card?.textContent?.includes('KICK BACK') ? card : null;
+    });
+    expect(apiSpy).toHaveBeenCalledWith(
+      'https://api.example.test',
+      expect.objectContaining({ query: 'kick', limit: 50 }),
+    );
+  });
+  it('falls back to MiniSearch when API search rejects', async () => {
+    vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockRejectedValue(new Error('api down'));
+    await mount();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    await waitFor(() => (apiSpy.mock.calls.length > 0 ? true : null));
+    await waitFor(() => {
+      const card = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return card?.textContent?.includes('KICK BACK') ? card : null;
+    });
+  });
+  it('falls back to MiniSearch instead of API when multiple vendors are selected', async () => {
+    vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockResolvedValue([]);
+    await mount();
+
+    const vendorChips = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.chip-group-vendor .chip'),
+    );
+    vendorChips.find((c) => c.textContent?.trim() === 'TJ')?.click();
+    vendorChips.find((c) => c.textContent?.trim() === 'KY')?.click();
+    await flushPromises();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'idol');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+    await flushPromises();
+
+    expect(apiSpy).not.toHaveBeenCalled();
+  });
   it('default tab on first render is Browse', async () => {
     await mount();
     const tabs = getTabs(host);
