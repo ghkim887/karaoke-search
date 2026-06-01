@@ -52,6 +52,25 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.12.4)(jsdom@25.0.1)
 
+  apps/worker:
+    dependencies:
+      '@karaoke/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+    devDependencies:
+      '@karaoke/data-store':
+        specifier: workspace:*
+        version: link:../../packages/data-store
+      '@types/node':
+        specifier: ^24.12.4
+        version: 24.12.4
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@24.12.4)(jsdom@25.0.1)
+
   packages/category-rules:
     dependencies:
       '@karaoke/schema':
@@ -88,6 +107,22 @@ importers:
       undici:
         specifier: ^6.21.0
         version: 6.25.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.12.4
+        version: 24.12.4
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@24.12.4)(jsdom@25.0.1)
+
+  packages/data-store:
+    dependencies:
+      '@karaoke/schema':
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       '@types/node':
         specifier: ^24.12.4
