@@ -13,7 +13,7 @@ const FULL_SONGLIST_BASE = 'https://www.joysound.com/web/search/songlist';
 const DETAIL_BASE = 'https://www.joysound.com/apis/v1/ise/fetchContentsDetail';
 const SONG_PAGE_BASE = 'https://www.joysound.com/web/search/song';
 
-export const JOYSOUND_FULL_CATALOG_KANA = [
+const JOYSOUND_FULL_CATALOG_KANA = [
   'ア',
   'イ',
   'ウ',

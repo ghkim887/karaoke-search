@@ -3,8 +3,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { join } from 'node:path';
-import { describe, it } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { describe, it } from 'vitest';
 import { writeJsonAtomic, writeTextAtomic } from './lib/atomic-write.mjs';
 import { loadCorpus, loadValidator } from './lib/corpus.mjs';
 

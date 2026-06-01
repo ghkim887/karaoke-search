@@ -11,6 +11,9 @@ importers:
       '@biomejs/biome':
         specifier: 1.9.4
         version: 1.9.4
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@24.12.4)(jsdom@25.0.1)
 
   apps/web:
     dependencies:
@@ -101,12 +104,6 @@ importers:
       '@karaoke/schema':
         specifier: workspace:*
         version: link:../schema
-      ajv:
-        specifier: ^8.17.1
-        version: 8.20.0
-      ajv-formats:
-        specifier: ^3.0.1
-        version: 3.0.1(ajv@8.20.0)
       cheerio:
         specifier: ^1.0.0
         version: 1.2.0

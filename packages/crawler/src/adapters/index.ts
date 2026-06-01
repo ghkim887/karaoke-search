@@ -38,7 +38,7 @@ export interface Crawler {
  *
  * The merger uses array order as registration order for collision tie-breaks.
  */
-export function buildAdapters(http: HttpClient): Crawler[] {
+function buildAdapters(http: HttpClient): Crawler[] {
   return [new BlogCrawler(http), new TJDirectCrawler(http), new JoysoundOfficialCrawler(http)];
 }
 

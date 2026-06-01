@@ -15,6 +15,7 @@
     "typecheck": "corepack pnpm -r typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4"
+    "@biomejs/biome": "1.9.4",
+    "vitest": "^2.1.8"
   }
 }

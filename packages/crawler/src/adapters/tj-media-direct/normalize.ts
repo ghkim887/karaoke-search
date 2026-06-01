@@ -1,8 +1,8 @@
 /**
  * TJ-direct adapter normalization helpers.
  *
- * Cross-adapter clustering primitives (`normalizeForMatch`, `splitArtistCollab`,
- * `getLeadComponent`) used to live here but were moved to `../../clustering.ts`
+ * Cross-adapter clustering primitives (`normalizeForMatch`, `splitArtistCollab`)
+ * used to live here but were moved to `../../clustering.ts`
  * in the 2026-05-06 refactor — the central merger should not depend on a
  * specific adapter's normalize module. The re-exports at the bottom of this
  * file keep the existing in-adapter import paths working without forcing every
@@ -13,12 +13,7 @@
  * `RE_HAN`, `RE_HANGUL`), and the JSON-shape coercion helpers shared across
  * the TJ-direct modules (`isPlainObject`, `coerceProString`).
  */
-export {
-  SPLIT_RE,
-  getLeadComponent,
-  normalizeForMatch,
-  splitArtistCollab,
-} from '../../clustering.js';
+export { normalizeForMatch, splitArtistCollab } from '../../clustering.js';
 
 /**
  * Script-detection regexes used by the blog-whitelist trim (PR-3).
