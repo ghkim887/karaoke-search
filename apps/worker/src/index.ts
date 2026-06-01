@@ -145,6 +145,11 @@ async function findIndexedCandidateRows(
   db: D1DatabaseLike,
   params: SearchQueryParams,
 ): Promise<StoredSongRow[]> {
+  const numberQuery = parseKaraokeNumberQuery(params.query);
+  if (numberQuery !== null) {
+    return findKaraokeNumberCandidateRows(db, params, numberQuery);
+  }
+
   const subqueries: string[] = [];
   const values: D1Value[] = [];
   const queryTokens = buildSearchQueryTokens(params.query);
@@ -180,59 +185,96 @@ async function findIndexedCandidateRows(
     `);
   }
 
-  const numberQuery = parseKaraokeNumberQuery(params.query);
-  if (numberQuery !== null) {
-    const where = ['kn.number IS NOT NULL'];
-    const matchConditions = ['kn.number = ?', 'kn.number_key = ?'];
-    const trimmedNumber = trimLeadingZeroes(numberQuery.number);
-    const numberValues: D1Value[] = [
-      numberQuery.number,
-      trimmedNumber,
-      numberQuery.number,
-      trimmedNumber,
-    ];
-    const numberPrefixPattern = makeD1LikePrefixPattern(numberQuery.number);
-    if (numberPrefixPattern !== null) {
-      matchConditions.push(`kn.number LIKE ? ESCAPE '\\'`);
-      numberValues.push(numberPrefixPattern);
-    }
-    const numberKeyPrefixPattern = makeD1LikePrefixPattern(trimmedNumber);
-    if (numberKeyPrefixPattern !== null) {
-      matchConditions.push(`kn.number_key LIKE ? ESCAPE '\\'`);
-      numberValues.push(numberKeyPrefixPattern);
-    }
-    where.push(`(${matchConditions.join(' OR ')})`);
-    if (numberQuery.provider !== undefined) {
-      where.push('kn.provider = ?');
-      numberValues.push(numberQuery.provider);
-    }
-    if (params.vendor !== undefined) {
-      where.push('kn.provider = ?');
-      numberValues.push(params.vendor);
-    }
-    if (params.category !== undefined) {
-      where.push(`EXISTS (
-        SELECT 1 FROM song_categories sc
-        WHERE sc.song_id = kn.song_id AND sc.category = ?
-      )`);
-      numberValues.push(params.category);
-    }
-    subqueries.push(`
-      SELECT kn.song_id,
-        MAX(CASE
-          WHEN kn.number = ? THEN 1000000000
-          WHEN kn.number_key = ? THEN 990000000
-          ELSE 900000000
-        END) AS score
-      FROM karaoke_numbers kn
-      WHERE ${where.join(' AND ')}
-      GROUP BY kn.song_id
-    `);
-    values.push(...numberValues);
-  }
-
   if (subqueries.length === 0) {
     return [];
+  }
+
+  const statement = db
+    .prepare(
+      `WITH candidates AS (
+        ${subqueries.join('\nUNION ALL\n')}
+      ), ranked AS (
+        SELECT song_id, SUM(score) AS score
+        FROM candidates
+        GROUP BY song_id
+      )
+      SELECT
+        s.id,
+        s.source_url,
+        s.title_primary,
+        s.title_ko,
+        s.artist_primary,
+        s.artist_ko,
+        s.artist_aliases_present,
+        s.crawled_at,
+        s.media_context_ko,
+        s.title_ko_source,
+        s.title_ko_confidence
+      FROM ranked r
+      JOIN songs s ON s.id = r.song_id
+      ORDER BY r.score DESC, s.sort_order ASC, s.id ASC
+      LIMIT ? OFFSET ?`,
+    )
+    .bind(...values, params.limit, params.offset);
+
+  return allRows<StoredSongRow>(statement);
+}
+
+async function findKaraokeNumberCandidateRows(
+  db: D1DatabaseLike,
+  params: SearchQueryParams,
+  numberQuery: NonNullable<ReturnType<typeof parseKaraokeNumberQuery>>,
+): Promise<StoredSongRow[]> {
+  const subqueries: string[] = [];
+  const values: D1Value[] = [];
+  const trimmedNumber = trimLeadingZeroes(numberQuery.number);
+  appendKaraokeNumberCandidateSubquery({
+    subqueries,
+    values,
+    params,
+    provider: numberQuery.provider,
+    predicateSql: 'kn.number = ?',
+    predicateValues: [numberQuery.number],
+    notNullColumn: 'number',
+    score: 1000000000,
+  });
+  appendKaraokeNumberCandidateSubquery({
+    subqueries,
+    values,
+    params,
+    provider: numberQuery.provider,
+    predicateSql: 'kn.number_key = ?',
+    predicateValues: [trimmedNumber],
+    notNullColumn: 'number_key',
+    score: 990000000,
+  });
+
+  const numberPrefixPattern = makeD1NumericPrefixPattern(numberQuery.number);
+  if (numberPrefixPattern !== null) {
+    appendKaraokeNumberCandidateSubquery({
+      subqueries,
+      values,
+      params,
+      provider: numberQuery.provider,
+      predicateSql: 'kn.number LIKE ?',
+      predicateValues: [numberPrefixPattern],
+      notNullColumn: 'number',
+      score: 900000000,
+    });
+  }
+
+  const numberKeyPrefixPattern = makeD1NumericPrefixPattern(trimmedNumber);
+  if (numberKeyPrefixPattern !== null) {
+    appendKaraokeNumberCandidateSubquery({
+      subqueries,
+      values,
+      params,
+      provider: numberQuery.provider,
+      predicateSql: 'kn.number_key LIKE ?',
+      predicateValues: [numberKeyPrefixPattern],
+      notNullColumn: 'number_key',
+      score: 900000000,
+    });
   }
 
   const statement = db
@@ -397,6 +439,52 @@ function appendIndexFilters(
   }
 }
 
+function appendKaraokeNumberCandidateSubquery({
+  subqueries,
+  values,
+  params,
+  provider,
+  predicateSql,
+  predicateValues,
+  notNullColumn,
+  score,
+}: {
+  subqueries: string[];
+  values: D1Value[];
+  params: Pick<SearchQueryParams, 'category' | 'vendor'>;
+  provider: Vendor | undefined;
+  predicateSql: string;
+  predicateValues: readonly D1Value[];
+  notNullColumn: 'number' | 'number_key';
+  score: number;
+}): void {
+  const where = [`kn.${notNullColumn} IS NOT NULL`, predicateSql];
+  const branchValues: D1Value[] = [...predicateValues];
+  if (provider !== undefined) {
+    where.push('kn.provider = ?');
+    branchValues.push(provider);
+  }
+  if (params.vendor !== undefined) {
+    where.push('kn.provider = ?');
+    branchValues.push(params.vendor);
+  }
+  if (params.category !== undefined) {
+    where.push(`EXISTS (
+      SELECT 1 FROM song_categories sc
+      WHERE sc.song_id = kn.song_id AND sc.category = ?
+    )`);
+    branchValues.push(params.category);
+  }
+
+  subqueries.push(`
+    SELECT kn.song_id, ${score} AS score
+    FROM karaoke_numbers kn
+    WHERE ${where.join(' AND ')}
+    GROUP BY kn.song_id
+  `);
+  values.push(...branchValues);
+}
+
 function buildSearchQueryTokens(query: string): SearchQueryToken[] {
   const byKey = new Map<string, SearchQueryToken>();
   const add = (kind: SearchTokenKind, token: string, queryWeight: number): void => {
@@ -508,13 +596,9 @@ function parseNonNegativeInteger(value: string, field: string): number {
   return parsed;
 }
 
-function makeD1LikePrefixPattern(value: string): string | null {
-  const pattern = `${escapeLike(value)}%`;
+function makeD1NumericPrefixPattern(value: string): string | null {
+  const pattern = `${value}%`;
   return new TextEncoder().encode(pattern).length <= MAX_D1_LIKE_PATTERN_BYTES ? pattern : null;
-}
-
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
 function isOneOf<T extends readonly string[]>(value: string, allowed: T): value is T[number] {

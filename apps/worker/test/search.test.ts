@@ -12,6 +12,7 @@ const openDatabases: SongDatabase[] = [];
 
 interface NodeSqliteD1Options {
   enforceD1SuffixLikePatternLimit?: boolean;
+  inspectStatement?: (sql: string, parameters: readonly unknown[]) => void;
 }
 
 function createD1WithSongs(
@@ -258,6 +259,22 @@ describe('worker search API', () => {
     });
   });
 
+  it('splits numeric lookup branches so exact and prefix predicates remain indexable', async () => {
+    const statements: string[] = [];
+    const db = createD1WithSongs(FIXTURE_RECORDS, {
+      inspectStatement: (sql) => statements.push(sql),
+    });
+
+    const byNumber = await fetchJson(db, '/api/search?q=68748');
+
+    expect(byNumber.items.map((song) => song.id)).toEqual(['song-4']);
+    const candidateSql = statements.find((sql) => sql.includes('FROM karaoke_numbers kn'));
+    expect(candidateSql).toBeDefined();
+    expect(candidateSql).not.toMatch(/\bLTRIM\s*\(/i);
+    expect(candidateSql).not.toMatch(/kn\.number\s*=\s*\?\s+OR\s+kn\.number_key\s*=\s*\?/i);
+    expect(candidateSql?.match(/FROM karaoke_numbers kn/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
   it('rejects unsafe cursor offsets', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
     const response = await handleRequest(
@@ -318,6 +335,7 @@ class NodeSqliteD1 implements D1DatabaseLike {
     return {
       bind: (...values: unknown[]) => this.prepareBoundStatement(statement, values),
       all: async <T>() => {
+        this.options.inspectStatement?.(statement.sourceSQL, parameters);
         this.assertD1SuffixLikePatterns(parameters);
         return { results: statement.all(...parameters) as T[] };
       },
