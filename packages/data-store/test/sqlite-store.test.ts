@@ -58,6 +58,19 @@ const FIXTURE_RECORDS: SongRecord[] = [
   },
 ];
 
+const CJK_SEARCH_RECORD: SongRecord = {
+  id: 'joysound-613446',
+  source_url: 'https://example.com/joysound/613446',
+  title_primary: '残酷な天使のテーゼ',
+  title_ko: '사랑했나봐',
+  artist_primary: "B'z",
+  artist_ko: '비즈',
+  artist_aliases: ['Mrs. GREEN APPLE'],
+  karaoke_numbers: { tj: '068748', ky: null, joysound: '613446' },
+  categories: ['anime'],
+  crawled_at: '2026-01-03T00:00:00.000Z',
+};
+
 function cloneRecords(records: readonly SongRecord[]): SongRecord[] {
   return structuredClone(records) as SongRecord[];
 }
@@ -169,6 +182,209 @@ describe('SQLite song store', () => {
     importSongs(db, FIXTURE_RECORDS);
 
     expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
+  });
+
+  it('creates derived search index tables and lookup indexes', () => {
+    const db = openMemoryDb();
+
+    db.exec(D1_SCHEMA_SQL);
+
+    const tables = db
+      .prepare(
+        `SELECT name FROM sqlite_schema
+        WHERE type = 'table' AND name IN ('search_texts', 'search_tokens', 'search_token_stats')
+        ORDER BY name ASC`,
+      )
+      .all() as unknown as Array<{ name: string }>;
+    expect(tables.map((row) => row.name)).toEqual([
+      'search_texts',
+      'search_token_stats',
+      'search_tokens',
+    ]);
+
+    const searchTextColumns = db
+      .prepare('PRAGMA table_info(search_texts)')
+      .all() as unknown as Array<{
+      name: string;
+    }>;
+    expect(searchTextColumns.map((column) => column.name)).toEqual([
+      'song_id',
+      'field',
+      'text_norm',
+      'text_compact',
+      'weight',
+      'category',
+      'provider_mask',
+    ]);
+
+    const numberColumns = db
+      .prepare('PRAGMA table_info(karaoke_numbers)')
+      .all() as unknown as Array<{
+      name: string;
+    }>;
+    expect(numberColumns.map((column) => column.name)).toEqual([
+      'song_id',
+      'provider',
+      'number',
+      'number_key',
+    ]);
+
+    const numberIndexes = db
+      .prepare(
+        `SELECT name FROM sqlite_schema
+        WHERE type = 'index' AND name LIKE 'idx_karaoke_numbers_%'
+        ORDER BY name ASC`,
+      )
+      .all() as unknown as Array<{ name: string }>;
+    expect(numberIndexes.map((row) => row.name)).toEqual([
+      'idx_karaoke_numbers_number',
+      'idx_karaoke_numbers_number_key',
+      'idx_karaoke_numbers_provider_number',
+    ]);
+
+    const indexes = db
+      .prepare(
+        `SELECT name FROM sqlite_schema
+        WHERE type = 'index' AND name LIKE 'idx_search_%'
+        ORDER BY name ASC`,
+      )
+      .all() as unknown as Array<{ name: string }>;
+    expect(indexes.map((row) => row.name)).toEqual([
+      'idx_search_texts_compact',
+      'idx_search_texts_song',
+      'idx_search_tokens_lookup',
+      'idx_search_tokens_song',
+    ]);
+  });
+
+  it('materializes exact text, token, and token-stat search index rows during SQLite import', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+
+    importSongs(db, [CJK_SEARCH_RECORD]);
+
+    const numberKey = db
+      .prepare(
+        `SELECT number_key FROM karaoke_numbers
+        WHERE song_id = ? AND provider = 'tj'`,
+      )
+      .get(CJK_SEARCH_RECORD.id) as unknown as { number_key: string };
+    expect(numberKey.number_key).toBe('68748');
+
+    const exactTexts = db
+      .prepare(
+        `SELECT field, text_compact, weight, category, provider_mask
+        FROM search_texts
+        WHERE song_id = ?
+        ORDER BY field ASC, text_compact ASC`,
+      )
+      .all(CJK_SEARCH_RECORD.id) as unknown as Array<{
+      field: string;
+      text_compact: string;
+      weight: number;
+      category: string;
+      provider_mask: number;
+    }>;
+    expect(exactTexts).toEqual(
+      expect.arrayContaining([
+        {
+          field: 'title_primary',
+          text_compact: '残酷な天使のテーゼ',
+          weight: 5,
+          category: 'anime',
+          provider_mask: 5,
+        },
+        {
+          field: 'artist_alias',
+          text_compact: 'mrsgreenapple',
+          weight: 2,
+          category: 'anime',
+          provider_mask: 5,
+        },
+      ]),
+    );
+
+    const tokens = db
+      .prepare(
+        `SELECT kind, token, field
+        FROM search_tokens
+        WHERE song_id = ?
+        ORDER BY kind ASC, token ASC, field ASC`,
+      )
+      .all(CJK_SEARCH_RECORD.id) as unknown as Array<{
+      kind: string;
+      token: string;
+      field: string;
+    }>;
+    expect(tokens).toEqual(
+      expect.arrayContaining([
+        { kind: 'gram2', token: '天使', field: 'title_primary' },
+        { kind: 'gram3', token: '天使の', field: 'title_primary' },
+        { kind: 'initial', token: 'ㅅㄹㅎㄴㅂ', field: 'title_ko' },
+        { kind: 'prefix', token: 'mr', field: 'artist_alias' },
+      ]),
+    );
+
+    const tokenStats = db
+      .prepare(
+        `SELECT df, idf_scaled FROM search_token_stats WHERE kind = 'gram2' AND token = '天使'`,
+      )
+      .get() as unknown as { df: number; idf_scaled: number };
+    expect(tokenStats.df).toBe(1);
+    expect(tokenStats.idf_scaled).toBeGreaterThan(0);
+  });
+
+  it('builds a complete D1 replacement SQL dump that populates derived search indexes', () => {
+    const db = openMemoryDb();
+
+    db.exec(buildD1ImportSql([CJK_SEARCH_RECORD]));
+
+    expect(exportSongs(db)).toEqual([CJK_SEARCH_RECORD]);
+    expect(
+      (
+        db.prepare('SELECT COUNT(*) AS count FROM search_texts').get() as unknown as {
+          count: number;
+        }
+      ).count,
+    ).toBeGreaterThan(0);
+    expect(
+      (
+        db.prepare('SELECT COUNT(*) AS count FROM search_tokens').get() as unknown as {
+          count: number;
+        }
+      ).count,
+    ).toBeGreaterThan(0);
+    expect(
+      (
+        db.prepare('SELECT COUNT(*) AS count FROM search_token_stats').get() as unknown as {
+          count: number;
+        }
+      ).count,
+    ).toBeGreaterThan(0);
+  });
+
+  it('batches generated D1 SQL inserts below Cloudflare statement-size limits', () => {
+    const records = Array.from({ length: 150 }, (_, index): SongRecord => {
+      const songNumber = 613446 + index;
+      return {
+        ...CJK_SEARCH_RECORD,
+        id: `joysound-${songNumber}`,
+        source_url: `https://example.com/joysound/${songNumber}`,
+        karaoke_numbers: { tj: `0${68748 + index}`, ky: null, joysound: String(songNumber) },
+      };
+    });
+
+    const sql = buildD1ImportSql(records);
+    const statements = sql
+      .trim()
+      .split(/;\n/u)
+      .map((statement) => `${statement};`);
+    const maxStatementBytes = Math.max(
+      ...statements.map((statement) => Buffer.byteLength(statement, 'utf8')),
+    );
+
+    expect(maxStatementBytes).toBeLessThanOrEqual(100_000);
+    expect(sql.match(/^INSERT INTO search_tokens/gmu)?.length ?? 0).toBeGreaterThan(1);
   });
 
   it('builds a complete D1 replacement SQL dump that preserves escaped text fields', () => {

@@ -1,4 +1,11 @@
 import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
+import {
+  compactSearchText,
+  makeCharacterNgrams,
+  makeHangulInitials,
+  parseKaraokeNumberQuery,
+  tokenizeSearchWords,
+} from '@karaoke/search';
 
 export interface Env {
   DB: D1DatabaseLike;
@@ -18,7 +25,7 @@ export interface D1Result<T> {
 }
 
 type D1Value = string | number | null;
-type Vendor = keyof KaraokeNumbers;
+type Vendor = (typeof VENDORS)[number];
 type TitleKoSource = NonNullable<SongRecord['title_ko_source']>;
 type TitleKoConfidence = NonNullable<SongRecord['title_ko_confidence']>;
 
@@ -26,8 +33,10 @@ const CATEGORIES = ['jpop', 'vocaloid', 'anime'] as const;
 const VENDORS = ['tj', 'ky', 'joysound'] as const;
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
-const MAX_LIKE_PATTERN_BYTES = 50;
-const TEXT_ENCODER = new TextEncoder();
+const MAX_QUERY_TOKENS = 24;
+const MAX_PREFIX_TOKEN_CHARS = 12;
+const VENDOR_MASKS: Record<Vendor, number> = { tj: 1, ky: 2, joysound: 4 };
+const HANGUL_INITIALS_QUERY_PATTERN = /^[ㄱ-ㅎ]+$/u;
 const JSON_HEADERS = {
   'access-control-allow-origin': '*',
   'content-type': 'application/json; charset=utf-8',
@@ -92,43 +101,19 @@ async function findCandidateRows(
   db: D1DatabaseLike,
   params: SearchQueryParams,
 ): Promise<StoredSongRow[]> {
+  if (params.query.length === 0) {
+    return findFilteredRows(db, params);
+  }
+  return findIndexedCandidateRows(db, params);
+}
+
+async function findFilteredRows(
+  db: D1DatabaseLike,
+  params: SearchQueryParams,
+): Promise<StoredSongRow[]> {
   const where: string[] = [];
   const values: D1Value[] = [];
-
-  if (params.query.length > 0) {
-    const like = makeLikePattern(params.query);
-    where.push(`(
-      s.title_primary LIKE ? ESCAPE '\\'
-      OR s.title_ko LIKE ? ESCAPE '\\'
-      OR s.artist_primary LIKE ? ESCAPE '\\'
-      OR s.artist_ko LIKE ? ESCAPE '\\'
-      OR EXISTS (
-        SELECT 1 FROM artist_aliases aa
-        WHERE aa.song_id = s.id AND aa.alias LIKE ? ESCAPE '\\'
-      )
-      OR EXISTS (
-        SELECT 1 FROM karaoke_numbers qn
-        WHERE qn.song_id = s.id AND qn.number = ?
-      )
-    )`);
-    values.push(like, like, like, like, like, params.query);
-  }
-
-  if (params.category !== undefined) {
-    where.push(`EXISTS (
-      SELECT 1 FROM song_categories sc
-      WHERE sc.song_id = s.id AND sc.category = ?
-    )`);
-    values.push(params.category);
-  }
-
-  if (params.vendor !== undefined) {
-    where.push(`EXISTS (
-      SELECT 1 FROM karaoke_numbers vn
-      WHERE vn.song_id = s.id AND vn.provider = ? AND vn.number IS NOT NULL
-    )`);
-    values.push(params.vendor);
-  }
+  appendSongFilters(where, values, params, 's');
 
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const statement = db
@@ -148,6 +133,124 @@ async function findCandidateRows(
       FROM songs s
       ${whereSql}
       ORDER BY s.sort_order ASC, s.id ASC
+      LIMIT ? OFFSET ?`,
+    )
+    .bind(...values, params.limit, params.offset);
+
+  return allRows<StoredSongRow>(statement);
+}
+
+async function findIndexedCandidateRows(
+  db: D1DatabaseLike,
+  params: SearchQueryParams,
+): Promise<StoredSongRow[]> {
+  const subqueries: string[] = [];
+  const values: D1Value[] = [];
+  const queryTokens = buildSearchQueryTokens(params.query);
+  if (queryTokens.length > 0) {
+    const tokenRowsSql = queryTokens
+      .map(() => 'SELECT ? AS kind, ? AS token, ? AS query_weight')
+      .join(' UNION ALL ');
+    const where: string[] = [];
+    for (const token of queryTokens) {
+      values.push(token.kind, token.token, token.queryWeight);
+    }
+    appendIndexFilters(where, values, params, 'st');
+    subqueries.push(`
+      SELECT st.song_id, SUM(st.weight * qt.query_weight * COALESCE(stats.idf_scaled, 1000)) AS score
+      FROM search_tokens st
+      JOIN (${tokenRowsSql}) qt ON qt.kind = st.kind AND qt.token = st.token
+      LEFT JOIN search_token_stats stats ON stats.kind = st.kind AND stats.token = st.token
+      ${where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''}
+      GROUP BY st.song_id
+    `);
+  }
+
+  const compactQuery = compactSearchText(params.query);
+  if (Array.from(compactQuery).length >= 2) {
+    const where = ['sx.text_compact = ?'];
+    values.push(compactQuery);
+    appendIndexFilters(where, values, params, 'sx');
+    subqueries.push(`
+      SELECT sx.song_id, MAX(sx.weight * 2000000) AS score
+      FROM search_texts sx
+      WHERE ${where.join(' AND ')}
+      GROUP BY sx.song_id
+    `);
+  }
+
+  const numberQuery = parseKaraokeNumberQuery(params.query);
+  if (numberQuery !== null) {
+    const where = [
+      'kn.number IS NOT NULL',
+      `(kn.number = ? OR kn.number LIKE ? ESCAPE '\\' OR kn.number_key = ? OR kn.number_key LIKE ? ESCAPE '\\')`,
+    ];
+    const trimmedNumber = trimLeadingZeroes(numberQuery.number);
+    const numberValues: D1Value[] = [
+      numberQuery.number,
+      trimmedNumber,
+      numberQuery.number,
+      `${escapeLike(numberQuery.number)}%`,
+      trimmedNumber,
+      `${escapeLike(trimmedNumber)}%`,
+    ];
+    if (numberQuery.provider !== undefined) {
+      where.push('kn.provider = ?');
+      numberValues.push(numberQuery.provider);
+    }
+    if (params.vendor !== undefined) {
+      where.push('kn.provider = ?');
+      numberValues.push(params.vendor);
+    }
+    if (params.category !== undefined) {
+      where.push(`EXISTS (
+        SELECT 1 FROM song_categories sc
+        WHERE sc.song_id = kn.song_id AND sc.category = ?
+      )`);
+      numberValues.push(params.category);
+    }
+    subqueries.push(`
+      SELECT kn.song_id,
+        MAX(CASE
+          WHEN kn.number = ? THEN 1000000000
+          WHEN kn.number_key = ? THEN 990000000
+          ELSE 900000000
+        END) AS score
+      FROM karaoke_numbers kn
+      WHERE ${where.join(' AND ')}
+      GROUP BY kn.song_id
+    `);
+    values.push(...numberValues);
+  }
+
+  if (subqueries.length === 0) {
+    return [];
+  }
+
+  const statement = db
+    .prepare(
+      `WITH candidates AS (
+        ${subqueries.join('\nUNION ALL\n')}
+      ), ranked AS (
+        SELECT song_id, SUM(score) AS score
+        FROM candidates
+        GROUP BY song_id
+      )
+      SELECT
+        s.id,
+        s.source_url,
+        s.title_primary,
+        s.title_ko,
+        s.artist_primary,
+        s.artist_ko,
+        s.artist_aliases_present,
+        s.crawled_at,
+        s.media_context_ko,
+        s.title_ko_source,
+        s.title_ko_confidence
+      FROM ranked r
+      JOIN songs s ON s.id = r.song_id
+      ORDER BY r.score DESC, s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -247,6 +350,107 @@ async function allRows<T>(statement: D1PreparedStatementLike): Promise<T[]> {
   return result.results ?? [];
 }
 
+function appendSongFilters(
+  where: string[],
+  values: D1Value[],
+  params: Pick<SearchQueryParams, 'category' | 'vendor'>,
+  songAlias: string,
+): void {
+  if (params.category !== undefined) {
+    where.push(`EXISTS (
+      SELECT 1 FROM song_categories sc
+      WHERE sc.song_id = ${songAlias}.id AND sc.category = ?
+    )`);
+    values.push(params.category);
+  }
+
+  if (params.vendor !== undefined) {
+    where.push(`EXISTS (
+      SELECT 1 FROM karaoke_numbers vn
+      WHERE vn.song_id = ${songAlias}.id AND vn.provider = ? AND vn.number IS NOT NULL
+    )`);
+    values.push(params.vendor);
+  }
+}
+
+function appendIndexFilters(
+  where: string[],
+  values: D1Value[],
+  params: Pick<SearchQueryParams, 'category' | 'vendor'>,
+  indexAlias: string,
+): void {
+  if (params.category !== undefined) {
+    where.push(`${indexAlias}.category = ?`);
+    values.push(params.category);
+  }
+  if (params.vendor !== undefined) {
+    where.push(`(${indexAlias}.provider_mask & ?) != 0`);
+    values.push(VENDOR_MASKS[params.vendor]);
+  }
+}
+
+function buildSearchQueryTokens(query: string): SearchQueryToken[] {
+  const byKey = new Map<string, SearchQueryToken>();
+  const add = (kind: SearchTokenKind, token: string, queryWeight: number): void => {
+    if (Array.from(token).length < 2) {
+      return;
+    }
+    const key = `${kind}\u0000${token}`;
+    const existing = byKey.get(key);
+    if (existing === undefined || queryWeight > existing.queryWeight) {
+      byKey.set(key, { kind, token, queryWeight });
+    }
+  };
+
+  for (const word of tokenizeSearchWords(query)) {
+    const wordLength = Array.from(word).length;
+    add('term', word, 45);
+    if (wordLength <= MAX_PREFIX_TOKEN_CHARS) {
+      add('prefix', word, 30);
+    } else {
+      add('prefix', Array.from(word).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), 30);
+    }
+  }
+
+  const compactQuery = compactSearchText(query);
+  const compactLength = Array.from(compactQuery).length;
+  if (hasNonAsciiCharacter(compactQuery) && compactLength >= 2) {
+    for (const gram of makeCharacterNgrams(compactQuery, 2)) {
+      add('gram2', gram, 12);
+    }
+  }
+  if (hasNonAsciiCharacter(compactQuery) && compactLength >= 3) {
+    for (const gram of makeCharacterNgrams(compactQuery, 3)) {
+      add('gram3', gram, 18);
+    }
+  }
+
+  const hangulInitials = makeHangulInitials(query);
+  if (hangulInitials.length >= 2) {
+    add('initial', hangulInitials.slice(0, MAX_PREFIX_TOKEN_CHARS), 35);
+  }
+  if (HANGUL_INITIALS_QUERY_PATTERN.test(compactQuery)) {
+    add('initial', Array.from(compactQuery).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), 35);
+  }
+
+  return Array.from(byKey.values())
+    .sort(
+      (left, right) =>
+        right.queryWeight - left.queryWeight ||
+        left.kind.localeCompare(right.kind) ||
+        left.token.localeCompare(right.token),
+    )
+    .slice(0, MAX_QUERY_TOKENS);
+}
+
+function trimLeadingZeroes(value: string): string {
+  return value.replace(/^0+/u, '') || '0';
+}
+
+function hasNonAsciiCharacter(value: string): boolean {
+  return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
+}
+
 function parseCategory(value: string | null): Category | undefined {
   if (value === null || value === '') {
     return undefined;
@@ -296,16 +500,6 @@ function parseNonNegativeInteger(value: string, field: string): number {
   return parsed;
 }
 
-function makeLikePattern(query: string): string {
-  const pattern = `%${escapeLike(query)}%`;
-  if (TEXT_ENCODER.encode(pattern).byteLength > MAX_LIKE_PATTERN_BYTES) {
-    throw new BadRequestError(
-      `Search query is too long: LIKE pattern exceeds ${MAX_LIKE_PATTERN_BYTES} UTF-8 bytes`,
-    );
-  }
-  return pattern;
-}
-
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
@@ -322,6 +516,14 @@ function json(body: unknown, status = 200): Response {
 }
 
 class BadRequestError extends Error {}
+
+type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';
+
+interface SearchQueryToken {
+  kind: SearchTokenKind;
+  token: string;
+  queryWeight: number;
+}
 
 interface SearchQueryParams {
   query: string;

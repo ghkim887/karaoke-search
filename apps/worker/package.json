@@ -14,9 +14,9 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -b",
-    "test": "vitest run test/search.test.ts test/d1-workflow.test.ts && corepack pnpm run test:d1-runtime",
-    "typecheck": "tsc --noEmit",
+    "build": "corepack pnpm --filter @karaoke/search build && tsc -b",
+    "test": "corepack pnpm --filter @karaoke/data-store build && vitest run test/search.test.ts test/d1-workflow.test.ts && corepack pnpm run test:d1-runtime",
+    "typecheck": "corepack pnpm --filter @karaoke/search build && tsc --noEmit",
     "test:d1-runtime": "corepack pnpm --filter @karaoke/data-store build && tsc -b && vitest run test/d1-runtime.test.ts",
     "d1:export-sql": "corepack pnpm --filter @karaoke/data-store build && node scripts/export-d1-sql.mjs",
     "d1:migrate:local": "wrangler d1 migrations apply karaoke-songs --local",
@@ -25,7 +25,8 @@
     "d1:import:remote": "node scripts/guard-remote-d1.mjs && corepack pnpm run d1:export-sql && wrangler d1 execute karaoke-songs --remote --file .wrangler/import/songs-d1.sql"
   },
   "dependencies": {
-    "@karaoke/schema": "workspace:*"
+    "@karaoke/schema": "workspace:*",
+    "@karaoke/search": "workspace:*"
   },
   "devDependencies": {
     "@karaoke/data-store": "workspace:*",

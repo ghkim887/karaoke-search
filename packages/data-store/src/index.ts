@@ -2,6 +2,14 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'nod
 import { createRequire } from 'node:module';
 import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
+import {
+  compactSearchText,
+  makeCharacterNgrams,
+  makeHangulInitials,
+  normalizeKaraokeNumber,
+  normalizeSearchText,
+  tokenizeSearchWords,
+} from '@karaoke/search';
 
 type SqliteModule = typeof import('node:sqlite');
 type TitleKoSource = NonNullable<SongRecord['title_ko_source']>;
@@ -10,18 +18,44 @@ export type SongDatabase = import('node:sqlite').DatabaseSync;
 
 const require = createRequire(import.meta.url);
 const KARAOKE_PROVIDERS = ['tj', 'ky', 'joysound'] as const;
+const PROVIDER_MASKS = { tj: 1, ky: 2, joysound: 4 } as const;
+const SEARCH_TEXT_FIELDS = [
+  { field: 'title_primary', weight: 5 },
+  { field: 'title_ko', weight: 5 },
+  { field: 'artist_primary', weight: 3 },
+  { field: 'artist_ko', weight: 3 },
+  { field: 'artist_alias', weight: 2 },
+] as const;
+const MAX_PREFIX_LENGTH = 12;
+const MAX_D1_SQL_STATEMENT_BYTES = 90_000;
+
+type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
+type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';
 
 function sqlite(): SqliteModule {
   return require('node:sqlite') as SqliteModule;
 }
 
-export const D1_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, sort_order INTEGER NOT NULL, source_url TEXT NOT NULL, title_primary TEXT NOT NULL, title_ko TEXT, artist_primary TEXT NOT NULL, artist_ko TEXT, artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1)), crawled_at TEXT NOT NULL, media_context_ko TEXT, title_ko_source TEXT, title_ko_confidence TEXT);
-CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, PRIMARY KEY (song_id, provider));
+const D1_TABLE_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, sort_order INTEGER NOT NULL, source_url TEXT NOT NULL, title_primary TEXT NOT NULL, title_ko TEXT, artist_primary TEXT NOT NULL, artist_ko TEXT, artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1)), crawled_at TEXT NOT NULL, media_context_ko TEXT, title_ko_source TEXT, title_ko_confidence TEXT);
+CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, number_key TEXT, PRIMARY KEY (song_id, provider));
 CREATE TABLE IF NOT EXISTS song_categories (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), PRIMARY KEY (song_id, position));
 CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position));
-CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
+CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact));
+CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), weight INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
+CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token));`;
+
+const D1_INDEX_SCHEMA_SQL = `CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_song_categories_category ON song_categories(category);`;
+CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_number ON karaoke_numbers(number, provider, song_id) WHERE number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_number_key ON karaoke_numbers(number_key, provider, song_id) WHERE number_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_song_categories_category ON song_categories(category);
+CREATE INDEX IF NOT EXISTS idx_search_texts_compact ON search_texts(text_compact, category, song_id);
+CREATE INDEX IF NOT EXISTS idx_search_texts_song ON search_texts(song_id);
+CREATE INDEX IF NOT EXISTS idx_search_tokens_lookup ON search_tokens(kind, token, category, song_id);
+CREATE INDEX IF NOT EXISTS idx_search_tokens_song ON search_tokens(song_id);`;
+
+export const D1_SCHEMA_SQL = `${D1_TABLE_SCHEMA_SQL}
+${D1_INDEX_SCHEMA_SQL}`;
 
 export function openSongDatabase(path: string): SongDatabase {
   return new (sqlite().DatabaseSync)(path);
@@ -29,16 +63,25 @@ export function openSongDatabase(path: string): SongDatabase {
 
 export function createSongDatabase(db: SongDatabase): void {
   db.exec('PRAGMA foreign_keys = ON;');
-  db.exec(D1_SCHEMA_SQL);
-  ensureSongsColumn(
+  db.exec(D1_TABLE_SCHEMA_SQL);
+  ensureTableColumn(
     db,
+    'songs',
     'artist_aliases_present',
     'ALTER TABLE songs ADD COLUMN artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1))',
   );
+  ensureTableColumn(
+    db,
+    'karaoke_numbers',
+    'number_key',
+    'ALTER TABLE karaoke_numbers ADD COLUMN number_key TEXT',
+  );
+  db.exec(D1_INDEX_SCHEMA_SQL);
 }
 
 export function importSongs(db: SongDatabase, records: readonly SongRecord[]): void {
   validateSongCorpus(records);
+  const searchIndex = buildSearchIndexRows(records);
   db.exec(
     'CREATE TEMP TABLE IF NOT EXISTS temp_import_song_ids (id TEXT PRIMARY KEY) WITHOUT ROWID',
   );
@@ -76,7 +119,7 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
   const deleteCategories = db.prepare('DELETE FROM song_categories WHERE song_id = ?');
   const deleteAliases = db.prepare('DELETE FROM artist_aliases WHERE song_id = ?');
   const insertNumber = db.prepare(
-    'INSERT INTO karaoke_numbers (song_id, provider, number) VALUES (?, ?, ?)',
+    'INSERT INTO karaoke_numbers (song_id, provider, number, number_key) VALUES (?, ?, ?, ?)',
   );
   const insertCategory = db.prepare(
     'INSERT INTO song_categories (song_id, position, category) VALUES (?, ?, ?)',
@@ -84,9 +127,35 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
   const insertAlias = db.prepare(
     'INSERT INTO artist_aliases (song_id, position, alias) VALUES (?, ?, ?)',
   );
+  const insertSearchText = db.prepare(
+    `INSERT INTO search_texts (
+      song_id,
+      field,
+      text_norm,
+      text_compact,
+      weight,
+      category,
+      provider_mask
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const insertSearchToken = db.prepare(
+    `INSERT INTO search_tokens (
+      kind,
+      token,
+      song_id,
+      field,
+      weight,
+      category,
+      provider_mask
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const insertSearchTokenStat = db.prepare(
+    'INSERT INTO search_token_stats (kind, token, df, idf_scaled) VALUES (?, ?, ?, ?)',
+  );
 
   db.exec('BEGIN');
   try {
+    db.exec('DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts');
     db.exec('DELETE FROM temp_import_song_ids');
     records.forEach((record, index) => {
       insertImportId.run(record.id);
@@ -109,9 +178,24 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
       deleteCategories.run(record.id);
       deleteAliases.run(record.id);
 
-      insertNumber.run(record.id, 'tj', record.karaoke_numbers.tj);
-      insertNumber.run(record.id, 'ky', record.karaoke_numbers.ky);
-      insertNumber.run(record.id, 'joysound', record.karaoke_numbers.joysound);
+      insertNumber.run(
+        record.id,
+        'tj',
+        record.karaoke_numbers.tj,
+        karaokeNumberKey(record.karaoke_numbers.tj),
+      );
+      insertNumber.run(
+        record.id,
+        'ky',
+        record.karaoke_numbers.ky,
+        karaokeNumberKey(record.karaoke_numbers.ky),
+      );
+      insertNumber.run(
+        record.id,
+        'joysound',
+        record.karaoke_numbers.joysound,
+        karaokeNumberKey(record.karaoke_numbers.joysound),
+      );
 
       record.categories.forEach((category, categoryIndex) => {
         insertCategory.run(record.id, categoryIndex, category);
@@ -120,6 +204,33 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
         insertAlias.run(record.id, aliasIndex, alias);
       });
     });
+
+    for (const row of searchIndex.texts) {
+      insertSearchText.run(
+        row.songId,
+        row.field,
+        row.textNorm,
+        row.textCompact,
+        row.weight,
+        row.category,
+        row.providerMask,
+      );
+    }
+    for (const row of searchIndex.tokens) {
+      insertSearchToken.run(
+        row.kind,
+        row.token,
+        row.songId,
+        row.field,
+        row.weight,
+        row.category,
+        row.providerMask,
+      );
+    }
+    for (const row of searchIndex.tokenStats) {
+      insertSearchTokenStat.run(row.kind, row.token, row.df, row.idfScaled);
+    }
+
     db.exec('DELETE FROM songs WHERE id NOT IN (SELECT id FROM temp_import_song_ids)');
     db.exec('DELETE FROM temp_import_song_ids');
     db.exec('COMMIT');
@@ -217,6 +328,7 @@ export function buildD1ImportSql(
   options: BuildD1ImportSqlOptions = {},
 ): string {
   validateSongCorpus(records);
+  const searchIndex = buildSearchIndexRows(records);
   const includeSchema = options.includeSchema ?? true;
   const lines: string[] = [];
 
@@ -225,73 +337,126 @@ export function buildD1ImportSql(
   }
 
   lines.push(
+    'DELETE FROM search_token_stats;',
+    'DELETE FROM search_tokens;',
+    'DELETE FROM search_texts;',
     'DELETE FROM artist_aliases;',
     'DELETE FROM song_categories;',
     'DELETE FROM karaoke_numbers;',
     'DELETE FROM songs;',
   );
 
-  records.forEach((record, index) => {
-    lines.push(
-      `INSERT INTO songs (${[
-        'id',
-        'sort_order',
-        'source_url',
-        'title_primary',
-        'title_ko',
-        'artist_primary',
-        'artist_ko',
-        'artist_aliases_present',
-        'crawled_at',
-        'media_context_ko',
-        'title_ko_source',
-        'title_ko_confidence',
-      ].join(', ')}) VALUES (${[
-        sqlLiteral(record.id),
-        sqlInteger(index),
-        sqlLiteral(record.source_url),
-        sqlLiteral(record.title_primary),
-        sqlLiteral(record.title_ko),
-        sqlLiteral(record.artist_primary),
-        sqlLiteral(record.artist_ko),
-        sqlInteger(record.artist_aliases === undefined ? 0 : 1),
-        sqlLiteral(record.crawled_at),
-        sqlLiteral(record.media_context_ko ?? null),
-        sqlLiteral(record.title_ko_source ?? null),
-        sqlLiteral(record.title_ko_confidence ?? null),
-      ].join(', ')});`,
-    );
+  pushBatchedInsert(
+    lines,
+    'songs',
+    [
+      'id',
+      'sort_order',
+      'source_url',
+      'title_primary',
+      'title_ko',
+      'artist_primary',
+      'artist_ko',
+      'artist_aliases_present',
+      'crawled_at',
+      'media_context_ko',
+      'title_ko_source',
+      'title_ko_confidence',
+    ],
+    enumerate(records),
+    ([record, index]) => [
+      sqlLiteral(record.id),
+      sqlInteger(index),
+      sqlLiteral(record.source_url),
+      sqlLiteral(record.title_primary),
+      sqlLiteral(record.title_ko),
+      sqlLiteral(record.artist_primary),
+      sqlLiteral(record.artist_ko),
+      sqlInteger(record.artist_aliases === undefined ? 0 : 1),
+      sqlLiteral(record.crawled_at),
+      sqlLiteral(record.media_context_ko ?? null),
+      sqlLiteral(record.title_ko_source ?? null),
+      sqlLiteral(record.title_ko_confidence ?? null),
+    ],
+  );
 
-    for (const provider of KARAOKE_PROVIDERS) {
-      lines.push(
-        `INSERT INTO karaoke_numbers (song_id, provider, number) VALUES (${[
-          sqlLiteral(record.id),
-          sqlLiteral(provider),
-          sqlLiteral(record.karaoke_numbers[provider]),
-        ].join(', ')});`,
-      );
-    }
+  pushBatchedInsert(
+    lines,
+    'karaoke_numbers',
+    ['song_id', 'provider', 'number', 'number_key'],
+    karaokeNumberImportRows(records),
+    ([songId, provider, number]) => [
+      sqlLiteral(songId),
+      sqlLiteral(provider),
+      sqlLiteral(number),
+      sqlLiteral(karaokeNumberKey(number)),
+    ],
+  );
 
-    record.categories.forEach((category, categoryIndex) => {
-      lines.push(
-        `INSERT INTO song_categories (song_id, position, category) VALUES (${[
-          sqlLiteral(record.id),
-          sqlInteger(categoryIndex),
-          sqlLiteral(category),
-        ].join(', ')});`,
-      );
-    });
+  pushBatchedInsert(
+    lines,
+    'song_categories',
+    ['song_id', 'position', 'category'],
+    songCategoryImportRows(records),
+    ([songId, position, category]) => [
+      sqlLiteral(songId),
+      sqlInteger(position),
+      sqlLiteral(category),
+    ],
+  );
 
-    record.artist_aliases?.forEach((alias, aliasIndex) => {
-      lines.push(
-        `INSERT INTO artist_aliases (song_id, position, alias) VALUES (${[
-          sqlLiteral(record.id),
-          sqlInteger(aliasIndex),
-          sqlLiteral(alias),
-        ].join(', ')});`,
-      );
-    });
-  });
+  pushBatchedInsert(
+    lines,
+    'artist_aliases',
+    ['song_id', 'position', 'alias'],
+    artistAliasImportRows(records),
+    ([songId, position, alias]) => [sqlLiteral(songId), sqlInteger(position), sqlLiteral(alias)],
+  );
+
+  pushBatchedInsert(
+    lines,
+    'search_texts',
+    ['song_id', 'field', 'text_norm', 'text_compact', 'weight', 'category', 'provider_mask'],
+    searchIndex.texts,
+    (row) => [
+      sqlLiteral(row.songId),
+      sqlLiteral(row.field),
+      sqlLiteral(row.textNorm),
+      sqlLiteral(row.textCompact),
+      sqlInteger(row.weight),
+      sqlLiteral(row.category),
+      sqlInteger(row.providerMask),
+    ],
+  );
+
+  pushBatchedInsert(
+    lines,
+    'search_tokens',
+    ['kind', 'token', 'song_id', 'field', 'weight', 'category', 'provider_mask'],
+    searchIndex.tokens,
+    (row) => [
+      sqlLiteral(row.kind),
+      sqlLiteral(row.token),
+      sqlLiteral(row.songId),
+      sqlLiteral(row.field),
+      sqlInteger(row.weight),
+      sqlLiteral(row.category),
+      sqlInteger(row.providerMask),
+    ],
+  );
+
+  pushBatchedInsert(
+    lines,
+    'search_token_stats',
+    ['kind', 'token', 'df', 'idf_scaled'],
+    searchIndex.tokenStats,
+    (row) => [
+      sqlLiteral(row.kind),
+      sqlLiteral(row.token),
+      sqlInteger(row.df),
+      sqlInteger(row.idfScaled),
+    ],
+  );
 
   return `${lines.join('\n')}\n`;
 }
@@ -342,6 +507,197 @@ export function exportSongsJson({ dbPath, outputPath }: ExportSongsJsonArgs): vo
   }
 }
 
+function buildSearchIndexRows(records: readonly SongRecord[]): SearchIndexRows {
+  const texts: SearchTextRow[] = [];
+  const tokens: SearchTokenRow[] = [];
+  const seenTexts = new Set<string>();
+  const seenTokens = new Set<string>();
+
+  for (const record of records) {
+    const category = record.categories[0];
+    if (category === undefined) {
+      throw new Error(`Song ${record.id} has no primary category`);
+    }
+    const providerMask = karaokeProviderMask(record.karaoke_numbers);
+
+    for (const input of searchTextInputs(record)) {
+      const textCompact = compactSearchText(input.value);
+      if (textCompact.length === 0) {
+        continue;
+      }
+
+      const textNorm = normalizeSearchText(input.value).trim();
+      const textKey = `${record.id}\u0000${input.field}\u0000${textCompact}`;
+      if (!seenTexts.has(textKey)) {
+        seenTexts.add(textKey);
+        texts.push({
+          songId: record.id,
+          field: input.field,
+          textNorm,
+          textCompact,
+          weight: input.weight,
+          category,
+          providerMask,
+        });
+      }
+
+      addSearchTokens(tokens, seenTokens, {
+        songId: record.id,
+        field: input.field,
+        value: input.value,
+        textCompact,
+        weight: input.weight,
+        category,
+        providerMask,
+      });
+    }
+  }
+
+  return { texts, tokens, tokenStats: buildSearchTokenStats(tokens, records.length) };
+}
+
+function searchTextInputs(record: SongRecord): SearchTextInput[] {
+  const inputs: SearchTextInput[] = [
+    {
+      field: 'title_primary',
+      value: record.title_primary,
+      weight: searchFieldWeight('title_primary'),
+    },
+    {
+      field: 'artist_primary',
+      value: record.artist_primary,
+      weight: searchFieldWeight('artist_primary'),
+    },
+  ];
+
+  if (record.title_ko !== null) {
+    inputs.push({
+      field: 'title_ko',
+      value: record.title_ko,
+      weight: searchFieldWeight('title_ko'),
+    });
+  }
+  if (record.artist_ko !== null) {
+    inputs.push({
+      field: 'artist_ko',
+      value: record.artist_ko,
+      weight: searchFieldWeight('artist_ko'),
+    });
+  }
+  for (const alias of record.artist_aliases ?? []) {
+    inputs.push({ field: 'artist_alias', value: alias, weight: searchFieldWeight('artist_alias') });
+  }
+
+  return inputs;
+}
+
+function addSearchTokens(rows: SearchTokenRow[], seen: Set<string>, input: SearchTokenInput): void {
+  for (const word of tokenizeSearchWords(input.value)) {
+    if (Array.from(word).length >= 2) {
+      addSearchToken(rows, seen, input, 'term', word);
+    }
+    addPrefixTokens(rows, seen, input, word, 'prefix');
+  }
+  addPrefixTokens(rows, seen, input, input.textCompact, 'prefix');
+
+  for (const gram of makeCharacterNgrams(input.textCompact, 2)) {
+    addSearchToken(rows, seen, input, 'gram2', gram);
+  }
+  for (const gram of makeCharacterNgrams(input.textCompact, 3)) {
+    addSearchToken(rows, seen, input, 'gram3', gram);
+  }
+
+  const initials = makeHangulInitials(input.value);
+  addPrefixTokens(rows, seen, input, initials, 'initial');
+}
+
+function addPrefixTokens(
+  rows: SearchTokenRow[],
+  seen: Set<string>,
+  input: SearchTokenInput,
+  value: string,
+  kind: SearchTokenKind,
+): void {
+  const characters = Array.from(value);
+  for (let length = 2; length <= Math.min(MAX_PREFIX_LENGTH, characters.length); length += 1) {
+    addSearchToken(rows, seen, input, kind, characters.slice(0, length).join(''));
+  }
+}
+
+function addSearchToken(
+  rows: SearchTokenRow[],
+  seen: Set<string>,
+  input: SearchTokenInput,
+  kind: SearchTokenKind,
+  token: string,
+): void {
+  if (token.length === 0) {
+    return;
+  }
+
+  const key = `${kind}\u0000${token}\u0000${input.songId}\u0000${input.field}`;
+  if (seen.has(key)) {
+    return;
+  }
+  seen.add(key);
+  rows.push({
+    kind,
+    token,
+    songId: input.songId,
+    field: input.field,
+    weight: input.weight,
+    category: input.category,
+    providerMask: input.providerMask,
+  });
+}
+
+function buildSearchTokenStats(
+  tokens: readonly SearchTokenRow[],
+  totalRecords: number,
+): SearchTokenStatRow[] {
+  const songsByToken = new Map<string, Set<string>>();
+  for (const token of tokens) {
+    const key = `${token.kind}\u0000${token.token}`;
+    let songIds = songsByToken.get(key);
+    if (songIds === undefined) {
+      songIds = new Set<string>();
+      songsByToken.set(key, songIds);
+    }
+    songIds.add(token.songId);
+  }
+
+  return Array.from(songsByToken, ([key, songIds]) => {
+    const separator = key.indexOf('\u0000');
+    const kind = key.slice(0, separator) as SearchTokenKind;
+    const token = key.slice(separator + 1);
+    const df = songIds.size;
+    return {
+      kind,
+      token,
+      df,
+      idfScaled: Math.max(1, Math.round(Math.log1p(Math.max(totalRecords, 1) / df) * 1000)),
+    };
+  });
+}
+
+function karaokeProviderMask(numbers: KaraokeNumbers): number {
+  let mask = 0;
+  for (const provider of KARAOKE_PROVIDERS) {
+    if (numbers[provider] !== null) {
+      mask |= PROVIDER_MASKS[provider];
+    }
+  }
+  return mask;
+}
+
+function searchFieldWeight(field: SearchField): number {
+  const config = SEARCH_TEXT_FIELDS.find((entry) => entry.field === field);
+  if (config === undefined) {
+    throw new Error(`Unknown search field: ${field}`);
+  }
+  return config.weight;
+}
+
 function sqlLiteral(value: string | null | undefined): string {
   if (value === null || value === undefined) {
     return 'NULL';
@@ -359,6 +715,84 @@ function sqlInteger(value: number): string {
   return String(value);
 }
 
+function pushBatchedInsert<T>(
+  lines: string[],
+  tableName: string,
+  columns: readonly string[],
+  rows: Iterable<T>,
+  sqlValues: (row: T) => readonly string[],
+): void {
+  const prefix = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES `;
+  let batch: string[] = [];
+  let batchBytes = Buffer.byteLength(`${prefix};`, 'utf8');
+
+  const flush = (): void => {
+    if (batch.length === 0) {
+      return;
+    }
+    lines.push(`${prefix}${batch.join(', ')};`);
+    batch = [];
+    batchBytes = Buffer.byteLength(`${prefix};`, 'utf8');
+  };
+
+  for (const row of rows) {
+    const tuple = `(${sqlValues(row).join(', ')})`;
+    const tupleBytes = Buffer.byteLength(`${batch.length === 0 ? '' : ', '}${tuple}`, 'utf8');
+    const singleStatementBytes = Buffer.byteLength(`${prefix}${tuple};`, 'utf8');
+    if (singleStatementBytes > MAX_D1_SQL_STATEMENT_BYTES) {
+      throw new Error(
+        `D1 SQL insert row for ${tableName} exceeds ${MAX_D1_SQL_STATEMENT_BYTES} bytes`,
+      );
+    }
+    if (batch.length > 0 && batchBytes + tupleBytes > MAX_D1_SQL_STATEMENT_BYTES) {
+      flush();
+    }
+    batch.push(tuple);
+    batchBytes += tupleBytes;
+  }
+
+  flush();
+}
+
+function* enumerate<T>(items: readonly T[]): Iterable<[T, number]> {
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (item !== undefined) {
+      yield [item, index];
+    }
+  }
+}
+
+function* karaokeNumberImportRows(
+  records: readonly SongRecord[],
+): Iterable<[string, (typeof KARAOKE_PROVIDERS)[number], string | null]> {
+  for (const record of records) {
+    for (const provider of KARAOKE_PROVIDERS) {
+      yield [record.id, provider, record.karaoke_numbers[provider]];
+    }
+  }
+}
+
+function* songCategoryImportRows(
+  records: readonly SongRecord[],
+): Iterable<[string, number, Category]> {
+  for (const record of records) {
+    for (const [position, category] of record.categories.entries()) {
+      yield [record.id, position, category];
+    }
+  }
+}
+
+function* artistAliasImportRows(
+  records: readonly SongRecord[],
+): Iterable<[string, number, string]> {
+  for (const record of records) {
+    for (const [position, alias] of (record.artist_aliases ?? []).entries()) {
+      yield [record.id, position, alias];
+    }
+  }
+}
+
 function validateSongCorpus(records: readonly SongRecord[]): void {
   const seen = new Set<string>();
   for (const record of records) {
@@ -370,11 +804,27 @@ function validateSongCorpus(records: readonly SongRecord[]): void {
   }
 }
 
-function ensureSongsColumn(db: SongDatabase, columnName: string, alterSql: string): void {
-  const columns = db.prepare('PRAGMA table_info(songs)').all() as unknown as TableInfoRow[];
+function ensureTableColumn(
+  db: SongDatabase,
+  tableName: string,
+  columnName: string,
+  alterSql: string,
+): void {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as unknown as TableInfoRow[];
   if (!columns.some((column) => column.name === columnName)) {
     db.exec(alterSql);
   }
+}
+
+function karaokeNumberKey(number: string | null): string | null {
+  if (number === null) {
+    return null;
+  }
+  const normalized = normalizeKaraokeNumber(number);
+  if (normalized.length === 0) {
+    return null;
+  }
+  return normalized.replace(/^0+/u, '') || '0';
 }
 
 function replaceFile(sourcePath: string, targetPath: string): void {
@@ -403,6 +853,52 @@ function replaceFile(sourcePath: string, targetPath: string): void {
       rmSync(backupPath, { force: true });
     }
   }
+}
+
+interface SearchIndexRows {
+  texts: SearchTextRow[];
+  tokens: SearchTokenRow[];
+  tokenStats: SearchTokenStatRow[];
+}
+
+interface SearchTextInput {
+  field: SearchField;
+  value: string;
+  weight: number;
+}
+
+interface SearchTokenInput extends SearchTextInput {
+  songId: string;
+  textCompact: string;
+  category: Category;
+  providerMask: number;
+}
+
+interface SearchTextRow {
+  songId: string;
+  field: SearchField;
+  textNorm: string;
+  textCompact: string;
+  weight: number;
+  category: Category;
+  providerMask: number;
+}
+
+interface SearchTokenRow {
+  kind: SearchTokenKind;
+  token: string;
+  songId: string;
+  field: SearchField;
+  weight: number;
+  category: Category;
+  providerMask: number;
+}
+
+interface SearchTokenStatRow {
+  kind: SearchTokenKind;
+  token: string;
+  df: number;
+  idfScaled: number;
 }
 
 interface StoredSongRow {

@@ -1,14 +1,21 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { D1_SCHEMA_SQL, buildD1ImportSql } from '@karaoke/data-store';
+import { buildD1ImportSql } from '@karaoke/data-store';
 import type { SongRecord } from '@karaoke/schema';
 import { Miniflare } from 'miniflare';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const WORKER_DIST_PATH = join(__dirname, '..', 'dist', 'index.js');
-const MIGRATION_PATH = join(__dirname, '..', 'migrations', '0001_init.sql');
+const MIGRATIONS_DIR = join(__dirname, '..', 'migrations');
+const OLD_D1_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, sort_order INTEGER NOT NULL, source_url TEXT NOT NULL, title_primary TEXT NOT NULL, title_ko TEXT, artist_primary TEXT NOT NULL, artist_ko TEXT, artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1)), crawled_at TEXT NOT NULL, media_context_ko TEXT, title_ko_source TEXT, title_ko_confidence TEXT);
+CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, PRIMARY KEY (song_id, provider));
+CREATE TABLE IF NOT EXISTS song_categories (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), PRIMARY KEY (song_id, position));
+CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position));
+CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_song_categories_category ON song_categories(category);`;
 
 const FIXTURE_RECORDS: SongRecord[] = [
   {
@@ -43,8 +50,13 @@ afterEach(async () => {
 });
 
 describe('worker D1 runtime integration', () => {
-  it('keeps the migration SQL in sync with the shared D1 schema', () => {
-    expect(normalizeSql(readFileSync(MIGRATION_PATH, 'utf8'))).toBe(normalizeSql(D1_SCHEMA_SQL));
+  it('ships an additive migration for existing D1 search index databases', () => {
+    const migration = readFileSync(join(MIGRATIONS_DIR, '0002_search_index.sql'), 'utf8');
+
+    expect(migration).toContain('ALTER TABLE karaoke_numbers ADD COLUMN number_key TEXT');
+    expect(migration).toContain('CREATE TABLE IF NOT EXISTS search_texts');
+    expect(migration).toContain('CREATE TABLE IF NOT EXISTS search_tokens');
+    expect(migration).toContain('CREATE TABLE IF NOT EXISTS search_token_stats');
   });
 
   it('serves search results through Miniflare with a real D1 binding', async () => {
@@ -59,23 +71,62 @@ describe('worker D1 runtime integration', () => {
     });
   });
 
-  it('returns D1-runtime HTTP errors for over-limit LIKE patterns', async () => {
+  it('upgrades an old D1 schema with 0002 before no-schema import', async () => {
+    const records: SongRecord[] = [
+      {
+        ...FIXTURE_RECORDS[0],
+        karaoke_numbers: { tj: '068000', ky: null, joysound: '123456' },
+      },
+    ];
+    const mf = await createMiniflare();
+    const db = await mf.getD1Database('DB');
+    await db.exec(OLD_D1_SCHEMA_SQL);
+    await db.exec(readFileSync(join(MIGRATIONS_DIR, '0002_search_index.sql'), 'utf8'));
+    await db.exec(buildD1ImportSql(records, { includeSchema: false }));
+
+    const byNumberKey = await mf.dispatchFetch('https://karaoke.example/api/search?q=68000');
+    const byIndexedText = await mf.dispatchFetch(
+      'https://karaoke.example/api/search?q=Yoa%20Alias',
+    );
+
+    expect(byNumberKey.status).toBe(200);
+    await expect(byNumberKey.json()).resolves.toMatchObject({ items: [records[0]] });
+    expect(byIndexedText.status).toBe(200);
+    await expect(byIndexedText.json()).resolves.toMatchObject({ items: [records[0]] });
+  });
+
+  it('accepts long queries without D1 LIKE-pattern errors at runtime', async () => {
     const mf = await createSeededMiniflare(FIXTURE_RECORDS);
 
     const response = await mf.dispatchFetch(
       `https://karaoke.example/api/search?q=${'a'.repeat(49)}`,
     );
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-      error: 'Search query is too long: LIKE pattern exceeds 50 UTF-8 bytes',
-    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
   });
 });
 
 async function createSeededMiniflare(records: readonly SongRecord[]): Promise<Miniflare> {
+  const mf = await createMiniflare();
+  const db = await mf.getD1Database('DB');
+  for (const migrationPath of migrationPaths()) {
+    await db.exec(readFileSync(migrationPath, 'utf8'));
+  }
+  await db.exec(buildD1ImportSql(records, { includeSchema: false }));
+  return mf;
+}
+
+async function createMiniflare(): Promise<Miniflare> {
+  const workerScript = readFileSync(WORKER_DIST_PATH, 'utf8').replaceAll(
+    '@karaoke/search',
+    '../../../packages/search/dist/index.js',
+  );
   const mf = new Miniflare({
     modules: true,
+    modulesRoot: join(__dirname, '..', '..', '..'),
+    modulesRules: [{ type: 'ESModule', include: ['**/*.js'], fallthrough: true }],
+    script: workerScript,
     scriptPath: WORKER_DIST_PATH,
     compatibilityDate: '2026-01-01',
     d1Databases: {
@@ -83,12 +134,12 @@ async function createSeededMiniflare(records: readonly SongRecord[]): Promise<Mi
     },
   });
   miniflares.push(mf);
-  const db = await mf.getD1Database('DB');
-  await db.exec(readFileSync(MIGRATION_PATH, 'utf8'));
-  await db.exec(buildD1ImportSql(records, { includeSchema: false }));
   return mf;
 }
 
-function normalizeSql(sql: string): string {
-  return sql.trim().replace(/\r\n/g, '\n');
+function migrationPaths(): string[] {
+  return readdirSync(MIGRATIONS_DIR)
+    .filter((fileName) => fileName.endsWith('.sql'))
+    .sort()
+    .map((fileName) => join(MIGRATIONS_DIR, fileName));
 }

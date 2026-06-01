@@ -57,6 +57,9 @@ importers:
       '@karaoke/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@karaoke/search':
+        specifier: workspace:*
+        version: link:../../packages/search
     devDependencies:
       '@karaoke/data-store':
         specifier: workspace:*
@@ -129,6 +132,9 @@ importers:
       '@karaoke/schema':
         specifier: workspace:*
         version: link:../schema
+      '@karaoke/search':
+        specifier: workspace:*
+        version: link:../search
     devDependencies:
       '@types/node':
         specifier: ^24.12.4
@@ -152,6 +158,15 @@ importers:
       expect-type:
         specifier: ^1.1.0
         version: 1.3.0
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@24.12.4)(jsdom@25.0.1)
+
+  packages/search:
+    devDependencies:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3

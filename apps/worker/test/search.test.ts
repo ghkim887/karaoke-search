@@ -59,6 +59,66 @@ const FIXTURE_RECORDS: SongRecord[] = [
     categories: ['vocaloid'],
     crawled_at: '2026-01-03T00:00:00.000Z',
   },
+  {
+    id: 'song-4',
+    source_url: 'https://example.com/4',
+    title_primary: '残酷な天使のテーゼ',
+    title_ko: '사랑했나봐',
+    artist_primary: "B'z",
+    artist_ko: '비즈',
+    artist_aliases: ['Mrs. GREEN APPLE'],
+    karaoke_numbers: { tj: '068748', ky: null, joysound: '613446' },
+    categories: ['anime'],
+    crawled_at: '2026-01-04T00:00:00.000Z',
+  },
+];
+
+const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
+  {
+    id: 'parity-kessoku-1',
+    source_url: 'https://example.com/parity/kessoku',
+    title_primary: '青春コンプレックス',
+    title_ko: null,
+    artist_primary: '結束バンド',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
+    categories: ['anime'],
+    crawled_at: '2026-01-05T00:00:00.000Z',
+  },
+  {
+    id: 'parity-radwimps-1',
+    source_url: 'https://example.com/parity/radwimps',
+    title_primary: 'Sparkle',
+    title_ko: null,
+    artist_primary: 'RADWIMPS',
+    artist_ko: null,
+    karaoke_numbers: { tj: '62466', ky: null, joysound: null },
+    categories: ['jpop'],
+    crawled_at: '2026-01-06T00:00:00.000Z',
+  },
+  {
+    id: 'parity-deco-27',
+    source_url: 'https://example.com/parity/deco27',
+    title_primary: 'Ghost Rule',
+    title_ko: null,
+    artist_primary: 'DECO*27',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: '44000', joysound: null },
+    categories: ['vocaloid'],
+    crawled_at: '2026-01-07T00:00:00.000Z',
+  },
+  {
+    id: 'parity-higedan-1',
+    source_url: 'https://example.com/parity/higedan',
+    title_primary: 'Pretender',
+    title_ko: null,
+    artist_primary: 'Official髭男dism',
+    artist_ko: null,
+    artist_aliases: ['Official HIGE DANdism'],
+    karaoke_numbers: { tj: '62500', ky: null, joysound: null },
+    categories: ['jpop'],
+    crawled_at: '2026-01-08T00:00:00.000Z',
+  },
 ];
 
 describe('worker search API', () => {
@@ -75,13 +135,54 @@ describe('worker search API', () => {
     expect(byArtist.items[0]).toEqual(FIXTURE_RECORDS[0]);
   });
 
+  it('uses derived search indexes for compact aliases, CJK grams, Hangul initials, and provider numbers', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const byJapaneseGram = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF');
+    const byHangulInitial = await fetchJson(db, '/api/search?q=%E3%85%85%E3%84%B9');
+    const byCompactAlias = await fetchJson(db, '/api/search?q=mrsgreenapple');
+    const byProviderNumber = await fetchJson(db, '/api/search?q=TJ068748');
+    const byIndexedFilters = await fetchJson(
+      db,
+      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=tj',
+    );
+    const byMismatchedIndexedFilters = await fetchJson(
+      db,
+      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=ky',
+    );
+
+    expect(byJapaneseGram.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(byHangulInitial.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(byCompactAlias.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(byProviderNumber.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(byIndexedFilters.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(byMismatchedIndexedFilters.items).toEqual([]);
+  });
+
+  it('preserves MiniSearch parity for Japanese artist, Latin casefolding, punctuation prefixes, and long prefixes', async () => {
+    const db = createD1WithSongs(MINISEARCH_PARITY_RECORDS);
+
+    const byJapaneseArtist = await fetchJson(
+      db,
+      '/api/search?q=%E7%B5%90%E6%9D%9F%E3%83%90%E3%83%B3%E3%83%89',
+    );
+    const byLatinCasefold = await fetchJson(db, '/api/search?q=radwimps');
+    const byPunctuationPrefix = await fetchJson(db, '/api/search?q=DECO');
+    const byLongPrefix = await fetchJson(db, '/api/search?q=officialhigedan');
+
+    expect(byJapaneseArtist.items.map((song) => song.id)).toEqual(['parity-kessoku-1']);
+    expect(byLatinCasefold.items.map((song) => song.id)).toEqual(['parity-radwimps-1']);
+    expect(byPunctuationPrefix.items.map((song) => song.id)).toEqual(['parity-deco-27']);
+    expect(byLongPrefix.items.map((song) => song.id)).toEqual(['parity-higedan-1']);
+  });
+
   it('applies category and vendor filters', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
 
     const animeWithTj = await fetchJson(db, '/api/search?category=anime&vendor=tj');
     const animeWithKy = await fetchJson(db, '/api/search?category=anime&vendor=ky');
 
-    expect(animeWithTj.items.map((song) => song.id)).toEqual(['song-2']);
+    expect(animeWithTj.items.map((song) => song.id)).toEqual(['song-2', 'song-4']);
     expect(animeWithKy.items).toEqual([]);
   });
 
@@ -93,7 +194,7 @@ describe('worker search API', () => {
 
     expect(first.items.map((song) => song.id)).toEqual(['song-1', 'song-2']);
     expect(first.nextCursor).toBe('2');
-    expect(second.items.map((song) => song.id)).toEqual(['song-3']);
+    expect(second.items.map((song) => song.id)).toEqual(['song-3', 'song-4']);
     expect(second.nextCursor).toBeNull();
   });
 
@@ -109,17 +210,15 @@ describe('worker search API', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Invalid category: invalid' });
   });
 
-  it('rejects search queries whose escaped LIKE pattern exceeds D1 limits', async () => {
+  it('accepts long search queries without D1 LIKE-pattern failures', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
     const response = await handleRequest(
       new Request(`https://karaoke.example/api/search?q=${'a'.repeat(49)}`),
       { DB: db },
     );
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-      error: 'Search query is too long: LIKE pattern exceeds 50 UTF-8 bytes',
-    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
   });
 
   it('rejects unsafe cursor offsets', async () => {
@@ -177,6 +276,7 @@ class NodeSqliteD1 implements D1DatabaseLike {
     parameters: unknown[],
   ) {
     return {
+      bind: (...values: unknown[]) => this.prepareBoundStatement(statement, values),
       all: async <T>() => ({ results: statement.all(...parameters) as T[] }),
     };
   }

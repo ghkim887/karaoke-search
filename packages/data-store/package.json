@@ -17,12 +17,13 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -b",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "build": "corepack pnpm --filter @karaoke/search build && tsc -b",
+    "test": "corepack pnpm --filter @karaoke/search build && vitest run",
+    "typecheck": "corepack pnpm --filter @karaoke/search build && tsc --noEmit"
   },
   "dependencies": {
-    "@karaoke/schema": "workspace:*"
+    "@karaoke/schema": "workspace:*",
+    "@karaoke/search": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.12.4",
