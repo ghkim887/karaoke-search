@@ -3,8 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
+import { runDataStoreCli } from '../src/cli.js';
 import {
+  D1_SCHEMA_SQL,
+  buildD1ImportSql,
   createSongDatabase,
+  exportD1ImportSqlJson,
   exportSongs,
   exportSongsJson,
   importSongs,
@@ -156,5 +160,57 @@ describe('SQLite song store', () => {
     exportSongsJson({ dbPath, outputPath });
 
     expect(readFileSync(outputPath, 'utf8')).toBe(validJson);
+  });
+
+  it('exposes D1 schema SQL that creates a store-compatible database', () => {
+    const db = openMemoryDb();
+
+    db.exec(D1_SCHEMA_SQL);
+    importSongs(db, FIXTURE_RECORDS);
+
+    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
+  });
+
+  it('builds a complete D1 replacement SQL dump that preserves escaped text fields', () => {
+    const db = openMemoryDb();
+    const records = cloneRecords(FIXTURE_RECORDS);
+    records[0] = {
+      ...fixtureRecord(0),
+      source_url: "https://example.com/song?name=Rock'n'Roll",
+      title_primary: "Rock 'n' Roll\nSong",
+      title_ko: '별빛_%_노래',
+      artist_primary: 'Back\\Slash; DROP TABLE songs; --',
+      artist_aliases: ["Alias 'One'", 'Line\nTwo'],
+    };
+
+    db.exec(buildD1ImportSql(records));
+
+    expect(exportSongs(db)).toEqual(records);
+  });
+
+  it('writes a schema-prefixed D1 SQL import file from a JSON corpus', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
+    const inputPath = join(dir, 'songs.json');
+    const outputPath = join(dir, 'songs-d1.sql');
+    writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
+
+    exportD1ImportSqlJson({ inputPath, outputPath });
+
+    const db = openMemoryDb();
+    db.exec(readFileSync(outputPath, 'utf8'));
+    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
+  });
+
+  it('supports exporting a D1 SQL file through the data-store CLI runner', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
+    const inputPath = join(dir, 'songs.json');
+    const outputPath = join(dir, 'songs-d1-cli.sql');
+    writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
+
+    runDataStoreCli(['export-d1-sql', '--input', inputPath, '--output', outputPath]);
+
+    const db = openMemoryDb();
+    db.exec(readFileSync(outputPath, 'utf8'));
+    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
   });
 });
