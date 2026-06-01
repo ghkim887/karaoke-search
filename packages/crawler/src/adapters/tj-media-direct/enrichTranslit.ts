@@ -38,7 +38,7 @@ export interface EnrichTranslitOptions {
   logger?: { log(msg: string): void; warn(msg: string): void };
 }
 
-export interface EnrichTranslitStats {
+interface EnrichTranslitStats {
   total: number;
   cacheHits: number;
   fetches: number;

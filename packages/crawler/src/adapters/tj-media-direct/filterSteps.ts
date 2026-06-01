@@ -24,7 +24,7 @@ import type { KeepVerdict } from './parser.js';
 // Public types
 // ---------------------------------------------------------------------------
 
-export type FilterVerdict =
+type FilterVerdict =
   | { decision: 'admit'; via: KeepVerdict }
   | { decision: 'reject'; reason: string }
   | { decision: 'pass' };

@@ -78,7 +78,9 @@ const FEAT_PAREN_RE = /\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*/gi;
  * instead of hand-mirroring the regex. Edit SPLIT_RE_SOURCE here — nowhere
  * else — and rebuild; the sidecar regenerates automatically.
  */
+/** @lintignore Consumed by scripts/export-clustering-rules.mjs via dynamic import. */
 export const SPLIT_RE_SOURCE = String.raw`\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*`;
+/** @lintignore Consumed by scripts/export-clustering-rules.mjs via dynamic import. */
 export const SPLIT_RE_FLAGS = 'i';
 export const SPLIT_RE = new RegExp(SPLIT_RE_SOURCE, SPLIT_RE_FLAGS);
 const OF_RE = /\s+of\s+/i;

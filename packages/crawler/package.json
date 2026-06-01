@@ -11,14 +11,12 @@
     "build": "tsc -b && node ../../scripts/export-drop-list.mjs && node ../../scripts/export-chinese-drop-list.mjs && node ../../scripts/export-post-category-overrides.mjs && node ../../scripts/export-clustering-rules.mjs",
     "prestart": "tsc -b",
     "start": "node ./dist/cli.js",
-    "test": "vitest run",
+    "test": "tsc -b && vitest run && vitest run --root=../.. scripts/apply-manual-title-ko-fixes.test.mjs scripts/manual-fix-title-ko.test.mjs scripts/translate_title_ko_via_agents.test.mjs scripts/lib-atomic-write.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@karaoke/category-rules": "workspace:*",
     "@karaoke/schema": "workspace:*",
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1",
     "cheerio": "^1.0.0",
     "robots-parser": "^3.0.1",
     "undici": "^6.21.0"

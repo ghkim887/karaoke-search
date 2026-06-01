@@ -1,0 +1,36 @@
+{
+  "name": "@karaoke/data-store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "corepack pnpm --filter @karaoke/search build && tsc -b",
+    "test": "corepack pnpm --filter @karaoke/search build && vitest run",
+    "typecheck": "corepack pnpm --filter @karaoke/search build && tsc --noEmit"
+  },
+  "dependencies": {
+    "@karaoke/schema": "workspace:*",
+    "@karaoke/search": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.4",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "bin": {
+    "karaoke-data-store": "./dist/cli.js"
+  }
+}

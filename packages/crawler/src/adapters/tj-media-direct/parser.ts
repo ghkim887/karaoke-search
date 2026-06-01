@@ -94,7 +94,7 @@ export interface ParseOptions {
  * many paths would have admitted. A record admitted by paths 1 AND 2 is
  * counted only as `admittedByArtist`.
  */
-export interface KeepStats {
+interface KeepStats {
   admittedByArtist: number;
   admittedByPro: number;
   admittedByRescue: number;

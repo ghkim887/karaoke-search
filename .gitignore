@@ -7,6 +7,9 @@ dist/
 .cache/
 *.tsbuildinfo
 
+# Cloudflare Wrangler local state and generated D1 import SQL
+apps/worker/.wrangler/
+
 # Logs
 *.log
 npm-debug.log*

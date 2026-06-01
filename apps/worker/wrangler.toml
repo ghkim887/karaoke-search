@@ -1,0 +1,10 @@
+name = "karaoke-search-api"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "karaoke-songs"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
