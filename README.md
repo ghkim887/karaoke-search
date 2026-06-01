@@ -168,6 +168,37 @@ Pushing to `main` triggers `.github/workflows/deploy.yml`:
 
 The weekly crawl workflow runs separately and opens a `crawl-output` pull request instead of pushing data directly to `main`.
 
+### Cloudflare Worker/D1 import workflow
+
+The D1-backed API lives in `apps/worker`. Local D1 state and generated SQL dumps are scratch artifacts under `apps/worker/.wrangler/` and must not be committed.
+
+```bash
+# Generate a D1 import dump from the committed product corpus. The dump omits schema;
+# apply migrations first so Wrangler/D1 owns schema changes.
+corepack pnpm --filter @karaoke/worker run d1:export-sql
+
+# Local smoke database.
+corepack pnpm --filter @karaoke/worker run d1:migrate:local
+corepack pnpm --filter @karaoke/worker run d1:import:local
+```
+
+Remote D1 mutations are guarded. Before running the remote scripts, replace the placeholder `database_id` in `apps/worker/wrangler.toml`, verify the target Cloudflare account/database, then set `KARAOKE_D1_REMOTE_OK=1` for the command:
+
+```bash
+KARAOKE_D1_REMOTE_OK=1 corepack pnpm --filter @karaoke/worker run d1:migrate:remote
+KARAOKE_D1_REMOTE_OK=1 corepack pnpm --filter @karaoke/worker run d1:import:remote
+```
+
+PowerShell equivalent:
+
+```powershell
+$env:KARAOKE_D1_REMOTE_OK = '1'
+corepack pnpm --filter @karaoke/worker run d1:migrate:remote
+corepack pnpm --filter @karaoke/worker run d1:import:remote
+```
+
+Do not use the remote D1 scripts from feature branches unless you intentionally want to mutate that D1 database; static GitHub Pages deployment still only happens from `main`.
+
 ## License
 
 GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See [LICENSE](LICENSE).
