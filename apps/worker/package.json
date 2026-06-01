@@ -15,8 +15,9 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run test/search.test.ts && corepack pnpm run test:d1-runtime",
+    "typecheck": "tsc --noEmit",
+    "test:d1-runtime": "corepack pnpm --filter @karaoke/data-store build && tsc -b && vitest run test/d1-runtime.test.ts"
   },
   "dependencies": {
     "@karaoke/schema": "workspace:*"
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@karaoke/data-store": "workspace:*",
     "@types/node": "^24.12.4",
+    "miniflare": "^4.20260526.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
   }
