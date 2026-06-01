@@ -1051,3 +1051,201 @@ describe('getLeadComponent (via Tier C integration)', () => {
     expect(records).toHaveLength(2);
   });
 });
+
+describe('mergeRecords — joysound-official adapter regressions', () => {
+  function joysoundRec(over: Partial<SongRecord> = {}): SongRecord {
+    return record({
+      id: 'joysound-190001',
+      source_url: 'https://www.joysound.com/web/search/song/190001',
+      title_primary: '夜に駆ける',
+      title_ko: null,
+      artist_primary: 'YOASOBI',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '190-001' },
+      categories: ['jpop'],
+      ...over,
+    });
+  }
+
+  it('passes through a joysound-only record unchanged', () => {
+    const js = joysoundRec();
+    const { records, conflicts } = mergeRecords([js]);
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    expect(records[0]?.id).toBe('joysound-190001');
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: null, joysound: '190-001' });
+    expect(records[0]?.title_ko).toBeNull();
+    expect(records[0]?.artist_ko).toBeNull();
+  });
+
+  it('Tier B merges a joysound row with a blog row sharing title+artist; blog wins id/title/artist_primary/title_ko, joysound# is unioned', () => {
+    const blog = record({
+      id: 'blog-7777-0',
+      source_url: 'https://blog.test/7777',
+      title_primary: '夜に駆ける',
+      title_ko: '밤에 달리다',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const js = joysoundRec();
+
+    const { records, conflicts } = mergeRecords([blog, js]);
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // Primary id/source_url: blog (rank 1) wins over joysound (lower).
+    expect(m.id).toBe('blog-7777-0');
+    expect(m.source_url).toBe('https://blog.test/7777');
+    // title_primary chain TJ→blog: blog wins (no TJ).
+    expect(m.title_primary).toBe('夜に駆ける');
+    expect(m.artist_primary).toBe('YOASOBI');
+    // KO_CHAIN blog→tj: blog's KO fields propagate.
+    expect(m.title_ko).toBe('밤에 달리다');
+    expect(m.artist_ko).toBe('요아소비');
+    // karaoke_numbers union: joysound# is preserved from the joysound record.
+    expect(m.karaoke_numbers).toEqual({ tj: null, ky: null, joysound: '190-001' });
+  });
+
+  it('Tier B merges a joysound row with a tj row; tj wins title_primary, joysound# joins karaoke_numbers, title_ko stays null (no KO source)', () => {
+    const tj = record({
+      id: 'tj-68923',
+      source_url: 'https://tj.test/68923',
+      title_primary: '夜に駆ける',
+      title_ko: null,
+      artist_primary: 'YOASOBI',
+      artist_ko: null,
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const js = joysoundRec();
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // TJ wins title_primary (TITLE_ARTIST_CHAIN starts with tj).
+    expect(m.title_primary).toBe('夜に駆ける');
+    // Both vendor numbers union.
+    expect(m.karaoke_numbers).toEqual({ tj: '68923', ky: null, joysound: '190-001' });
+    // No source contributed title_ko; merger must not invent one from joysound.
+    expect(m.title_ko).toBeNull();
+    expect(m.artist_ko).toBeNull();
+    // id tiebreak: tj (rank 2) wins over joysound.
+    expect(m.id).toBe('tj-68923');
+  });
+
+  it('Three-way merge blog+tj+joysound (shared Tier B key): blog id wins, tj title wins, blog ko wins, joysound# preserved', () => {
+    // All three records share the same normalized title + artist so they
+    // cluster together at Tier B. No shared vendor # means no Tier A subset
+    // cluster that would split the three apart.
+    const blog = record({
+      id: 'blog-7777-0',
+      source_url: 'https://blog.test/7777',
+      title_primary: '夜に駆ける',
+      title_ko: '밤에 달리다',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const tj = record({
+      id: 'tj-68923',
+      source_url: 'https://tj.test/68923',
+      title_primary: '夜に駆ける',
+      title_ko: null,
+      artist_primary: 'YOASOBI',
+      artist_ko: null,
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+      categories: ['jpop'],
+    });
+    const js = joysoundRec();
+
+    const { records, conflicts } = mergeRecords([blog, tj, js]);
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    expect(m.id).toBe('blog-7777-0');
+    expect(m.title_primary).toBe('夜に駆ける');
+    expect(m.title_ko).toBe('밤에 달리다');
+    expect(m.artist_ko).toBe('요아소비');
+    expect(m.karaoke_numbers).toEqual({ tj: '68923', ky: null, joysound: '190-001' });
+  });
+
+  it('SOURCE_RANK ranks joysound below blog/tj/tjpdf — joysound id loses tiebreaks against all of them', () => {
+    // Construct a cluster of 4 records sharing Tier B key (same normalized
+    // title + artist). All vendor numbers are null so no Tier A unions and no
+    // vendor conflicts; tiebreak on id must follow source priority.
+    const blog = record({
+      id: 'blog-101-0',
+      source_url: 'https://blog.test/101',
+      title_primary: 'Generic',
+      title_ko: null,
+      artist_primary: 'A',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const tj = record({
+      id: 'tj-100',
+      source_url: 'https://tj.test/100',
+      title_primary: 'Generic',
+      title_ko: null,
+      artist_primary: 'A',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const tjpdf = record({
+      id: 'tjpdf-100',
+      source_url: 'https://tjpdf.test/100',
+      title_primary: 'Generic',
+      title_ko: null,
+      artist_primary: 'A',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-100',
+      source_url: 'https://www.joysound.com/web/search/song/100',
+      title_primary: 'Generic',
+      title_ko: null,
+      artist_primary: 'A',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '100-000' },
+    });
+
+    const { records } = mergeRecords([js, tjpdf, tj, blog]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('blog-101-0');
+  });
+
+  it('joysound vs an unknown-source record: joysound wins id (deterministic — joysound is in SOURCE_RANK)', () => {
+    // Tier B merge of joysound + unknown source. joysound has a SOURCE_RANK
+    // entry; "mystery" does not (Infinity). The deterministic tiebreak
+    // should pick joysound's id.
+    const js = record({
+      id: 'joysound-200',
+      source_url: 'https://www.joysound.com/web/search/song/200',
+      title_primary: 'GenericTiebreak',
+      title_ko: null,
+      artist_primary: 'B',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '200-000' },
+    });
+    const unknown = record({
+      id: 'mystery-1',
+      source_url: 'https://mystery.test/1',
+      title_primary: 'GenericTiebreak',
+      title_ko: null,
+      artist_primary: 'B',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const { records } = mergeRecords([unknown, js]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('joysound-200');
+  });
+});
