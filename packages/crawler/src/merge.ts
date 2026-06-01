@@ -5,14 +5,22 @@ import { normalize } from './normalize.js';
 
 /**
  * Source priority (lower number = higher priority). Single source of truth
- * for tiebreaks across this file. The order `blog > namu > tj` is retained
- * from v1, but ONLY for tiebreaking on the same field — not as a global
- * merge precedence rule. Per-field ownership chains live in `mergeCluster`.
+ * for tiebreaks across this file. The order blog > namu > tj > tjpdf > joysound
+ * is retained for known active corpus sources, with unknown legacy or
+ * experimental prefixes falling back to lowest priority instead of shaping
+ * merge semantics.
+ *
+ * joysound is intentionally lowest priority: it joins the merge primarily
+ * to union its karaoke_numbers.joysound cell. Listing it here gives
+ * pickByPriority a deterministic tiebreak without allowing JOYSOUND to
+ * displace existing sources.
  */
 const SOURCE_RANK: Record<string, number> = {
   blog: 1,
   namu: 2,
   tj: 3,
+  tjpdf: 4,
+  joysound: 5,
 };
 
 const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'namu'] as const;

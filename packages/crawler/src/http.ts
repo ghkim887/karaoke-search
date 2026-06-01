@@ -10,19 +10,42 @@ const DEFAULT_RATE_LIMIT_BASE_MS = 200;
 const DEFAULT_RATE_LIMIT_JITTER_MS = 100; // ±50ms uniform → 150–250ms gap
 const CACHE_PATH = resolve(process.cwd(), '.cache', 'http.json');
 
+/** Per-host allowlist rule. `pathPrefixes` restricts which pathnames are reachable. */
+interface HostRule {
+  /**
+   * If set, the request pathname must exactly equal one of these values or
+   * start with `<prefix>/`. Omit for hosts where all paths are permitted.
+   */
+  pathPrefixes?: readonly string[];
+}
+
 /**
- * (S2) Exhaustive allowlist of hostnames the crawler is permitted to contact.
- * Derived from every adapter's base-URL constant and every key in HOST_CONFIG:
- *   - j-pop-playlist.tistory.com  → BlogCrawler.BASE
+ * (S2) Exhaustive allowlist of hostnames (and, where applicable, pathname
+ * prefixes) the crawler is permitted to contact. Derived from every adapter's
+ * base-URL constant and every key in HOST_CONFIG:
+ *   - j-pop-playlist.tistory.com  → BlogCrawler.BASE (all paths)
  *   - www.tjmedia.com              → CATALOG_URL / SEARCH_SONG_URL / TOP_AND_HOT_URL
- *                                    + HOST_CONFIG entry
+ *                                    + HOST_CONFIG entry (all paths)
+ *   - www.joysound.com             → listing `/web/karaoke/contents/new`,
+ *                                    full songlist `/web/search/songlist/{kana}`,
+ *                                    and detail `/apis/v1/ise/fetchContentsDetail` only
  *
- * Throw on any other host (including RFC1918, link-local, loopback, file://).
+ * Throw on any other host or (for path-restricted hosts) any other path.
  * Do NOT add catch-all entries — every entry must trace to a real call site.
  */
-const ALLOWED_HOSTS: ReadonlySet<string> = new Set([
-  'j-pop-playlist.tistory.com',
-  'www.tjmedia.com',
+const ALLOWED_HOSTS: ReadonlyMap<string, HostRule> = new Map<string, HostRule>([
+  ['j-pop-playlist.tistory.com', {}],
+  ['www.tjmedia.com', {}],
+  [
+    'www.joysound.com',
+    {
+      pathPrefixes: [
+        '/web/karaoke/contents/new',
+        '/web/search/songlist',
+        '/apis/v1/ise/fetchContentsDetail',
+      ],
+    },
+  ],
 ]);
 
 /**
@@ -54,17 +77,25 @@ async function readBodyCapped(body: {
 }
 
 /**
- * Validate that `url` uses an allowed scheme and an allowed hostname.
- * Throws `Error` on violations — silently swallowing a misconfigured URL
- * would hide bugs.
+ * Validate that `url` uses an allowed scheme, an allowed hostname, and (for
+ * path-restricted hosts) an allowed pathname prefix. Throws on violations.
  */
 function assertUrlAllowed(url: string): void {
   const parsed = new URL(url);
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
     throw new Error(`Disallowed scheme: ${parsed.protocol} in URL: ${url}`);
   }
-  if (!ALLOWED_HOSTS.has(parsed.hostname)) {
+  const rule = ALLOWED_HOSTS.get(parsed.hostname);
+  if (!rule) {
     throw new Error(`Disallowed host: ${parsed.hostname} in URL: ${url}`);
+  }
+  if (rule.pathPrefixes) {
+    const ok = rule.pathPrefixes.some(
+      (p) => parsed.pathname === p || parsed.pathname.startsWith(`${p}/`),
+    );
+    if (!ok) {
+      throw new Error(`Disallowed path: ${parsed.pathname} on ${parsed.hostname}`);
+    }
   }
 }
 

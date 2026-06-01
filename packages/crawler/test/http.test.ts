@@ -49,6 +49,42 @@ describe('HttpClient — URL allowlist (S2)', () => {
     const client = new HttpClient();
     await expect(client.postForm('file:///etc/passwd', {})).rejects.toThrow(/Disallowed scheme/);
   });
+
+  it('fetch allows www.joysound.com listing path', async () => {
+    mockedRequest.mockReset();
+    mockedRequest.mockImplementation(async () => fakeResponse(200, [10]) as never);
+    const client = new HttpClient();
+    await expect(
+      client.fetch('https://www.joysound.com/web/karaoke/contents/new?page=1'),
+    ).resolves.toBeDefined();
+  });
+
+  it('fetch allows www.joysound.com detail path', async () => {
+    mockedRequest.mockReset();
+    mockedRequest.mockImplementation(async () => fakeResponse(200, [10]) as never);
+    const client = new HttpClient();
+    await expect(
+      client.fetch(
+        'https://www.joysound.com/apis/v1/ise/fetchContentsDetail?kind=naviGroupId&id=1',
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it('fetch allows www.joysound.com full songlist path', async () => {
+    mockedRequest.mockReset();
+    mockedRequest.mockImplementation(async () => fakeResponse(200, [10]) as never);
+    const client = new HttpClient();
+    await expect(
+      client.fetch('https://www.joysound.com/web/search/songlist/%E3%82%A2?page=1'),
+    ).resolves.toBeDefined();
+  });
+
+  it('fetch rejects a disallowed path on www.joysound.com', async () => {
+    const client = new HttpClient();
+    await expect(client.fetch('https://www.joysound.com/web/search/song/12345')).rejects.toThrow(
+      /Disallowed path/,
+    );
+  });
 });
 
 describe('HttpClient — response body size cap (S6)', () => {
