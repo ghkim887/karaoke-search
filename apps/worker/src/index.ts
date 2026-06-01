@@ -35,6 +35,7 @@ const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
 const MAX_QUERY_TOKENS = 24;
 const MAX_PREFIX_TOKEN_CHARS = 12;
+const MAX_D1_LIKE_PATTERN_BYTES = 50;
 const VENDOR_MASKS: Record<Vendor, number> = { tj: 1, ky: 2, joysound: 4 };
 const HANGUL_INITIALS_QUERY_PATTERN = /^[ㄱ-ㅎ]+$/u;
 const JSON_HEADERS = {
@@ -181,19 +182,26 @@ async function findIndexedCandidateRows(
 
   const numberQuery = parseKaraokeNumberQuery(params.query);
   if (numberQuery !== null) {
-    const where = [
-      'kn.number IS NOT NULL',
-      `(kn.number = ? OR kn.number LIKE ? ESCAPE '\\' OR kn.number_key = ? OR kn.number_key LIKE ? ESCAPE '\\')`,
-    ];
+    const where = ['kn.number IS NOT NULL'];
+    const matchConditions = ['kn.number = ?', 'kn.number_key = ?'];
     const trimmedNumber = trimLeadingZeroes(numberQuery.number);
     const numberValues: D1Value[] = [
       numberQuery.number,
       trimmedNumber,
       numberQuery.number,
-      `${escapeLike(numberQuery.number)}%`,
       trimmedNumber,
-      `${escapeLike(trimmedNumber)}%`,
     ];
+    const numberPrefixPattern = makeD1LikePrefixPattern(numberQuery.number);
+    if (numberPrefixPattern !== null) {
+      matchConditions.push(`kn.number LIKE ? ESCAPE '\\'`);
+      numberValues.push(numberPrefixPattern);
+    }
+    const numberKeyPrefixPattern = makeD1LikePrefixPattern(trimmedNumber);
+    if (numberKeyPrefixPattern !== null) {
+      matchConditions.push(`kn.number_key LIKE ? ESCAPE '\\'`);
+      numberValues.push(numberKeyPrefixPattern);
+    }
+    where.push(`(${matchConditions.join(' OR ')})`);
     if (numberQuery.provider !== undefined) {
       where.push('kn.provider = ?');
       numberValues.push(numberQuery.provider);
@@ -498,6 +506,11 @@ function parseNonNegativeInteger(value: string, field: string): number {
     throw new BadRequestError(`Invalid ${field}: ${value}`);
   }
   return parsed;
+}
+
+function makeD1LikePrefixPattern(value: string): string | null {
+  const pattern = `${escapeLike(value)}%`;
+  return new TextEncoder().encode(pattern).length <= MAX_D1_LIKE_PATTERN_BYTES ? pattern : null;
 }
 
 function escapeLike(value: string): string {

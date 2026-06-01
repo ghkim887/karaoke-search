@@ -10,12 +10,19 @@ import { type D1DatabaseLike, handleRequest } from '../src/index.js';
 
 const openDatabases: SongDatabase[] = [];
 
-function createD1WithSongs(records: readonly SongRecord[]): D1DatabaseLike {
+interface NodeSqliteD1Options {
+  enforceD1SuffixLikePatternLimit?: boolean;
+}
+
+function createD1WithSongs(
+  records: readonly SongRecord[],
+  options: NodeSqliteD1Options = {},
+): D1DatabaseLike {
   const sqlite = openSongDatabase(':memory:');
   openDatabases.push(sqlite);
   createSongDatabase(sqlite);
   importSongs(sqlite, records);
-  return new NodeSqliteD1(sqlite);
+  return new NodeSqliteD1(sqlite, options);
 }
 
 afterEach(() => {
@@ -221,6 +228,36 @@ describe('worker search API', () => {
     await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
   });
 
+  it('does not bind oversized D1 LIKE patterns while preserving long numeric exact search', async () => {
+    const longNumber = '1'.repeat(50);
+    const longNumberRecord: SongRecord = {
+      id: 'long-number-1',
+      source_url: 'https://example.com/long-number',
+      title_primary: 'Long Number Song',
+      title_ko: null,
+      artist_primary: 'Long Number Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: longNumber, ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-01-09T00:00:00.000Z',
+    };
+    const db = createD1WithSongs([...FIXTURE_RECORDS, longNumberRecord], {
+      enforceD1SuffixLikePatternLimit: true,
+    });
+    const response = await handleRequest(
+      new Request(`https://karaoke.example/api/search?q=${longNumber}`),
+      {
+        DB: db,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      items: [longNumberRecord],
+      nextCursor: null,
+    });
+  });
+
   it('rejects unsafe cursor offsets', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
     const response = await handleRequest(
@@ -257,7 +294,10 @@ interface SearchResponseBody {
 }
 
 class NodeSqliteD1 implements D1DatabaseLike {
-  constructor(private readonly db: SongDatabase) {}
+  constructor(
+    private readonly db: SongDatabase,
+    private readonly options: NodeSqliteD1Options = {},
+  ) {}
 
   prepare(sql: string) {
     const statement = this.db.prepare(sql);
@@ -277,7 +317,25 @@ class NodeSqliteD1 implements D1DatabaseLike {
   ) {
     return {
       bind: (...values: unknown[]) => this.prepareBoundStatement(statement, values),
-      all: async <T>() => ({ results: statement.all(...parameters) as T[] }),
+      all: async <T>() => {
+        this.assertD1SuffixLikePatterns(parameters);
+        return { results: statement.all(...parameters) as T[] };
+      },
     };
+  }
+
+  private assertD1SuffixLikePatterns(parameters: readonly unknown[]): void {
+    if (this.options.enforceD1SuffixLikePatternLimit !== true) {
+      return;
+    }
+    for (const parameter of parameters) {
+      if (
+        typeof parameter === 'string' &&
+        parameter.endsWith('%') &&
+        new TextEncoder().encode(parameter).length > 50
+      ) {
+        throw new Error('D1 LIKE/GLOB pattern limit exceeded in test');
+      }
+    }
   }
 }
