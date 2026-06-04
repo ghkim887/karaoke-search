@@ -323,10 +323,42 @@ export interface ExportD1ImportSqlJsonArgs {
   includeSchema?: boolean;
 }
 
+export interface D1ImportSqlStats {
+  recordCount: number;
+  searchTextRows: number;
+  searchTokenRows: number;
+  searchTokenStatRows: number;
+  statementCount: number;
+  statementCountByTable: Record<string, number>;
+  maxStatementBytes: number;
+  sqlBytes: number;
+}
+
+interface D1ImportSqlArtifact {
+  sql: string;
+  recordCount: number;
+  searchIndex: SearchIndexRows;
+}
+
 export function buildD1ImportSql(
   records: readonly SongRecord[],
   options: BuildD1ImportSqlOptions = {},
 ): string {
+  return buildD1ImportSqlArtifact(records, options).sql;
+}
+
+export function buildD1ImportSqlStats(
+  records: readonly SongRecord[],
+  options: BuildD1ImportSqlOptions = {},
+): D1ImportSqlStats {
+  const artifact = buildD1ImportSqlArtifact(records, options);
+  return buildD1ImportSqlStatsFromSql(artifact.sql, artifact.recordCount, artifact.searchIndex);
+}
+
+function buildD1ImportSqlArtifact(
+  records: readonly SongRecord[],
+  options: BuildD1ImportSqlOptions = {},
+): D1ImportSqlArtifact {
   validateSongCorpus(records);
   const searchIndex = buildSearchIndexRows(records);
   const includeSchema = options.includeSchema ?? true;
@@ -458,7 +490,55 @@ export function buildD1ImportSql(
     ],
   );
 
-  return `${lines.join('\n')}\n`;
+  const sql = `${lines.join('\n')}\n`;
+  return {
+    sql,
+    recordCount: records.length,
+    searchIndex,
+  };
+}
+
+function buildD1ImportSqlStatsFromSql(
+  sql: string,
+  recordCount: number,
+  searchIndex: SearchIndexRows,
+): D1ImportSqlStats {
+  const statements =
+    sql.trim().length === 0
+      ? []
+      : sql
+          .trim()
+          .split(/;\n/u)
+          .map((part) => `${part};`);
+  const statementCountByTable: Record<string, number> = {
+    artist_aliases: 0,
+    karaoke_numbers: 0,
+    search_texts: 0,
+    search_token_stats: 0,
+    search_tokens: 0,
+    song_categories: 0,
+    songs: 0,
+  };
+  for (const statement of statements) {
+    const insertMatch = /^INSERT INTO ([a-z_]+)/u.exec(statement);
+    if (insertMatch?.[1] !== undefined) {
+      statementCountByTable[insertMatch[1]] = (statementCountByTable[insertMatch[1]] ?? 0) + 1;
+    }
+  }
+
+  return {
+    recordCount,
+    searchTextRows: searchIndex.texts.length,
+    searchTokenRows: searchIndex.tokens.length,
+    searchTokenStatRows: searchIndex.tokenStats.length,
+    statementCount: statements.length,
+    statementCountByTable,
+    maxStatementBytes: Math.max(
+      0,
+      ...statements.map((statement) => Buffer.byteLength(statement, 'utf8')),
+    ),
+    sqlBytes: Buffer.byteLength(sql, 'utf8'),
+  };
 }
 
 export function exportD1ImportSqlJson({

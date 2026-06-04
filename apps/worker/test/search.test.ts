@@ -308,8 +308,39 @@ describe('worker search API', () => {
     const candidateSql = statements.find((sql) => sql.includes('FROM karaoke_numbers kn'));
     expect(candidateSql).toBeDefined();
     expect(candidateSql).not.toMatch(/\bLTRIM\s*\(/i);
+    expect(candidateSql).not.toMatch(/\bLIKE\b/i);
     expect(candidateSql).not.toMatch(/kn\.number\s*=\s*\?\s+OR\s+kn\.number_key\s*=\s*\?/i);
-    expect(candidateSql?.match(/FROM karaoke_numbers kn/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(candidateSql).toContain('kn.number = ?');
+    expect(candidateSql).toContain('kn.number_key = ?');
+    expect(candidateSql).toContain('kn.number >= ? AND kn.number < ?');
+    expect(candidateSql).toContain('kn.number_key >= ? AND kn.number_key < ?');
+    expect(candidateSql?.match(/FROM karaoke_numbers kn/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+  });
+
+  it('serves all-9 numeric prefixes through the indexed range path', async () => {
+    const ninesRecord: SongRecord = {
+      id: 'nines-prefix-1',
+      source_url: 'https://example.com/nines-prefix',
+      title_primary: 'Nines Prefix Song',
+      title_ko: null,
+      artist_primary: 'Nines Prefix Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: '999123', ky: null, joysound: null },
+      categories: ['jpop'],
+      crawled_at: '2026-01-10T00:00:00.000Z',
+    };
+    const adjacentRecord: SongRecord = {
+      ...ninesRecord,
+      id: 'adjacent-prefix-1',
+      source_url: 'https://example.com/adjacent-prefix',
+      title_primary: 'Adjacent Prefix Song',
+      karaoke_numbers: { tj: '998999', ky: null, joysound: null },
+    };
+    const db = createD1WithSongs([...FIXTURE_RECORDS, ninesRecord, adjacentRecord]);
+
+    const byNinesPrefix = await fetchJson(db, '/api/search?q=TJ999');
+
+    expect(byNinesPrefix.items.map((song) => song.id)).toEqual(['nines-prefix-1']);
   });
 
   it('rejects unsafe cursor offsets', async () => {

@@ -7,6 +7,7 @@ import { runDataStoreCli } from '../src/cli.js';
 import {
   D1_SCHEMA_SQL,
   buildD1ImportSql,
+  buildD1ImportSqlStats,
   createSongDatabase,
   exportD1ImportSqlJson,
   exportSongs,
@@ -385,6 +386,31 @@ describe('SQLite song store', () => {
 
     expect(maxStatementBytes).toBeLessThanOrEqual(100_000);
     expect(sql.match(/^INSERT INTO search_tokens/gmu)?.length ?? 0).toBeGreaterThan(1);
+  });
+
+  it('reports D1 import/index scale metrics for production-sized search expansion smoke', () => {
+    const records = Array.from({ length: 1_000 }, (_, index): SongRecord => {
+      const songNumber = 700000 + index;
+      return {
+        ...CJK_SEARCH_RECORD,
+        id: `scale-${songNumber}`,
+        source_url: `https://example.com/scale/${songNumber}`,
+        title_primary: `残酷な天使のテーゼ ${songNumber}`,
+        title_ko: `사랑했나봐 ${songNumber}`,
+        artist_aliases: [`Official HIGE DANdism ${songNumber}`, 'Mrs. GREEN APPLE'],
+        karaoke_numbers: { tj: `0${songNumber}`, ky: String(800000 + index), joysound: null },
+      };
+    });
+
+    const stats = buildD1ImportSqlStats(records);
+
+    expect(stats.recordCount).toBe(records.length);
+    expect(stats.searchTextRows).toBeGreaterThan(records.length * 4);
+    expect(stats.searchTokenRows).toBeGreaterThan(records.length * 25);
+    expect(stats.searchTokenStatRows).toBeGreaterThan(25);
+    expect(stats.statementCountByTable.search_tokens).toBeGreaterThan(1);
+    expect(stats.maxStatementBytes).toBeLessThanOrEqual(16_000);
+    expect(stats.sqlBytes).toBeGreaterThan(1_000_000);
   });
 
   it('builds a complete D1 replacement SQL dump that preserves escaped text fields', () => {

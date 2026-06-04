@@ -35,7 +35,6 @@ const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
 const MAX_QUERY_TOKENS = 24;
 const MAX_PREFIX_TOKEN_CHARS = 12;
-const MAX_D1_LIKE_PATTERN_BYTES = 50;
 const VENDOR_MASKS: Record<Vendor, number> = { tj: 1, ky: 2, joysound: 4 };
 const HANGUL_INITIALS_QUERY_PATTERN = /^[ㄱ-ㅎ]+$/u;
 const JSON_HEADERS = {
@@ -253,33 +252,27 @@ async function findKaraokeNumberCandidateRows(
     score: 990000000,
   });
 
-  const numberPrefixPattern = makeD1NumericPrefixPattern(numberQuery.number);
-  if (numberPrefixPattern !== null) {
-    appendKaraokeNumberCandidateSubquery({
-      subqueries,
-      values,
-      params,
-      provider: numberQuery.provider,
-      predicateSql: 'kn.number LIKE ?',
-      predicateValues: [numberPrefixPattern],
-      notNullColumn: 'number',
-      score: 900000000,
-    });
-  }
+  appendKaraokeNumberCandidateSubquery({
+    subqueries,
+    values,
+    params,
+    provider: numberQuery.provider,
+    predicateSql: 'kn.number >= ? AND kn.number < ?',
+    predicateValues: [numberQuery.number, nextDigitPrefixUpperBound(numberQuery.number)],
+    notNullColumn: 'number',
+    score: 900000000,
+  });
 
-  const numberKeyPrefixPattern = makeD1NumericPrefixPattern(trimmedNumber);
-  if (numberKeyPrefixPattern !== null) {
-    appendKaraokeNumberCandidateSubquery({
-      subqueries,
-      values,
-      params,
-      provider: numberQuery.provider,
-      predicateSql: 'kn.number_key LIKE ?',
-      predicateValues: [numberKeyPrefixPattern],
-      notNullColumn: 'number_key',
-      score: 900000000,
-    });
-  }
+  appendKaraokeNumberCandidateSubquery({
+    subqueries,
+    values,
+    params,
+    provider: numberQuery.provider,
+    predicateSql: 'kn.number_key >= ? AND kn.number_key < ?',
+    predicateValues: [trimmedNumber, nextDigitPrefixUpperBound(trimmedNumber)],
+    notNullColumn: 'number_key',
+    score: 890000000,
+  });
 
   const statement = db
     .prepare(
@@ -547,6 +540,18 @@ function trimLeadingZeroes(value: string): string {
   return value.replace(/^0+/u, '') || '0';
 }
 
+function nextDigitPrefixUpperBound(prefix: string): string {
+  const characters = Array.from(prefix);
+  for (let index = characters.length - 1; index >= 0; index -= 1) {
+    const character = characters[index];
+    if (character !== undefined && character >= '0' && character <= '8') {
+      characters[index] = String(Number(character) + 1);
+      return characters.slice(0, index + 1).join('');
+    }
+  }
+  return `${characters.slice(0, -1).join('')}:`;
+}
+
 function hasNonAsciiCharacter(value: string): boolean {
   return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
@@ -598,11 +603,6 @@ function parseNonNegativeInteger(value: string, field: string): number {
     throw new BadRequestError(`Invalid ${field}: ${value}`);
   }
   return parsed;
-}
-
-function makeD1NumericPrefixPattern(value: string): string | null {
-  const pattern = `${value}%`;
-  return new TextEncoder().encode(pattern).length <= MAX_D1_LIKE_PATTERN_BYTES ? pattern : null;
 }
 
 function isOneOf<T extends readonly string[]>(value: string, allowed: T): value is T[number] {
