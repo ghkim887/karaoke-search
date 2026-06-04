@@ -41,6 +41,17 @@ const FIXTURE_RECORDS: SongRecord[] = [
     categories: ['vocaloid'],
     crawled_at: '2026-01-02T00:00:00.000Z',
   },
+  {
+    id: 'song-3',
+    source_url: 'https://example.com/3',
+    title_primary: 'Sparkle',
+    title_ko: '스파클',
+    artist_primary: 'RADWIMPS',
+    artist_ko: '래드윔프스',
+    karaoke_numbers: { tj: '62466', ky: null, joysound: null },
+    categories: ['jpop'],
+    crawled_at: '2026-01-03T00:00:00.000Z',
+  },
 ];
 
 const miniflares: Miniflare[] = [];
@@ -69,6 +80,22 @@ describe('worker D1 runtime integration', () => {
       items: [FIXTURE_RECORDS[0]],
       nextCursor: null,
     });
+  });
+
+  it('serves three-or-more-character Hangul initial prefixes through real D1', async () => {
+    const mf = await createSeededMiniflare(FIXTURE_RECORDS);
+
+    const byArtistInitial = await mf.dispatchFetch(
+      'https://karaoke.example/api/search?q=%E3%84%B9%E3%84%B7%E3%85%87',
+    );
+    const byTitleInitial = await mf.dispatchFetch(
+      'https://karaoke.example/api/search?q=%E3%85%85%E3%85%8D%E3%85%8B',
+    );
+
+    expect(byArtistInitial.status).toBe(200);
+    await expect(byArtistInitial.json()).resolves.toMatchObject({ items: [FIXTURE_RECORDS[2]] });
+    expect(byTitleInitial.status).toBe(200);
+    await expect(byTitleInitial.json()).resolves.toMatchObject({ items: [FIXTURE_RECORDS[2]] });
   });
 
   it('upgrades an old D1 schema with 0002 before no-schema import', async () => {

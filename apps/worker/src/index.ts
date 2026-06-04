@@ -153,10 +153,9 @@ async function findIndexedCandidateRows(
   const subqueries: string[] = [];
   const values: D1Value[] = [];
   const queryTokens = buildSearchQueryTokens(params.query);
+  const queryTokenValuesSql =
+    queryTokens.length > 0 ? queryTokens.map(() => '(?, ?, ?)').join(', ') : null;
   if (queryTokens.length > 0) {
-    const tokenRowsSql = queryTokens
-      .map(() => 'SELECT ? AS kind, ? AS token, ? AS query_weight')
-      .join(' UNION ALL ');
     const where: string[] = [];
     for (const token of queryTokens) {
       values.push(token.kind, token.token, token.queryWeight);
@@ -165,7 +164,7 @@ async function findIndexedCandidateRows(
     subqueries.push(`
       SELECT st.song_id, SUM(st.weight * qt.query_weight * COALESCE(stats.idf_scaled, 1000)) AS score
       FROM search_tokens st
-      JOIN (${tokenRowsSql}) qt ON qt.kind = st.kind AND qt.token = st.token
+      JOIN query_tokens qt ON qt.kind = st.kind AND qt.token = st.token
       LEFT JOIN search_token_stats stats ON stats.kind = st.kind AND stats.token = st.token
       ${where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''}
       GROUP BY st.song_id
@@ -189,9 +188,14 @@ async function findIndexedCandidateRows(
     return [];
   }
 
+  const queryTokensCte =
+    queryTokenValuesSql !== null
+      ? `query_tokens(kind, token, query_weight) AS (VALUES ${queryTokenValuesSql}),`
+      : '';
+
   const statement = db
     .prepare(
-      `WITH candidates AS (
+      `WITH ${queryTokensCte} candidates AS (
         ${subqueries.join('\nUNION ALL\n')}
       ), ranked AS (
         SELECT song_id, SUM(score) AS score
