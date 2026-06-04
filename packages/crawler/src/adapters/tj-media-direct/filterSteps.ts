@@ -20,6 +20,14 @@ import { isInDropList } from './koreanArtistDropList.js';
 import { normalizeForMatch, splitArtistCollab } from './normalize.js';
 import type { KeepVerdict } from './parser.js';
 
+/**
+ * Artist-level nationality tags are unsafe for deliberately generic bucket
+ * names. A few real JP rows can make `Various Artists` look JPN, but that
+ * must not blanket-admit every Korean OST / BGM row carrying the same artist.
+ * Let per-pro JPN evidence or the JP-likely rescue path admit genuine rows.
+ */
+const GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST = new Set(['variousartists', 'variousartist']);
+
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
@@ -107,6 +115,7 @@ const jpnAdmitStep: FilterStep = {
     if (lead === undefined) return { decision: 'pass' };
     const leadKey = normalizeForMatch(lead);
     if (leadKey === '') return { decision: 'pass' };
+    if (GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) return { decision: 'pass' };
     const entry = cache.artistNationalityMap[leadKey];
     if (entry?.code === 'JPN') return { decision: 'admit', via: 'artist' };
     return { decision: 'pass' };
