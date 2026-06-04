@@ -13,7 +13,7 @@ audit) can clean the corpus without paying the re-crawl cost.
 Scope (Fix 4, 2026-05-01)
 -------------------------
 This script applies the drop list against ALL records regardless of `id`
-source prefix (`tj-`, `blog-`, `tjpdf-`, `namu-`). The TS parser drop-list
+source prefix (`tj-`, `blog-`, `tjpdf-`). The TS parser drop-list
 only gates `tj-` records at crawl time; this script is the after-the-fact
 "cleanup also catches blog-source residue and tjpdf-source residue"
 companion. The match is on `artist_primary` content, not on `id` prefix —

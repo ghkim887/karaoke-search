@@ -57,6 +57,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@karaoke/data-store':
+        specifier: workspace:*
+        version: link:../../packages/data-store
       '@karaoke/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -64,9 +67,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/search
     devDependencies:
-      '@karaoke/data-store':
-        specifier: workspace:*
-        version: link:../../packages/data-store
       '@types/node':
         specifier: ^24.12.4
         version: 24.12.4

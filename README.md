@@ -162,9 +162,17 @@ Pushing to `main` triggers `.github/workflows/deploy.yml`:
 
 1. install dependencies with pnpm
 2. build all packages
-3. build the Astro static site
+3. build the Astro static site with `PUBLIC_KARAOKE_API_BASE_URL` set to the Worker API (`https://karaoke-search-api.ghkim887.workers.dev`)
 4. upload `apps/web/dist` to GitHub Pages
 5. run Playwright E2E against the built artifact in a parallel verification job
+
+The web app remains client-side/static, but Browse searches are API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the Worker API currently accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index.
+
+For a local API-first web smoke, run the Worker/Node API and then build or serve the web app with the same public env var:
+
+```bash
+PUBLIC_KARAOKE_API_BASE_URL=http://127.0.0.1:8787 corepack pnpm --filter @karaoke/web dev
+```
 
 The weekly crawl workflow runs separately and opens a `crawl-output` pull request instead of pushing data directly to `main`.
 
@@ -186,7 +194,7 @@ Remote D1 mutations are guarded. Before running the remote scripts, replace the 
 
 ```bash
 KARAOKE_D1_REMOTE_OK=1 corepack pnpm --filter @karaoke/worker run d1:migrate:remote
-KARAOKE_D1_REMOTE_OK=1 corepack pnpm --filter @karaoke/worker run d1:import:remote
+KARAOKE_D1_REMOTE_OK=1 KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK=1 corepack pnpm --filter @karaoke/worker run d1:import:remote
 ```
 
 PowerShell equivalent:
@@ -194,8 +202,12 @@ PowerShell equivalent:
 ```powershell
 $env:KARAOKE_D1_REMOTE_OK = '1'
 corepack pnpm --filter @karaoke/worker run d1:migrate:remote
+$env:KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK = '1'
 corepack pnpm --filter @karaoke/worker run d1:import:remote
 ```
+
+
+`d1:import:remote` is chunked because a full 170MB import file and 90KB statements can hit `SQLITE_NOMEM` on real D1. The chunked replacement is **not atomic across the whole corpus**: it preflights all chunks before mutating, and the first chunk clears derived/canonical tables so a retry from the beginning replaces a partial import, but a mid-run failure can still leave the live DB partial until the retry finishes. Prefer importing into a staging D1 database and switching the Worker binding after row-count/API smoke verification when avoiding live partial-state risk matters. Set `KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK=1` only when you intentionally accept that recovery procedure.
 
 Do not use the remote D1 scripts from feature branches unless you intentionally want to mutate that D1 database; static GitHub Pages deployment still only happens from `main`.
 

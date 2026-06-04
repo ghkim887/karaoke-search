@@ -25,10 +25,10 @@ You are a Stage-2 worker for a J-pop karaoke search app's `title_ko`
      until one yields a Korean canonical form:
        1. `"<title_primary>" "<artist_primary>" 한국어`
        2. `<artist Korean-rendered> 가사 OR 제목`
-       3. `site:namu.wiki <artist Korean-rendered>`
+       3. Korean wiki, official database, or Korean lyric-site evidence for `<artist Korean-rendered>`
        4. `site:youtube.com 한글자막 <artist Korean-rendered>`
      - If a Korean YouTube fan-sub title (especially with `한글자막`),
-       Korean Namuwiki entry, or Korean lyric site shows a stable Korean
+       Korean wiki entry, official database, or Korean lyric site shows a stable Korean
        form: use it, mark `confidence='high'`. Two+ independent Korean
        sources converging on the same form → high. Single source →
        medium.

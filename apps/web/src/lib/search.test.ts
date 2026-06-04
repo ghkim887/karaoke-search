@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
 import { featured, featuredArtistLabel, featuredArtistQuery } from '../data/featured.js';
+import * as searchModule from './search.js';
 import { buildIndex } from './search.js';
 
 const fixtureUrl = new URL(
@@ -120,5 +121,33 @@ describe('featured artist chips against the production corpus', () => {
         ).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe('API search client', () => {
+  it('builds a /api/search request with filters and returns SongRecord items', async () => {
+    const apiRecord = records[0];
+    if (!apiRecord) throw new Error('fixture record missing');
+    const requested: string[] = [];
+    const fetchImpl = async (input: RequestInfo | URL) => {
+      requested.push(String(input));
+      return new Response(JSON.stringify({ items: [apiRecord], nextCursor: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    const result = await searchModule.searchApi('https://api.example.test', {
+      query: String.fromCodePoint(0x5929, 0x4f7f),
+      category: 'anime',
+      vendor: 'tj',
+      limit: 50,
+      fetchImpl,
+    });
+
+    expect(result).toEqual([apiRecord]);
+    expect(requested).toEqual([
+      'https://api.example.test/api/search?q=%E5%A4%A9%E4%BD%BF&limit=50&category=anime&vendor=tj',
+    ]);
   });
 });

@@ -1,4 +1,4 @@
-import type { SongRecord } from '@karaoke/schema';
+import type { Category, SongRecord } from '@karaoke/schema';
 import MiniSearch from 'minisearch';
 import { normalize } from './normalize.js';
 import { fetchWithRetry } from './retry.js';
@@ -76,4 +76,49 @@ export async function loadIndex(): Promise<IndexBundle> {
   const byId = new Map<string, SongRecord>();
   for (const r of records) byId.set(r.id, r);
   return { index, byId };
+}
+
+export type SearchVendor = 'tj' | 'ky' | 'joysound';
+
+export interface ApiSearchOptions {
+  query: string;
+  category?: Category;
+  vendor?: SearchVendor;
+  limit?: number;
+  fetchImpl?: typeof fetch;
+}
+
+interface ApiSearchResponse {
+  items?: SongRecord[];
+  nextCursor?: string | null;
+}
+
+export function getApiSearchBaseUrl(): string | null {
+  const raw = import.meta.env.PUBLIC_KARAOKE_API_BASE_URL as string | undefined;
+  if (raw === undefined || raw.trim() === '') {
+    return null;
+  }
+  return raw.trim().replace(/\/+$/u, '');
+}
+
+export async function searchApi(baseUrl: string, options: ApiSearchOptions): Promise<SongRecord[]> {
+  const url = new URL('api/search', `${baseUrl.replace(/\/+$/u, '')}/`);
+  url.searchParams.set('q', options.query);
+  url.searchParams.set('limit', String(options.limit ?? 50));
+  if (options.category !== undefined) {
+    url.searchParams.set('category', options.category);
+  }
+  if (options.vendor !== undefined) {
+    url.searchParams.set('vendor', options.vendor);
+  }
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchImpl(url.toString());
+  if (!response.ok) {
+    throw new Error(`Search API failed: HTTP ${response.status}`);
+  }
+  const body = (await response.json()) as ApiSearchResponse;
+  if (!Array.isArray(body.items)) {
+    throw new Error('Search API response missing items array');
+  }
+  return body.items;
 }

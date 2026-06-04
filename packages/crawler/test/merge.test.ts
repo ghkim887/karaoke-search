@@ -104,10 +104,10 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
     expect(conflicts).toHaveLength(0);
     const m = records[0];
     if (!m) throw new Error('no record');
-    // title_primary chain TJ→blog→namu: TJ wins.
+    // title_primary chain TJ→blog→tjpdf: TJ wins.
     expect(m.title_primary).toBe('群青');
     expect(m.artist_primary).toBe('YOASOBI');
-    // ko chain blog→namu: blog wins.
+    // ko chain blog→tj→tjpdf→joysound: blog wins.
     expect(m.title_ko).toBe('군청');
     expect(m.artist_ko).toBe('요아소비');
     expect(m.karaoke_numbers.tj).toBe('68923');
@@ -135,27 +135,27 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       artist_primary: 'YOASOBI',
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
     });
-    const namu = record({
-      id: 'namu-1',
-      source_url: 'https://namu.test/1',
+    const tjpdf = record({
+      id: 'tjpdf-1',
+      source_url: 'https://tjpdf.test/1',
       title_primary: '群青 (YOASOBI)',
-      title_ko: '군청 (나무)',
+      title_ko: '군청 (TJPDF)',
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: '68923', ky: '47474', joysound: null },
     });
 
-    const { records, conflicts } = mergeRecords([tj, blog, namu]);
+    const { records, conflicts } = mergeRecords([tj, blog, tjpdf]);
 
     expect(records).toHaveLength(1);
     expect(conflicts).toHaveLength(0);
     const m = records[0];
     if (!m) throw new Error('no record');
-    // title_primary chain TJ→blog→namu: TJ wins.
+    // title_primary chain TJ→blog→tjpdf: TJ wins.
     expect(m.title_primary).toBe('群青');
-    // title_ko chain blog→namu: blog wins.
+    // title_ko chain blog→tj→tjpdf→joysound: blog wins.
     expect(m.title_ko).toBe('군청');
-    // KY contributed only by namu — survives the union.
+    // KY contributed only by tjpdf — survives the union.
     expect(m.karaoke_numbers).toEqual({ tj: '68923', ky: '47474', joysound: null });
   });
 
@@ -221,15 +221,15 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       artist_primary: 'YOASOBI',
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
     });
-    const namu = record({
-      id: 'namu-2',
-      source_url: 'https://namu.test/2',
+    const tjpdf = record({
+      id: 'tjpdf-2',
+      source_url: 'https://tjpdf.test/2',
       title_primary: 'アイドル',
       artist_primary: 'YOASOBI',
       karaoke_numbers: { tj: '68924', ky: null, joysound: null },
     });
 
-    const { records, conflicts } = mergeRecords([blog, namu]);
+    const { records, conflicts } = mergeRecords([blog, tjpdf]);
 
     expect(records).toHaveLength(1);
     // Blog wins on tj (highest priority).
@@ -240,7 +240,7 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
     if (!c) throw new Error('no conflict');
     expect(c.field).toBe('tj');
     expect(c.winner).toBe('68923');
-    expect(c.values.map((v) => v.source).sort()).toEqual(['blog', 'namu']);
+    expect(c.values.map((v) => v.source).sort()).toEqual(['blog', 'tjpdf']);
     expect(c.values.map((v) => v.value).sort()).toEqual(['68923', '68924']);
   });
 
@@ -256,8 +256,8 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       karaoke_numbers: { tj: 'X', ky: 'Y', joysound: null },
     });
     const b = record({
-      id: 'namu-3',
-      source_url: 'https://namu.test/3',
+      id: 'tjpdf-3',
+      source_url: 'https://tjpdf.test/3',
       title_primary: 'Song A',
       artist_primary: 'Artist A',
       karaoke_numbers: { tj: null, ky: 'Y', joysound: 'Z' },
@@ -271,12 +271,12 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
   });
 
   // ---------------------------------------------------------------------
-  // Case 7: TJ-less Vocaloid (namu only)
+  // Case 7: TJ-less Vocaloid (tjpdf only)
   // ---------------------------------------------------------------------
-  it('keeps a namuwiki-only Vocaloid record standalone with title_primary from namu', () => {
-    const namu = record({
-      id: 'namu-vocaloid-1',
-      source_url: 'https://namu.test/vocaloid/1',
+  it('keeps a tjpdf-only Vocaloid record standalone with title_primary from tjpdf', () => {
+    const tjpdf = record({
+      id: 'tjpdf-vocaloid-1',
+      source_url: 'https://tjpdf.test/vocaloid/1',
       title_primary: 'メルト',
       title_ko: '멜트',
       artist_primary: 'ryo',
@@ -284,13 +284,13 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       categories: ['vocaloid'],
     });
 
-    const { records, conflicts } = mergeRecords([namu]);
+    const { records, conflicts } = mergeRecords([tjpdf]);
 
     expect(records).toHaveLength(1);
     expect(conflicts).toHaveLength(0);
     expect(records[0]?.title_primary).toBe('メルト');
     expect(records[0]?.karaoke_numbers.tj).toBeNull();
-    expect(records[0]?.id).toBe('namu-vocaloid-1');
+    expect(records[0]?.id).toBe('tjpdf-vocaloid-1');
   });
 
   // ---------------------------------------------------------------------
@@ -321,8 +321,8 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
         karaoke_numbers: { tj: null, ky: null, joysound: null },
       }),
       record({
-        id: 'namu-99',
-        source_url: 'https://namu.test/99',
+        id: 'tjpdf-99',
+        source_url: 'https://tjpdf.test/99',
         title_primary: 'Alpha',
         artist_primary: 'X',
         karaoke_numbers: { tj: null, ky: null, joysound: null },
@@ -409,16 +409,16 @@ describe('mergeRecords — category exclusivity (priority vocaloid > anime > jpo
       karaoke_numbers: { tj: '50001', ky: null, joysound: null },
       categories: ['anime'],
     });
-    const namu = record({
-      id: 'namu-300',
-      source_url: 'https://namu.test/300',
+    const tjpdf = record({
+      id: 'tjpdf-300',
+      source_url: 'https://tjpdf.test/300',
       title_primary: 'メルト',
       artist_primary: 'ryo',
       karaoke_numbers: { tj: '50001', ky: null, joysound: null },
       categories: ['vocaloid'],
     });
 
-    const { records } = mergeRecords([tj, blog, namu]);
+    const { records } = mergeRecords([tj, blog, tjpdf]);
     expect(records).toHaveLength(1);
     expect(records[0]?.categories).toEqual(['vocaloid']);
   });
@@ -500,10 +500,10 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     if (!m) throw new Error('no record');
     // Vendor numbers union across the cross-source pair.
     expect(m.karaoke_numbers).toEqual({ tj: '52498', ky: null, joysound: '672848' });
-    // TJ wins title/artist via the title-artist chain (tj > blog > namu).
+    // TJ wins title/artist via the title-artist chain (tj > blog > tjpdf).
     expect(m.title_primary).toBe('少女A');
     expect(m.artist_primary).toBe('椎名もた(Feat.鏡音リン)');
-    // blog wins title_ko via the ko chain (blog > namu > tj).
+    // blog wins title_ko via the ko chain (blog > tjpdf > tj).
     expect(m.title_ko).toBe('소녀A');
     expect(m.categories).toEqual(['vocaloid']);
     // id/source_url tiebreak: blog (rank 1) wins over tj (rank 3).
@@ -638,7 +638,7 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
 
-  it('merges a 3-source cluster (tj + blog + namu) when all share the primary token', () => {
+  it('merges a 3-source cluster (tj + blog + tjpdf) when all share the primary token', () => {
     const tj = record({
       id: 'tj-68689',
       source_url: 'https://tj.test/68689',
@@ -655,9 +655,9 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       karaoke_numbers: { tj: null, ky: null, joysound: '500001' },
       categories: ['vocaloid'],
     });
-    const namu = record({
-      id: 'namu-9001',
-      source_url: 'https://namu.test/9001',
+    const tjpdf = record({
+      id: 'tjpdf-9001',
+      source_url: 'https://tjpdf.test/9001',
       title_primary: '月光',
       artist_primary: 'キタニタツヤ & はるまきごはん',
       title_ko: '월광',
@@ -665,7 +665,7 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       categories: ['vocaloid'],
     });
 
-    const { records, conflicts } = mergeRecords([tj, blog, namu]);
+    const { records, conflicts } = mergeRecords([tj, blog, tjpdf]);
 
     expect(records).toHaveLength(1);
     const m = records[0];
@@ -674,14 +674,14 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     expect(m.karaoke_numbers).toEqual({ tj: '68689', ky: '40001', joysound: '500001' });
     // Categories collapse to [vocaloid] via priority (vocaloid > jpop).
     expect(m.categories).toEqual(['vocaloid']);
-    // ko chain blog→namu→tj: namu wins (blog has null title_ko).
+    // ko chain blog→tj→tjpdf→joysound: tjpdf wins (blog has null title_ko).
     expect(m.title_ko).toBe('월광');
 
     // One tier_c_merge conflict, three contributors.
     const tierC = conflicts.filter((c) => c.field === 'tier_c_merge');
     expect(tierC).toHaveLength(1);
     expect(tierC[0]?.values).toHaveLength(3);
-    expect(tierC[0]?.values.map((v) => v.source).sort()).toEqual(['blog', 'namu', 'tj']);
+    expect(tierC[0]?.values.map((v) => v.source).sort()).toEqual(['blog', 'tj', 'tjpdf']);
   });
 
   // -------------------------------------------------------------------
