@@ -55330,13 +55330,13 @@
       "lastSeen": "2026-05-30T19:25:46.432Z"
     },
     "한로로": {
-      "code": "JPN",
+      "code": "KOR",
       "votes": {
-        "JPN": 3,
-        "KOR": 0,
+        "JPN": 0,
+        "KOR": 27,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-04T00:00:00.000Z"
     },
     "tak(feat.初音ミク,重音テト)": {
       "code": "UNKNOWN",
@@ -55436,6 +55436,33 @@
         "ENG": 0
       },
       "lastSeen": "2026-05-30T19:38:19.815Z"
+    },
+    "cortis": {
+      "code": "KOR",
+      "votes": {
+        "JPN": 0,
+        "KOR": 7,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-04T00:00:00.000Z"
+    },
+    "cortis코르티스": {
+      "code": "KOR",
+      "votes": {
+        "JPN": 0,
+        "KOR": 7,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-04T00:00:00.000Z"
+    },
+    "코르티스": {
+      "code": "KOR",
+      "votes": {
+        "JPN": 0,
+        "KOR": 7,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-04T00:00:00.000Z"
     }
   },
   "bootstrappedAt": "2026-05-30T19:25:46.432Z"

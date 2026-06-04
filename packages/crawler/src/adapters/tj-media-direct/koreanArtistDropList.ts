@@ -231,6 +231,18 @@ export const DROP_LIST: readonly DropListEntry[] = [
     lastReviewed: '2026-05-01',
     note: '`plave` JPN 3/0/0 in post-Phase-2 cache (false-positive) — 30 TJ records leaked. Cache has only Latin `plave` form (4 entries).',
   },
+  {
+    canonical: 'Hanroro',
+    variants: ['한로로', 'Hanroro', 'HANRORO'],
+    lastReviewed: '2026-06-04',
+    note: 'Live TJ artist search returns KOR-only results; tracked cache had stale JPN 3/0/0 and 24 TJ-direct rows leaked.',
+  },
+  {
+    canonical: 'CORTIS',
+    variants: ['CORTIS', 'CORTIS(코르티스)', '코르티스'],
+    lastReviewed: '2026-06-04',
+    note: 'Live TJ artist search returns KOR for the Hangul-suffixed group rows; 7 TJ-direct rows leaked in the current corpus.',
+  },
 ];
 
 /**

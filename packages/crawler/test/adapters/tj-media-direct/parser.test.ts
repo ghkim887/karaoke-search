@@ -121,6 +121,70 @@ describe('parseCatalogResponse — per-artist nationality confirmation (path 2)'
     const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
     expect(records).toHaveLength(3);
   });
+
+  it('does not admit generic Various Artists solely from an artist-level JPN cache hit', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        itemsTotalCount: 1,
+        items: [
+          {
+            pro: 98158,
+            indexTitle: '뽀로로와 노래해요(뽀로로와노래해요 OP)',
+            indexSong: 'Various Artists',
+            publishdate: '2026-05-01',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.variousartists = {
+      code: 'JPN',
+      votes: { JPN: 5, KOR: 0, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+
+    expect(records).toEqual([]);
+    expect(stats.admittedByArtist).toBe(0);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('drops newly observed Korean TJ-direct leakers even when stale JPN-cached', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        itemsTotalCount: 2,
+        items: [
+          { pro: 43796, indexTitle: '나침반', indexSong: '한로로', publishdate: '2025-06-02' },
+          {
+            pro: 50556,
+            indexTitle: 'GO!',
+            indexSong: 'CORTIS(코르티스)',
+            publishdate: '2025-09-17',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.한로로 = {
+      code: 'JPN',
+      votes: { JPN: 3, KOR: 0, ENG: 0 },
+      lastSeen: '2026-05-30T19:25:46.432Z',
+    };
+    cache.artistNationalityMap.cortis = {
+      code: 'JPN',
+      votes: { JPN: 3, KOR: 0, ENG: 0 },
+      lastSeen: '2026-06-04T00:00:00.000Z',
+    };
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+
+    expect(records).toEqual([]);
+    expect(stats.admittedByArtist).toBe(0);
+    expect(stats.dropped).toBe(2);
+  });
 });
 
 describe('parseCatalogResponse — blog-whitelist rescue (path 3)', () => {
