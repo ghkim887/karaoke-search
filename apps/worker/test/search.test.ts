@@ -95,9 +95,9 @@ const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
     id: 'parity-radwimps-1',
     source_url: 'https://example.com/parity/radwimps',
     title_primary: 'Sparkle',
-    title_ko: null,
+    title_ko: '스파클',
     artist_primary: 'RADWIMPS',
-    artist_ko: null,
+    artist_ko: '래드윔프스',
     karaoke_numbers: { tj: '62466', ky: null, joysound: null },
     categories: ['jpop'],
     crawled_at: '2026-01-06T00:00:00.000Z',
@@ -180,6 +180,16 @@ describe('worker search API', () => {
     expect(byLatinCasefold.items.map((song) => song.id)).toEqual(['parity-radwimps-1']);
     expect(byPunctuationPrefix.items.map((song) => song.id)).toEqual(['parity-deco-27']);
     expect(byLongPrefix.items.map((song) => song.id)).toEqual(['parity-higedan-1']);
+  });
+
+  it('serves three-or-more-character Hangul initial prefixes without internal errors', async () => {
+    const db = createD1WithSongs(MINISEARCH_PARITY_RECORDS);
+
+    const byArtistInitial = await fetchJson(db, '/api/search?q=%E3%84%B9%E3%84%B7%E3%85%87');
+    const byTitleInitial = await fetchJson(db, '/api/search?q=%E3%85%85%E3%85%8D%E3%85%8B');
+
+    expect(byArtistInitial.items.map((song) => song.id)).toEqual(['parity-radwimps-1']);
+    expect(byTitleInitial.items.map((song) => song.id)).toEqual(['parity-radwimps-1']);
   });
 
   it('applies category and vendor filters', async () => {
