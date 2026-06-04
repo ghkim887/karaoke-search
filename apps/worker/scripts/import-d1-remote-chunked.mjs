@@ -107,14 +107,34 @@ export function splitSqlIntoChunks({ sqlPath, chunksDir, maxBytes }) {
   return { sourceBytes: statSync(sqlPath).size, sourceStatements: statements.length, chunks };
 }
 
-export function wranglerInvocation(args) {
-  if (process.platform !== 'win32') {
-    return { command: 'wrangler', args };
+export function quoteWindowsCommandArg(arg) {
+  return `"${arg.replaceAll('"', '\\"')}"`;
+}
+
+export function wranglerInvocation(args, options = {}) {
+  const platform = options.platform ?? process.platform;
+  const cwd = options.cwd ?? WORKER_ROOT;
+  const env = options.env ?? process.env;
+  const node = options.node ?? process.execPath;
+  const localWranglerJs = join(cwd, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+
+  if (existsSync(localWranglerJs)) {
+    return { command: node, args: [localWranglerJs, ...args] };
   }
-  return {
-    command: process.env.ComSpec ?? 'cmd.exe',
-    args: ['/d', '/s', '/c', 'wrangler', ...args],
-  };
+
+  if (platform === 'win32') {
+    const command = env.ComSpec ?? 'cmd.exe';
+    const commandLine = ['corepack', 'pnpm', 'exec', 'wrangler', ...args]
+      .map(quoteWindowsCommandArg)
+      .join(' ');
+    return { command, args: ['/d', '/s', '/c', commandLine] };
+  }
+
+  const localWrangler = join(cwd, 'node_modules', '.bin', 'wrangler');
+  if (existsSync(localWrangler)) {
+    return { command: localWrangler, args };
+  }
+  return { command: 'wrangler', args };
 }
 
 export function executeChunk({ databaseName, chunk, index, total }) {

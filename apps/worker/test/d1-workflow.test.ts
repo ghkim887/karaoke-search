@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -156,6 +156,61 @@ describe('D1 import workflow', () => {
         env: { KARAOKE_D1_REMOTE_OK: '1' },
       }),
     ).not.toThrow();
+  });
+
+  it('resolves Wrangler through its package entrypoint before Windows command fallback', async () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'karaoke wrangler bin '));
+    try {
+      const { quoteWindowsCommandArg, wranglerInvocation } = await importWorkerScript<{
+        quoteWindowsCommandArg(arg: string): string;
+        wranglerInvocation(
+          args: readonly string[],
+          options?: {
+            platform?: NodeJS.Platform;
+            cwd?: string;
+            env?: Record<string, string>;
+            node?: string;
+          },
+        ): { command: string; args: readonly string[] };
+      }>('import-d1-remote-chunked.mjs');
+      const wranglerBinDir = join(tempRoot, 'node_modules', 'wrangler', 'bin');
+      mkdirSync(wranglerBinDir, { recursive: true });
+      const wranglerEntrypoint = join(wranglerBinDir, 'wrangler.js');
+      writeFileSync(wranglerEntrypoint, 'console.log("stub wrangler")\n', 'utf8');
+
+      expect(
+        wranglerInvocation(['--file', join(tempRoot, 'chunk file.sql')], {
+          platform: 'win32',
+          cwd: tempRoot,
+          env: { ComSpec: 'cmd.exe' },
+          node: 'node.exe',
+        }),
+      ).toEqual({
+        command: 'node.exe',
+        args: [wranglerEntrypoint, '--file', join(tempRoot, 'chunk file.sql')],
+      });
+
+      rmSync(wranglerEntrypoint, { force: true });
+      expect(
+        wranglerInvocation(['--file', join(tempRoot, 'chunk file.sql')], {
+          platform: 'win32',
+          cwd: tempRoot,
+          env: { ComSpec: 'cmd.exe' },
+        }),
+      ).toEqual({
+        command: 'cmd.exe',
+        args: [
+          '/d',
+          '/s',
+          '/c',
+          ['corepack', 'pnpm', 'exec', 'wrangler', '--file', join(tempRoot, 'chunk file.sql')]
+            .map(quoteWindowsCommandArg)
+            .join(' '),
+        ],
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it('splits remote D1 import SQL into small chunks and rejects oversized statements', () => {
