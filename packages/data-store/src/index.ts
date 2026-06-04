@@ -27,7 +27,7 @@ const SEARCH_TEXT_FIELDS = [
   { field: 'artist_alias', weight: 2 },
 ] as const;
 const MAX_PREFIX_LENGTH = 12;
-const MAX_D1_SQL_STATEMENT_BYTES = 90_000;
+const MAX_D1_SQL_STATEMENT_BYTES = 16_000;
 
 type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
 type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';

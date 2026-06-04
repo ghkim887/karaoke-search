@@ -6,5 +6,5 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "karaoke-songs"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "2b0c76a1-ea2e-4739-a94e-f37cb7179289"
 migrations_dir = "migrations"

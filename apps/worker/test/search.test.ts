@@ -192,6 +192,35 @@ describe('worker search API', () => {
     expect(animeWithKy.items).toEqual([]);
   });
 
+  it('applies category and vendor filters while using the derived search index', async () => {
+    const statements: string[] = [];
+    const db = createD1WithSongs(FIXTURE_RECORDS, {
+      inspectStatement: (sql) => statements.push(sql),
+    });
+
+    const animeWithTj = await fetchJson(
+      db,
+      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=tj',
+    );
+    const animeWithKy = await fetchJson(
+      db,
+      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=ky',
+    );
+    const vocaloidWithTj = await fetchJson(
+      db,
+      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=vocaloid&vendor=tj',
+    );
+
+    expect(animeWithTj.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(animeWithKy.items).toEqual([]);
+    expect(vocaloidWithTj.items).toEqual([]);
+
+    const indexedSql = statements.find((sql) => sql.includes('FROM search_tokens st'));
+    expect(indexedSql).toBeDefined();
+    expect(indexedSql).toMatch(/st\.category = \?/);
+    expect(indexedSql).toMatch(/\(st\.provider_mask & \?\) != 0/);
+  });
+
   it('paginates using limit and cursor without dropping result order', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
 

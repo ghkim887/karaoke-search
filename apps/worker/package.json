@@ -22,7 +22,7 @@
     "d1:migrate:local": "wrangler d1 migrations apply karaoke-songs --local",
     "d1:import:local": "corepack pnpm run d1:export-sql && wrangler d1 execute karaoke-songs --local --file .wrangler/import/songs-d1.sql",
     "d1:migrate:remote": "node scripts/guard-remote-d1.mjs && wrangler d1 migrations apply karaoke-songs --remote",
-    "d1:import:remote": "node scripts/guard-remote-d1.mjs && corepack pnpm run d1:export-sql && wrangler d1 execute karaoke-songs --remote --file .wrangler/import/songs-d1.sql",
+    "d1:import:remote": "node scripts/guard-remote-d1.mjs && corepack pnpm run d1:export-sql && node scripts/import-d1-remote-chunked.mjs",
     "d1:verify-sql": "corepack pnpm --filter @karaoke/data-store build && node scripts/export-d1-sql.mjs && node scripts/report-d1-sql-metrics.mjs .wrangler/import/songs-d1.sql",
     "deploy:dry-run": "wrangler deploy --dry-run",
     "deploy:remote": "node scripts/guard-remote-d1.mjs && wrangler deploy",

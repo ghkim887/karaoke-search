@@ -85,6 +85,9 @@ export function App({ songCount }: AppProps) {
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
   const apiBaseUrl = getApiSearchBaseUrl();
+  const localIndexRequiredForCurrentView =
+    activeTab === 'favorites' || apiBaseUrl === null || selectedVendors.size > 1;
+  const controlsDisabled = loading && localIndexRequiredForCurrentView;
 
   useEffect(() => {
     let cancelled = false;
@@ -174,9 +177,9 @@ export function App({ songCount }: AppProps) {
    *  chip + slice pipeline. Browse uses MiniSearch; Favorites does a linear
    *  substring pass over the user-bounded favorites set. */
   const results: SongRecord[] = useMemo(() => {
-    if (bundle === null) return [];
     let candidates: SongRecord[];
     if (activeTab === 'favorites') {
+      if (bundle === null) return [];
       // Favorites candidate set: ids resolved against byId, stale dropped.
       const favRecords: SongRecord[] = [];
       for (const id of favoriteIds) {
@@ -206,6 +209,7 @@ export function App({ songCount }: AppProps) {
       if (apiBaseUrl !== null && apiBrowse.key === currentApiKey && apiBrowse.records !== null) {
         candidates = apiBrowse.records;
       } else {
+        if (bundle === null) return [];
         const hits = bundle.index.search(query);
         const records: SongRecord[] = [];
         for (const hit of hits) {
@@ -280,7 +284,7 @@ export function App({ songCount }: AppProps) {
   const mode: RenderMode =
     error !== null
       ? 'error'
-      : loading
+      : loading && localIndexRequiredForCurrentView
         ? 'loading'
         : activeTab === 'favorites' && favoriteIds.length === 0
           ? 'favorites-empty'
@@ -329,7 +333,7 @@ export function App({ songCount }: AppProps) {
 
   return (
     <main class="results">
-      <SearchBox value={inputValue} onInput={handleInputChange} disabled={loading} />
+      <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
       <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
       <CategoryChips selected={categoryFilter} onChange={setCategoryFilter} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />

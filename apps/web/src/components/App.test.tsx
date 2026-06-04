@@ -240,6 +240,34 @@ describe('App tab behavior', () => {
       expect.objectContaining({ query: 'kick', limit: 50 }),
     );
   });
+  it('keeps Browse search usable through the API before the local MiniSearch index finishes loading', async () => {
+    vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
+    vi.spyOn(searchModule, 'loadIndex').mockReturnValue(new Promise(() => {}) as never);
+    const apiRecord = fixtureRecords[1];
+    if (apiRecord === undefined) throw new Error('fixture record missing');
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockResolvedValue([apiRecord]);
+
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<App songCount={26401} />, host);
+    await flushMicrotasks();
+
+    const input = host.querySelector<HTMLInputElement>('.search-input');
+    expect(input).not.toBeNull();
+    expect(input?.disabled).toBe(false);
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    await waitFor(() => (apiSpy.mock.calls.length > 0 ? true : null));
+    await waitFor(() => {
+      const card = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return card?.textContent?.includes('KICK BACK') ? card : null;
+    });
+    expect(host.querySelector('.loading')).toBeNull();
+  });
   it('falls back to MiniSearch when API search rejects', async () => {
     vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
     const apiSpy = vi.spyOn(searchModule, 'searchApi').mockRejectedValue(new Error('api down'));
