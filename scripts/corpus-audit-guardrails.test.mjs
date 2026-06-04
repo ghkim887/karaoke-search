@@ -9,6 +9,11 @@ import {
   runCli,
 } from './lib/corpus-audit-guardrails.mjs';
 
+function readJsonl(path) {
+  const raw = readFileSync(path, 'utf8').trim();
+  return raw.length === 0 ? [] : raw.split(/\r?\n/u).map((line) => JSON.parse(line));
+}
+
 function record(overrides = {}) {
   return {
     id: 'base-1',
@@ -204,6 +209,203 @@ describe('corpus audit guardrails', () => {
       expect(() => runCli(['corpus', '--in', corpusPath, '--out', outputPath])).toThrow(
         /refusing to write audit output through symlink/u,
       );
+      expect(JSON.parse(readFileSync(corpusPath, 'utf8'))[0]).toMatchObject({ id: 'safe' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('writes full issue JSONL for one-by-one corpus and JOYSOUND listing review', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-audit-'));
+    const corpusPath = join(dir, 'songs.json');
+    const listingPath = join(dir, 'listing.jsonl');
+    const corpusReportPath = join(dir, 'corpus-report.json');
+    const corpusIssuesPath = join(dir, 'corpus-issues.jsonl');
+    const listingReportPath = join(dir, 'listing-report.json');
+    const listingIssuesPath = join(dir, 'listing-issues.jsonl');
+
+    writeFileSync(
+      corpusPath,
+      `${JSON.stringify([
+        record({ id: 'blog-1', artist_primary: 'BTS' }),
+        record({ id: 'blog-2', title_primary: 'WE WILL ROCK YOU', artist_primary: 'QUEEN' }),
+      ])}\n`,
+    );
+    writeFileSync(
+      listingPath,
+      [
+        JSON.stringify({
+          naviGroupId: 'n1',
+          selSongNo: '11111',
+          songName: 'Set The Tone',
+          artistName: 'BLACKPINK',
+        }),
+        JSON.stringify({
+          naviGroupId: 'n1',
+          selSongNo: '11111',
+          songName: 'WE WILL ROCK YOU',
+          artistName: 'QUEEN',
+        }),
+      ].join('\n'),
+    );
+
+    try {
+      runCli([
+        'corpus',
+        '--in',
+        corpusPath,
+        '--out',
+        corpusReportPath,
+        '--issues-out',
+        corpusIssuesPath,
+      ]);
+      runCli([
+        'joysound-listing',
+        '--in',
+        listingPath,
+        '--baseline',
+        corpusPath,
+        '--out',
+        listingReportPath,
+        '--issues-out',
+        listingIssuesPath,
+      ]);
+
+      expect(readJsonl(corpusIssuesPath)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            mode: 'corpus',
+            bucket: 'knownKoreanAct',
+            record: expect.objectContaining({ id: 'blog-1' }),
+          }),
+          expect.objectContaining({
+            mode: 'corpus',
+            bucket: 'knownWesternAct',
+            record: expect.objectContaining({ id: 'blog-2' }),
+          }),
+        ]),
+      );
+      expect(readJsonl(listingIssuesPath)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            mode: 'joysound-listing',
+            bucket: 'knownKoreanAct',
+            row: expect.objectContaining({ selSongNo: '11111' }),
+          }),
+          expect.objectContaining({
+            mode: 'joysound-listing',
+            bucket: 'duplicateKey',
+            row: expect.objectContaining({ selSongNo: '11111' }),
+          }),
+          expect.objectContaining({
+            mode: 'joysound-listing',
+            bucket: 'knownWesternAct',
+            row: expect.objectContaining({ selSongNo: '11111' }),
+          }),
+        ]),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('writes full issue JSONL for merge-delta gates', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-audit-'));
+    const baselinePath = join(dir, 'baseline.json');
+    const candidatePath = join(dir, 'candidate.json');
+    const reportPath = join(dir, 'merge-report.json');
+    const issuesPath = join(dir, 'merge-issues.jsonl');
+
+    writeFileSync(
+      baselinePath,
+      `${JSON.stringify([
+        record({ id: 'remove-me' }),
+        record({ id: 'mutate-me', title_ko: '풍부한 제목' }),
+        record({ id: 'dupe' }),
+        record({ id: 'dupe', title_primary: '別タイトル' }),
+      ])}\n`,
+    );
+    writeFileSync(
+      candidatePath,
+      `${JSON.stringify([
+        record({ id: 'mutate-me', title_ko: null }),
+        record({ id: 'dupe' }),
+        record({ id: 'dupe', artist_primary: '別アーティスト' }),
+        record({
+          id: 'joysound-new',
+          source_url: 'https://www.joysound.com/web/search/song/new',
+          artist_primary: 'TWICE',
+        }),
+      ])}\n`,
+    );
+
+    try {
+      runCli([
+        'merge-delta',
+        '--baseline',
+        baselinePath,
+        '--candidate',
+        candidatePath,
+        '--out',
+        reportPath,
+        '--issues-out',
+        issuesPath,
+      ]);
+
+      expect(readJsonl(issuesPath)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'removed',
+            record: expect.objectContaining({ id: 'remove-me' }),
+          }),
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'duplicateBaselineId',
+            id: 'dupe',
+          }),
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'duplicateCandidateId',
+            id: 'dupe',
+          }),
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'mutatedExisting',
+            id: 'mutate-me',
+          }),
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'richFieldLoss',
+            id: 'mutate-me',
+          }),
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'added',
+            record: expect.objectContaining({ id: 'joysound-new' }),
+          }),
+          expect.objectContaining({
+            mode: 'merge-delta',
+            bucket: 'suspiciousAddition.knownKoreanAct',
+            record: expect.objectContaining({ id: 'joysound-new' }),
+          }),
+        ]),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses to write issue JSONL over any input corpus path', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-audit-'));
+    const corpusPath = join(dir, 'songs.json');
+    const reportPath = join(dir, 'report.json');
+    writeFileSync(corpusPath, `${JSON.stringify([record({ id: 'safe' })])}\n`);
+
+    try {
+      expect(() =>
+        runCli(['corpus', '--in', corpusPath, '--out', reportPath, '--issues-out', corpusPath]),
+      ).toThrow(/refusing to write audit output over input path/u);
       expect(JSON.parse(readFileSync(corpusPath, 'utf8'))[0]).toMatchObject({ id: 'safe' });
     } finally {
       rmSync(dir, { recursive: true, force: true });

@@ -201,6 +201,150 @@ function sampleListingAuditItem(item) {
   return sample;
 }
 
+function issueRow(mode, bucket, payload) {
+  return { mode, bucket, ...payload };
+}
+
+function collectCorpusIssueRows(records) {
+  const issues = [];
+  for (const record of records) {
+    const fullText = songText(record);
+    const titleArtist = titleArtistText(record);
+    const artist = asString(record?.artist_primary);
+    if (matchesAny(artist, KOREAN_ACT_PATTERNS)) {
+      issues.push(issueRow('corpus', 'knownKoreanAct', { record: sampleRecord(record) }));
+    }
+    if (isKnownWesternAct(artist)) {
+      issues.push(issueRow('corpus', 'knownWesternAct', { record: sampleRecord(record) }));
+    }
+    if (RE_HANGUL.test(titleArtist) && !hasKana(titleArtist)) {
+      issues.push(issueRow('corpus', 'hangulNoJapaneseScript', { record: sampleRecord(record) }));
+    }
+    if (GENERIC_ARTIST_RE.test(artist) && !hasKana(fullText)) {
+      issues.push(
+        issueRow('corpus', 'genericArtistNoJapaneseScript', { record: sampleRecord(record) }),
+      );
+    }
+    if (isAsciiOnlyTitleArtist(titleArtist)) {
+      issues.push(issueRow('corpus', 'asciiOnlyTitleArtist', { record: sampleRecord(record) }));
+    }
+  }
+  return issues;
+}
+
+function collectJoysoundListingIssueRows(rows, options = {}) {
+  const issues = [];
+  const baselineNumbers = baselineJoysoundNumberMap(options.baselineRecords);
+  const seenKeys = new Set();
+  for (const row of rows) {
+    const key = `${row?.naviGroupId ?? ''}|${row?.selSongNo ?? ''}`;
+    if (seenKeys.has(key)) {
+      issues.push(
+        issueRow('joysound-listing', 'duplicateKey', { key, row: sampleListingRow(row) }),
+      );
+    } else {
+      seenKeys.add(key);
+    }
+
+    const surface = listingText(row);
+    const titleArtist = listingTitleArtistText(row);
+    const artist = asString(row?.artistName);
+    if (matchesAny(artist, KOREAN_ACT_PATTERNS)) {
+      issues.push(issueRow('joysound-listing', 'knownKoreanAct', { row: sampleListingRow(row) }));
+    }
+    if (isKnownWesternAct(artist)) {
+      issues.push(issueRow('joysound-listing', 'knownWesternAct', { row: sampleListingRow(row) }));
+    }
+    if (!hasJapaneseOrAmbiguousHan(titleArtist)) {
+      issues.push(
+        issueRow('joysound-listing', 'noJapaneseTitleArtist', { row: sampleListingRow(row) }),
+      );
+    }
+    if (isAsciiOnlyTitleArtist(titleArtist)) {
+      issues.push(
+        issueRow('joysound-listing', 'asciiOnlyTitleArtist', { row: sampleListingRow(row) }),
+      );
+    }
+    if (isBareAnimeTokenRisk(surface)) {
+      issues.push(
+        issueRow('joysound-listing', 'bareAnimeTokenRisk', { row: sampleListingRow(row) }),
+      );
+    }
+    if (isLatinVocaloidSubstringRisk(surface)) {
+      issues.push(
+        issueRow('joysound-listing', 'latinVocaloidSubstringRisk', { row: sampleListingRow(row) }),
+      );
+    }
+
+    const baselineMatches = baselineNumbers.get(row?.selSongNo);
+    if (baselineMatches) {
+      const payload = {
+        row: sampleListingRow(row),
+        baseline: baselineMatches.map(sampleRichRecord),
+      };
+      issues.push(issueRow('joysound-listing', 'existingJoysoundNumberOverlap', payload));
+      if (!baselineMatches.some((record) => sameTitleArtist(row, record))) {
+        issues.push(issueRow('joysound-listing', 'existingJoysoundNumberConflict', payload));
+      }
+    }
+  }
+  return issues;
+}
+
+function collectMergeDeltaIssueRows(baselineRecords, candidateRecords) {
+  const issues = [];
+  const baselineDuplicates = duplicateIdReport(baselineRecords);
+  const candidateDuplicates = duplicateIdReport(candidateRecords);
+  const baseline = mapById(baselineRecords);
+  const candidate = mapById(candidateRecords);
+  const added = candidateRecords.filter((record) => !baseline.has(record.id));
+  const removed = baselineRecords.filter((record) => !candidate.has(record.id));
+
+  for (const record of removed)
+    issues.push(issueRow('merge-delta', 'removed', { record: sampleRichRecord(record) }));
+  for (const duplicate of baselineDuplicates)
+    issues.push(issueRow('merge-delta', 'duplicateBaselineId', duplicate));
+  for (const duplicate of candidateDuplicates)
+    issues.push(issueRow('merge-delta', 'duplicateCandidateId', duplicate));
+
+  for (const [id, before] of baseline) {
+    const after = candidate.get(id);
+    if (!after) continue;
+    if (stableStringify(before) !== stableStringify(after)) {
+      issues.push(
+        issueRow('merge-delta', 'mutatedExisting', {
+          id,
+          before: sampleRichRecord(before),
+          after: sampleRichRecord(after),
+          changedFields: changedTopLevelFields(before, after),
+        }),
+      );
+    }
+    const lostFields = lostRichFields(before, after);
+    if (lostFields.length > 0) {
+      issues.push(
+        issueRow('merge-delta', 'richFieldLoss', {
+          id,
+          lostFields,
+          before: sampleRichRecord(before),
+          after: sampleRichRecord(after),
+        }),
+      );
+    }
+  }
+
+  for (const record of added)
+    issues.push(issueRow('merge-delta', 'added', { record: sampleRichRecord(record) }));
+  for (const suspicious of collectCorpusIssueRows(added)) {
+    issues.push(
+      issueRow('merge-delta', `suspiciousAddition.${suspicious.bucket}`, {
+        record: suspicious.record,
+      }),
+    );
+  }
+  return issues;
+}
+
 export function analyzeCorpus(records) {
   if (!Array.isArray(records)) throw new Error('analyzeCorpus: records must be an array');
 
@@ -555,61 +699,95 @@ function realPathIfExists(path) {
   }
 }
 
+function outputFlagEntries(flags) {
+  return ['out', 'issues-out']
+    .map((name) => [name, flags[name]])
+    .filter(([, value]) => typeof value === 'string' && value.length > 0);
+}
+
 function assertOutputDoesNotOverwriteInput(flags, names) {
-  if (typeof flags.out !== 'string' || flags.out.length === 0) return;
-  const outputPath = resolve(flags.out);
-  const outputRealPath = realPathIfExists(outputPath);
-  try {
-    if (lstatSync(outputPath).isSymbolicLink()) {
-      throw new Error('refusing to write audit output through symlink: --out is a symbolic link');
+  const outputs = outputFlagEntries(flags);
+  for (const [outputName, outputValue] of outputs) {
+    const outputPath = resolve(outputValue);
+    const outputRealPath = realPathIfExists(outputPath);
+    try {
+      if (lstatSync(outputPath).isSymbolicLink()) {
+        throw new Error(
+          `refusing to write audit output through symlink: --${outputName} is a symbolic link`,
+        );
+      }
+    } catch (err) {
+      if (!(err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT')) throw err;
     }
-  } catch (err) {
-    if (!(err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT')) throw err;
+
+    for (const name of names) {
+      const value = flags[name];
+      if (typeof value !== 'string' || value.length === 0) continue;
+      const inputPath = resolve(value);
+      const inputRealPath = realPathIfExists(inputPath);
+      if (
+        inputPath === outputPath ||
+        (outputRealPath && inputRealPath && outputRealPath === inputRealPath)
+      ) {
+        throw new Error(
+          `refusing to write audit output over input path: --${outputName} matches --${name}`,
+        );
+      }
+    }
   }
 
-  for (const name of names) {
-    const value = flags[name];
-    if (typeof value !== 'string' || value.length === 0) continue;
-    const inputPath = resolve(value);
-    const inputRealPath = realPathIfExists(inputPath);
-    if (
-      inputPath === outputPath ||
-      (outputRealPath && inputRealPath && outputRealPath === inputRealPath)
-    ) {
-      throw new Error(`refusing to write audit output over input path: --out matches --${name}`);
+  for (let i = 0; i < outputs.length; i++) {
+    const [leftName, leftValue] = outputs[i];
+    const leftPath = resolve(leftValue);
+    for (const [rightName, rightValue] of outputs.slice(i + 1)) {
+      if (leftPath === resolve(rightValue)) {
+        throw new Error(
+          `refusing to use the same audit output path for --${leftName} and --${rightName}`,
+        );
+      }
     }
   }
+}
+
+function writeJsonl(path, rows) {
+  const body = rows.map((row) => JSON.stringify(row)).join('\n');
+  writeFileSync(path, body.length > 0 ? `${body}\n` : '');
 }
 
 export function runCli(argv = process.argv.slice(2)) {
   const flags = parseArgs(argv);
   let report;
+  let issueRows = [];
   if (flags.mode === 'corpus') {
     const inputPath = requireFlag(flags, 'in');
     assertOutputDoesNotOverwriteInput(flags, ['in']);
-    report = analyzeCorpus(readJsonArray(inputPath));
+    const records = readJsonArray(inputPath);
+    report = analyzeCorpus(records);
+    issueRows = collectCorpusIssueRows(records);
   } else if (flags.mode === 'joysound-listing') {
     const inputPath = requireFlag(flags, 'in');
     const baselinePath = flags.baseline;
     assertOutputDoesNotOverwriteInput(flags, ['in', 'baseline']);
-    report = analyzeJoysoundListing(readJsonOrJsonlArray(inputPath), {
-      baselineRecords: baselinePath ? readJsonArray(baselinePath) : [],
-    });
+    const rows = readJsonOrJsonlArray(inputPath);
+    const baselineRecords = baselinePath ? readJsonArray(baselinePath) : [];
+    report = analyzeJoysoundListing(rows, { baselineRecords });
+    issueRows = collectJoysoundListingIssueRows(rows, { baselineRecords });
   } else if (flags.mode === 'merge-delta') {
     assertOutputDoesNotOverwriteInput(flags, ['baseline', 'candidate']);
-    report = compareCorpora(
-      readJsonArray(requireFlag(flags, 'baseline')),
-      readJsonArray(requireFlag(flags, 'candidate')),
-    );
+    const baselineRecords = readJsonArray(requireFlag(flags, 'baseline'));
+    const candidateRecords = readJsonArray(requireFlag(flags, 'candidate'));
+    report = compareCorpora(baselineRecords, candidateRecords);
+    issueRows = collectMergeDeltaIssueRows(baselineRecords, candidateRecords);
   } else {
     throw new Error(
-      'usage: audit-corpus-guardrails.mjs <corpus|joysound-listing|merge-delta> --in PATH --out PATH',
+      'usage: audit-corpus-guardrails.mjs <corpus|joysound-listing|merge-delta> --in PATH --out PATH [--issues-out PATH]',
     );
   }
 
   const json = `${JSON.stringify(report, null, 2)}\n`;
   if (flags.out) writeFileSync(flags.out, json);
   else process.stdout.write(json);
+  if (flags['issues-out']) writeJsonl(flags['issues-out'], issueRows);
   return report;
 }
 
