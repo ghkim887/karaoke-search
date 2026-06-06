@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-30T23:15:26.916Z",
+  "generatedAt": "2026-06-06T23:20:47.817Z",
   "proEnrichmentMap": {
     "6101": {
       "nationalcode": "JPN",
@@ -30234,6 +30234,38 @@
       "publishdate": "2026-05-28",
       "lastSeen": "2026-05-30T23:15:08.005Z"
     },
+    "52521": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "카이마쿠센겐",
+      "sortSongKo": null,
+      "subTitle": null,
+      "publishdate": "2026-06-02",
+      "lastSeen": "2026-06-06T23:20:47.817Z"
+    },
+    "52522": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "오도",
+      "sortSongKo": null,
+      "subTitle": null,
+      "publishdate": "2026-06-02",
+      "lastSeen": "2026-06-06T23:20:47.817Z"
+    },
+    "52524": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "이마사라닷테보쿠와이우카나",
+      "sortSongKo": null,
+      "subTitle": null,
+      "publishdate": "2026-06-04",
+      "lastSeen": "2026-06-06T23:20:47.817Z"
+    },
+    "52525": {
+      "nationalcode": "JPN",
+      "sortTitleKo": "카리스맛쿠스",
+      "sortSongKo": null,
+      "subTitle": null,
+      "publishdate": "2026-06-04",
+      "lastSeen": "2026-06-06T23:20:47.817Z"
+    },
     "52565": {
       "nationalcode": "JPN",
       "sortTitleKo": "코이오 시테이루 미타이나노",
@@ -35860,7 +35892,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "優里": {
       "code": "JPN",
@@ -35869,7 +35901,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "vaundy": {
       "code": "JPN",
@@ -35878,7 +35910,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "backnumber": {
       "code": "JPN",
@@ -35887,7 +35919,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "米津玄師": {
       "code": "JPN",
@@ -35896,7 +35928,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "spyair": {
       "code": "JPN",
@@ -35905,7 +35937,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "novelbright": {
       "code": "JPN",
@@ -35914,16 +35946,16 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "ado": {
       "code": "JPN",
       "votes": {
-        "JPN": 7,
+        "JPN": 8,
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "mrs.greenapple": {
       "code": "JPN",
@@ -35932,7 +35964,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "yoasobi": {
       "code": "JPN",
@@ -35941,7 +35973,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "あいみょん": {
       "code": "JPN",
@@ -35950,7 +35982,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "radwimps": {
       "code": "JPN",
@@ -35959,7 +35991,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "kinggnu": {
       "code": "JPN",
@@ -35968,7 +36000,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "ヨルシカ": {
       "code": "JPN",
@@ -35977,7 +36009,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "lisa": {
       "code": "JPN",
@@ -35986,7 +36018,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "aimer": {
       "code": "JPN",
@@ -36004,7 +36036,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "ずっと真夜中でいいのに。": {
       "code": "JPN",
@@ -36202,7 +36234,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "ゆこぴ(feat.歌愛ユキ)": {
       "code": "UNKNOWN",
@@ -36418,7 +36450,7 @@
         "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
     "すとぷり": {
       "code": "JPN",
@@ -41533,15 +41565,6 @@
       "lastSeen": "2026-04-29T18:54:13.741Z"
     },
     "neru(feat.鏡音リン)": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-04-29T18:54:13.741Z"
-    },
-    "variousartists(feat.지구인,행주)(prod.byjangsoo,padi)": {
       "code": "UNKNOWN",
       "votes": {
         "JPN": 0,
@@ -51684,15 +51707,6 @@
       },
       "lastSeen": "2026-04-29T18:54:13.741Z"
     },
-    "ヤン·スギョン": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-04-29T18:54:13.741Z"
-    },
     "因幡晃": {
       "code": "JPN",
       "votes": {
@@ -53610,15 +53624,6 @@
       },
       "lastSeen": "2026-04-29T23:32:10.873Z"
     },
-    "지구인,행주": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-04-29T23:32:10.873Z"
-    },
     "gumi,初音ミク": {
       "code": "UNKNOWN",
       "votes": {
@@ -55293,15 +55298,6 @@
       },
       "lastSeen": "2026-05-01T08:56:17.041Z"
     },
-    "byjangsoo,padi": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-05-01T08:56:17.041Z"
-    },
     "いよわ": {
       "code": "UNKNOWN",
       "votes": {
@@ -55319,24 +55315,6 @@
         "ENG": 0
       },
       "lastSeen": "2026-05-12T06:30:24.978Z"
-    },
-    "cortis(코르티스)": {
-      "code": "JPN",
-      "votes": {
-        "JPN": 3,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-05-30T19:25:46.432Z"
-    },
-    "한로로": {
-      "code": "KOR",
-      "votes": {
-        "JPN": 0,
-        "KOR": 27,
-        "ENG": 0
-      },
-      "lastSeen": "2026-06-04T00:00:00.000Z"
     },
     "tak(feat.初音ミク,重音テト)": {
       "code": "UNKNOWN",
@@ -55392,24 +55370,6 @@
       },
       "lastSeen": "2026-05-30T19:38:19.815Z"
     },
-    "정한(feat.omoinotake)": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-05-30T19:38:19.815Z"
-    },
-    "정한": {
-      "code": "UNKNOWN",
-      "votes": {
-        "JPN": 0,
-        "KOR": 0,
-        "ENG": 0
-      },
-      "lastSeen": "2026-05-30T19:38:19.815Z"
-    },
     "粗品(feat.竹達彩奈(cv.竹達彩奈))": {
       "code": "UNKNOWN",
       "votes": {
@@ -55437,33 +55397,141 @@
       },
       "lastSeen": "2026-05-30T19:38:19.815Z"
     },
-    "cortis": {
-      "code": "KOR",
+    "로이킴": {
+      "code": "JPN",
       "votes": {
-        "JPN": 0,
-        "KOR": 7,
+        "JPN": 3,
+        "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-06-04T00:00:00.000Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
-    "cortis코르티스": {
-      "code": "KOR",
+    "루시": {
+      "code": "JPN",
       "votes": {
-        "JPN": 0,
-        "KOR": 7,
+        "JPN": 3,
+        "KOR": 0,
         "ENG": 0
       },
-      "lastSeen": "2026-06-04T00:00:00.000Z"
+      "lastSeen": "2026-06-06T19:32:17.541Z"
     },
-    "코르티스": {
+    "eve(feat.suisfromヨルシカ)": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "suisfromヨルシカ": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "원슈타인": {
       "code": "KOR",
       "votes": {
         "JPN": 0,
-        "KOR": 7,
+        "KOR": 23,
         "ENG": 0
       },
-      "lastSeen": "2026-06-04T00:00:00.000Z"
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "루시(feat.원슈타인)": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "김이지": {
+      "code": "KOR",
+      "votes": {
+        "JPN": 0,
+        "KOR": 5,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "maisondes(feat.美波,sakuramoti)": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "美波,sakuramoti": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "로이킴,김선재": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 1,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "김선재": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "로이킴,김이지": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 1,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "로이킴,배다해": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 0,
+        "KOR": 1,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "배다해": {
+      "code": "KOR",
+      "votes": {
+        "JPN": 0,
+        "KOR": 4,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
+    },
+    "ヤンᆞスギョン": {
+      "code": "UNKNOWN",
+      "votes": {
+        "JPN": 1,
+        "KOR": 0,
+        "ENG": 0
+      },
+      "lastSeen": "2026-06-06T19:42:43.138Z"
     }
   },
-  "bootstrappedAt": "2026-05-30T19:25:46.432Z"
+  "bootstrappedAt": "2026-06-06T19:32:17.541Z"
 }
