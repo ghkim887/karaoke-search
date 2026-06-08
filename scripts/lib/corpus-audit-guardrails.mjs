@@ -1192,6 +1192,14 @@ const JOYSOUND_DB_FN_BUCKETS = [
   'droppedAsciiOnly',
 ];
 
+// Admit paths whose primary evidence is a STRONG positive signal (corpus-confirmed
+// Japanese act, or a curated hand-review allow), NOT weak-script heuristics. These
+// rows must NOT land in the Han-only / ASCII-only weak-script FP buckets — their
+// script shape is irrelevant given the strong signal. Token-based admit-vocaloid /
+// admit-anime admits are intentionally NOT excluded: a token + Han-only/ASCII-only
+// title could still be a non-Japanese coincidence worth the P2 look.
+const STRONG_SIGNAL_ADMIT_REASONS = new Set(['admit-jp-artist', 'reviewed-allow']);
+
 function decisionLogTitleArtist(entry) {
   return [entry?.title, entry?.artist].filter((value) => typeof value === 'string').join(' ');
 }
@@ -1265,6 +1273,7 @@ function collectJoysoundDatabaseIssues({ decisionLog, records }) {
 
     if (entry?.decision === 'admit') {
       admitted++;
+      const isStrongSignalAdmit = STRONG_SIGNAL_ADMIT_REASONS.has(asString(entry?.reason));
       if (baselineConflict) {
         pushIssue(
           falsePositive,
@@ -1291,7 +1300,7 @@ function collectJoysoundDatabaseIssues({ decisionLog, records }) {
           }),
         );
       }
-      if (RE_HAN.test(titleArtist) && !hasKana(titleArtist)) {
+      if (!isStrongSignalAdmit && RE_HAN.test(titleArtist) && !hasKana(titleArtist)) {
         pushIssue(
           falsePositive,
           'hanNoKanaAdmitted',
@@ -1304,7 +1313,7 @@ function collectJoysoundDatabaseIssues({ decisionLog, records }) {
           }),
         );
       }
-      if (isAsciiOnlyTitleArtist(titleArtist)) {
+      if (!isStrongSignalAdmit && isAsciiOnlyTitleArtist(titleArtist)) {
         pushIssue(
           falsePositive,
           'asciiOnlyAdmitted',
@@ -1333,7 +1342,9 @@ function collectJoysoundDatabaseIssues({ decisionLog, records }) {
     } else if (entry?.decision === 'drop') {
       dropped++;
       const isForeignReason =
-        entry?.reason === 'foreign-korean' || entry?.reason === 'foreign-western';
+        entry?.reason === 'foreign-korean' ||
+        entry?.reason === 'foreign-western' ||
+        entry?.reason === 'foreign-chinese';
       if (hasKana(titleArtist)) {
         pushIssue(
           falseNegative,

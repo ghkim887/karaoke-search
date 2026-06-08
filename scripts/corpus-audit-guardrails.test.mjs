@@ -1201,6 +1201,103 @@ describe('corpus audit guardrails', () => {
     expect(report.falseNegative.samples.droppedAsciiOnly[0].priority).toBe('P3');
   });
 
+  it('excludes strong-signal admit-jp-artist and reviewed-allow admits from weak-script FP buckets', () => {
+    const decisionLog = [
+      // admit-jp-artist with a Han-only title: artist is a confirmed JP act -> strong signal, NOT a weak-script FP.
+      {
+        selSongNo: '700007',
+        selSongNoRaw: '700-007',
+        naviGroupId: 'n1',
+        title: '感謝',
+        artist: 'JP Confirmed Act',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jp-artist',
+        detailFlipRisk: false,
+      },
+      // admit-jp-artist with an ASCII-only title: same strong signal, NOT a weak-script FP.
+      {
+        selSongNo: '700008',
+        selSongNoRaw: '700-008',
+        naviGroupId: 'n2',
+        title: 'ASCII ONLY',
+        artist: 'JP Confirmed Act',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jp-artist',
+        detailFlipRisk: false,
+      },
+      // reviewed-allow curated admit with an ASCII-only title: curated, NOT a weak-script FP.
+      {
+        selSongNo: '700009',
+        selSongNoRaw: '700-009',
+        naviGroupId: 'n3',
+        title: 'CURATED ASCII',
+        artist: 'Curated Act',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'reviewed-allow',
+        detailFlipRisk: false,
+      },
+      // token-based admit-anime with a Han-only title: still surfaced as a P2 weak-script look.
+      {
+        selSongNo: '700010',
+        selSongNoRaw: '700-010',
+        naviGroupId: 'n4',
+        title: '愛情',
+        artist: '張學友',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'anime',
+        reason: 'admit-anime',
+        detailFlipRisk: false,
+      },
+    ];
+
+    const report = analyzeJoysoundDatabase({ decisionLog, records: [] });
+
+    const fpBucket = (name) => report.falsePositive.samples[name].map((row) => row.selSongNo);
+
+    // Strong-signal admits stay OUT of both weak-script FP buckets.
+    expect(fpBucket('hanNoKanaAdmitted')).not.toContain('700007');
+    expect(fpBucket('asciiOnlyAdmitted')).not.toContain('700008');
+    expect(fpBucket('asciiOnlyAdmitted')).not.toContain('700009');
+    // Token-based admit-anime Han-only admit still surfaces in hanNoKanaAdmitted.
+    expect(fpBucket('hanNoKanaAdmitted')).toContain('700010');
+    expect(report.falsePositive.buckets.hanNoKanaAdmitted.count).toBe(1);
+    expect(report.falsePositive.buckets.asciiOnlyAdmitted.count).toBe(0);
+  });
+
+  it('surfaces a foreign-chinese drop with kana as a Japanese-release ALLOW candidate', () => {
+    const decisionLog = [
+      {
+        selSongNo: '800008',
+        selSongNoRaw: '800-008',
+        naviGroupId: 'n1',
+        title: 'コラボ',
+        artist: 'BEYOND × 日本人歌手',
+        tieupInfo: null,
+        decision: 'drop',
+        category: null,
+        reason: 'foreign-chinese',
+        detailFlipRisk: false,
+      },
+    ];
+
+    const report = analyzeJoysoundDatabase({ decisionLog, records: [] });
+
+    expect(report.falseNegative.buckets.droppedForeignButJpRelease.count).toBe(1);
+    expect(report.falseNegative.samples.droppedForeignButJpRelease[0]).toMatchObject({
+      selSongNo: '800008',
+      reason: 'foreign-chinese',
+      priority: 'P1',
+      suggested_verdict: 'POLICY_EDGE',
+    });
+  });
+
   it('writes JOYSOUND database FP/FN JSONL plus high/other TSV review queues via the joysound-db CLI', () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-joysound-db-'));
     const decisionLogPath = join(dir, 'decision-log.jsonl');

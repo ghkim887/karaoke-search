@@ -38,19 +38,23 @@ export interface DecisionRecord {
  * signal) that the listing row lacks. So:
  *   - `admit-jpop-kana` — admitted as plain jpop, but detail genre/tieup could
  *     reveal it is really vocaloid or an anime tie-in.
+ *   - `admit-jp-artist` — admitted as plain jpop on the strength of the
+ *     known-Japanese-artist seam without any kana/anime/vocaloid signal; detail
+ *     genre/tieup could refine the category to vocaloid or anime.
  *   - `drop-han-only` / `drop-ascii-only` / `drop-no-signal` — dropped for lack
  *     of a positive signal, but detail genre/tieup could reveal an
  *     anime/vocaloid tie-in that would admit it.
  * The remaining reasons are NOT flip-risk:
  *   - `reviewed-allow` / `reviewed-drop` — adjudicated at the exact number,
  *     detail cannot override a human decision.
- *   - `foreign-korean` / `foreign-western` — a hard negative act gate; detail
- *     genre/tieup never rehabilitates a confirmed foreign act.
+ *   - `foreign-korean` / `foreign-chinese` / `foreign-western` — a hard negative
+ *     act gate; detail genre/tieup never rehabilitates a confirmed foreign act.
  *   - `admit-vocaloid` / `admit-anime` — the strongest positive signals already
  *     fired on the listing; detail can only corroborate, not flip.
  */
 const DETAIL_FLIP_RISK_REASONS: ReadonlySet<JoysoundClassifyReason> = new Set([
   'admit-jpop-kana',
+  'admit-jp-artist',
   'drop-han-only',
   'drop-ascii-only',
   'drop-no-signal',
@@ -77,20 +81,60 @@ function canonicalSelSongNo(raw: string): string {
 }
 
 /**
+ * Optional sweep-layer knobs for {@link buildJoysoundDecision}.
+ *
+ * Both are forwarded to the classifier verbatim; both are optional so the
+ * production-equivalent call (`buildJoysoundDecision(listItem)`) is unchanged.
+ */
+export interface BuildJoysoundDecisionOptions {
+  overrides?: JoysoundOverridePredicates;
+  /**
+   * Injected known-Japanese-artist predicate (Fix F2). The sweep runner builds
+   * this from the corpus and passes it here; it enables the `admit-jp-artist`
+   * recall path in the classifier. Undefined in production.
+   */
+  isKnownJapaneseArtist?: (artist: string) => boolean;
+}
+
+/**
  * Run the reason-rich classifier over a single JOYSOUND listing row (LISTING
  * LEVEL — no per-song detail) and emit a {@link DecisionRecord}. `decision` is
  * `admit` iff a non-null category was assigned.
  *
- * `overrides` defaults to the production override predicates; tests inject a
- * stub to exercise the ALLOW/DROP paths against the (empty) production lists.
+ * Accepts either the bare production override predicates (back-compat: the
+ * second positional argument may be a `JoysoundOverridePredicates`) or a
+ * {@link BuildJoysoundDecisionOptions} bag carrying `overrides` and/or the
+ * `isKnownJapaneseArtist` sweep seam. Tests inject a stub to exercise the
+ * ALLOW/DROP paths against the (empty) production lists.
  */
+/**
+ * Disambiguate the overloaded second argument. A {@link JoysoundOverridePredicates}
+ * carries `isAllow`/`isDrop`; the options bag does not. The diagnostic test
+ * suite passes the bare predicates positionally, so that legacy shape must keep
+ * mapping onto `{ overrides }`.
+ */
+function normalizeBuildOptions(
+  arg?: BuildJoysoundDecisionOptions | JoysoundOverridePredicates,
+): BuildJoysoundDecisionOptions {
+  if (arg === undefined) return {};
+  if (typeof (arg as JoysoundOverridePredicates).isAllow === 'function') {
+    return { overrides: arg as JoysoundOverridePredicates };
+  }
+  return arg as BuildJoysoundDecisionOptions;
+}
+
 export function buildJoysoundDecision(
   listItem: JoysoundListItem,
-  overrides?: JoysoundOverridePredicates,
+  optionsOrOverrides?: BuildJoysoundDecisionOptions | JoysoundOverridePredicates,
 ): DecisionRecord {
-  const { category, reason } = classifyJoysoundRecordWithReason(
-    overrides ? { listItem, overrides } : { listItem },
-  );
+  const options = normalizeBuildOptions(optionsOrOverrides);
+  const { category, reason } = classifyJoysoundRecordWithReason({
+    listItem,
+    ...(options.overrides ? { overrides: options.overrides } : {}),
+    ...(options.isKnownJapaneseArtist
+      ? { isKnownJapaneseArtist: options.isKnownJapaneseArtist }
+      : {}),
+  });
   return {
     selSongNo: canonicalSelSongNo(listItem.selSongNo),
     selSongNoRaw: listItem.selSongNo,

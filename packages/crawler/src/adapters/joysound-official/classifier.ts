@@ -1,4 +1,8 @@
 import type { Category } from '@karaoke/schema';
+import { splitArtistCollab } from '../../clustering.js';
+import { isInChineseDropList } from '../tj-media-direct/chineseArtistDropList.js';
+import { isInDropList } from '../tj-media-direct/koreanArtistDropList.js';
+import { normalizeForMatch } from '../tj-media-direct/normalize.js';
 import { isReviewedJoysoundAllow, isReviewedJoysoundDrop } from './reviewedJoysoundOverrides.js';
 import type { JoysoundDetail, JoysoundListItem } from './types.js';
 
@@ -55,10 +59,18 @@ const ANIME_TOKENS: readonly string[] = [
  * supplies Japanese kana ruby for foreign/K-pop songs too, and some Korean
  * acts are rendered in katakana on the public listing. Match only artist-like
  * fields so a Japanese row titled "SEVENTEEN" is not falsely dropped.
+ *
+ * Fix F1 (2026-06-09): kept in lock-step with the audit's `KOREAN_ACT_PATTERNS`
+ * (`scripts/lib/corpus-audit-guardrails.mjs`) so the classifier no longer drifts
+ * from `isAuditForeignAct`. The added entries (`BIG BANG`, `CORTIS`,
+ * `FT ISLAND`, `IZ*ONE`, `LE SSERAFIM`, `PLAVE`, `防弾少年団`) are a substring
+ * test on the full artist surface, which catches member/feat forms the
+ * collab-splitter cannot — e.g. `イ・ホンギ from FTISLAND` (` from ` is not a
+ * split delimiter anywhere in the codebase) still trips `FT\s*ISLAND`.
  */
 const KOREAN_ACT_PATTERNS: readonly RegExp[] = [
-  /\b(?:aespa|BABYMONSTER|ENHYPEN|ITZY|IVE|NCT\s*DREAM|NCT\s*WISH|NMIXX|SEVENTEEN|STRAY\s*KIDS|ZEROBASEONE|BTS|BLACKPINK|TWICE|TOMORROW\s*X\s*TOGETHER|TXT|TREASURE|BIGBANG|2NE1|GFRIEND|SUPER\s*JUNIOR|RED\s*VELVET|MONSTA\s*X|MAMAMOO|GOT7|EXO|ATEEZ|Kep1er|BOYNEXTDOOR|KISS\s*OF\s*LIFE|SHINee|KARA)\b/i,
-  /(?:東方神起|少女時代|エスパ|アイヴ|エンハイプン|エヌシーティー|ストレイキッズ|セブンティーン|チョンソミ|ニュージーンズ|ルセラフィム|ベイビーモンスター|ゼロベースワン|トゥワイス|ブラックピンク|トゥモローバイトゥギャザー|トレジャー|レッドベルベット|モンスタエックス|ママムー|ヨジャチング|スーパージュニア|ビッグバン|トゥエニィワン|エクソ|エイティーズ|ケプラー|ボーイネクストドア|キスオブライフ|ゴットセブン)/u,
+  /\b(?:aespa|BABYMONSTER|BIG\s*BANG|CORTIS|ENHYPEN|FT\s*ISLAND|ITZY|IVE|IZ\*ONE|LE\s*SSERAFIM|NCT\s*DREAM|NCT\s*WISH|NMIXX|PLAVE|SEVENTEEN|STRAY\s*KIDS|ZEROBASEONE|BTS|BLACKPINK|TWICE|TOMORROW\s*X\s*TOGETHER|TXT|TREASURE|BIGBANG|2NE1|GFRIEND|SUPER\s*JUNIOR|RED\s*VELVET|MONSTA\s*X|MAMAMOO|GOT7|EXO|ATEEZ|Kep1er|BOYNEXTDOOR|KISS\s*OF\s*LIFE|SHINee|KARA)\b/i,
+  /(?:防弾少年団|東方神起|少女時代|エスパ|アイヴ|エンハイプン|エヌシーティー|ストレイキッズ|セブンティーン|チョンソミ|ニュージーンズ|ルセラフィム|ベイビーモンスター|ゼロベースワン|トゥワイス|ブラックピンク|トゥモローバイトゥギャザー|トレジャー|レッドベルベット|モンスタエックス|ママムー|ヨジャチング|スーパージュニア|ビッグバン|トゥエニィワン|エクソ|エイティーズ|ケプラー|ボーイネクストドア|キスオブライフ|ゴットセブン)/u,
 ];
 
 const WESTERN_ACT_COMPONENTS = new Set<string>([
@@ -147,6 +159,31 @@ function isKnownWesternAct(surface: string): boolean {
 }
 
 /**
+ * Production drop-list foreign-act detection (Fix F1, 2026-06-09).
+ *
+ * The classifier's own `KOREAN_ACT_PATTERNS` / `WESTERN_ACT_COMPONENTS` are
+ * hand-maintained and were drifting from the audit's `isAuditForeignAct`, which
+ * unions the TJ-chain production Korean + Chinese drop lists. The full-catalog
+ * sweep found 140 admitted rows by 12 drop-listed foreign acts (S.H.E, TWINS,
+ * BEYOND, IZ*ONE, FTISLAND, J-Walk, AKMU, F4, PLAVE, B.A.D, …) whose katakana
+ * song titles fired `admit-jpop-kana`. To stop that drift the foreign-act gate
+ * now ALSO consults the SAME production drop lists the TJ filter chain rejects
+ * on (`isInDropList` / `isInChineseDropList`), using the SAME component split
+ * (`splitArtistCollab`) + normalization (`normalizeForMatch`) as
+ * `filterSteps.ts` step 3 — so a featured member (`J-Walk Feat.ウンジウォン`,
+ * `イ・ホンギ from FTISLAND`) still sinks the row.
+ */
+function dropListForeignKind(surface: string): 'korean' | 'chinese' | null {
+  for (const component of splitArtistCollab(surface)) {
+    const key = normalizeForMatch(component);
+    if (key === '') continue;
+    if (isInDropList(key)) return 'korean';
+    if (isInChineseDropList(key)) return 'chinese';
+  }
+  return null;
+}
+
+/**
  * Override-predicate seam. Defaults to the production `reviewedJoysoundOverrides`
  * predicates; tests inject stubs to exercise the ALLOW/DROP paths against the
  * (intentionally empty) production lists without duplicating classification
@@ -161,6 +198,16 @@ interface ClassifyArgs {
   listItem: JoysoundListItem;
   detail?: JoysoundDetail;
   overrides?: JoysoundOverridePredicates;
+  /**
+   * Injected recall seam (Fix F2, 2026-06-09). When supplied AND a row would
+   * otherwise fall through to a `drop-*` reason (no kana/anime/vocaloid signal,
+   * not a foreign act, not curated-dropped), a `true` result admits the row as
+   * `jpop` with reason `admit-jp-artist`. Mirrors the existing `overrides`
+   * seam: OPTIONAL and defaults to undefined, so `classifyJoysoundRecord` and
+   * the production crawler are UNAFFECTED — the JP-artist admit path is opt-in,
+   * wired only by the sweep layer from a corpus-derived artist set.
+   */
+  isKnownJapaneseArtist?: (artist: string) => boolean;
 }
 
 /**
@@ -168,8 +215,14 @@ interface ClassifyArgs {
  * the three `drop-*` reasons and `reviewed-drop` / `foreign-*` carry `null`.
  *
  *  - `reviewed-allow` / `reviewed-drop` — exact-number curated override hit.
- *  - `foreign-korean` / `foreign-western` — hard negative act gate.
+ *  - `foreign-korean` / `foreign-chinese` / `foreign-western` — hard negative
+ *    act gate. `foreign-korean`/`foreign-chinese` fire from the production
+ *    Korean / Chinese drop lists (and the classifier's own Korean patterns);
+ *    `foreign-western` from the Western-act components.
  *  - `admit-vocaloid` / `admit-anime` / `admit-jpop-kana` — positive gates.
+ *  - `admit-jp-artist` — admitted (jpop) because an INJECTED known-Japanese
+ *    -artist predicate matched a row that would otherwise drop for lack of a
+ *    kana/anime/vocaloid signal. Sweep-layer-only: production injects nothing.
  *  - `drop-han-only` — title/artist has Han but no kana (Mandopop-ambiguous).
  *  - `drop-ascii-only` — title/artist is Latin-only, weak Japanese evidence.
  *  - `drop-no-signal` — neither Han, Latin, nor kana script.
@@ -178,10 +231,12 @@ export type JoysoundClassifyReason =
   | 'reviewed-allow'
   | 'reviewed-drop'
   | 'foreign-korean'
+  | 'foreign-chinese'
   | 'foreign-western'
   | 'admit-vocaloid'
   | 'admit-anime'
   | 'admit-jpop-kana'
+  | 'admit-jp-artist'
   | 'drop-han-only'
   | 'drop-ascii-only'
   | 'drop-no-signal';
@@ -240,14 +295,20 @@ export function classifyJoysoundRecord(args: ClassifyArgs): Category | null {
  *   1. override DROP   → drop first, before any admit gate.
  *   2. override ALLOW  → admit before the foreign-act gate; picks the best
  *      normal-gate category, falling back to `jpop` when no signal fires.
- *   3. foreign-act gate (Korean / Western) → hard negative.
+ *   3. foreign-act gate (Korean drop list / Korean patterns / Chinese drop list
+ *      / Western) → hard negative. Consulting the production drop lists keeps
+ *      this gate in lock-step with the audit's `isAuditForeignAct` (Fix F1).
  *   4. positive gates: vocaloid > anime > jpop-kana.
- *   5. fall-through drop, split by script signal for diagnostic richness.
+ *   5. injected known-Japanese-artist admit (Fix F2) → jpop. Runs AFTER the
+ *      foreign-act gate so a foreign act that also has corpus presence (e.g.
+ *      BoA) stays dropped; opt-in only, no-op in production.
+ *   6. fall-through drop, split by script signal for diagnostic richness.
  */
 export function classifyJoysoundRecordWithReason({
   listItem,
   detail,
   overrides = DEFAULT_OVERRIDES,
+  isKnownJapaneseArtist,
 }: ClassifyArgs): { category: Category | null; reason: JoysoundClassifyReason } {
   const titleArtistParts: string[] = [listItem.songName, listItem.artistName];
   const surfaceParts: string[] = [listItem.songName, listItem.artistName, listItem.tieupInfo ?? ''];
@@ -279,8 +340,15 @@ export function classifyJoysoundRecordWithReason({
     return { category: positiveCategory ?? 'jpop', reason: 'reviewed-allow' };
   }
 
-  // 3. Hard negative foreign-act gate.
+  // 3. Hard negative foreign-act gate. The classifier's own Korean patterns +
+  //    the production Korean drop list both resolve to `foreign-korean`; the
+  //    production Chinese drop list resolves to `foreign-chinese` (Fix F1).
   if (artistFields.some(isKnownKoreanAct)) return { category: null, reason: 'foreign-korean' };
+  for (const field of artistFields) {
+    const kind = dropListForeignKind(field);
+    if (kind === 'korean') return { category: null, reason: 'foreign-korean' };
+    if (kind === 'chinese') return { category: null, reason: 'foreign-chinese' };
+  }
   if (artistFields.some(isKnownWesternAct)) return { category: null, reason: 'foreign-western' };
 
   // 4. Positive gates.
@@ -288,7 +356,20 @@ export function classifyJoysoundRecordWithReason({
   if (positiveCategory === 'anime') return { category: 'anime', reason: 'admit-anime' };
   if (positiveCategory === 'jpop') return { category: 'jpop', reason: 'admit-jpop-kana' };
 
-  // 5. Fall-through drop — split by script signal for diagnostic richness.
+  // 5. Injected known-Japanese-artist admit (Fix F2). Opt-in recall path: a row
+  //    with no positive script signal but a confirmed corpus JP artist admits
+  //    as jpop. The foreign-act gate above already excluded foreign acts, so a
+  //    predicate hit here is genuinely Japanese. No predicate → skipped, so the
+  //    production classifier/crawler contract is unchanged.
+  if (isKnownJapaneseArtist) {
+    for (const field of artistFields) {
+      if (field !== '' && isKnownJapaneseArtist(field)) {
+        return { category: 'jpop', reason: 'admit-jp-artist' };
+      }
+    }
+  }
+
+  // 6. Fall-through drop — split by script signal for diagnostic richness.
   if (hasHanScript(titleArtist)) return { category: null, reason: 'drop-han-only' };
   if (hasAsciiLetter(titleArtist)) return { category: null, reason: 'drop-ascii-only' };
   return { category: null, reason: 'drop-no-signal' };
