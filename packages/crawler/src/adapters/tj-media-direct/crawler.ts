@@ -18,7 +18,7 @@ import { enrichWithTranslit } from './enrichTranslit.js';
 import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA, extractCatalogItems } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { classifyRecord, parseCatalogResponse } from './parser.js';
-import { type SearchSongItem, searchSongByTitle } from './searchSong.js';
+import { searchSongByPro } from './searchSong.js';
 
 const CATALOG_URL = 'https://www.tjmedia.com/legacy/api/newSongOfMonth';
 /** "all songs since 2000-01" — returns the full historical TJ catalog (~67k). */
@@ -250,9 +250,12 @@ export class TJDirectCrawler implements Crawler {
     // rescue is hiding gaps; a low value means the rescue is doing minimal
     // safety-net work as designed.
     const keptTotal =
-      keepStats.admittedByArtist + keepStats.admittedByPro + keepStats.admittedByRescue;
+      keepStats.admittedByArtist +
+      keepStats.admittedByPro +
+      keepStats.admittedBySongOverride +
+      keepStats.admittedByRescue;
     console.log(
-      `[tj-direct] kept ${keptTotal}: by-artist ${keepStats.admittedByArtist}, by-pro ${keepStats.admittedByPro}, by-rescue ${keepStats.admittedByRescue}; dropped ${keepStats.dropped}`,
+      `[tj-direct] kept ${keptTotal}: by-artist ${keepStats.admittedByArtist}, by-pro ${keepStats.admittedByPro}, by-song-override ${keepStats.admittedBySongOverride}, by-rescue ${keepStats.admittedByRescue}; dropped ${keepStats.dropped}`,
     );
 
     // Step 7: persist enrichment work BEFORE yielding so a downstream
@@ -398,9 +401,9 @@ async function rescueJpLikelyDroppedRecords(
       continue;
     }
 
-    let matches: SearchSongItem[];
+    let match: Awaited<ReturnType<typeof searchSongByPro>>;
     try {
-      matches = await searchSongByTitle(http, shell.title, 'JPN');
+      match = await searchSongByPro(http, shell.tj);
       stats.fetches++;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -408,7 +411,6 @@ async function rescueJpLikelyDroppedRecords(
       stats.errors++;
       continue;
     }
-    const match = matches.find((candidate) => candidate.pro === shell.tj);
     if (match?.nationalcode === 'JPN') {
       const entry: EnrichmentEntry = {
         nationalcode: match.nationalcode,

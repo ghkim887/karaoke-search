@@ -67,7 +67,7 @@ describe('enrichWithTranslit', () => {
     ];
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
     const { client, calls } = buildHttp(({ searchTxt }) => {
-      if (searchTxt === 'A') {
+      if (searchTxt === '111') {
         return searchResp([
           {
             pro: 111,
@@ -79,7 +79,7 @@ describe('enrichWithTranslit', () => {
           },
         ]);
       }
-      if (searchTxt === 'B') {
+      if (searchTxt === '222') {
         return searchResp([
           {
             pro: 222,
@@ -160,7 +160,7 @@ describe('enrichWithTranslit', () => {
     });
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.body.searchTxt).toBe('B');
+    expect(calls[0]?.body.searchTxt).toBe('222');
     expect(stats.cacheHits).toBe(1);
     expect(stats.fetches).toBe(1);
     expect(byPro.get('111')?.sortTitleKo).toBe('캐시된');
@@ -190,7 +190,7 @@ describe('enrichWithTranslit', () => {
     ];
     const cache = emptyCache();
     const { client } = buildHttp(({ searchTxt }) => {
-      if (searchTxt === 'A') {
+      if (searchTxt === '111') {
         return { status: 503, body: 'oops' };
       }
       return searchResp([{ pro: 222, indexTitle: 'B', indexSong: 'b', sortTitleKo: 'ㄷ' }]);
@@ -217,7 +217,7 @@ describe('enrichWithTranslit', () => {
     ];
     const cache = emptyCache();
     const { client } = buildHttp(({ searchTxt }) => {
-      if (searchTxt === 'A') {
+      if (searchTxt === '111') {
         // Successful fetch but `pro` mismatch -> bona fide miss.
         return searchResp([{ pro: 999, indexTitle: 'A', indexSong: 'X', sortTitleKo: 'wrong' }]);
       }
@@ -247,7 +247,7 @@ describe('enrichWithTranslit', () => {
     );
     await enrichWithTranslit(client, all, cache, { logger: silentLogger() });
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.body.searchTxt).toBe('A');
+    expect(calls[0]?.body.searchTxt).toBe('111');
   });
 
   it('logs progress every progressEveryN records', async () => {

@@ -4,7 +4,8 @@
  * Coverage:
  *   - Each step's evaluate() in isolation: admit / reject / pass cases
  *   - The reducer correctly short-circuits on first non-pass verdict
- *   - FILTER_STEPS contains all 5 expected step names in documented order
+ *   - FILTER_STEPS contains all 7 expected step names in documented order
+ *   - drop-list-reject precedes the JPN admit paths (KPOP-leak regression)
  *   - blog-rescue step is reachable (NOT dead code)
  */
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
 import {
   FILTER_STEPS,
   type FilterContext,
+  type FilterStep,
   buildFilterContext,
 } from '../../../src/adapters/tj-media-direct/filterSteps.js';
 import { splitArtistCollab } from '../../../src/adapters/tj-media-direct/normalize.js';
@@ -50,6 +52,32 @@ function enrichmentEntry(nationalcode: string) {
   };
 }
 
+function runReducer(tj: string, artist: string, cache = emptyCache(), force?: ReadonlySet<string>) {
+  const ctx = buildFilterContext(tj, artist, cache, force);
+  for (const step of FILTER_STEPS) {
+    const verdict = step.evaluate(ctx);
+    if (verdict.decision === 'admit') return verdict.via;
+    if (verdict.decision === 'reject') return 'drop';
+  }
+  return 'drop';
+}
+
+type FilterVerdict = ReturnType<FilterStep['evaluate']>;
+
+/**
+ * Run the pipeline, recording each step name reached into `reached`, and return
+ * the first non-pass verdict (or the final pass verdict if every step passed).
+ */
+function runVerdict(ctx: FilterContext, reached: string[]): FilterVerdict {
+  let verdict: FilterVerdict = { decision: 'pass' };
+  for (const step of FILTER_STEPS) {
+    reached.push(step.name);
+    verdict = step.evaluate(ctx);
+    if (verdict.decision !== 'pass') break;
+  }
+  return verdict;
+}
+
 // Convenience: find a step by name (fails fast if the step is missing)
 function getStep(name: string) {
   const step = FILTER_STEPS.find((s) => s.name === name);
@@ -63,15 +91,17 @@ function getStep(name: string) {
 
 describe('FILTER_STEPS — pipeline shape', () => {
   const EXPECTED_NAMES = [
-    'drop-list-reject',
+    'reviewed-song-drop',
     'non-jpn-pro-reject',
-    'jpn-admit-artist',
+    'reviewed-song-allow',
+    'drop-list-reject',
     'jpn-admit-pro',
+    'jpn-admit-artist',
     'blog-rescue',
   ];
 
-  it('contains exactly 5 steps', () => {
-    expect(FILTER_STEPS).toHaveLength(5);
+  it('contains exactly 7 steps', () => {
+    expect(FILTER_STEPS).toHaveLength(7);
   });
 
   it('step names match the documented CLAUDE.md order', () => {
@@ -85,7 +115,7 @@ describe('FILTER_STEPS — pipeline shape', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Step 0: drop-list-reject
+// Step 3: drop-list-reject
 // ---------------------------------------------------------------------------
 
 describe('drop-list-reject step', () => {
@@ -172,7 +202,7 @@ describe('non-jpn-pro-reject step', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Step 2: jpn-admit-artist
+// Step 5: jpn-admit-artist
 // ---------------------------------------------------------------------------
 
 describe('jpn-admit-artist step', () => {
@@ -240,7 +270,7 @@ describe('jpn-admit-artist step', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Step 3: jpn-admit-pro
+// Step 4: jpn-admit-pro
 // ---------------------------------------------------------------------------
 
 describe('jpn-admit-pro step', () => {
@@ -276,7 +306,7 @@ describe('jpn-admit-pro step', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Step 4: blog-rescue
+// Step 6: blog-rescue
 // ---------------------------------------------------------------------------
 
 describe('blog-rescue step', () => {
@@ -310,22 +340,46 @@ describe('blog-rescue step', () => {
 // ---------------------------------------------------------------------------
 
 describe('reducer short-circuit semantics', () => {
-  it('stops at drop-list-reject and does NOT continue to kor-reject or admit steps', () => {
-    // BTS is on the Korean drop list. Even if we also put a JPN pro entry in
-    // the cache, the drop-list step fires first and the result is drop.
+  it('rejects a drop-listed Korean act with a JPN pro tag before jpn-admit-pro can leak it', () => {
+    // KPOP-leak regression: a drop-listed act (BTS) carrying a JPN pro tag and
+    // NOT curated into reviewed-song-allow must be rejected at drop-list-reject
+    // (step 3) BEFORE jpn-admit-pro (step 4) admits it. Pre-fix, jpn-admit-pro
+    // ran before drop-list-reject and leaked this row into the corpus.
     const cache = emptyCache();
-    cache.proEnrichmentMap['1'] = enrichmentEntry('JPN');
+    cache.proEnrichmentMap['999999'] = enrichmentEntry('JPN');
     cache.artistNationalityMap.bts = jpnArtistEntry();
-    const ctx = buildFilterContext('1', 'BTS', cache, new Set(['1']));
+    const ctx = buildFilterContext('999999', 'BTS', cache, new Set(['999999']));
 
-    let stepsReached = 0;
-    for (const step of FILTER_STEPS) {
-      stepsReached++;
-      const v = step.evaluate(ctx);
-      if (v.decision !== 'pass') break;
+    const reached: string[] = [];
+    const finalVerdict = runVerdict(ctx, reached);
+    expect(finalVerdict.decision).toBe('reject');
+    if (finalVerdict.decision === 'reject') {
+      expect(finalVerdict.reason).toBe('korean-drop-list');
     }
-    // Should stop after step 0 (drop-list-reject)
-    expect(stepsReached).toBe(1);
+    expect(reached).toEqual([
+      'reviewed-song-drop',
+      'non-jpn-pro-reject',
+      'reviewed-song-allow',
+      'drop-list-reject',
+    ]);
+  });
+
+  it('admits a drop-listed act via reviewed-song-allow before the drop-list deny', () => {
+    // A drop-listed artist (BTS = 防弾少年団) whose TJ number IS curated into
+    // REVIEWED_TJ_SONG_ALLOW is admitted at reviewed-song-allow (step 2),
+    // BEFORE drop-list-reject (step 3) — so the 105 curated K-pop Japanese
+    // releases still get in even though the artist is on the drop list.
+    const cache = emptyCache();
+    cache.proEnrichmentMap['68048'] = enrichmentEntry('JPN');
+    const ctx = buildFilterContext('68048', 'BTS', cache, new Set(['68048']));
+
+    const reached: string[] = [];
+    const finalVerdict = runVerdict(ctx, reached);
+    expect(finalVerdict.decision).toBe('admit');
+    if (finalVerdict.decision === 'admit') {
+      expect(finalVerdict.via).toBe('song-override');
+    }
+    expect(reached).toEqual(['reviewed-song-drop', 'non-jpn-pro-reject', 'reviewed-song-allow']);
   });
 
   it('stops at non-jpn-pro-reject and does NOT continue to admit steps', () => {
@@ -341,11 +395,11 @@ describe('reducer short-circuit semantics', () => {
       const v = step.evaluate(ctx);
       if (v.decision !== 'pass') break;
     }
-    // Should stop after step 1 (non-jpn-pro-reject)
+    // Should stop after step 1 in the new pipeline (reviewed drop, then non-JPN reject).
     expect(stepsReached).toBe(2);
   });
 
-  it('stops at jpn-admit-artist (step 2) and does NOT reach pro or rescue', () => {
+  it('stops at jpn-admit-artist (step 5) and does NOT reach rescue', () => {
     const cache = emptyCache();
     cache.artistNationalityMap.yoasobi = jpnArtistEntry();
     const ctx = buildFilterContext('99', 'YOASOBI', cache, new Set(['99']));
@@ -356,14 +410,14 @@ describe('reducer short-circuit semantics', () => {
       const v = step.evaluate(ctx);
       if (v.decision !== 'pass') break;
     }
-    // Should stop after step 2 (jpn-admit-artist)
-    expect(stepsReached).toBe(3);
+    // reviewed drop + non-JPN + reviewed allow + deny pass + pro pass + artist admit
+    expect(stepsReached).toBe(6);
   });
 
-  it('stops at jpn-admit-pro (step 3) when artist step passes', () => {
+  it('stops at jpn-admit-pro (step 4) when drop-list and artist steps pass', () => {
     const cache = emptyCache();
     cache.proEnrichmentMap['99'] = enrichmentEntry('JPN');
-    // No artist entry — step 2 passes, step 3 admits
+    // No artist entry — drop-list passes, pro admits before jpn-admit-artist.
     const ctx = buildFilterContext('99', 'UnknownAct', cache, new Set(['99']));
 
     let stepsReached = 0;
@@ -372,10 +426,11 @@ describe('reducer short-circuit semantics', () => {
       const v = step.evaluate(ctx);
       if (v.decision !== 'pass') break;
     }
-    expect(stepsReached).toBe(4);
+    // reviewed drop + non-JPN + reviewed allow + drop-list pass + pro admit
+    expect(stepsReached).toBe(5);
   });
 
-  it('reaches blog-rescue (step 4) only when all prior steps pass', () => {
+  it('reaches blog-rescue (step 6) only when all prior steps pass', () => {
     // Empty cache + unknown artist + rescue whitelist → only rescue fires
     const ctx = buildFilterContext('99', 'UnknownAct', emptyCache(), new Set(['99']));
 
@@ -385,7 +440,33 @@ describe('reducer short-circuit semantics', () => {
       const v = step.evaluate(ctx);
       if (v.decision !== 'pass') break;
     }
-    expect(stepsReached).toBe(5);
+    expect(stepsReached).toBe(7);
+  });
+
+  it('lets a reviewed K-pop/Korean song-level allow beat the drop-list without artist-wide admission', () => {
+    expect(runReducer('28779', 'BTS', emptyCache())).toBe('song-override');
+  });
+
+  it('keeps explicit non-JPN pro evidence stronger than a reviewed song-level allow', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['26544'] = enrichmentEntry('KOR');
+    expect(runReducer('26544', '東方神起', cache)).toBe('drop');
+  });
+
+  it('keeps reviewed generic false-positive drops stronger than artist cache and rescue', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.variousartists = jpnArtistEntry();
+    expect(runReducer('7055', 'Various Artists', cache, new Set(['7055']))).toBe('drop');
+  });
+
+  it('blocks generic artists from weak artist-cache or rescue admission without song-level evidence', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.variousartists = jpnArtistEntry();
+    expect(runReducer('999999', 'Various Artists', cache, new Set(['999999']))).toBe('drop');
+  });
+
+  it('still blocks a drop-listed Korean act from weak rescue when no song-level evidence exists', () => {
+    expect(runReducer('999999', 'BTS', emptyCache(), new Set(['999999']))).toBe('drop');
   });
 
   it('falls through all steps with pass and returns drop when nothing admits', () => {

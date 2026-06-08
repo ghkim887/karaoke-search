@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseSearchSongResponse,
   searchSongByArtist,
+  searchSongByPro,
   searchSongByTitle,
 } from '../../../src/adapters/tj-media-direct/searchSong.js';
 import type { FetchResult, HttpClient } from '../../../src/http.js';
@@ -292,6 +293,54 @@ describe('searchSongByTitle', () => {
     // A single apostrophe sanitizes to '', which short-circuits.
     expect(await searchSongByTitle(http, "'")).toEqual([]);
     expect(captured).toHaveLength(0);
+  });
+});
+
+describe('searchSongByPro', () => {
+  it('issues exact song-number search with strType=16 + strWord=Y and returns the matching pro only', async () => {
+    const captured: Captured[] = [];
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 87055, indexTitle: 'neighbor', indexSong: 'KOR Artist', nationalcode: 'KOR' },
+          {
+            pro: 7055,
+            indexTitle: 'Besame Mucho',
+            indexSong: 'Various Artists',
+            nationalcode: 'ENG',
+          },
+        ],
+      },
+    };
+    const http = buildHttp({ captured, body: JSON.stringify(json) });
+
+    const item = await searchSongByPro(http, '7055');
+
+    expect(item?.pro).toBe('7055');
+    expect(item?.nationalcode).toBe('ENG');
+    expect(captured).toHaveLength(1);
+    expect(captured[0]?.url).toBe(SEARCH_SONG_URL);
+    expect(captured[0]?.body).toEqual({
+      searchTxt: '7055',
+      strType: '16',
+      nationType: '',
+      strWord: 'Y',
+    });
+  });
+
+  it('returns null when TJ returns only numeric neighbors for the requested pro', async () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 87055, indexTitle: 'neighbor', indexSong: 'KOR Artist', nationalcode: 'KOR' },
+        ],
+      },
+    };
+    const http = buildHttp({ body: JSON.stringify(json) });
+
+    await expect(searchSongByPro(http, '7055')).resolves.toBeNull();
   });
 });
 
