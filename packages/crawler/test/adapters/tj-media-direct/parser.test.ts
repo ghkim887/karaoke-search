@@ -31,6 +31,7 @@ describe('parseCatalogResponse — empty cache + empty whitelist (everything dro
     expect(records).toEqual([]);
     expect(stats.admittedByArtist).toBe(0);
     expect(stats.admittedByPro).toBe(0);
+    expect(stats.admittedBySongOverride).toBe(0);
     expect(stats.admittedByRescue).toBe(0);
     expect(stats.dropped).toBeGreaterThan(0);
   });
@@ -187,6 +188,78 @@ describe('parseCatalogResponse — per-artist nationality confirmation (path 2)'
   });
 });
 
+describe('parseCatalogResponse — reviewed song-level overrides', () => {
+  it('admits a reviewed K-pop Japanese release by TJ number without artist-wide allowing the act', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 26544, indexTitle: '明日は来るから(ワンピース 17th ED)', indexSong: '東方神起' },
+          { pro: 999999, indexTitle: 'Korean catalog row', indexSong: '東方神起' },
+        ],
+      },
+    };
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+
+    expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['26544']);
+    expect(stats.admittedBySongOverride).toBe(1);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('drops a drop-listed act with a JPN pro tag when its TJ number is NOT reviewed-allowed', () => {
+    // KPOP-leak regression: drop-list-reject must beat jpn-admit-pro. The
+    // reviewed-allowed TJ number (26544) is admitted via song-override; the
+    // non-allowed row (999999) carries a JPN pro tag yet must still drop
+    // because 東方神起 is on the Korean drop list. Pre-fix the JPN pro tag on
+    // 999999 leaked it in via the per-pro admit path.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 26544, indexTitle: '明日は来るから(ワンピース 17th ED)', indexSong: '東方神起' },
+          { pro: 999999, indexTitle: 'Korean catalog row', indexSong: '東方神起' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.proEnrichmentMap['999999'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+
+    expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['26544']);
+    expect(stats.admittedBySongOverride).toBe(1);
+    expect(stats.admittedByPro).toBe(0);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('drops a reviewed generic false positive even if generic artist cache or rescue would otherwise admit it', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [{ pro: 7055, indexTitle: 'Besame Mucho', indexSong: 'Various Artists' }],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.variousartists = jpnArtist();
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, {
+      cache,
+      forceIncludeTjNumbers: new Set(['7055']),
+    });
+
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+  });
+});
+
 describe('parseCatalogResponse — blog-whitelist rescue (path 3)', () => {
   it('rescues an all-Latin Japanese act when forceIncludeTjNumbers contains its pro', () => {
     const json = {
@@ -213,6 +286,7 @@ describe('parseCatalogResponse — blog-whitelist rescue (path 3)', () => {
     expect(stats.admittedByRescue).toBe(1);
     expect(stats.admittedByArtist).toBe(0);
     expect(stats.admittedByPro).toBe(0);
+    expect(stats.admittedBySongOverride).toBe(0);
   });
 
   it('drops the same record when its pro is NOT in the whitelist and cache is empty', () => {
@@ -787,7 +861,7 @@ describe('parseCatalogResponse — Phase 1 §2.C per-pro KOR-reject', () => {
 
 describe('parseCatalogResponse — KeepStats per-path admit counters', () => {
   /**
-   * Reading order: per-artist (1) → per-record (2) → blog whitelist (3).
+   * Reading order: reviewed song/pro evidence → artist → blog whitelist.
    * "First to fire wins" — these tests verify that ordering shows up in the
    * counters, not that "any-admit" semantics changed.
    */
@@ -828,7 +902,7 @@ describe('parseCatalogResponse — KeepStats per-path admit counters', () => {
     expect(stats.dropped).toBe(1);
   });
 
-  it('per-artist beats per-record when both tags say JPN (reading-order check)', () => {
+  it('per-record exact evidence beats per-artist when both tags say JPN (reading-order check)', () => {
     const json = {
       resultCode: '99',
       resultData: {
@@ -846,8 +920,8 @@ describe('parseCatalogResponse — KeepStats per-path admit counters', () => {
       lastSeen: '2026-04-29T00:00:00.000Z',
     };
     const { stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
-    expect(stats.admittedByArtist).toBe(1);
-    expect(stats.admittedByPro).toBe(0);
+    expect(stats.admittedByArtist).toBe(0);
+    expect(stats.admittedByPro).toBe(1);
   });
 
   it('per-record beats blog rescue when both would admit (reading-order check)', () => {

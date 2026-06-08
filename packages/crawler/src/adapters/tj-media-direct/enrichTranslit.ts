@@ -1,7 +1,7 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import { type EnrichmentEntry, type SearchSongCache, isFresh } from './cache.js';
-import { type SearchSongItem, searchSongByTitle } from './searchSong.js';
+import { searchSongByPro } from './searchSong.js';
 
 /**
  * Per-record translit enrichment pass.
@@ -90,21 +90,18 @@ export async function enrichWithTranslit(
         stats.cacheHits++;
       }
     } else {
-      let items: SearchSongItem[] = [];
+      let match = null as Awaited<ReturnType<typeof searchSongByPro>>;
       let fetchSucceeded = false;
       try {
-        items = await searchSongByTitle(http, record.title_primary, 'JPN');
+        match = await searchSongByPro(http, pro);
         stats.fetches++;
         fetchSucceeded = true;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        logger.warn(
-          `[tj-search] enrichment fetch failed for pro=${pro} (title="${record.title_primary}"): ${msg}`,
-        );
+        logger.warn(`[tj-search] enrichment fetch failed for pro=${pro}: ${msg}`);
         stats.errors++;
       }
 
-      const match = items.find((item) => item.pro === pro);
       if (match) {
         const entry: EnrichmentEntry = {
           nationalcode: match.nationalcode,

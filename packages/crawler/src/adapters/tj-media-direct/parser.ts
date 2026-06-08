@@ -24,8 +24,13 @@ import { extractCatalogItems } from './normalize.js';
  *
  * Three independent admit signals; first to confirm JPN keeps the record.
  * None say JPN -> drop. The reading order below is primary -> secondary ->
- * safety net; the behavior is "any-admit", so reordering does not change
- * which records are kept, only which path gets credit in `KeepStats`.
+ * safety net. The ORDER IS LOAD-BEARING (see the authoritative order block on
+ * `classifyRecord` below and FILTER_STEPS in filterSteps.ts): drop-list-reject
+ * MUST run before the JPN admit steps (jpn-admit-pro / jpn-admit-artist /
+ * blog-rescue), otherwise a drop-listed Korean act carrying a JPN pro tag
+ * leaks in. reviewed-song-allow is the one curated exact-TJ-number exception
+ * that precedes drop-list-reject. Reordering can change which records are kept,
+ * not just which path gets credit in `KeepStats`.
  *
  *   1. **Per-artist JPN tag (primary).** Split `artist` via
  *      `splitArtistCollab` (whole-string scan PLUS per-component scan for
@@ -86,8 +91,9 @@ export interface ParseOptions {
  * Per-path admit counters. Reported alongside the parsed records so the
  * crawler can surface which path is doing the work post-pre-seed.
  *   - `admittedByArtist`: path 1 (per-artist JPN tag) admitted first.
- *   - `admittedByPro`: path 2 (per-record JPN tag) admitted first.
- *   - `admittedByRescue`: path 3 (blog whitelist) admitted first.
+ *   - `admittedByPro`: exact per-record JPN tag admitted first.
+ *   - `admittedBySongOverride`: reviewed TJ-number song-level allow admitted first.
+ *   - `admittedByRescue`: blog whitelist admitted first.
  *   - `dropped`: no path confirmed JPN.
  *
  * "First to fire wins" — the counters reflect the reading order, not how
@@ -97,6 +103,7 @@ export interface ParseOptions {
 interface KeepStats {
   admittedByArtist: number;
   admittedByPro: number;
+  admittedBySongOverride: number;
   admittedByRescue: number;
   dropped: number;
 }
@@ -127,6 +134,7 @@ export function parseCatalogResponse(
   const stats: KeepStats = {
     admittedByArtist: 0,
     admittedByPro: 0,
+    admittedBySongOverride: 0,
     admittedByRescue: 0,
     dropped: 0,
   };
@@ -152,6 +160,9 @@ export function parseCatalogResponse(
         break;
       case 'pro':
         stats.admittedByPro++;
+        break;
+      case 'song-override':
+        stats.admittedBySongOverride++;
         break;
       case 'rescue':
         stats.admittedByRescue++;
@@ -181,18 +192,22 @@ export function parseCatalogResponse(
  * Exported for unit tests so we can exercise the filter logic directly
  * without going through the JSON-extraction wrapper.
  *
- * Filter chain order (post Phase 1 KPOP-leak fix, spec §2.E) — implemented
- * as a typed FilterStep[] reducer in filterSteps.ts. CLAUDE.md gotcha: this
- * order is LOAD-BEARING; do not reorder FILTER_STEPS.
- *   0. drop-list-reject  — drop-list check, any-component (§2.E)
- *   1. kor-reject        — per-pro KOR-reject (§2.C)
- *   2. jpn-admit-artist  — per-artist JPN tag, lead-component-only (§2.B)
- *   3. jpn-admit-pro     — per-pro JPN tag
- *   4. blog-rescue       — blog-whitelist rescue (safety net, NOT dead code)
+ * Filter chain order (post 2026-06 FP/FN audit) — implemented as a typed
+ * FilterStep[] reducer in filterSteps.ts. CLAUDE.md gotcha: this order is
+ * LOAD-BEARING; do not reorder FILTER_STEPS.
+ *   0. reviewed-song-drop  — audited TJ-number false positives
+ *   1. non-jpn-pro-reject  — explicit non-JPN pro overrides all admit paths
+ *   2. reviewed-song-allow — audited TJ-number K-pop Japanese releases
+ *   3. drop-list-reject    — Korean/Chinese artist deny, any-component (§2.E)
+ *   4. jpn-admit-pro       — per-pro JPN tag
+ *   5. jpn-admit-artist    — per-artist JPN tag, lead-component-only (§2.B)
+ *   6. blog-rescue         — blog-whitelist rescue (safety net, NOT dead code)
  *
+ * drop-list-reject (step 3) precedes jpn-admit-pro so a drop-listed Korean act
+ * carrying a JPN pro tag (and not curated into reviewed-song-allow) drops.
  * If no step admits, drop.
  */
-export type KeepVerdict = 'artist' | 'pro' | 'rescue' | 'drop';
+export type KeepVerdict = 'artist' | 'pro' | 'song-override' | 'rescue' | 'drop';
 
 export function classifyRecord(
   tj: string,

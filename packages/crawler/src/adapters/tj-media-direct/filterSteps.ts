@@ -1,9 +1,18 @@
 /**
  * Typed FilterStep[] reducer for the TJ-direct classifyRecord filter chain.
  *
- * CLAUDE.md gotcha: the filter chain ORDER IS LOAD-BEARING (spec §2.E / explicit
- * non-JPN pro reject / §2.B / per-pro JPN / blog-rescue). Do NOT reorder
- * FILTER_STEPS.
+ * CLAUDE.md gotcha: the filter chain ORDER IS LOAD-BEARING. Do NOT reorder
+ * FILTER_STEPS. The 7-step order is:
+ *   0. reviewed-song-drop  — audited TJ-number false positives stay out
+ *   1. non-jpn-pro-reject  — explicit non-JPN pro overrides every admit path
+ *   2. reviewed-song-allow — curated exact-TJ-number K-pop Japanese releases
+ *   3. drop-list-reject    — Korean/Chinese artist deny (any-component)
+ *   4. jpn-admit-pro       — exact per-pro JPN admit
+ *   5. jpn-admit-artist    — lead-component-only per-artist JPN admit (§2.B)
+ *   6. blog-rescue         — safety net for TJ-search index gaps
+ * drop-list-reject precedes the JPN admit paths so a drop-listed Korean act
+ * carrying a JPN pro tag (and NOT curated into reviewed-song-allow) is rejected
+ * before jpn-admit-pro can leak it into the corpus.
  *
  * Each step returns a tagged FilterVerdict:
  *   - { decision: 'admit'; via: KeepVerdict }  → stop, keep the record
@@ -19,6 +28,7 @@ import { isInChineseDropList } from './chineseArtistDropList.js';
 import { isInDropList } from './koreanArtistDropList.js';
 import { normalizeForMatch, splitArtistCollab } from './normalize.js';
 import type { KeepVerdict } from './parser.js';
+import { isReviewedTjSongAllow, isReviewedTjSongDrop } from './reviewedSongOverrides.js';
 
 /**
  * Artist-level nationality tags are unsafe for deliberately generic bucket
@@ -26,7 +36,14 @@ import type { KeepVerdict } from './parser.js';
  * must not blanket-admit every Korean OST / BGM row carrying the same artist.
  * Let per-pro JPN evidence or the JP-likely rescue path admit genuine rows.
  */
-const GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST = new Set(['variousartists', 'variousartist']);
+const GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST = new Set([
+  'variousartists',
+  'variousartist',
+  'unknownartist',
+  'unknown',
+  'omnibus',
+  'オムニバス',
+]);
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -61,13 +78,45 @@ export interface FilterStep {
 // ---------------------------------------------------------------------------
 
 /**
- * Step 0 — Drop-list reject (any-component).
+ * Step 0 — Reviewed song-level drop.
+ *
+ * Hand-audited false positives are keyed by TJ number. They stay out even if a
+ * stale generic artist cache or the blog whitelist would otherwise admit them.
+ */
+const reviewedSongDropStep: FilterStep = {
+  name: 'reviewed-song-drop',
+  evaluate({ tj }): FilterVerdict {
+    if (isReviewedTjSongDrop(tj)) return { decision: 'reject', reason: 'reviewed-song-drop' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * Step 2 — Reviewed song-level allow.
+ *
+ * K-pop/Korean-artist Japanese releases are deliberately allowed only by their
+ * exact TJ number, never by blanket artist allowlisting. This is the curated
+ * exception that precedes drop-list-reject (step 3): the 105 audited releases
+ * are admitted here even though their artist is on the Korean drop list.
+ */
+const reviewedSongAllowStep: FilterStep = {
+  name: 'reviewed-song-allow',
+  evaluate({ tj }): FilterVerdict {
+    if (isReviewedTjSongAllow(tj)) return { decision: 'admit', via: 'song-override' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * Step 3 — Drop-list reject (any-component).
  *
  * CLAUDE.md gotcha (§2.E): Hand-curated Korean + Chinese (Cantopop/Mandopop)
  * acts that leak despite the cache signal. Applies to EVERY collab component
- * (inverse of Step 2's lead-only admit rule): a Japanese-led record featuring
- * SUGA of BTS still drops. This is the STRONGEST negative signal — it overrides
- * every admit path including the blog rescue.
+ * (inverse of jpn-admit-artist's lead-only admit rule): a Japanese-led record
+ * featuring SUGA of BTS still drops. This overrides every admit path that
+ * follows it — jpn-admit-pro, jpn-admit-artist, and the blog rescue. The one
+ * exception is reviewed-song-allow (step 2): the curated exact-TJ-number K-pop
+ * Japanese releases are admitted before this reject runs.
  */
 const dropListRejectStep: FilterStep = {
   name: 'drop-list-reject',
@@ -85,8 +134,8 @@ const dropListRejectStep: FilterStep = {
  * Step 1 — Explicit non-JPN pro reject.
  *
  * CLAUDE.md gotcha: an explicit non-JPN `nationalcode` from the searchSong
- * enrichment overrules every admit path (including the blog rescue). Defense
- * against stale or overly broad blog rescue data.
+ * enrichment overrules every admit path (including reviewed-song-allow and the
+ * blog rescue). Defense against stale or overly broad blog rescue data.
  */
 const nonJpnProRejectStep: FilterStep = {
   name: 'non-jpn-pro-reject',
@@ -100,7 +149,7 @@ const nonJpnProRejectStep: FilterStep = {
 };
 
 /**
- * Step 2 — Per-artist JPN tag, lead-component-only (§2.B).
+ * Step 5 — Per-artist JPN tag, lead-component-only (§2.B).
  *
  * CLAUDE.md gotcha: the "lead" is index 1 when splitArtistCollab produced ≥2
  * elements (index 0 is the whole string), else index 0. Featured-artist
@@ -123,10 +172,11 @@ const jpnAdmitStep: FilterStep = {
 };
 
 /**
- * Step 3 — Per-pro JPN tag.
+ * Step 4 — Per-pro JPN tag.
  *
  * CLAUDE.md gotcha: catches the case where the artist scan was AMBIGUOUS or
- * UNKNOWN but the specific `pro` is JPN.
+ * UNKNOWN but the specific `pro` is JPN. Runs AFTER drop-list-reject (step 3)
+ * so a drop-listed Korean act with a JPN pro tag can't leak through here.
  */
 const proJpnAdmitStep: FilterStep = {
   name: 'jpn-admit-pro',
@@ -138,7 +188,7 @@ const proJpnAdmitStep: FilterStep = {
 };
 
 /**
- * Step 4 — Blog-whitelist rescue.
+ * Step 6 — Blog-whitelist rescue.
  *
  * CLAUDE.md gotcha: safety net for residual TJ-search index gaps. Already
  * gated by step 1's explicit non-JPN pro reject above. This is NOT dead code —
@@ -147,7 +197,12 @@ const proJpnAdmitStep: FilterStep = {
  */
 const blogRescueStep: FilterStep = {
   name: 'blog-rescue',
-  evaluate({ tj, force }): FilterVerdict {
+  evaluate({ tj, force, components }): FilterVerdict {
+    const lead = components.length >= 2 ? components[1] : components[0];
+    const leadKey = lead === undefined ? '' : normalizeForMatch(lead);
+    if (leadKey !== '' && GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) {
+      return { decision: 'pass' };
+    }
     if (force?.has(tj)) return { decision: 'admit', via: 'rescue' };
     return { decision: 'pass' };
   },
@@ -159,17 +214,25 @@ const blogRescueStep: FilterStep = {
 
 /**
  * Load-bearing filter step order per CLAUDE.md "TJ-direct filter chain" gotcha:
- *   0. drop-list-reject      — strongest negative signal, any-component
- *   1. non-jpn-pro-reject    — explicit non-JPN pro overrides every admit path
- *   2. jpn-admit-artist      — lead-component-only JPN admit
- *   3. jpn-admit-pro         — per-pro JPN admit (catches AMBIGUOUS artists)
- *   4. blog-rescue           — safety net for TJ-search index gaps (NOT dead code)
+ *   0. reviewed-song-drop    — audited TJ-number false positives
+ *   1. non-jpn-pro-reject    — explicit non-JPN pro overrides all admit paths
+ *   2. reviewed-song-allow   — audited TJ-number K-pop Japanese releases
+ *   3. drop-list-reject      — Korean/Chinese artist deny (any-component)
+ *   4. jpn-admit-pro         — exact per-pro JPN admit
+ *   5. jpn-admit-artist      — lead-component-only JPN admit
+ *   6. blog-rescue           — safety net for TJ-search index gaps
+ *
+ * drop-list-reject (step 3) precedes the JPN admit paths (steps 4-6) so a
+ * drop-listed Korean act with a JPN pro tag that is NOT curated into
+ * reviewed-song-allow is rejected before jpn-admit-pro can admit it.
  */
 export const FILTER_STEPS: FilterStep[] = [
-  dropListRejectStep,
+  reviewedSongDropStep,
   nonJpnProRejectStep,
-  jpnAdmitStep,
+  reviewedSongAllowStep,
+  dropListRejectStep,
   proJpnAdmitStep,
+  jpnAdmitStep,
   blogRescueStep,
 ];
 

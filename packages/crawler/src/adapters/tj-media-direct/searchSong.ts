@@ -60,7 +60,7 @@ import {
 const SEARCH_SONG_URL = 'https://www.tjmedia.com/legacy/api/searchSong';
 
 /** Allowed values for the `strType` form param. */
-export type SearchSongStrType = 0 | 1 | 2;
+export type SearchSongStrType = 0 | 1 | 2 | 16;
 
 /** Allowed values for the `nationType` form param. */
 export type SearchSongNationType = '' | 'KOR' | 'ENG' | 'JPN';
@@ -125,6 +125,23 @@ export async function searchSongByArtist(
 }
 
 /**
+ * Issue an exact TJ song-number lookup (`strType=16`).
+ *
+ * Live API note: numeric search without `strWord=Y` can return neighboring
+ * numbers such as `87055` for query `7055`. Keep `strWord=Y` in the request
+ * and still client-side exact-match `pro` before returning.
+ */
+export async function searchSongByPro(
+  http: Pick<HttpClient, 'postForm'>,
+  pro: string,
+  nationType: SearchSongNationType = '',
+): Promise<SearchSongItem | null> {
+  const items = await searchSong(http, pro, 16, nationType, { strWord: 'Y' });
+  const normalized = normalizeProQuery(pro);
+  return items.find((item) => normalizeProQuery(item.pro) === normalized) ?? null;
+}
+
+/**
  * Internal: shared transport for both title and artist searches. All inbound
  * `searchTxt` values pass through `sanitizeSearchTxt` first (apostrophe
  * strip) — the only call sites are the two helpers above, so centralizing
@@ -135,6 +152,7 @@ async function searchSong(
   searchTxt: string,
   strType: SearchSongStrType,
   nationType: SearchSongNationType,
+  extraBody: Record<string, string> = {},
 ): Promise<SearchSongItem[]> {
   if (typeof searchTxt !== 'string') return [];
   const cleaned = sanitizeSearchTxt(searchTxt);
@@ -150,6 +168,7 @@ async function searchSong(
     searchTxt: cleaned,
     strType: String(strType),
     nationType,
+    ...extraBody,
   });
 
   if (res === null) {
@@ -230,4 +249,10 @@ function mapItem(raw: unknown): SearchSongItem | null {
     nationalcode: coerceNonEmptyString(raw.nationalcode, { trim: false }),
     publishdate: coerceNonEmptyString(raw.publishdate, { trim: false }),
   };
+}
+
+function normalizeProQuery(pro: string): string {
+  const trimmed = pro.trim();
+  if (trimmed === '') return '';
+  return trimmed.replace(/^0+/, '') || '0';
 }

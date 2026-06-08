@@ -286,7 +286,7 @@ describe('TJDirectCrawler.crawl — blog-whitelist rescue (path 3)', () => {
 });
 
 describe('TJDirectCrawler.crawl — JP-likely drop rescue', () => {
-  it('rescues a kana-bearing dropped record when title-search confirms the exact pro as JPN', async () => {
+  it('rescues a kana-bearing dropped record when exact pro search confirms it as JPN', async () => {
     const catalogBody = JSON.stringify({
       resultCode: '99',
       resultData: {
@@ -340,7 +340,12 @@ describe('TJDirectCrawler.crawl — JP-likely drop rescue', () => {
       expect(records[0]?.karaoke_numbers.tj).toBe('68781');
       expect(records[0]?.title_primary).toBe('アイドル');
       expect(
-        captured.some((call) => call.body.strType === '1' && call.body.nationType === 'JPN'),
+        captured.some(
+          (call) =>
+            call.body.strType === '16' &&
+            call.body.strWord === 'Y' &&
+            call.body.searchTxt === '68781',
+        ),
       ).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
