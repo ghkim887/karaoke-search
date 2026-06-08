@@ -682,6 +682,43 @@ describe('corpus audit guardrails', () => {
     expect(report.buckets.latinVocaloidSubstringRisk.count).toBe(1);
   });
 
+  it('matches hyphenated JOYSOUND listing numbers against dashless baseline corpus numbers', () => {
+    const baseline = [
+      record({
+        id: 'blog-overlap',
+        title_primary: 'さよなら',
+        artist_primary: '米津玄師',
+        karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
+      }),
+      record({
+        id: 'blog-conflict',
+        title_primary: 'Baseline Title',
+        artist_primary: 'Baseline Artist',
+        karaoke_numbers: { tj: null, ky: null, joysound: '290002' },
+      }),
+    ];
+    const rows = [
+      // Same dashless number as baseline, same title/artist -> overlap only (no conflict).
+      { naviGroupId: 'n1', selSongNo: '190-001', songName: 'さよなら', artistName: '米津玄師' },
+      // Same dashless number as baseline, different title/artist -> overlap AND conflict.
+      {
+        naviGroupId: 'n2',
+        selSongNo: '290-002',
+        songName: 'Different Title',
+        artistName: 'Different Artist',
+      },
+    ];
+
+    const report = analyzeJoysoundListing(rows, { baselineRecords: baseline });
+
+    expect(report.buckets.existingJoysoundNumberOverlap.count).toBe(2);
+    expect(report.buckets.existingJoysoundNumberConflict.count).toBe(1);
+    expect(report.samples.existingJoysoundNumberConflict[0]).toMatchObject({
+      selSongNo: '290-002',
+      baseline: [{ id: 'blog-conflict', title_primary: 'Baseline Title' }],
+    });
+  });
+
   it('compares baseline and candidate product corpora without hiding removals, mutations, or suspicious additions', () => {
     const baseline = [
       record({ id: 'keep', title_primary: 'さよなら', artist_primary: '米津玄師' }),

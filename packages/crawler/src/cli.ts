@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { adapters as registeredAdapters } from './adapters/index.js';
+import { resolveAdaptersForSources } from './adapters/index.js';
 import { headlineConflicts } from './merge.js';
 import { runPipeline } from './pipeline.js';
 
@@ -16,8 +16,10 @@ Options:
   --limit <n>      Per-source page cap (e.g. artist pages for the blog
                    adapter). 0 or omitted means no cap.
   --source <slug>  Restrict to adapters whose name matches <slug>. Repeatable;
-                   may also be a comma-separated list. If omitted, all
-                   registered adapters run in registration order.
+                   may also be a comma-separated list. If omitted, the default
+                   adapters (jpop-playlist-blog, tj-media-direct) run in
+                   registration order. Opt-in adapters (joysound-official) run
+                   ONLY when named explicitly. An unknown slug is an error.
   --out <path>     Output JSON path. Resolved relative to the repo root
                    (the directory containing pnpm-workspace.yaml). Defaults
                    to apps/web/public/data/songs.json.
@@ -122,10 +124,7 @@ async function main(): Promise<void> {
       : resolve(repoRoot, parsed.conflictsOut)
     : undefined;
 
-  const selected =
-    parsed.sources.length === 0
-      ? registeredAdapters
-      : registeredAdapters.filter((a) => parsed.sources.includes(a.name));
+  const selected = resolveAdaptersForSources(parsed.sources);
 
   const pipelineOpts: Parameters<typeof runPipeline>[0] = {
     adapters: selected,

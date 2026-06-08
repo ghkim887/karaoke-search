@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   JoysoundFullCatalogCrawler,
   JoysoundOfficialCrawler,
 } from '../../../src/adapters/joysound-official/crawler.js';
 import type { HttpClient } from '../../../src/http.js';
+
+// Zero-delay backoff so retry tests don't actually sleep.
+const NO_BACKOFF = { detailRetryBackoffMs: 0 } as const;
 
 const LISTING_BASE = 'https://www.joysound.com/web/karaoke/contents/new';
 const FULL_SONGLIST_BASE = 'https://www.joysound.com/web/search/songlist';
@@ -115,7 +118,7 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
 
     expect(recs).toHaveLength(1);
     expect(recs[0]?.id).toBe('joysound-190001');
-    expect(recs[0]?.karaoke_numbers.joysound).toBe('190-001');
+    expect(recs[0]?.karaoke_numbers.joysound).toBe('190001');
     expect(recs[0]?.categories).toEqual(['jpop']);
     expect(recs[0]?.title_ko).toBeNull();
     expect(recs[0]?.artist_ko).toBeNull();
@@ -447,5 +450,358 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
 
     expect(recs).toHaveLength(1);
     expect(recs[0]?.id).toBe('joysound-920002');
+  });
+});
+
+describe('JoysoundOfficialCrawler — detail-fetch resilience (retry + skip count)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('retries a 429 detail response once and yields the record on the 200 retry', async () => {
+    let detailCallCount = 0;
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        const parsed = new URL(url);
+        if (parsed.pathname.startsWith('/web/karaoke/contents/new')) {
+          return {
+            status: 200,
+            body: listingHtml(
+              [
+                {
+                  naviGroupId: '940001',
+                  selSongNo: '940-001',
+                  songName: '夜に駆ける',
+                  artistName: 'YOASOBI',
+                },
+              ],
+              1,
+            ),
+          };
+        }
+        if (parsed.pathname.startsWith('/apis/v1/ise/fetchContentsDetail')) {
+          detailCallCount++;
+          // First attempt 429, retry succeeds.
+          if (detailCallCount === 1) return { status: 429, body: '' };
+          const id = parsed.searchParams.get('id') ?? '';
+          return {
+            status: 200,
+            body: detailJson({
+              naviGroupId: id,
+              selSongNo: '940-001',
+              songName: '夜に駆ける',
+              artistName: 'YOASOBI',
+            }),
+          };
+        }
+        return { status: 404, body: '' };
+      },
+    };
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 1 })) recs.push(r);
+
+    expect(detailCallCount).toBe(2); // initial 429 + one retry
+    expect(recs).toHaveLength(1);
+    expect(recs[0]?.id).toBe('joysound-940001');
+  });
+
+  it('retries a 503 detail response once and yields on the 200 retry', async () => {
+    let detailCallCount = 0;
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        const parsed = new URL(url);
+        if (parsed.pathname.startsWith('/web/karaoke/contents/new')) {
+          return {
+            status: 200,
+            body: listingHtml(
+              [
+                {
+                  naviGroupId: '950001',
+                  selSongNo: '950-001',
+                  songName: '夜に駆ける',
+                  artistName: 'YOASOBI',
+                },
+              ],
+              1,
+            ),
+          };
+        }
+        if (parsed.pathname.startsWith('/apis/v1/ise/fetchContentsDetail')) {
+          detailCallCount++;
+          if (detailCallCount === 1) return { status: 503, body: '' };
+          const id = parsed.searchParams.get('id') ?? '';
+          return {
+            status: 200,
+            body: detailJson({
+              naviGroupId: id,
+              selSongNo: '950-001',
+              songName: '夜に駆ける',
+              artistName: 'YOASOBI',
+            }),
+          };
+        }
+        return { status: 404, body: '' };
+      },
+    };
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 1 })) recs.push(r);
+
+    expect(detailCallCount).toBe(2);
+    expect(recs).toHaveLength(1);
+  });
+
+  it('does NOT retry a 404 detail response (only 429/5xx retry)', async () => {
+    let detailCallCount = 0;
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        const parsed = new URL(url);
+        if (parsed.pathname.startsWith('/web/karaoke/contents/new')) {
+          return {
+            status: 200,
+            body: listingHtml(
+              [
+                {
+                  naviGroupId: '960001',
+                  selSongNo: '960-001',
+                  songName: '夜に駆ける',
+                  artistName: 'YOASOBI',
+                },
+              ],
+              1,
+            ),
+          };
+        }
+        if (parsed.pathname.startsWith('/apis/v1/ise/fetchContentsDetail')) {
+          detailCallCount++;
+          return { status: 404, body: '' };
+        }
+        return { status: 404, body: '' };
+      },
+    };
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 1 })) recs.push(r);
+
+    expect(detailCallCount).toBe(1); // 4xx (non-429) is not retried
+    expect(recs).toHaveLength(0);
+  });
+
+  it('increments the skip counter and logs a run summary when detail keeps failing', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        const parsed = new URL(url);
+        if (parsed.pathname.startsWith('/web/karaoke/contents/new')) {
+          return {
+            status: 200,
+            body: listingHtml(
+              [
+                {
+                  naviGroupId: '970001',
+                  selSongNo: '970-001',
+                  songName: '夜に駆ける',
+                  artistName: 'YOASOBI',
+                },
+                {
+                  naviGroupId: '970002',
+                  selSongNo: '970-002',
+                  songName: '千本桜',
+                  artistName: '初音ミク',
+                },
+              ],
+              1,
+            ),
+          };
+        }
+        if (parsed.pathname.startsWith('/apis/v1/ise/fetchContentsDetail')) {
+          // Always 500, even on retry → both rows skipped.
+          return { status: 500, body: '' };
+        }
+        return { status: 404, body: '' };
+      },
+    };
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 0 })) recs.push(r);
+
+    expect(recs).toHaveLength(0);
+    // The run summary surfaces the skip count (not buried in warns).
+    const summaryLine = logSpy.mock.calls
+      .map((c) => String(c[0]))
+      .find((line) => line.includes('joysound-official') && /skip/i.test(line));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).toMatch(/skipped\D*2/);
+    // The summary attributes the skips to detail-fetch failures, accurately.
+    expect(summaryLine).toMatch(/2\s+detail-fetch/);
+  });
+
+  it('skips a row whose detail body is unparseable, counts it as detail-fetch, and continues', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        const parsed = new URL(url);
+        if (parsed.pathname.startsWith('/web/karaoke/contents/new')) {
+          return {
+            status: 200,
+            body: listingHtml(
+              [
+                // First row: detail body is present (HTTP 200) but malformed
+                // JSON → JSON.parse throws → row skipped at the parse step.
+                {
+                  naviGroupId: '990001',
+                  selSongNo: '990-001',
+                  songName: '夜に駆ける',
+                  artistName: 'YOASOBI',
+                },
+                // Clean follow-on row that must still be yielded.
+                {
+                  naviGroupId: '990002',
+                  selSongNo: '990-002',
+                  songName: '千本桜',
+                  artistName: '初音ミク',
+                },
+              ],
+              1,
+            ),
+          };
+        }
+        if (parsed.pathname.startsWith('/apis/v1/ise/fetchContentsDetail')) {
+          const id = parsed.searchParams.get('id') ?? '';
+          if (id === '990001') {
+            // HTTP 200 but the body is not valid JSON → parse failure.
+            return { status: 200, body: '{not valid json' };
+          }
+          return {
+            status: 200,
+            body: detailJson({
+              naviGroupId: id,
+              selSongNo: '990-002',
+              songName: '千本桜',
+              artistName: '初音ミク',
+            }),
+          };
+        }
+        return { status: 404, body: '' };
+      },
+    };
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 0 })) recs.push(r);
+
+    // The crawl continues past the parse failure and yields the clean row.
+    expect(recs.map((r) => r.id)).toEqual(['joysound-990002']);
+    expect(recs.some((r) => r.id === 'joysound-990001')).toBe(false);
+
+    // The run summary must count the parse failure (not vanish from the total).
+    const summaryLine = logSpy.mock.calls
+      .map((c) => String(c[0]))
+      .find((line) => line.includes('joysound-official') && /skip/i.test(line));
+    expect(summaryLine).toBeDefined();
+    // Exactly one skip, attributed to the detail-fetch bucket, none invalid.
+    expect(summaryLine).toMatch(/skipped\D*1/);
+    expect(summaryLine).toMatch(/1\s+detail-fetch/);
+    expect(summaryLine).toMatch(/0\s+invalid/);
+  });
+
+  it('skips a row whose detail body parses as JSON but fails structural validation, counted as detail-fetch', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        const parsed = new URL(url);
+        if (parsed.pathname.startsWith('/web/karaoke/contents/new')) {
+          return {
+            status: 200,
+            body: listingHtml(
+              [
+                {
+                  naviGroupId: '991001',
+                  selSongNo: '991-001',
+                  songName: '夜に駆ける',
+                  artistName: 'YOASOBI',
+                },
+                {
+                  naviGroupId: '991002',
+                  selSongNo: '991-002',
+                  songName: '千本桜',
+                  artistName: '初音ミク',
+                },
+              ],
+              1,
+            ),
+          };
+        }
+        if (parsed.pathname.startsWith('/apis/v1/ise/fetchContentsDetail')) {
+          const id = parsed.searchParams.get('id') ?? '';
+          if (id === '991001') {
+            // Valid JSON but the expected structure is missing (no required
+            // naviGroupId) → parseJoysoundDetail throws.
+            return { status: 200, body: JSON.stringify({ unexpected: 'shape' }) };
+          }
+          return {
+            status: 200,
+            body: detailJson({
+              naviGroupId: id,
+              selSongNo: '991-002',
+              songName: '千本桜',
+              artistName: '初音ミク',
+            }),
+          };
+        }
+        return { status: 404, body: '' };
+      },
+    };
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 0 })) recs.push(r);
+
+    expect(recs.map((r) => r.id)).toEqual(['joysound-991002']);
+
+    const summaryLine = logSpy.mock.calls
+      .map((c) => String(c[0]))
+      .find((line) => line.includes('joysound-official') && /skip/i.test(line));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).toMatch(/skipped\D*1/);
+    expect(summaryLine).toMatch(/1\s+detail-fetch/);
+    expect(summaryLine).toMatch(/0\s+invalid/);
+  });
+
+  it('skips a row whose selSongNo normalizes to invalid without aborting the crawl, and counts it as invalid', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { http } = fakeHttpFor({
+      page1Items: [
+        // selSongNo carries a stray letter → dashless form '190001A' is not
+        // digits → normalizeJoysoundNumber throws. Detail echoes the same
+        // value so detailMatchesListing passes and we reach the normalizer.
+        {
+          naviGroupId: '980001',
+          selSongNo: '190-001A',
+          songName: '夜に駆ける',
+          artistName: 'YOASOBI',
+        },
+        // A clean follow-on row that must still be yielded.
+        {
+          naviGroupId: '980002',
+          selSongNo: '980-002',
+          songName: '千本桜',
+          artistName: '初音ミク',
+        },
+      ],
+    });
+    const crawler = new JoysoundOfficialCrawler(http as HttpClient, NO_BACKOFF);
+    const recs = [];
+    for await (const r of crawler.crawl({ limit: 0 })) recs.push(r);
+
+    // The crawl completes (does not throw) and the malformed row is absent.
+    expect(recs.map((r) => r.id)).toEqual(['joysound-980002']);
+    expect(recs.some((r) => r.id === 'joysound-980001')).toBe(false);
+
+    // The run summary surfaces the invalid-row skip count accurately.
+    const summaryLine = logSpy.mock.calls
+      .map((c) => String(c[0]))
+      .find((line) => line.includes('joysound-official') && /skip/i.test(line));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).toMatch(/1\s+invalid/);
   });
 });
