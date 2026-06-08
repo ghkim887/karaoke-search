@@ -1,4 +1,4 @@
-import { lstatSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -13,11 +13,19 @@ const RE_LATIN_VOCALOID_SAFE_CONTEXT =
   /\bfeat\.?\s*(?:v[._\s-]*)?flower\b|\bv[._\s-]*flower\b|\b(?:GUMI|MEIKO|KAITO)\b/iu;
 const RE_BARE_ANIME_TOKEN = /(?:^|[^A-Za-z0-9])(?:OP|ED)(?:[^A-Za-z0-9]|$)/u;
 const STRONG_ANIME_TOKENS = ['アニメ', 'TVアニメ', '劇場版', '特撮', 'キャラクター', 'CV:'];
-const GENERIC_ARTIST_RE = /^(?:Various Artists|Various|Unknown|オムニバス)$/iu;
+const GENERIC_ARTIST_RE = /^(?:Various Artists|Various|Unknown|Unknown Artist|オムニバス)$/iu;
+const GENERIC_ARTIST_KEYS = new Set([
+  'variousartists',
+  'variousartist',
+  'various',
+  'unknown',
+  'unknownartist',
+  'オムニバス',
+]);
 
 const KOREAN_ACT_PATTERNS = [
-  /\b(?:aespa|BABYMONSTER|ENHYPEN|ITZY|IVE|NCT\s*DREAM|NCT\s*WISH|NMIXX|SEVENTEEN|STRAY\s*KIDS|ZEROBASEONE|BTS|BLACKPINK|TWICE|TOMORROW\s*X\s*TOGETHER|TXT|TREASURE|BIGBANG|2NE1|GFRIEND|SUPER\s*JUNIOR|RED\s*VELVET|MONSTA\s*X|MAMAMOO|GOT7|EXO|ATEEZ|Kep1er|BOYNEXTDOOR|KISS\s*OF\s*LIFE|SHINee|KARA)\b/iu,
-  /(?:東方神起|少女時代|エスパ|アイヴ|エンハイプン|エヌシーティー|ストレイキッズ|セブンティーン|チョンソミ|ニュージーンズ|ルセラフィム|ベイビーモンスター|ゼロベースワン|トゥワイス|ブラックピンク|トゥモローバイトゥギャザー|トレジャー|レッドベルベット|モンスタエックス|ママムー|ヨジャチング|スーパージュニア|ビッグバン|トゥエニィワン|エクソ|エイティーズ|ケプラー|ボーイネクストドア|キスオブライフ|ゴットセブン)/u,
+  /\b(?:aespa|BABYMONSTER|BIG\s*BANG|CORTIS|ENHYPEN|FT\s*ISLAND|ITZY|IVE|IZ\*ONE|LE\s*SSERAFIM|NCT\s*DREAM|NCT\s*WISH|NMIXX|PLAVE|SEVENTEEN|STRAY\s*KIDS|ZEROBASEONE|BTS|BLACKPINK|TWICE|TOMORROW\s*X\s*TOGETHER|TXT|TREASURE|BIGBANG|2NE1|GFRIEND|SUPER\s*JUNIOR|RED\s*VELVET|MONSTA\s*X|MAMAMOO|GOT7|EXO|ATEEZ|Kep1er|BOYNEXTDOOR|KISS\s*OF\s*LIFE|SHINee|KARA)\b/iu,
+  /(?:防弾少年団|東方神起|少女時代|エスパ|アイヴ|エンハイプン|エヌシーティー|ストレイキッズ|セブンティーン|チョンソミ|ニュージーンズ|ルセラフィム|ベイビーモンスター|ゼロベースワン|トゥワイス|ブラックピンク|トゥモローバイトゥギャザー|トレジャー|レッドベルベット|モンスタエックス|ママムー|ヨジャチング|スーパージュニア|ビッグバン|トゥエニィワン|エクソ|エイティーズ|ケプラー|ボーイネクストドア|キスオブライフ|ゴットセブン)/u,
 ];
 
 const WESTERN_ACT_COMPONENTS = new Set([
@@ -27,6 +35,7 @@ const WESTERN_ACT_COMPONENTS = new Set([
   'BILLIE EILISH',
   'BRUNO MARS',
   'CELINE DION',
+  'CHARLIE PUTH',
   'COLDPLAY',
   'DUA LIPA',
   'ED SHEERAN',
@@ -43,6 +52,8 @@ const WESTERN_ACT_COMPONENTS = new Set([
   'バックストリートボーイズ',
   'レディーガガ',
 ]);
+
+const GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST = GENERIC_ARTIST_KEYS;
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -134,6 +145,32 @@ function isKnownWesternAct(surface) {
   return artistComponents(surface).some((part) => WESTERN_ACT_COMPONENTS.has(part));
 }
 
+function matchesDropListArtist(surface, keys) {
+  return splitArtistCollabForAudit(surface).some((component) =>
+    keys.has(normalizeForMatch(component)),
+  );
+}
+
+function isGenericArtist(surface) {
+  return GENERIC_ARTIST_RE.test(surface) || GENERIC_ARTIST_KEYS.has(normalizeForMatch(surface));
+}
+
+function isProductionDropListArtist(surface) {
+  return (
+    matchesDropListArtist(surface, KOREAN_DROP_KEYS) ||
+    matchesDropListArtist(surface, CHINESE_DROP_KEYS)
+  );
+}
+
+function isPolicyExcludedOfficialArtist(surface) {
+  return (
+    isGenericArtist(surface) ||
+    isProductionDropListArtist(surface) ||
+    matchesAny(surface, KOREAN_ACT_PATTERNS) ||
+    isKnownWesternAct(surface)
+  );
+}
+
 function isBareAnimeTokenRisk(surface) {
   return (
     RE_BARE_ANIME_TOKEN.test(surface) &&
@@ -220,7 +257,7 @@ function collectCorpusIssueRows(records) {
     if (RE_HANGUL.test(titleArtist) && !hasKana(titleArtist)) {
       issues.push(issueRow('corpus', 'hangulNoJapaneseScript', { record: sampleRecord(record) }));
     }
-    if (GENERIC_ARTIST_RE.test(artist) && !hasKana(fullText)) {
+    if (isGenericArtist(artist) && !hasKana(fullText)) {
       issues.push(
         issueRow('corpus', 'genericArtistNoJapaneseScript', { record: sampleRecord(record) }),
       );
@@ -380,7 +417,7 @@ export function analyzeCorpus(records) {
     if (isKnownWesternAct(artist)) buckets.knownWesternAct.push(record);
     if (RE_HANGUL.test(titleArtist) && !hasKana(titleArtist))
       buckets.hangulNoJapaneseScript.push(record);
-    if (GENERIC_ARTIST_RE.test(artist) && !hasKana(fullText)) {
+    if (isGenericArtist(artist) && !hasKana(fullText)) {
       buckets.genericArtistNoJapaneseScript.push(record);
     }
     if (isAsciiOnlyTitleArtist(titleArtist)) buckets.asciiOnlyTitleArtist.push(record);
@@ -402,6 +439,584 @@ export function analyzeCorpus(records) {
   };
 }
 
+const TJ_FP_BUCKETS = [
+  'officialNonJpnPro',
+  'missingOfficialPro',
+  'hangulNoJapaneseEvidence',
+  'hanNoKanaMandopopRisk',
+  'asciiOnlyWeakEvidence',
+  'genericArtistRisk',
+  'rescueOnlyRisk',
+  'titleArtistConflict',
+  'knownKoreanAct',
+  'knownWesternAct',
+];
+
+const TJ_FN_BUCKETS = [
+  'exactProJpnMissing',
+  'artistJpnMissing',
+  'strongScriptJpMissing',
+  'animeVocaloidLikelyMissing',
+  'policyExcludedOfficialJpn',
+  'weakEvidenceMissing',
+  'sameSongNoTjNumber',
+];
+
+function tjNumberKey(value) {
+  const raw = typeof value === 'number' && Number.isFinite(value) ? String(value) : asString(value);
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return '';
+  return trimmed.replace(/^0+/u, '') || '0';
+}
+
+function recordTjKey(record) {
+  return tjNumberKey(record?.karaoke_numbers?.tj);
+}
+
+function catalogTjKey(row) {
+  return tjNumberKey(row?.pro ?? row?.tj ?? row?.tjNumber);
+}
+
+function officialTitle(row) {
+  return asString(row?.indexTitle ?? row?.title ?? row?.title_primary);
+}
+
+function officialArtist(row) {
+  return asString(row?.indexSong ?? row?.artist ?? row?.artist_primary);
+}
+
+function cacheProEntry(cache, tj) {
+  return cache?.proEnrichmentMap?.[tj] ?? cache?.proEnrichmentMap?.[tjNumberKey(tj)] ?? null;
+}
+
+function normalizeNationalityCode(value) {
+  const code = asString(value).trim().toLocaleUpperCase('en-US');
+  return code.length > 0 ? code : null;
+}
+
+function cacheArtistEntryForKey(cache, key) {
+  if (key.length === 0) return null;
+  return cache?.artistNationalityMap?.[key] ?? null;
+}
+
+function artistCacheKeys(artist) {
+  return new Set([
+    artist,
+    normalizeForComparison(artist),
+    normalizeForMatch(artist),
+    normalizeWesternActComponent(artist).toLocaleLowerCase('ja-JP'),
+    ...splitArtistCollabForAudit(artist).map((component) => normalizeForMatch(component)),
+  ]);
+}
+
+function cacheArtistEntry(cache, artist) {
+  const map = cache?.artistNationalityMap ?? {};
+  const keys = artistCacheKeys(artist);
+  for (const key of keys) {
+    if (typeof key === 'string' && map[key]) return map[key];
+  }
+  return null;
+}
+
+function cacheAnyJpnArtistEntry(cache, artist) {
+  const map = cache?.artistNationalityMap ?? {};
+  let firstEntry = null;
+  for (const key of artistCacheKeys(artist)) {
+    const entry = typeof key === 'string' ? map[key] : null;
+    if (!entry) continue;
+    if (!firstEntry) firstEntry = entry;
+    if (normalizeNationalityCode(entry.code) === 'JPN') return entry;
+  }
+  return firstEntry;
+}
+
+function leadArtistKey(artist) {
+  const components = splitArtistCollabForAudit(artist);
+  const lead = components.length >= 2 ? components[1] : components[0];
+  const key = normalizeForMatch(lead);
+  return GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(key) ? '' : key;
+}
+
+function cacheLeadArtistEntry(cache, artist) {
+  return cacheArtistEntryForKey(cache, leadArtistKey(artist));
+}
+
+function catalogNationalcode(row, cache, tj) {
+  return (
+    normalizeNationalityCode(row?.nationalcode) ??
+    normalizeNationalityCode(row?.nationalCode) ??
+    normalizeNationalityCode(cacheProEntry(cache, tj)?.nationalcode)
+  );
+}
+
+function scriptSignalFor(titleArtist) {
+  const parts = [];
+  if (hasKana(titleArtist)) parts.push('kana');
+  if (RE_HAN.test(titleArtist)) parts.push('han');
+  if (RE_HANGUL.test(titleArtist)) parts.push('hangul');
+  if (isAsciiOnlyTitleArtist(titleArtist)) parts.push('ascii-only');
+  return parts.length > 0 ? parts.join('+') : 'none';
+}
+
+function sameCatalogTitleArtist(row, record) {
+  return (
+    normalizeForComparison(officialTitle(row)) === normalizeForComparison(record?.title_primary) &&
+    normalizeForComparison(officialArtist(row)) === normalizeForComparison(record?.artist_primary)
+  );
+}
+
+function evidenceRow({
+  bucket,
+  priority,
+  record = null,
+  row = null,
+  cache = {},
+  why,
+  suggested,
+  tjOverride = null,
+}) {
+  const tj =
+    tjOverride ??
+    (record && recordTjKey(record).length > 0 ? recordTjKey(record) : catalogTjKey(row));
+  const official = row;
+  const currentTitleArtist = record ? titleArtistText(record) : '';
+  const officialTitleArtist = row ? `${officialTitle(row)} ${officialArtist(row)}`.trim() : '';
+  const artistForCache = record?.artist_primary ?? officialArtist(row);
+  const proEntry = cacheProEntry(cache, tj);
+  const leadArtistEntry = cacheLeadArtistEntry(cache, artistForCache);
+  const anyArtistEntry = cacheAnyJpnArtistEntry(cache, artistForCache);
+  return {
+    bucket,
+    priority,
+    tj,
+    current_id: record?.id ?? '',
+    current_source: record ? sourceOf(record) : '',
+    current_category: record ? asArray(record.categories).join(',') : '',
+    current_title: record?.title_primary ?? '',
+    current_artist: record?.artist_primary ?? '',
+    official_title: official ? officialTitle(official) : '',
+    official_artist: official ? officialArtist(official) : '',
+    official_nationalcode: official
+      ? (catalogNationalcode(official, cache, tj) ?? '')
+      : (normalizeNationalityCode(proEntry?.nationalcode) ?? ''),
+    artist_cache_code: normalizeNationalityCode(leadArtistEntry?.code) ?? '',
+    artist_cache_any_code: normalizeNationalityCode(anyArtistEntry?.code) ?? '',
+    pro_cache_nationalcode: normalizeNationalityCode(proEntry?.nationalcode) ?? '',
+    script_signal: scriptSignalFor(`${currentTitleArtist} ${officialTitleArtist}`),
+    why_flagged: why,
+    suggested_verdict: suggested,
+    reviewer_verdict: '',
+    reviewer_note: '',
+  };
+}
+
+function pushIssue(buckets, bucket, row) {
+  buckets[bucket].push(row);
+}
+
+function tjBucketData(buckets) {
+  return bucketReport(buckets, (row) => row);
+}
+
+function tjCatalogMap(tjCatalog) {
+  const map = new Map();
+  for (const row of tjCatalog) {
+    const key = catalogTjKey(row);
+    if (key.length === 0) continue;
+    const existing = map.get(key) ?? [];
+    existing.push(row);
+    map.set(key, existing);
+  }
+  return map;
+}
+
+function corpusTjMap(records) {
+  const map = new Map();
+  for (const record of records) {
+    const key = recordTjKey(record);
+    if (key.length === 0) continue;
+    const existing = map.get(key) ?? [];
+    existing.push(record);
+    map.set(key, existing);
+  }
+  return map;
+}
+
+function titleArtistKey(title, artist) {
+  return `${normalizeForComparison(title)}|${normalizeForComparison(artist)}`;
+}
+
+function sameSongWithoutTjMap(records) {
+  const map = new Map();
+  for (const record of records) {
+    if (recordTjKey(record).length > 0) continue;
+    const key = titleArtistKey(record?.title_primary, record?.artist_primary);
+    if (key === '|') continue;
+    const existing = map.get(key) ?? [];
+    existing.push(record);
+    map.set(key, existing);
+  }
+  return map;
+}
+
+function currentCorpusTjSummary(records, byTj) {
+  const withTj = [...byTj.values()].flat();
+  return {
+    totalRecords: records.length,
+    recordsWithTjNumber: withTj.length,
+    directTjSourceRecords: withTj.filter((record) => sourceOf(record) === 'tj').length,
+    tjpdfSourceRecords: withTj.filter((record) => sourceOf(record) === 'tjpdf').length,
+    blogRecordsWithTjNumber: withTj.filter((record) => sourceOf(record) === 'blog').length,
+    duplicateTjNumbers: [...byTj.values()].filter((matches) => matches.length > 1).length,
+  };
+}
+
+function collectTjDatabaseIssues({ records, tjCatalog, cache = {} }) {
+  const byTj = corpusTjMap(records);
+  const byCatalogTj = tjCatalogMap(tjCatalog);
+  const bySameSongWithoutTj = sameSongWithoutTjMap(records);
+  const falsePositive = makeBucketStore(TJ_FP_BUCKETS);
+  const falseNegative = makeBucketStore(TJ_FN_BUCKETS);
+
+  for (const matches of byTj.values()) {
+    for (const record of matches) {
+      const tj = recordTjKey(record);
+      const catalogRows = byCatalogTj.get(tj) ?? [];
+      const official = catalogRows[0] ?? null;
+      const titleArtist = titleArtistText(record);
+      const fullText = songText(record);
+      const artist = asString(record?.artist_primary);
+      const proCode = catalogNationalcode(official, cache, tj);
+      const artistCode = normalizeNationalityCode(cacheLeadArtistEntry(cache, artist)?.code);
+      const hasOfficialJpnEvidence = proCode === 'JPN' || artistCode === 'JPN';
+
+      if (catalogRows.length === 0) {
+        pushIssue(
+          falsePositive,
+          'missingOfficialPro',
+          evidenceRow({
+            bucket: 'missingOfficialPro',
+            priority: 'P0',
+            record,
+            cache,
+            why: 'current corpus has a TJ number that is absent from the official TJ catalog snapshot',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (proCode && proCode !== 'JPN') {
+        pushIssue(
+          falsePositive,
+          'officialNonJpnPro',
+          evidenceRow({
+            bucket: 'officialNonJpnPro',
+            priority: 'P0',
+            record,
+            row: official,
+            cache,
+            why: `exact-pro official/cache nationalcode is ${proCode}`,
+            suggested: 'DROP_FALSE_POSITIVE',
+          }),
+        );
+      }
+      if (official && !catalogRows.some((row) => sameCatalogTitleArtist(row, record))) {
+        pushIssue(
+          falsePositive,
+          'titleArtistConflict',
+          evidenceRow({
+            bucket: 'titleArtistConflict',
+            priority: 'P1',
+            record,
+            row: official,
+            cache,
+            why: 'same TJ number exists but product title/artist differs from official title/artist',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (
+        RE_HANGUL.test(titleArtist) &&
+        !hasJapaneseOrAmbiguousHan(titleArtist) &&
+        !hasOfficialJpnEvidence
+      ) {
+        pushIssue(
+          falsePositive,
+          'hangulNoJapaneseEvidence',
+          evidenceRow({
+            bucket: 'hangulNoJapaneseEvidence',
+            priority: 'P1',
+            record,
+            row: official,
+            cache,
+            why: 'Hangul title/artist without kana/Han or official JPN evidence',
+            suggested: 'DROP_FALSE_POSITIVE',
+          }),
+        );
+      }
+      if (RE_HAN.test(titleArtist) && !hasKana(titleArtist) && !hasOfficialJpnEvidence) {
+        pushIssue(
+          falsePositive,
+          'hanNoKanaMandopopRisk',
+          evidenceRow({
+            bucket: 'hanNoKanaMandopopRisk',
+            priority: 'P2',
+            record,
+            row: official,
+            cache,
+            why: 'Han-only/no-kana title/artist without official JPN evidence',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (isAsciiOnlyTitleArtist(titleArtist) && !hasOfficialJpnEvidence) {
+        pushIssue(
+          falsePositive,
+          'asciiOnlyWeakEvidence',
+          evidenceRow({
+            bucket: 'asciiOnlyWeakEvidence',
+            priority: 'P2',
+            record,
+            row: official,
+            cache,
+            why: 'Latin-only title/artist without exact-pro JPN or lead-artist-cache JPN evidence',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (isGenericArtist(artist) && !hasKana(fullText) && !hasOfficialJpnEvidence) {
+        pushIssue(
+          falsePositive,
+          'genericArtistRisk',
+          evidenceRow({
+            bucket: 'genericArtistRisk',
+            priority: 'P1',
+            record,
+            row: official,
+            cache,
+            why: 'generic artist label without Japanese or official JPN evidence',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (sourceOf(record) === 'blog' && !hasOfficialJpnEvidence) {
+        pushIssue(
+          falsePositive,
+          'rescueOnlyRisk',
+          evidenceRow({
+            bucket: 'rescueOnlyRisk',
+            priority: 'P2',
+            record,
+            row: official,
+            cache,
+            why: 'blog-carried TJ number lacks exact official JPN or lead-artist-cache JPN evidence',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (isProductionDropListArtist(artist) || matchesAny(artist, KOREAN_ACT_PATTERNS)) {
+        pushIssue(
+          falsePositive,
+          'knownKoreanAct',
+          evidenceRow({
+            bucket: 'knownKoreanAct',
+            priority: 'P0',
+            record,
+            row: official,
+            cache,
+            why: 'artist matches production Korean/Chinese drop-list or known Korean act deny bucket',
+            suggested: 'DROP_FALSE_POSITIVE',
+          }),
+        );
+      }
+      if (isKnownWesternAct(artist)) {
+        pushIssue(
+          falsePositive,
+          'knownWesternAct',
+          evidenceRow({
+            bucket: 'knownWesternAct',
+            priority: 'P1',
+            record,
+            row: official,
+            cache,
+            why: 'artist matches known Western act review bucket',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+    }
+  }
+
+  for (const [tj, rows] of byCatalogTj) {
+    if (byTj.has(tj)) continue;
+    const row = rows[0];
+    const titleArtist = `${officialTitle(row)} ${officialArtist(row)}`.trim();
+    const proCode = catalogNationalcode(row, cache, tj);
+    const artistCode = normalizeNationalityCode(
+      cacheLeadArtistEntry(cache, officialArtist(row))?.code,
+    );
+    const anyArtistCode = normalizeNationalityCode(
+      cacheAnyJpnArtistEntry(cache, officialArtist(row))?.code,
+    );
+    const artistCachePolicyEdge = anyArtistCode === 'JPN' && artistCode !== 'JPN';
+    const policyExcluded =
+      isPolicyExcludedOfficialArtist(officialArtist(row)) || artistCachePolicyEdge;
+    const policyExcludedPriority =
+      proCode === 'JPN'
+        ? 'P0'
+        : artistCode === 'JPN'
+          ? 'P1'
+          : hasJapaneseOrAmbiguousHan(titleArtist)
+            ? 'P2'
+            : 'P4';
+    if (proCode && proCode !== 'JPN') continue;
+    const sameSongMatches =
+      bySameSongWithoutTj.get(titleArtistKey(officialTitle(row), officialArtist(row))) ?? [];
+    for (const record of sameSongMatches) {
+      pushIssue(
+        falseNegative,
+        'sameSongNoTjNumber',
+        evidenceRow({
+          bucket: 'sameSongNoTjNumber',
+          priority: policyExcluded
+            ? policyExcludedPriority
+            : proCode === 'JPN' || artistCode === 'JPN'
+              ? 'P1'
+              : 'P2',
+          record,
+          row,
+          cache,
+          why: 'same normalized title/artist already exists in current corpus but lacks this official TJ number',
+          suggested: policyExcluded
+            ? 'POLICY_EDGE'
+            : proCode === 'JPN' || artistCode === 'JPN'
+              ? 'ADD_FALSE_NEGATIVE'
+              : 'NEEDS_MORE_EVIDENCE',
+        }),
+      );
+    }
+    if (policyExcluded) {
+      pushIssue(
+        falseNegative,
+        'policyExcludedOfficialJpn',
+        evidenceRow({
+          bucket: 'policyExcludedOfficialJpn',
+          priority: policyExcludedPriority,
+          row,
+          cache,
+          why: 'official row is missing and may be JPN, but artist matches known non-Japanese policy-exclusion bucket',
+          suggested: 'POLICY_EDGE',
+        }),
+      );
+    } else if (proCode === 'JPN') {
+      pushIssue(
+        falseNegative,
+        'exactProJpnMissing',
+        evidenceRow({
+          bucket: 'exactProJpnMissing',
+          priority: 'P0',
+          row,
+          cache,
+          why: 'official/cache exact-pro evidence says JPN but current corpus lacks this TJ number',
+          suggested: 'ADD_FALSE_NEGATIVE',
+        }),
+      );
+    } else if (artistCode === 'JPN' && proCode !== 'KOR' && proCode !== 'ENG') {
+      pushIssue(
+        falseNegative,
+        'artistJpnMissing',
+        evidenceRow({
+          bucket: 'artistJpnMissing',
+          priority: 'P1',
+          row,
+          cache,
+          why: 'artist cache says JPN and current corpus lacks this TJ number',
+          suggested: 'ADD_FALSE_NEGATIVE',
+        }),
+      );
+    } else if (hasKana(titleArtist)) {
+      pushIssue(
+        falseNegative,
+        'strongScriptJpMissing',
+        evidenceRow({
+          bucket: 'strongScriptJpMissing',
+          priority: 'P2',
+          row,
+          cache,
+          why: 'official title/artist has kana and current corpus lacks this TJ number',
+          suggested: 'NEEDS_MORE_EVIDENCE',
+        }),
+      );
+    } else if (isBareAnimeTokenRisk(titleArtist)) {
+      pushIssue(
+        falseNegative,
+        'animeVocaloidLikelyMissing',
+        evidenceRow({
+          bucket: 'animeVocaloidLikelyMissing',
+          priority: 'P3',
+          row,
+          cache,
+          why: 'official title/artist has anime-like token but needs policy confirmation',
+          suggested: 'NEEDS_MORE_EVIDENCE',
+        }),
+      );
+    } else {
+      pushIssue(
+        falseNegative,
+        'weakEvidenceMissing',
+        evidenceRow({
+          bucket: 'weakEvidenceMissing',
+          priority: 'P4',
+          row,
+          cache,
+          why: 'official catalog row is absent from current corpus but lacks strong JPN evidence',
+          suggested: 'NEEDS_MORE_EVIDENCE',
+        }),
+      );
+    }
+  }
+
+  return { falsePositive, falseNegative, byTj, byCatalogTj };
+}
+
+export function analyzeTjDatabase({ records, tjCatalog, cache = {} }) {
+  if (!Array.isArray(records)) throw new Error('analyzeTjDatabase: records must be an array');
+  if (!Array.isArray(tjCatalog)) throw new Error('analyzeTjDatabase: tjCatalog must be an array');
+  const { falsePositive, falseNegative, byTj, byCatalogTj } = collectTjDatabaseIssues({
+    records,
+    tjCatalog,
+    cache,
+  });
+  const fpData = tjBucketData(falsePositive);
+  const fnData = tjBucketData(falseNegative);
+  return {
+    generatedAt: new Date().toISOString(),
+    summary: {
+      currentCorpus: currentCorpusTjSummary(records, byTj),
+      officialCatalog: {
+        totalRows: tjCatalog.length,
+        uniqueProNumbers: byCatalogTj.size,
+        missingFromCurrentCorpus: [...byCatalogTj.keys()].filter((tj) => !byTj.has(tj)).length,
+        proCacheEntries: Object.keys(cache?.proEnrichmentMap ?? {}).length,
+        artistCacheEntries: Object.keys(cache?.artistNationalityMap ?? {}).length,
+      },
+    },
+    falsePositive: fpData,
+    falseNegative: fnData,
+  };
+}
+
+function collectTjDatabaseIssueRows(records, tjCatalog, cache) {
+  const { falsePositive, falseNegative } = collectTjDatabaseIssues({ records, tjCatalog, cache });
+  return {
+    falsePositiveRows: Object.values(falsePositive)
+      .flat()
+      .map((row) => issueRow('tj-db-false-positive', row.bucket, row)),
+    falseNegativeRows: Object.values(falseNegative)
+      .flat()
+      .map((row) => issueRow('tj-db-false-negative', row.bucket, row)),
+  };
+}
+
 function baselineJoysoundNumberMap(records) {
   const numbers = new Map();
   for (const record of records ?? []) {
@@ -417,6 +1032,81 @@ function baselineJoysoundNumberMap(records) {
 function normalizeForComparison(value) {
   return asString(value).normalize('NFKC').replace(/\s+/gu, ' ').trim().toLocaleLowerCase('ja-JP');
 }
+
+function normalizeForMatch(value) {
+  return asString(value).replace(/\s+/gu, '').toLowerCase().normalize('NFKC');
+}
+
+const FEAT_PAREN_RE = /\s*\(\s*(?:feat|prod)\.\s*([^()]+?)\s*\)\s*/gi;
+const SPLIT_RE = /\s*[&＆,×｜]\s*|\s+with\s+|\s+meets\s+|\s*feat\.\s*/i;
+const OF_RE = /\s+of\s+/i;
+
+function splitArtistCollabForAudit(artist) {
+  const whole = asString(artist).trim();
+  if (whole === '') return [];
+  const parts = [whole];
+  const featContents = [];
+  const main = whole
+    .replace(FEAT_PAREN_RE, (_, inner) => {
+      featContents.push(inner);
+      return ' ';
+    })
+    .trim();
+  if (main !== '') {
+    for (const piece of main.split(SPLIT_RE)) {
+      const trimmed = piece.trim();
+      if (trimmed !== '') parts.push(trimmed);
+    }
+  }
+  for (const inner of featContents) {
+    if (inner !== '') parts.push(inner);
+    if (inner !== '' && OF_RE.test(inner)) {
+      for (const piece of inner.split(OF_RE)) {
+        const trimmed = piece.trim();
+        if (trimmed !== '') parts.push(trimmed);
+      }
+    }
+  }
+  const seen = new Set();
+  return parts.filter((part) => {
+    const key = normalizeForMatch(part);
+    if (key === '' || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function readDropListKeys(relativePath) {
+  let source;
+  try {
+    source = readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+  } catch (err) {
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') {
+      throw new Error(`required TJ production drop-list source is missing: ${relativePath}`);
+    }
+    throw err;
+  }
+  const keys = new Set();
+  for (const [, rawVariants] of source.matchAll(/variants:\s*\[([\s\S]*?)\]/gu)) {
+    for (const match of rawVariants.matchAll(/'((?:\\'|[^'])*)'|"((?:\\"|[^"])*)"/gu)) {
+      const raw = match[1] ?? match[2] ?? '';
+      const variant = raw.replace(/\\(['"\\])/gu, '$1');
+      const key = normalizeForMatch(variant);
+      if (key !== '') keys.add(key);
+    }
+  }
+  if (keys.size === 0) {
+    throw new Error(`required TJ production drop-list source produced no keys: ${relativePath}`);
+  }
+  return keys;
+}
+
+const KOREAN_DROP_KEYS = readDropListKeys(
+  '../../packages/crawler/src/adapters/tj-media-direct/koreanArtistDropList.ts',
+);
+const CHINESE_DROP_KEYS = readDropListKeys(
+  '../../packages/crawler/src/adapters/tj-media-direct/chineseArtistDropList.ts',
+);
 
 function sameTitleArtist(row, record) {
   return (
@@ -699,10 +1389,24 @@ function realPathIfExists(path) {
   }
 }
 
+const TJ_REVIEW_QUEUE_FILENAMES = [
+  'review-fp-high.tsv',
+  'review-fp-policy-edge.tsv',
+  'review-fn-high.tsv',
+  'review-fn-medium.tsv',
+];
+
 function outputFlagEntries(flags) {
-  return ['out', 'issues-out']
+  const outputs = ['out', 'issues-out', 'fp-issues-out', 'fn-issues-out']
     .map((name) => [name, flags[name]])
     .filter(([, value]) => typeof value === 'string' && value.length > 0);
+  if (typeof flags['review-dir'] === 'string' && flags['review-dir'].length > 0) {
+    outputs.push(['review-dir', flags['review-dir']]);
+    for (const filename of TJ_REVIEW_QUEUE_FILENAMES) {
+      outputs.push([`review-dir/${filename}`, resolve(flags['review-dir'], filename)]);
+    }
+  }
+  return outputs;
 }
 
 function assertOutputDoesNotOverwriteInput(flags, names) {
@@ -754,10 +1458,78 @@ function writeJsonl(path, rows) {
   writeFileSync(path, body.length > 0 ? `${body}\n` : '');
 }
 
+const TJ_REVIEW_COLUMNS = [
+  'bucket',
+  'priority',
+  'tj',
+  'current_id',
+  'current_source',
+  'current_category',
+  'current_title',
+  'current_artist',
+  'official_title',
+  'official_artist',
+  'official_nationalcode',
+  'artist_cache_code',
+  'artist_cache_any_code',
+  'pro_cache_nationalcode',
+  'script_signal',
+  'why_flagged',
+  'suggested_verdict',
+  'reviewer_verdict',
+  'reviewer_note',
+];
+
+function tsvCell(value) {
+  return asString(value ?? '')
+    .replace(/\r?\n/gu, ' ')
+    .replace(/\t/gu, ' ');
+}
+
+function writeTsv(path, rows) {
+  const lines = [
+    TJ_REVIEW_COLUMNS.join('\t'),
+    ...rows.map((row) => TJ_REVIEW_COLUMNS.map((column) => tsvCell(row[column])).join('\t')),
+  ];
+  writeFileSync(path, `${lines.join('\n')}\n`);
+}
+
+function writeTjReviewQueues(reviewDir, falsePositiveRows, falseNegativeRows) {
+  mkdirSync(reviewDir, { recursive: true });
+  const rawFp = falsePositiveRows.map(({ mode: _mode, ...row }) => row);
+  const rawFn = falseNegativeRows.map(({ mode: _mode, ...row }) => row);
+  writeTsv(
+    resolve(reviewDir, 'review-fp-high.tsv'),
+    rawFp.filter((row) => row.priority === 'P0' || row.priority === 'P1'),
+  );
+  writeTsv(
+    resolve(reviewDir, 'review-fp-policy-edge.tsv'),
+    rawFp.filter((row) => row.priority !== 'P0' && row.priority !== 'P1'),
+  );
+  writeTsv(
+    resolve(reviewDir, 'review-fn-high.tsv'),
+    rawFn.filter((row) => row.priority === 'P0' || row.priority === 'P1'),
+  );
+  writeTsv(
+    resolve(reviewDir, 'review-fn-medium.tsv'),
+    rawFn.filter((row) => row.priority === 'P2' || row.priority === 'P3'),
+  );
+}
+
+function readJsonObject(path) {
+  const parsed = JSON.parse(readFileSync(path, 'utf8'));
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`${path} must contain a JSON object`);
+  }
+  return parsed;
+}
+
 export function runCli(argv = process.argv.slice(2)) {
   const flags = parseArgs(argv);
   let report;
   let issueRows = [];
+  const extraJsonlWrites = [];
+  let reviewQueueWrite = null;
   if (flags.mode === 'corpus') {
     const inputPath = requireFlag(flags, 'in');
     assertOutputDoesNotOverwriteInput(flags, ['in']);
@@ -778,9 +1550,27 @@ export function runCli(argv = process.argv.slice(2)) {
     const candidateRecords = readJsonArray(requireFlag(flags, 'candidate'));
     report = compareCorpora(baselineRecords, candidateRecords);
     issueRows = collectMergeDeltaIssueRows(baselineRecords, candidateRecords);
+  } else if (flags.mode === 'tj-db') {
+    assertOutputDoesNotOverwriteInput(flags, ['corpus', 'tj-catalog', 'cache']);
+    const records = readJsonArray(requireFlag(flags, 'corpus'));
+    const tjCatalog = readJsonOrJsonlArray(requireFlag(flags, 'tj-catalog'));
+    const cache = flags.cache ? readJsonObject(flags.cache) : {};
+    report = analyzeTjDatabase({ records, tjCatalog, cache });
+    const { falsePositiveRows, falseNegativeRows } = collectTjDatabaseIssueRows(
+      records,
+      tjCatalog,
+      cache,
+    );
+    issueRows = [...falsePositiveRows, ...falseNegativeRows];
+    if (flags['fp-issues-out']) extraJsonlWrites.push([flags['fp-issues-out'], falsePositiveRows]);
+    if (flags['fn-issues-out']) extraJsonlWrites.push([flags['fn-issues-out'], falseNegativeRows]);
+    if (flags['review-dir']) {
+      reviewQueueWrite = () =>
+        writeTjReviewQueues(flags['review-dir'], falsePositiveRows, falseNegativeRows);
+    }
   } else {
     throw new Error(
-      'usage: audit-corpus-guardrails.mjs <corpus|joysound-listing|merge-delta> --in PATH --out PATH [--issues-out PATH]',
+      'usage: audit-corpus-guardrails.mjs <corpus|joysound-listing|merge-delta> --in PATH --out PATH [--issues-out PATH] OR tj-db --corpus PATH --tj-catalog PATH [--cache PATH] --out PATH [--issues-out PATH] [--fp-issues-out PATH] [--fn-issues-out PATH] [--review-dir DIR]',
     );
   }
 
@@ -788,6 +1578,8 @@ export function runCli(argv = process.argv.slice(2)) {
   if (flags.out) writeFileSync(flags.out, json);
   else process.stdout.write(json);
   if (flags['issues-out']) writeJsonl(flags['issues-out'], issueRows);
+  for (const [path, rows] of extraJsonlWrites) writeJsonl(path, rows);
+  if (reviewQueueWrite) reviewQueueWrite();
   return report;
 }
 
