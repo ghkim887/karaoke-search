@@ -282,9 +282,17 @@ export class JoysoundOfficialCrawler implements Crawler {
       const json: unknown = JSON.parse(detailRes.body);
       detail = parseJoysoundDetail(json);
     } catch (err) {
+      // The fetch succeeded but the body was unusable (malformed JSON or a
+      // response missing the expected structure). This is a malformed-detail-
+      // RESPONSE problem, so it shares the detail-fetch skip bucket (matching
+      // the class-level failure-semantics doc that groups "parse error" with
+      // detail-fetch failures). Counting it here keeps the run-summary total
+      // accurate; the early `return null` ensures the row never reaches the
+      // normalizer, so it can't also be counted as `skippedInvalidRows`.
+      this.skippedDetailRows++;
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(
-        `[${this.name}] detail parse failed for naviGroupId=${item.naviGroupId}: ${msg}`,
+        `[${this.name}] detail parse failed for naviGroupId=${item.naviGroupId}: ${msg} (skipped)`,
       );
       return null;
     }
