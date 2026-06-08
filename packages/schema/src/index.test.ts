@@ -105,6 +105,41 @@ describe('validateSongRecord — failure cases', () => {
   });
 });
 
+describe('karaoke_numbers.joysound — digit-pattern guard', () => {
+  it('accepts a bare-digit joysound number', () => {
+    expect(() =>
+      validateSongRecord(
+        makeRecord({ karaoke_numbers: { tj: null, ky: null, joysound: '190001' } }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts joysound: null (pattern only constrains string instances)', () => {
+    expect(() =>
+      validateSongRecord(makeRecord({ karaoke_numbers: { tj: null, ky: null, joysound: null } })),
+    ).not.toThrow();
+  });
+
+  // Non-numeric junk — a blog-editing artifact dropped the Korean word "등록일"
+  // ("registration date") into a JOYSOUND cell (corpus record blog-826-175).
+  // The pattern guard is defense-in-depth behind the parser fix.
+  it('rejects a non-numeric joysound value ("등록일")', () => {
+    expect(() =>
+      validateSongRecord(
+        makeRecord({ karaoke_numbers: { tj: null, ky: null, joysound: '등록일' } }),
+      ),
+    ).toThrowError(/joysound/);
+  });
+
+  it('rejects a hyphenated joysound value ("190-001")', () => {
+    expect(() =>
+      validateSongRecord(
+        makeRecord({ karaoke_numbers: { tj: null, ky: null, joysound: '190-001' } }),
+      ),
+    ).toThrowError(/joysound/);
+  });
+});
+
 describe('validateSongRecord — Category enum coverage', () => {
   it('accepts records for each of the three live category values', () => {
     const liveValues: Category[] = ['jpop', 'vocaloid', 'anime'];

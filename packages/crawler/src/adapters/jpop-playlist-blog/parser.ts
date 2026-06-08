@@ -85,7 +85,16 @@ function extractNumberCell(
   }
 
   const value = segments[0] as string;
-  if (/^\d+$/.test(value) && value.length > NUMBER_LENGTH_CAPS[field]) {
+  // All real karaoke codes are bare digits. A non-numeric cell (e.g. the
+  // Korean word "등록일" a blog-editing artifact dropped into a JOYSOUND
+  // column — corpus record blog-826-175) is junk, not a code → drop it.
+  if (!/^\d+$/.test(value)) {
+    console.warn(
+      `[blog] dropping non-numeric ${field.toUpperCase()}# "${value}" on row "${rowTitle}" (${sourceUrl})`,
+    );
+    return null;
+  }
+  if (value.length > NUMBER_LENGTH_CAPS[field]) {
     console.warn(
       `[blog] dropping malformed ${field.toUpperCase()}# "${value}" on row "${rowTitle}" (length ${value.length} exceeds digit cap ${NUMBER_LENGTH_CAPS[field]}) (${sourceUrl})`,
     );
