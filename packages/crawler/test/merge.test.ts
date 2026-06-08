@@ -1248,4 +1248,44 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.id).toBe('joysound-200');
   });
+
+  it('Tier A unions a JOYSOUND-official record with a blog record sharing the SAME dashless joysound# (P0-1 collapse)', () => {
+    // The actual P0-1 goal: the official normalizer now emits a dashless
+    // joysound number (e.g. '190001'), matching the ~20.9k dashless blog
+    // numbers. Two records carrying the same dashless joysound# must collapse
+    // via the Tier A joysound vendor index into exactly ONE record — even with
+    // DIFFERENT title/artist text, so the union is provably driven by the
+    // shared number, not by a Tier B title+artist match.
+    const blog = record({
+      id: 'blog-7777-0',
+      source_url: 'https://blog.test/7777',
+      title_primary: '夜に駆ける',
+      title_ko: '밤에 달리다',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비',
+      // Dashless — the form every blog joysound number is stored in.
+      karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
+      categories: ['jpop'],
+    });
+    const js = record({
+      id: 'joysound-190001',
+      source_url: 'https://www.joysound.com/web/search/song/190001',
+      // Deliberately divergent surface text — only the shared number can union.
+      title_primary: 'Yoru ni Kakeru',
+      title_ko: null,
+      artist_primary: 'YOASOBI (Official)',
+      artist_ko: null,
+      // Dashless, post-normalizer form (was '190-001' on the JOYSOUND surface).
+      karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
+      categories: ['jpop'],
+    });
+
+    const { records } = mergeRecords([blog, js]);
+    // Exactly ONE record — they collapsed instead of duplicating.
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // The shared dashless joysound# survives on the merged record.
+    expect(m.karaoke_numbers.joysound).toBe('190001');
+  });
 });

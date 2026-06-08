@@ -313,7 +313,7 @@ function collectJoysoundListingIssueRows(rows, options = {}) {
       );
     }
 
-    const baselineMatches = baselineNumbers.get(row?.selSongNo);
+    const baselineMatches = baselineNumbers.get(normalizeJoysoundNumber(row?.selSongNo));
     if (baselineMatches) {
       const payload = {
         row: sampleListingRow(row),
@@ -1017,14 +1017,23 @@ function collectTjDatabaseIssueRows(records, tjCatalog, cache) {
   };
 }
 
+function normalizeJoysoundNumber(value) {
+  // Canonical JOYSOUND number = strip all hyphens (`190-001` -> `190001`). The
+  // corpus stores dashless numbers but live listing rows carry the hyphenated
+  // `selSongNo` form, so both compare sides MUST normalize through this helper.
+  return asString(value).replace(/-/gu, '');
+}
+
 function baselineJoysoundNumberMap(records) {
   const numbers = new Map();
   for (const record of records ?? []) {
     const value = record?.karaoke_numbers?.joysound;
     if (typeof value !== 'string' || value.length === 0) continue;
-    const existing = numbers.get(value) ?? [];
+    const key = normalizeJoysoundNumber(value);
+    if (key === '') continue;
+    const existing = numbers.get(key) ?? [];
     existing.push(record);
-    numbers.set(value, existing);
+    numbers.set(key, existing);
   }
   return numbers;
 }
@@ -1149,7 +1158,7 @@ export function analyzeJoysoundListing(rows, options = {}) {
     if (isAsciiOnlyTitleArtist(titleArtist)) buckets.asciiOnlyTitleArtist.push(row);
     if (isBareAnimeTokenRisk(surface)) buckets.bareAnimeTokenRisk.push(row);
     if (isLatinVocaloidSubstringRisk(surface)) buckets.latinVocaloidSubstringRisk.push(row);
-    const baselineMatches = baselineNumbers.get(row?.selSongNo);
+    const baselineMatches = baselineNumbers.get(normalizeJoysoundNumber(row?.selSongNo));
     if (baselineMatches) {
       const auditItem = { row, baseline: baselineMatches };
       buckets.existingJoysoundNumberOverlap.push(auditItem);
