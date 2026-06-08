@@ -298,6 +298,39 @@ describe('parseArtistPage — number-cell defensive guards', () => {
     }
   });
 
+  // Non-numeric junk (e.g. the Korean word "등록일" = "registration date" that a
+  // blog-editing artifact dropped into a JOYSOUND cell — corpus record
+  // blog-826-175) must yield null, not the literal string. The length cap only
+  // fired on all-digit values, so non-numeric content previously passed through.
+  it('returns null (and warns) for a non-numeric JOYSOUND cell value', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml('<tr><td>Title</td><td>1</td><td>2</td><td>등록일</td></tr>');
+      const recs = parseArtistPage(html, 'https://j-pop-playlist.tistory.com/826');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.joysound).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping non-numeric JOYSOUND#/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  // The non-numeric guard applies uniformly to all three number columns.
+  it('returns null (and warns) for a non-numeric TJ cell value', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const html = buildHtml('<tr><td>Title</td><td>abc</td><td>1</td><td>2</td></tr>');
+      const recs = parseArtistPage(html, 'https://x.test/nonnum');
+      expect(recs).toHaveLength(1);
+      expect(recs[0]?.karaoke_numbers.tj).toBeNull();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(/dropping non-numeric TJ#/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
   // extractNumberCell must bail early (null + warn) on HTML longer than 64 KB.
   it('extractNumberCell returns null and warns when cell HTML exceeds 64KB', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});

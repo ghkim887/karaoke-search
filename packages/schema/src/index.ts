@@ -153,7 +153,11 @@ export const songRecordSchema = {
       properties: {
         tj: { type: ['string', 'null'] },
         ky: { type: ['string', 'null'] },
-        joysound: { type: ['string', 'null'] },
+        // Defense-in-depth: a string joysound value must be bare digits (all
+        // real codes look like `190001`). `null` stays valid — `pattern` only
+        // constrains string instances. Catches blog-parse junk like the Korean
+        // word "등록일" that landed in blog-826-175 before the parser guard.
+        joysound: { type: ['string', 'null'], pattern: '^[0-9]+$' },
       },
     },
     categories: {
