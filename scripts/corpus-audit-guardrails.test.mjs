@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   analyzeCorpus,
+  analyzeJoysoundDatabase,
   analyzeJoysoundListing,
   analyzeTjDatabase,
   compareCorpora,
@@ -1008,6 +1009,363 @@ describe('corpus audit guardrails', () => {
         runCli(['corpus', '--in', corpusPath, '--out', reportPath, '--issues-out', corpusPath]),
       ).toThrow(/refusing to write audit output over input path/u);
       expect(JSON.parse(readFileSync(corpusPath, 'utf8'))[0]).toMatchObject({ id: 'safe' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('buckets JOYSOUND decision-log admit/drop rows into FP and FN audit trees with priorities', () => {
+    const records = [
+      record({
+        id: 'joysound-conflict',
+        source_url: 'https://www.joysound.com/web/search/song/conflict',
+        title_primary: 'Baseline Title',
+        artist_primary: 'Baseline Artist',
+        karaoke_numbers: { tj: null, ky: null, joysound: '990001' },
+      }),
+      record({
+        id: 'blog-known-jp',
+        title_primary: 'さよなら',
+        artist_primary: '米津玄師',
+        karaoke_numbers: { tj: null, ky: null, joysound: null },
+      }),
+    ];
+    const decisionLog = [
+      // Clean admit: kana, no conflict, not foreign -> no buckets.
+      {
+        selSongNo: '100001',
+        selSongNoRaw: '100-001',
+        naviGroupId: 'n1',
+        title: 'さくら',
+        artist: 'スピッツ',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jpop-kana',
+        detailFlipRisk: false,
+      },
+      // Admit foreign Korean act (classifier<->audit drift leak).
+      {
+        selSongNo: '200002',
+        selSongNoRaw: '200-002',
+        naviGroupId: 'n2',
+        title: 'Set The Tone',
+        artist: 'BLACKPINK',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jpop-kana',
+        detailFlipRisk: false,
+      },
+      // Admit conflicting with baseline number (different title/artist).
+      {
+        selSongNo: '990-001',
+        selSongNoRaw: '990-001',
+        naviGroupId: 'n3',
+        title: 'Different Title',
+        artist: 'Different Artist',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jpop-kana',
+        detailFlipRisk: false,
+      },
+      // Admit Han-but-no-kana (Mandopop risk).
+      {
+        selSongNo: '300003',
+        selSongNoRaw: '300-003',
+        naviGroupId: 'n4',
+        title: '愛情',
+        artist: '張學友',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jpop-kana',
+        detailFlipRisk: true,
+      },
+      // Drop though it has kana.
+      {
+        selSongNo: '400004',
+        selSongNoRaw: '400-004',
+        naviGroupId: 'n5',
+        title: 'ありがとう',
+        artist: 'Unknown Foreign',
+        tieupInfo: null,
+        decision: 'drop',
+        category: null,
+        reason: 'drop-no-signal',
+        detailFlipRisk: false,
+      },
+      // Dropped as foreign but actually a Japanese release/collab (has kana).
+      {
+        selSongNo: '500005',
+        selSongNoRaw: '500-005',
+        naviGroupId: 'n6',
+        title: 'コラボ',
+        artist: 'BTS × 日本人歌手',
+        tieupInfo: null,
+        decision: 'drop',
+        category: null,
+        reason: 'foreign-korean',
+        detailFlipRisk: false,
+      },
+    ];
+
+    const report = analyzeJoysoundDatabase({ decisionLog, records });
+
+    expect(report.summary).toMatchObject({
+      decisionLogRows: 6,
+      admitted: 4,
+      dropped: 2,
+      corpusJoysoundNumbers: 1,
+    });
+    expect(report.summary.byReason).toMatchObject({
+      'admit-jpop-kana': 4,
+      'drop-no-signal': 1,
+      'foreign-korean': 1,
+    });
+    expect(report.summary.conflicts).toBe(1);
+
+    const fpBucket = (name) => report.falsePositive.samples[name].map((row) => row.selSongNo);
+    const fnBucket = (name) => report.falseNegative.samples[name].map((row) => row.selSongNo);
+
+    expect(report.falsePositive.buckets.existingNumberConflict.count).toBe(1);
+    expect(fpBucket('existingNumberConflict')).toContain('990001');
+    expect(report.falsePositive.samples.existingNumberConflict[0]).toMatchObject({
+      bucket: 'existingNumberConflict',
+      priority: 'P0',
+      reviewer_verdict: '',
+      reviewer_note: '',
+    });
+
+    expect(report.falsePositive.buckets.foreignActAdmitted.count).toBe(1);
+    expect(fpBucket('foreignActAdmitted')).toContain('200002');
+    expect(report.falsePositive.samples.foreignActAdmitted[0].priority).toBe('P0');
+
+    expect(report.falsePositive.buckets.hanNoKanaAdmitted.count).toBe(1);
+    expect(fpBucket('hanNoKanaAdmitted')).toContain('300003');
+    expect(report.falsePositive.samples.hanNoKanaAdmitted[0].priority).toBe('P2');
+
+    expect(report.falsePositive.buckets.categoryAmbiguous.count).toBe(1);
+    expect(fpBucket('categoryAmbiguous')).toContain('300003');
+    expect(report.falsePositive.samples.categoryAmbiguous[0].priority).toBe('P3');
+
+    // The clean admit lands in no FP bucket.
+    for (const name of Object.keys(report.falsePositive.buckets)) {
+      expect(fpBucket(name)).not.toContain('100001');
+    }
+
+    expect(report.falseNegative.buckets.droppedHasKana.count).toBe(2);
+    expect(fnBucket('droppedHasKana')).toEqual(expect.arrayContaining(['400004', '500005']));
+    expect(report.falseNegative.samples.droppedHasKana[0].priority).toBe('P0');
+
+    expect(report.falseNegative.buckets.droppedForeignButJpRelease.count).toBe(1);
+    expect(fnBucket('droppedForeignButJpRelease')).toContain('500005');
+    expect(report.falseNegative.samples.droppedForeignButJpRelease[0].priority).toBe('P1');
+  });
+
+  it('flags JOYSOUND drops of a known Japanese artist already in the corpus as a P1 false negative', () => {
+    const records = [
+      record({
+        id: 'blog-jp',
+        title_primary: 'Lemon',
+        artist_primary: '米津玄師',
+        karaoke_numbers: { tj: null, ky: null, joysound: null },
+      }),
+    ];
+    const decisionLog = [
+      {
+        selSongNo: '600006',
+        selSongNoRaw: '600-006',
+        naviGroupId: 'n1',
+        title: 'KICK BACK',
+        artist: '米津玄師',
+        tieupInfo: null,
+        decision: 'drop',
+        category: null,
+        reason: 'drop-ascii-only',
+        detailFlipRisk: false,
+      },
+    ];
+
+    const report = analyzeJoysoundDatabase({ decisionLog, records });
+
+    expect(report.falseNegative.buckets.droppedKnownJpArtist.count).toBe(1);
+    expect(report.falseNegative.samples.droppedKnownJpArtist[0]).toMatchObject({
+      bucket: 'droppedKnownJpArtist',
+      priority: 'P1',
+      selSongNo: '600006',
+      artist: '米津玄師',
+    });
+    expect(report.falseNegative.buckets.droppedAsciiOnly.count).toBe(1);
+    expect(report.falseNegative.samples.droppedAsciiOnly[0].priority).toBe('P3');
+  });
+
+  it('writes JOYSOUND database FP/FN JSONL plus high/other TSV review queues via the joysound-db CLI', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-joysound-db-'));
+    const decisionLogPath = join(dir, 'decision-log.jsonl');
+    const corpusPath = join(dir, 'songs.json');
+    const reportPath = join(dir, 'joysound-db-summary.json');
+    const issuesPath = join(dir, 'joysound-db-issues.jsonl');
+    const fpIssuesPath = join(dir, 'fp-issues.jsonl');
+    const fnIssuesPath = join(dir, 'fn-issues.jsonl');
+    const reviewDir = join(dir, 'review-queues');
+
+    writeFileSync(
+      corpusPath,
+      `${JSON.stringify([
+        record({
+          id: 'joysound-conflict',
+          source_url: 'https://www.joysound.com/web/search/song/conflict',
+          title_primary: 'Baseline Title',
+          artist_primary: 'Baseline Artist',
+          karaoke_numbers: { tj: null, ky: null, joysound: '990001' },
+        }),
+      ])}\n`,
+    );
+    writeFileSync(
+      decisionLogPath,
+      [
+        JSON.stringify({
+          selSongNo: '200002',
+          selSongNoRaw: '200-002',
+          naviGroupId: 'n2',
+          title: 'Set The Tone',
+          artist: 'BLACKPINK',
+          tieupInfo: null,
+          decision: 'admit',
+          category: 'jpop',
+          reason: 'admit-jpop-kana',
+          detailFlipRisk: false,
+        }),
+        JSON.stringify({
+          selSongNo: '990-001',
+          selSongNoRaw: '990-001',
+          naviGroupId: 'n3',
+          title: 'Different Title',
+          artist: 'Different Artist',
+          tieupInfo: null,
+          decision: 'admit',
+          category: 'jpop',
+          reason: 'admit-jpop-kana',
+          detailFlipRisk: false,
+        }),
+        JSON.stringify({
+          selSongNo: '400004',
+          selSongNoRaw: '400-004',
+          naviGroupId: 'n5',
+          title: 'ありがとう',
+          artist: 'Unknown Foreign',
+          tieupInfo: null,
+          decision: 'drop',
+          category: null,
+          reason: 'drop-han-only',
+          detailFlipRisk: false,
+        }),
+      ].join('\n'),
+    );
+
+    try {
+      runCli([
+        'joysound-db',
+        '--decision-log',
+        decisionLogPath,
+        '--corpus',
+        corpusPath,
+        '--out',
+        reportPath,
+        '--issues-out',
+        issuesPath,
+        '--fp-issues-out',
+        fpIssuesPath,
+        '--fn-issues-out',
+        fnIssuesPath,
+        '--review-dir',
+        reviewDir,
+      ]);
+
+      expect(JSON.parse(readFileSync(reportPath, 'utf8')).summary).toMatchObject({
+        decisionLogRows: 3,
+        admitted: 2,
+        dropped: 1,
+      });
+      expect(readJsonl(fpIssuesPath)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            mode: 'joysound-db-false-positive',
+            bucket: 'foreignActAdmitted',
+            selSongNo: '200002',
+            priority: 'P0',
+          }),
+          expect.objectContaining({
+            mode: 'joysound-db-false-positive',
+            bucket: 'existingNumberConflict',
+            selSongNo: '990001',
+          }),
+        ]),
+      );
+      expect(readJsonl(fnIssuesPath)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            mode: 'joysound-db-false-negative',
+            bucket: 'droppedHasKana',
+            selSongNo: '400004',
+          }),
+        ]),
+      );
+      // The all-issues JSONL carries both FP and FN rows.
+      expect(readJsonl(issuesPath).map((row) => row.mode)).toEqual(
+        expect.arrayContaining(['joysound-db-false-positive', 'joysound-db-false-negative']),
+      );
+
+      const fpHigh = readFileSync(join(reviewDir, 'review-fp-high.tsv'), 'utf8');
+      expect(fpHigh).toContain('reviewer_verdict');
+      expect(fpHigh).toContain('foreignActAdmitted');
+      expect(fpHigh).toContain('existingNumberConflict');
+      const fnHigh = readFileSync(join(reviewDir, 'review-fn-high.tsv'), 'utf8');
+      expect(fnHigh).toContain('droppedHasKana');
+      // P3 dropped-han-ambiguous stays out of the FN high queue.
+      expect(fnHigh).not.toContain('droppedHanAmbiguous');
+      const fnOther = readFileSync(join(reviewDir, 'review-fn-other.tsv'), 'utf8');
+      expect(fnOther).toContain('droppedHanAmbiguous');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses joysound-db output that would overwrite the decision-log or corpus input', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-joysound-db-'));
+    const decisionLogPath = join(dir, 'decision-log.jsonl');
+    const corpusPath = join(dir, 'songs.json');
+    writeFileSync(corpusPath, '[]\n');
+    writeFileSync(
+      decisionLogPath,
+      `${JSON.stringify({
+        selSongNo: '100001',
+        selSongNoRaw: '100-001',
+        naviGroupId: 'n1',
+        title: 'さくら',
+        artist: 'スピッツ',
+        tieupInfo: null,
+        decision: 'admit',
+        category: 'jpop',
+        reason: 'admit-jpop-kana',
+        detailFlipRisk: false,
+      })}\n`,
+    );
+
+    try {
+      expect(() =>
+        runCli([
+          'joysound-db',
+          '--decision-log',
+          decisionLogPath,
+          '--corpus',
+          corpusPath,
+          '--out',
+          decisionLogPath,
+        ]),
+      ).toThrow(/refusing to write audit output over input path/u);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
