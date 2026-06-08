@@ -367,7 +367,7 @@ describe('reducer short-circuit semantics', () => {
   it('admits a drop-listed act via reviewed-song-allow before the drop-list deny', () => {
     // A drop-listed artist (BTS = 防弾少年団) whose TJ number IS curated into
     // REVIEWED_TJ_SONG_ALLOW is admitted at reviewed-song-allow (step 2),
-    // BEFORE drop-list-reject (step 3) — so the 105 curated K-pop Japanese
+    // BEFORE drop-list-reject (step 3) — so the 112 curated K-pop Japanese
     // releases still get in even though the artist is on the drop list.
     const cache = emptyCache();
     cache.proEnrichmentMap['68048'] = enrichmentEntry('JPN');

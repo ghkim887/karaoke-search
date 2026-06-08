@@ -7,7 +7,7 @@
  * non-scope rows should stay out even if a weak artist/rescue signal appears.
  *
  * Source artifact: .tmp_review/tj-db-audit/review-queues/tj-fp-fn-action-plan.tsv
- * Counts: allow=105, drop=9.
+ * Counts: allow=112, drop=9.
  */
 
 const REVIEWED_TJ_SONG_ALLOW_NUMBERS = [
@@ -37,7 +37,9 @@ const REVIEWED_TJ_SONG_ALLOW_NUMBERS = [
   '26949',
   '26951',
   '26971',
+  '27013',
   '27025',
+  '27033',
   '27036',
   '27056',
   '27069',
@@ -84,6 +86,7 @@ const REVIEWED_TJ_SONG_ALLOW_NUMBERS = [
   '28916',
   '28965',
   '28980',
+  '44601',
   '52521',
   '52522',
   '52524',
@@ -96,6 +99,7 @@ const REVIEWED_TJ_SONG_ALLOW_NUMBERS = [
   '52913',
   '52914',
   '52917',
+  '52925',
   '52930',
   '68013',
   '68038',
@@ -109,10 +113,13 @@ const REVIEWED_TJ_SONG_ALLOW_NUMBERS = [
   '68389',
   '68401',
   '68457',
+  '68531',
   '68547',
   '68554',
   '68595',
   '68629',
+  '68630',
+  '68804',
   '68856',
   '68960',
   '68976',
