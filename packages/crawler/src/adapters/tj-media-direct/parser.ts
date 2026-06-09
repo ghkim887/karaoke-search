@@ -179,7 +179,6 @@ export function parseCatalogResponse(
       artist_primary: artist,
       artist_ko: null,
       karaoke_numbers: { tj, ky: null, joysound: null },
-      categories: ['jpop'],
     });
   }
 

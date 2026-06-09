@@ -252,7 +252,6 @@ export function parseArtistPage(html: string, sourceUrl: string): RawSongRecord[
           artist_primary: artistPrimary,
           artist_ko: artistKo,
           karaoke_numbers: { tj, ky, joysound },
-          categories: [],
         });
       });
   });

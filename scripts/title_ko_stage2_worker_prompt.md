@@ -11,7 +11,7 @@ You are a Stage-2 worker for a J-pop karaoke search app's `title_ko`
 (Korean title) backfill. Translate Japanese song titles to Korean.
 
 **Input:** `{CHUNK_INPUT_PATH}` — JSON array of records with shape
-`{id, title_primary, artist_primary, title_ko: null, categories, ...}`. Read it.
+`{id, title_primary, artist_primary, title_ko: null, ...}`. Read it.
 
 **Per-record decision rules:**
 

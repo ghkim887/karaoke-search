@@ -49,7 +49,6 @@ describe('normalizeJoysoundRecord — record shape', () => {
   it('builds the id as joysound-${naviGroupId}', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem(),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -59,7 +58,6 @@ describe('normalizeJoysoundRecord — record shape', () => {
   it('threads sourceUrl and crawledAt through', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem(),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -70,7 +68,6 @@ describe('normalizeJoysoundRecord — record shape', () => {
   it('puts the dashless selSongNo into karaoke_numbers.joysound, leaving tj/ky null', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ selSongNo: '190-001' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -81,23 +78,10 @@ describe('normalizeJoysoundRecord — record shape', () => {
     // 900-000 → 900000: matches the dashless blog corpus joysound numbers.
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ selSongNo: '900-000' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
     expect(rec.karaoke_numbers.joysound).toBe('900000');
-  });
-
-  it('uses the passed category as the single categories entry', () => {
-    for (const c of ['jpop', 'anime', 'vocaloid'] as const) {
-      const rec = normalizeJoysoundRecord({
-        listItem: listItem(),
-        category: c,
-        sourceUrl: SOURCE_URL,
-        crawledAt: CRAWLED_AT,
-      });
-      expect(rec.categories).toEqual([c]);
-    }
   });
 });
 
@@ -106,7 +90,6 @@ describe('normalizeJoysoundRecord — title / artist', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ songName: 'fallback title' }),
       detail: detail({ songName: 'detail title' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -117,7 +100,6 @@ describe('normalizeJoysoundRecord — title / artist', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ artistName: 'fallback artist' }),
       detail: detail({ artistName: 'detail artist' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -127,7 +109,6 @@ describe('normalizeJoysoundRecord — title / artist', () => {
   it('falls back to listItem.songName / listItem.artistName when no detail is supplied', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ songName: 'L Song', artistName: 'L Artist' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -139,7 +120,6 @@ describe('normalizeJoysoundRecord — title / artist', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ artistName: 'List Artist' }),
       detail: detail({ artistName: null }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -152,7 +132,6 @@ describe('normalizeJoysoundRecord — invariants (no Korean fields)', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem(),
       detail: detail({ songNameRuby: 'よるにかける' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -163,7 +142,6 @@ describe('normalizeJoysoundRecord — invariants (no Korean fields)', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem(),
       detail: detail(),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -174,7 +152,6 @@ describe('normalizeJoysoundRecord — invariants (no Korean fields)', () => {
     const rec = normalizeJoysoundRecord({
       listItem: listItem({ selSongNo: '500-123' }),
       detail: detail({ selSongNo: '500-123' }),
-      category: 'jpop',
       sourceUrl: SOURCE_URL,
       crawledAt: CRAWLED_AT,
     });
@@ -206,7 +183,6 @@ describe('normalizeJoysoundRecord — validation', () => {
     expect(() =>
       normalizeJoysoundRecord({
         listItem: listItem({ selSongNo: '' }),
-        category: 'jpop',
         sourceUrl: SOURCE_URL,
         crawledAt: CRAWLED_AT,
       }),
@@ -217,7 +193,6 @@ describe('normalizeJoysoundRecord — validation', () => {
     expect(() =>
       normalizeJoysoundRecord({
         listItem: listItem({ naviGroupId: '' }),
-        category: 'jpop',
         sourceUrl: SOURCE_URL,
         crawledAt: CRAWLED_AT,
       }),

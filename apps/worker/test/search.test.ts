@@ -40,7 +40,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_ko: null,
     artist_aliases: ['Yoa Alias'],
     karaoke_numbers: { tj: '12345', ky: null, joysound: '999001' },
-    categories: ['jpop'],
     crawled_at: '2026-01-01T00:00:00.000Z',
   },
   {
@@ -51,7 +50,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: 'Kenshi Yonezu',
     artist_ko: null,
     karaoke_numbers: { tj: '67890', ky: null, joysound: null },
-    categories: ['anime'],
     crawled_at: '2026-01-02T00:00:00.000Z',
   },
   {
@@ -62,7 +60,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: 'Kurousa P',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: '11111', joysound: null },
-    categories: ['vocaloid'],
     crawled_at: '2026-01-03T00:00:00.000Z',
   },
   {
@@ -74,7 +71,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_ko: '비즈',
     artist_aliases: ['Mrs. GREEN APPLE'],
     karaoke_numbers: { tj: '068748', ky: null, joysound: '613446' },
-    categories: ['anime'],
     crawled_at: '2026-01-04T00:00:00.000Z',
   },
 ];
@@ -88,7 +84,6 @@ const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
     artist_primary: '結束バンド',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
-    categories: ['anime'],
     crawled_at: '2026-01-05T00:00:00.000Z',
   },
   {
@@ -99,7 +94,6 @@ const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
     artist_primary: 'RADWIMPS',
     artist_ko: '래드윔프스',
     karaoke_numbers: { tj: '62466', ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-01-06T00:00:00.000Z',
   },
   {
@@ -110,7 +104,6 @@ const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
     artist_primary: 'DECO*27',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: '44000', joysound: null },
-    categories: ['vocaloid'],
     crawled_at: '2026-01-07T00:00:00.000Z',
   },
   {
@@ -122,7 +115,6 @@ const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
     artist_ko: null,
     artist_aliases: ['Official HIGE DANdism'],
     karaoke_numbers: { tj: '62500', ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-01-08T00:00:00.000Z',
   },
 ];
@@ -148,13 +140,10 @@ describe('worker search API', () => {
     const byHangulInitial = await fetchJson(db, '/api/search?q=%E3%85%85%E3%84%B9');
     const byCompactAlias = await fetchJson(db, '/api/search?q=mrsgreenapple');
     const byProviderNumber = await fetchJson(db, '/api/search?q=TJ068748');
-    const byIndexedFilters = await fetchJson(
-      db,
-      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=tj',
-    );
+    const byIndexedFilters = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF&vendor=tj');
     const byMismatchedIndexedFilters = await fetchJson(
       db,
-      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=ky',
+      '/api/search?q=%E5%A4%A9%E4%BD%BF&vendor=ky',
     );
 
     expect(byJapaneseGram.items.map((song) => song.id)).toEqual(['song-4']);
@@ -192,42 +181,31 @@ describe('worker search API', () => {
     expect(byTitleInitial.items.map((song) => song.id)).toEqual(['parity-radwimps-1']);
   });
 
-  it('applies category and vendor filters', async () => {
+  it('applies vendor filters', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
 
-    const animeWithTj = await fetchJson(db, '/api/search?category=anime&vendor=tj');
-    const animeWithKy = await fetchJson(db, '/api/search?category=anime&vendor=ky');
+    const withTj = await fetchJson(db, '/api/search?vendor=tj');
+    const withKy = await fetchJson(db, '/api/search?vendor=ky');
 
-    expect(animeWithTj.items.map((song) => song.id)).toEqual(['song-2', 'song-4']);
-    expect(animeWithKy.items).toEqual([]);
+    expect(withTj.items.map((song) => song.id)).toEqual(['song-1', 'song-2', 'song-4']);
+    expect(withKy.items.map((song) => song.id)).toEqual(['song-3']);
   });
 
-  it('applies category and vendor filters while using the derived search index', async () => {
+  it('applies vendor filters while using the derived search index', async () => {
     const statements: string[] = [];
     const db = createD1WithSongs(FIXTURE_RECORDS, {
       inspectStatement: (sql) => statements.push(sql),
     });
 
-    const animeWithTj = await fetchJson(
-      db,
-      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=tj',
-    );
-    const animeWithKy = await fetchJson(
-      db,
-      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=anime&vendor=ky',
-    );
-    const vocaloidWithTj = await fetchJson(
-      db,
-      '/api/search?q=%E5%A4%A9%E4%BD%BF&category=vocaloid&vendor=tj',
-    );
+    const withTj = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF&vendor=tj');
+    const withKy = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF&vendor=ky');
 
-    expect(animeWithTj.items.map((song) => song.id)).toEqual(['song-4']);
-    expect(animeWithKy.items).toEqual([]);
-    expect(vocaloidWithTj.items).toEqual([]);
+    expect(withTj.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(withKy.items).toEqual([]);
 
     const indexedSql = statements.find((sql) => sql.includes('FROM search_tokens st'));
     expect(indexedSql).toBeDefined();
-    expect(indexedSql).toMatch(/st\.category = \?/);
+    expect(indexedSql).not.toMatch(/\.category\b/);
     expect(indexedSql).toMatch(/\(st\.provider_mask & \?\) != 0/);
   });
 
@@ -247,12 +225,12 @@ describe('worker search API', () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
 
     const response = await handleRequest(
-      new Request('https://karaoke.example/api/search?category=invalid'),
+      new Request('https://karaoke.example/api/search?vendor=invalid'),
       { DB: db },
     );
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: 'Invalid category: invalid' });
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid vendor: invalid' });
   });
 
   it('accepts long search queries without D1 LIKE-pattern failures', async () => {
@@ -276,7 +254,6 @@ describe('worker search API', () => {
       artist_primary: 'Long Number Artist',
       artist_ko: null,
       karaoke_numbers: { tj: longNumber, ky: null, joysound: null },
-      categories: ['jpop'],
       crawled_at: '2026-01-09T00:00:00.000Z',
     };
     const db = createD1WithSongs([...FIXTURE_RECORDS, longNumberRecord], {

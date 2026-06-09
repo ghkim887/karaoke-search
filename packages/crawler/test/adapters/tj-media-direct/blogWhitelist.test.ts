@@ -122,18 +122,11 @@ describe('buildBlogWhitelist (PR-3 trim)', () => {
 });
 
 describe('buildBlogWhitelist — direct-origin baseline rescue (tj-* / tjpdf-*)', () => {
-  function direct(
-    id: string,
-    tj: string,
-    title: string,
-    artist: string,
-    categories: string[],
-  ): BlogWhitelistRecord {
+  function direct(id: string, tj: string, title: string, artist: string): BlogWhitelistRecord {
     return {
       id,
       artist_primary: artist,
       title_primary: title,
-      categories,
       karaoke_numbers: { tj },
     };
   }
@@ -146,68 +139,36 @@ describe('buildBlogWhitelist — direct-origin baseline rescue (tj-* / tjpdf-*)'
     return { id: 'blog-test', artist_primary: artist, karaoke_numbers: { tj }, ...overrides };
   }
 
-  it('admits a direct tj-* anime baseline record even when artist/title are Latin-only', () => {
-    // Real-corpus shape: tj-20142 family — Latin-only title/artist but
-    // categories=['anime'] is a load-bearing JP signal because anime OSTs
-    // are essentially never non-JPN despite Latin surface form.
+  it('admits a direct tj-* record when title_primary contains kana (hiragana)', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      const set = buildBlogWhitelist([
-        direct('tj-12345', '12345', 'Cruel Angel Thesis', 'YOKO TAKAHASHI', ['anime']),
-      ]);
-      expect(set.has('12345')).toBe(true);
-    } finally {
-      log.mockRestore();
-    }
-  });
-
-  it('admits a direct tjpdf-* vocaloid baseline record even when artist/title are Latin-only', () => {
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      const set = buildBlogWhitelist([
-        direct('tjpdf-67890', '67890', 'World Is Mine', 'Hatsune Miku', ['vocaloid']),
-      ]);
-      expect(set.has('67890')).toBe(true);
-    } finally {
-      log.mockRestore();
-    }
-  });
-
-  it('admits a direct tj-* jpop record when title_primary contains kana (hiragana)', () => {
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      const set = buildBlogWhitelist([
-        direct('tj-11111', '11111', 'あいうえお', 'SomeJpAct', ['jpop']),
-      ]);
+      const set = buildBlogWhitelist([direct('tj-11111', '11111', 'あいうえお', 'SomeJpAct')]);
       expect(set.has('11111')).toBe(true);
     } finally {
       log.mockRestore();
     }
   });
 
-  it('admits a direct tj-* jpop record when title_primary contains kana (katakana)', () => {
+  it('admits a direct tj-* record when title_primary contains kana (katakana)', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      const set = buildBlogWhitelist([
-        direct('tj-22222', '22222', 'アイドル', 'YOASOBI', ['jpop']),
-      ]);
+      const set = buildBlogWhitelist([direct('tj-22222', '22222', 'アイドル', 'YOASOBI')]);
       expect(set.has('22222')).toBe(true);
     } finally {
       log.mockRestore();
     }
   });
 
-  it('does NOT admit a direct tj-* jpop record when only artist kana but title is Latin (featured-only leak shape: HOME / Charlie Puth(Feat.宇多田ヒカル))', () => {
+  it('does NOT admit a direct tj-* record when only artist kana but title is Latin (featured-only leak shape: HOME / Charlie Puth(Feat.宇多田ヒカル))', () => {
     // This is the precise shape we must NOT readmit:
     //   title_primary = 'HOME'  (Latin, no kana)
     //   artist_primary = 'Charlie Puth(Feat.宇多田ヒカル)'  (kana on the featured artist)
-    //   categories = ['jpop']
     // Direct-origin rescue must NOT use artist kana as evidence — only
-    // title kana or anime/vocaloid category counts.
+    // title kana counts.
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const set = buildBlogWhitelist([
-        direct('tj-33333', '33333', 'HOME', 'Charlie Puth(Feat.宇多田ヒカル)', ['jpop']),
+        direct('tj-33333', '33333', 'HOME', 'Charlie Puth(Feat.宇多田ヒカル)'),
       ]);
       expect(set.has('33333')).toBe(false);
     } finally {
@@ -215,26 +176,13 @@ describe('buildBlogWhitelist — direct-origin baseline rescue (tj-* / tjpdf-*)'
     }
   });
 
-  it('does NOT admit a direct tj-* pure-jpop record with Latin-only title and no anime/vocaloid category', () => {
+  it('does NOT admit a direct tj-* record with a Latin-only title', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const set = buildBlogWhitelist([
-        direct('tj-44444', '44444', 'Plain Latin Title', 'Latin Artist', ['jpop']),
+        direct('tj-44444', '44444', 'Plain Latin Title', 'Latin Artist'),
       ]);
       expect(set.has('44444')).toBe(false);
-    } finally {
-      log.mockRestore();
-    }
-  });
-
-  it('does NOT admit a direct tj-* record with no categories at all and no title kana', () => {
-    // Defensive: missing/empty categories must not count as anime/vocaloid.
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      const set = buildBlogWhitelist([
-        direct('tj-55555', '55555', 'Plain Title', 'Plain Artist', []),
-      ]);
-      expect(set.has('55555')).toBe(false);
     } finally {
       log.mockRestore();
     }
@@ -248,19 +196,16 @@ describe('buildBlogWhitelist — direct-origin baseline rescue (tj-* / tjpdf-*)'
         rec('YOASOBI', '10001'),
         // blog-origin: skipped — Han-only artist
         rec('王菲', '10002'),
-        // direct tj-* anime: admitted (Latin artist, anime category)
-        direct('tj-20001', '20001', 'Some Latin OP', 'Latin Artist', ['anime']),
-        // direct tj-* jpop + title kana: admitted
-        direct('tj-20002', '20002', 'カナタイトル', 'Latin Artist', ['jpop']),
-        // direct tj-* jpop + Latin title: NOT admitted (featured-only leak shape)
-        direct('tj-20003', '20003', 'HOME', 'Charlie Puth(Feat.宇多田ヒカル)', ['jpop']),
+        // direct tj-* + title kana: admitted
+        direct('tj-20002', '20002', 'カナタイトル', 'Latin Artist'),
+        // direct tj-* + Latin title: NOT admitted (featured-only leak shape)
+        direct('tj-20003', '20003', 'HOME', 'Charlie Puth(Feat.宇多田ヒカル)'),
       ]);
       expect(set.has('10001')).toBe(true);
       expect(set.has('10002')).toBe(false);
-      expect(set.has('20001')).toBe(true);
       expect(set.has('20002')).toBe(true);
       expect(set.has('20003')).toBe(false);
-      expect(set.size).toBe(3);
+      expect(set.size).toBe(2);
     } finally {
       log.mockRestore();
     }

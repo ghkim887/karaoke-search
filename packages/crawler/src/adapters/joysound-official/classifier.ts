@@ -1,10 +1,9 @@
-import type { Category } from '@karaoke/schema';
 import type { JoysoundDetail, JoysoundListItem } from './types.js';
 
 /**
- * Voicebanks, producer cues, and project names that mark a record as
- * `vocaloid`. Keep free-text tokens narrow: the full JOYSOUND catalog contains
- * ordinary J-pop/Western rows with words like "flower", "MEGUMI", and
+ * Voicebanks, producer cues, and project names that are a positive JP-relevance
+ * admit signal. Keep free-text tokens narrow: the full JOYSOUND catalog
+ * contains ordinary J-pop/Western rows with words like "flower", "MEGUMI", and
  * "TSUGUMI", so Latin voicebank names need artist-field boundaries/context.
  */
 const VOCALOID_SURFACE_TOKENS: readonly string[] = [
@@ -29,7 +28,8 @@ const VOCALOID_ARTIST_PATTERNS: readonly RegExp[] = [
 
 /**
  * Anime signals — these tokens reliably indicate anime/特撮 tie-ups in the
- * JOYSOUND listing `tieupInfo` cell. The list is intentionally narrow:
+ * JOYSOUND listing `tieupInfo` cell and are a positive JP-relevance admit
+ * signal. The list is intentionally narrow:
  *  - `映画` (movie) is excluded — it covers live-action films too.
  *  - `主題歌` / `挿入歌` (theme/insert song) are excluded — they appear in
  *    movie and drama tie-ups and require anime/特撮/character context to
@@ -134,41 +134,37 @@ interface ClassifyArgs {
 }
 
 /**
- * Conservatively classify a JOYSOUND new-release row.
+ * Conservatively decide whether to ADMIT a JOYSOUND new-release row into the
+ * corpus. Returns `true` to admit, `false` to drop.
  *
- * Priority:
- *   known foreign-act alias gate > `vocaloid` > `anime` > `jpop` > drop (`null`).
- *
- * Vocaloid:
- *   Japanese/project tokens can appear in full surface text. Latin voicebank
- *   tokens require artist-field boundaries/context so words like `MEGUMI`,
- *   `TSUGUMI`, or ordinary song titles containing `flower` are not promoted.
- *
- * Anime:
- *   any of `ANIME_TOKENS` appears in the full surface text. `映画` alone is
- *   NOT in the list (catches live-action films too).
- *
- * JPop:
- *   kana (hiragana / katakana) appears in songName / artistName. CJK
- *   ideographs alone are deliberately not enough: the JOYSOUND catalog is
- *   broad, and Han-only title/artist fields are ambiguous with Chinese catalog
- *   rows. `songNameRuby` is deliberately excluded from admission surfaces
- *   because JOYSOUND supplies kana ruby for foreign/K-pop rows too, and ruby
- *   for Latin words like `animation` can contain explicit-looking tokens such
- *   as `アニメーション` without proving an anime tie-up.
- *   tieupInfo and tieupNames are deliberately excluded from J-pop admission —
- *   a Latin-titled Latin-artist row with only `映画「X」` in tieup must not be
- *   promoted to jpop on the strength of one tieup-cell ideograph alone. Staff
- *   metadata is also excluded from admission because it does not identify the
- *   song itself.
- *
- * Drop (null):
- *   known Korean/Western-act alias, or no script signal and no token match.
+ * Foreign-act drop gate (checked first):
+ *   a known Korean/Western-act alias on an artist field drops the row.
  *   Examples: `Set The Tone / aespa`, `Chaconne / ENHYPEN`, `WE WILL ROCK YOU
  *   《LIVEカラオケ》 / QUEEN`, and katakana aliases like `チョンソミ`. These
- *   foreign rows would otherwise wrongly enter the JPop catalog.
+ *   foreign rows would otherwise wrongly enter the catalog.
+ *
+ * Positive admit signals (any one admits):
+ *   - A vocaloid voicebank/project token in the surface text, OR a vocaloid
+ *     artist-field pattern. Japanese/project tokens can appear in full surface
+ *     text; Latin voicebank tokens require artist-field boundaries/context so
+ *     words like `MEGUMI`, `TSUGUMI`, or ordinary titles containing `flower`
+ *     are not promoted.
+ *   - An anime/特撮 token (`ANIME_TOKENS`) in the surface text. `映画` alone is
+ *     NOT in the list (catches live-action films too).
+ *   - kana (hiragana / katakana) in songName / artistName. CJK ideographs
+ *     alone are deliberately not enough: the JOYSOUND catalog is broad, and
+ *     Han-only title/artist fields are ambiguous with Chinese catalog rows.
+ *     `songNameRuby` is deliberately excluded because JOYSOUND supplies kana
+ *     ruby for foreign/K-pop rows too, and ruby for Latin words like
+ *     `animation` can contain tokens such as `アニメーション` without proving a
+ *     tie-up. tieupInfo/tieupNames and staff metadata are excluded from the
+ *     kana admit surface — a Latin-titled Latin-artist row with only `映画「X」`
+ *     in tieup must not be admitted on one tieup-cell ideograph alone.
+ *
+ * Drop (false):
+ *   known Korean/Western-act alias, or no positive signal at all.
  */
-export function classifyJoysoundRecord({ listItem, detail }: ClassifyArgs): Category | null {
+export function classifyJoysoundRecord({ listItem, detail }: ClassifyArgs): boolean {
   const titleArtistParts: string[] = [listItem.songName, listItem.artistName];
   const surfaceParts: string[] = [listItem.songName, listItem.artistName, listItem.tieupInfo ?? ''];
   const artistFields: string[] = [listItem.artistName];
@@ -186,14 +182,14 @@ export function classifyJoysoundRecord({ listItem, detail }: ClassifyArgs): Cate
   const titleArtist = titleArtistParts.join(' ');
   const artistSurface = artistFields.join(' ');
 
-  if (artistFields.some(isKnownKoreanAct) || artistFields.some(isKnownWesternAct)) return null;
+  if (artistFields.some(isKnownKoreanAct) || artistFields.some(isKnownWesternAct)) return false;
   if (
     containsAny(surface, VOCALOID_SURFACE_TOKENS) ||
     matchesAny(artistSurface, VOCALOID_ARTIST_PATTERNS)
   ) {
-    return 'vocaloid';
+    return true;
   }
-  if (containsAny(surface, ANIME_TOKENS)) return 'anime';
-  if (hasKanaScript(titleArtist)) return 'jpop';
-  return null;
+  if (containsAny(surface, ANIME_TOKENS)) return true;
+  if (hasKanaScript(titleArtist)) return true;
+  return false;
 }

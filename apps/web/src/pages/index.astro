@@ -585,12 +585,6 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
         letter-spacing: 0.24px;
       }
 
-      .result-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-      }
-
       .badge {
         display: inline-flex;
         align-items: center;
@@ -607,34 +601,6 @@ const fontsHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fonts/fonts.cs
         text-transform: uppercase;
         color: var(--rui-fg-muted);
       }
-
-      /* DESIGN.md §4 Secondary Pill treatment — scaled down for inline content
-         tag use. Deviations from §4 baseline (documented):
-           - Padding: 6px 14px (vs §4's 14px 32px) — this is an inline tag
-             inside a card, NOT a primary CTA. Generous CTA padding would
-             dominate the card row.
-           - Typography: 12px / 500 / 0.6px tracking, uppercase (vs §3 Body
-             Semibold 16px / 600 / 0.16px) — picks the small uppercase caption
-             treatment used elsewhere on small inline labels (`.badge-label`,
-             `.empty-section-title`). 16px would overflow the card row at 3
-             tags + a category chip.
-           - No border (per brief — Secondary Pill has no border in either
-             theme).
-           - No opacity hover — this is a non-interactive `<span>`. */
-      .badge-category {
-        background: var(--rui-pill-secondary-bg);
-        color: var(--rui-pill-secondary-fg);
-        border-radius: var(--rui-radius-pill);
-        padding: 6px 14px;
-        text-transform: uppercase;
-      }
-
-      /* Category-modifier classes (`.badge-category-jpop`, etc.) previously
-         dimmed the foreground to --rui-fg-muted to match the legacy washed-out
-         look. The brief now requires Secondary Pill foreground contrast, so
-         the modifiers intentionally inherit `.badge-category`'s color
-         (--rui-pill-secondary-fg). They remain in the DOM as future hooks for
-         per-category tinting if it's ever wanted, but no longer dim. */
 
       .result-numbers {
         display: flex;

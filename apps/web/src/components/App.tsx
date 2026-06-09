@@ -1,12 +1,10 @@
-import type { Category, SongRecord } from '@karaoke/schema';
+import type { SongRecord } from '@karaoke/schema';
 import type { JSX } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useFavorites } from '../lib/favorites.js';
-import { filterByCategory, filterByVendors } from '../lib/filter.js';
+import { filterByVendors } from '../lib/filter.js';
 import type { IndexBundle } from '../lib/search.js';
 import { type SearchVendor, getApiSearchBaseUrl, loadIndex, searchApi } from '../lib/search.js';
-import type { CategoryFilter } from './CategoryChips.js';
-import { CategoryChips } from './CategoryChips.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';
@@ -42,8 +40,8 @@ type RenderMode = 'error' | 'loading' | 'favorites-empty' | 'favorites' | 'brows
 
 /**
  * Single root island. Fetches `/data/songs.json` once on mount, builds the
- * MiniSearch index, then re-runs queries reactively on `query` /
- * `categoryFilter` changes. Results are capped at 50 (spec §UI).
+ * MiniSearch index, then re-runs queries reactively on `query` changes.
+ * Results are capped at 50 (spec §UI).
  *
  * `inputValue` is the controlled value shown in the `<input>` — it updates
  * immediately on every keystroke (or when a featured chip is clicked).
@@ -57,17 +55,9 @@ function selectedVendorForApi(selectedVendors: ReadonlySet<Vendor>): SearchVendo
   return selectedVendors.values().next().value as SearchVendor | undefined;
 }
 
-function apiCategory(categoryFilter: CategoryFilter): Category | undefined {
-  return categoryFilter === 'all' ? undefined : categoryFilter;
-}
-
-function apiBrowseKey(
-  query: string,
-  categoryFilter: CategoryFilter,
-  selectedVendors: ReadonlySet<Vendor>,
-): string {
+function apiBrowseKey(query: string, selectedVendors: ReadonlySet<Vendor>): string {
   const vendorKey = Array.from(selectedVendors).sort().join(',');
-  return `${query}\u0000${categoryFilter}\u0000${vendorKey}`;
+  return `${query}\u0000${vendorKey}`;
 }
 
 export function App({ songCount }: AppProps) {
@@ -78,7 +68,6 @@ export function App({ songCount }: AppProps) {
   const [inputValue, setInputValue] = useState('');
   // Debounced search query — only updated after 150 ms of quiet.
   const [query, setQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const [activeTab, setActiveTab] = useState<TabId>('browse');
   const [apiBrowse, setApiBrowse] = useState<ApiBrowseState>({ key: '', records: null });
@@ -121,11 +110,9 @@ export function App({ songCount }: AppProps) {
       return;
     }
     let cancelled = false;
-    const key = apiBrowseKey(query, categoryFilter, selectedVendors);
+    const key = apiBrowseKey(query, selectedVendors);
     const vendor = selectedVendorForApi(selectedVendors);
-    const category = apiCategory(categoryFilter);
     const apiOptions = { query, limit: RESULT_LIMIT };
-    if (category !== undefined) Object.assign(apiOptions, { category });
     if (vendor !== undefined) Object.assign(apiOptions, { vendor });
     searchApi(apiBaseUrl, apiOptions)
       .then((records) => {
@@ -137,7 +124,7 @@ export function App({ songCount }: AppProps) {
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, activeTab, query, categoryFilter, selectedVendors]);
+  }, [apiBaseUrl, activeTab, query, selectedVendors]);
 
   /** Called on every keystroke from SearchBox. Updates the visible input
    *  immediately and schedules a debounced search-query update. */
@@ -168,7 +155,6 @@ export function App({ songCount }: AppProps) {
     }
     setInputValue('');
     setQuery('');
-    setCategoryFilter('all');
     setSelectedVendors(new Set());
     setActiveTab(newTab);
   };
@@ -205,7 +191,7 @@ export function App({ songCount }: AppProps) {
       // the request is pending or if it fails. Favorites remain local because the
       // favorite id set is user-local browser state.
       if (query === '') return [];
-      const currentApiKey = apiBrowseKey(query, categoryFilter, selectedVendors);
+      const currentApiKey = apiBrowseKey(query, selectedVendors);
       if (apiBaseUrl !== null && apiBrowse.key === currentApiKey && apiBrowse.records !== null) {
         candidates = apiBrowse.records;
       } else {
@@ -219,18 +205,8 @@ export function App({ songCount }: AppProps) {
         candidates = records;
       }
     }
-    const byCategory = filterByCategory(candidates, categoryFilter);
-    return filterByVendors(byCategory, selectedVendors).slice(0, RESULT_LIMIT);
-  }, [
-    bundle,
-    query,
-    activeTab,
-    favoriteIds,
-    categoryFilter,
-    selectedVendors,
-    apiBaseUrl,
-    apiBrowse,
-  ]);
+    return filterByVendors(candidates, selectedVendors).slice(0, RESULT_LIMIT);
+  }, [bundle, query, activeTab, favoriteIds, selectedVendors, apiBaseUrl, apiBrowse]);
 
   const toggleVendor = (v: Vendor) => {
     setSelectedVendors((prev) => {
@@ -335,7 +311,6 @@ export function App({ songCount }: AppProps) {
     <main class="results">
       <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
       <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
-      <CategoryChips selected={categoryFilter} onChange={setCategoryFilter} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
         {resultCount}건 / {resultCount} results

@@ -1,4 +1,4 @@
-import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
+import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import {
   compactSearchText,
   makeCharacterNgrams,
@@ -29,7 +29,6 @@ type Vendor = (typeof VENDORS)[number];
 type TitleKoSource = NonNullable<SongRecord['title_ko_source']>;
 type TitleKoConfidence = NonNullable<SongRecord['title_ko_confidence']>;
 
-const CATEGORIES = ['jpop', 'vocaloid', 'anime'] as const;
 const VENDORS = ['tj', 'ky', 'joysound'] as const;
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
@@ -79,14 +78,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 export async function handleSearchRequest(request: Request, db: D1DatabaseLike): Promise<Response> {
   const url = new URL(request.url);
   const query = url.searchParams.get('q')?.trim() ?? '';
-  const category = parseCategory(url.searchParams.get('category'));
   const vendor = parseVendor(url.searchParams.get('vendor'));
   const limit = parseLimit(url.searchParams.get('limit'));
   const offset = parseCursor(url.searchParams.get('cursor'));
 
   const candidateRows = await findCandidateRows(db, {
     query,
-    category,
     vendor,
     limit: limit + 1,
     offset,
@@ -322,7 +319,7 @@ async function hydrateSongs(
 
   const ids = rows.map((row) => row.id);
   const placeholders = ids.map(() => '?').join(', ');
-  const [numberRows, categoryRows, aliasRows] = await Promise.all([
+  const [numberRows, aliasRows] = await Promise.all([
     allRows<KaraokeNumberRow>(
       db
         .prepare(
@@ -330,16 +327,6 @@ async function hydrateSongs(
           FROM karaoke_numbers
           WHERE song_id IN (${placeholders})
           ORDER BY song_id ASC, provider ASC`,
-        )
-        .bind(...ids),
-    ),
-    allRows<CategoryRow>(
-      db
-        .prepare(
-          `SELECT song_id, category
-          FROM song_categories
-          WHERE song_id IN (${placeholders})
-          ORDER BY song_id ASC, position ASC`,
         )
         .bind(...ids),
     ),
@@ -356,11 +343,9 @@ async function hydrateSongs(
   ]);
 
   const numbersBySong = new Map<string, KaraokeNumbers>();
-  const categoriesBySong = new Map<string, Category[]>();
   const aliasesBySong = new Map<string, string[]>();
   for (const id of ids) {
     numbersBySong.set(id, { tj: null, ky: null, joysound: null });
-    categoriesBySong.set(id, []);
     aliasesBySong.set(id, []);
   }
 
@@ -369,9 +354,6 @@ async function hydrateSongs(
     if (numbers !== undefined) {
       numbers[row.provider] = row.number;
     }
-  }
-  for (const row of categoryRows) {
-    categoriesBySong.get(row.song_id)?.push(row.category);
   }
   for (const row of aliasRows) {
     aliasesBySong.get(row.song_id)?.push(row.alias);
@@ -390,7 +372,6 @@ async function hydrateSongs(
         ? { artist_aliases: aliases }
         : {}),
       karaoke_numbers: numbersBySong.get(row.id) ?? { tj: null, ky: null, joysound: null },
-      categories: categoriesBySong.get(row.id) ?? [],
       crawled_at: row.crawled_at,
       ...(row.media_context_ko !== null ? { media_context_ko: row.media_context_ko } : {}),
       ...(row.title_ko_source !== null ? { title_ko_source: row.title_ko_source } : {}),
@@ -407,17 +388,9 @@ async function allRows<T>(statement: D1PreparedStatementLike): Promise<T[]> {
 function appendSongFilters(
   where: string[],
   values: D1Value[],
-  params: Pick<SearchQueryParams, 'category' | 'vendor'>,
+  params: Pick<SearchQueryParams, 'vendor'>,
   songAlias: string,
 ): void {
-  if (params.category !== undefined) {
-    where.push(`EXISTS (
-      SELECT 1 FROM song_categories sc
-      WHERE sc.song_id = ${songAlias}.id AND sc.category = ?
-    )`);
-    values.push(params.category);
-  }
-
   if (params.vendor !== undefined) {
     where.push(`EXISTS (
       SELECT 1 FROM karaoke_numbers vn
@@ -430,13 +403,9 @@ function appendSongFilters(
 function appendIndexFilters(
   where: string[],
   values: D1Value[],
-  params: Pick<SearchQueryParams, 'category' | 'vendor'>,
+  params: Pick<SearchQueryParams, 'vendor'>,
   indexAlias: string,
 ): void {
-  if (params.category !== undefined) {
-    where.push(`${indexAlias}.category = ?`);
-    values.push(params.category);
-  }
   if (params.vendor !== undefined) {
     where.push(`(${indexAlias}.provider_mask & ?) != 0`);
     values.push(VENDOR_MASKS[params.vendor]);
@@ -455,7 +424,7 @@ function appendKaraokeNumberCandidateSubquery({
 }: {
   subqueries: string[];
   values: D1Value[];
-  params: Pick<SearchQueryParams, 'category' | 'vendor'>;
+  params: Pick<SearchQueryParams, 'vendor'>;
   provider: Vendor | undefined;
   predicateSql: string;
   predicateValues: readonly D1Value[];
@@ -471,13 +440,6 @@ function appendKaraokeNumberCandidateSubquery({
   if (params.vendor !== undefined) {
     where.push('kn.provider = ?');
     branchValues.push(params.vendor);
-  }
-  if (params.category !== undefined) {
-    where.push(`EXISTS (
-      SELECT 1 FROM song_categories sc
-      WHERE sc.song_id = kn.song_id AND sc.category = ?
-    )`);
-    branchValues.push(params.category);
   }
 
   subqueries.push(`
@@ -551,16 +513,6 @@ function hasNonAsciiCharacter(value: string): boolean {
   return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
-function parseCategory(value: string | null): Category | undefined {
-  if (value === null || value === '') {
-    return undefined;
-  }
-  if (!isOneOf(value, CATEGORIES)) {
-    throw new BadRequestError(`Invalid category: ${value}`);
-  }
-  return value;
-}
-
 function parseVendor(value: string | null): Vendor | undefined {
   if (value === null || value === '') {
     return undefined;
@@ -628,7 +580,6 @@ interface SearchQueryToken {
 
 interface SearchQueryParams {
   query: string;
-  category: Category | undefined;
   vendor: Vendor | undefined;
   limit: number;
   offset: number;
@@ -652,11 +603,6 @@ interface KaraokeNumberRow {
   song_id: string;
   provider: Vendor;
   number: string | null;
-}
-
-interface CategoryRow {
-  song_id: string;
-  category: Category;
 }
 
 interface AliasRow {

@@ -10,7 +10,7 @@ The app is optimized for quick phone use at karaoke: search a song, filter by ka
 
 1. Open the [live site](https://ghkim887.github.io/karaoke-search/).
 2. Search by Japanese title, Korean title, artist name, or romanized text.
-3. Narrow results with category chips (`J-pop`, `Vocaloid`, `Anime`) or vendor chips (`TJ`, `KY`, `JOYSOUND`).
+3. Narrow results with vendor chips (`TJ`, `KY`, `JOYSOUND`).
 4. Tap a karaoke number badge to copy it to your clipboard.
 5. Star songs to keep them in the device-local `즐겨찾기` tab.
 6. Check the footer for the last committed DB update date, then verify on the actual karaoke machine if the number is critical.
@@ -25,14 +25,6 @@ The current checked-in corpus contains **25,902 songs** from two main sources:
 | --- | ---: | --- |
 | j-pop-playlist.tistory.com | 21,390 | Korean blog source with TJ/KY/JOYSOUND mappings and Korean title/artist metadata. |
 | TJ Media catalog | 4,512 | TJ public catalog API records admitted through Japanese-relevance filters and cache-backed rescue rules. |
-
-Category coverage:
-
-| Category | Records |
-| --- | ---: |
-| J-pop | 20,263 |
-| Vocaloid | 3,238 |
-| Anime | 2,401 |
 
 Vendor-number coverage, with overlap because one song can have multiple karaoke systems:
 
@@ -53,7 +45,7 @@ Korean metadata coverage:
 
 ## Data sources and attribution
 
-This project stores and serves metadata only: song titles, artists, karaoke numbers, categories, source URLs, and crawl timestamps. It does **not** host lyrics or fan content.
+This project stores and serves metadata only: song titles, artists, karaoke numbers, source URLs, and crawl timestamps. It does **not** host lyrics or fan content.
 
 Primary sources:
 
@@ -63,11 +55,10 @@ Primary sources:
 The crawler also applies post-processing and quality gates, including:
 
 - schema validation with `@karaoke/schema`
-- category exclusivity rules (`jpop`, `vocaloid`, `anime`)
 - TJ Japanese-relevance filters
 - Korean/C-pop leak drop lists
 - artist alias normalization
-- anime songbook section-tag enrichment
+- anime songbook coverage enrichment
 - cached LLM Korean-title replay and manual title fixes
 - stale TJ search-cache pruning
 
@@ -80,8 +71,7 @@ This is a pnpm + TypeScript monorepo.
 | Path | Purpose |
 | --- | --- |
 | `apps/web` | Astro static site with a Preact search island and MiniSearch client-side index. |
-| `packages/schema` | Shared `SongRecord` schema, category definitions, and Ajv validation. |
-| `packages/category-rules` | Shared category priority/exclusivity rules used by crawler scripts. |
+| `packages/schema` | Shared `SongRecord` schema and Ajv validation. |
 | `packages/crawler` | Adapter-based crawler pipeline and two-tier record merger. |
 | `scripts/` | Data post-processing, validation, PDF ingest, translation-cache replay, and regression tests. |
 | `.github/workflows/crawl.yml` | Weekly/dispatch data refresh workflow that opens crawl-output PRs. |

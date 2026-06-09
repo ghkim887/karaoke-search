@@ -51,8 +51,7 @@ describe('App loading-state mitigation', () => {
   });
 });
 
-// Fixture corpus used by the tab-behavior tests below. Three records cover the
-// three categories so chip-narrowing assertions have a unique winner.
+// Fixture corpus used by the tab-behavior tests below.
 const fixtureRecords: SongRecord[] = [
   {
     id: 'r1',
@@ -60,7 +59,6 @@ const fixtureRecords: SongRecord[] = [
     title_ko: '아이돌',
     artist_primary: 'YOASOBI',
     artist_ko: '요아소비',
-    categories: ['jpop'],
     karaoke_numbers: { tj: '12345', ky: null, joysound: null },
     source_url: 'https://example.invalid/1',
     crawled_at: '2026-04-29T00:00:00.000Z',
@@ -71,7 +69,6 @@ const fixtureRecords: SongRecord[] = [
     title_ko: null,
     artist_primary: '米津玄師',
     artist_ko: '요네즈 켄시',
-    categories: ['anime'],
     karaoke_numbers: { tj: '67890', ky: null, joysound: null },
     source_url: 'https://example.invalid/2',
     crawled_at: '2026-04-29T00:00:00.000Z',
@@ -82,7 +79,6 @@ const fixtureRecords: SongRecord[] = [
     title_ko: '천본앵',
     artist_primary: '初音ミク',
     artist_ko: '하츠네 미쿠',
-    categories: ['vocaloid'],
     karaoke_numbers: { tj: null, ky: '11111', joysound: null },
     source_url: 'https://example.invalid/3',
     crawled_at: '2026-04-29T00:00:00.000Z',
@@ -323,22 +319,6 @@ describe('App tab behavior', () => {
     expect(cards[1]?.textContent).toContain('Idol');
   });
 
-  it('with Favorites active and an empty search box, applying a category chip narrows the body', async () => {
-    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r3', 'r1', 'r2']));
-    await mount();
-    await clickFavoritesTab(host);
-    // Find the Vocaloid chip in the category-chip group (rendered as a
-    // <div role="radiogroup">, not a <fieldset>).
-    const chips = Array.from(host.querySelectorAll<HTMLButtonElement>('.chip-group .chip'));
-    const vocaloidChip = chips.find((c) => c.textContent?.trim() === 'Vocaloid');
-    expect(vocaloidChip).toBeDefined();
-    vocaloidChip?.click();
-    await flushPromises();
-    const cards = host.querySelectorAll<HTMLElement>('[data-testid="result-card"]');
-    expect(cards.length).toBe(1);
-    expect(cards[0]?.textContent).toContain('Senbonzakura');
-  });
-
   it('with Favorites active, typing a query narrows the body case-insensitively', async () => {
     localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r1', 'r2', 'r3']));
     await mount();
@@ -363,7 +343,6 @@ describe('App tab behavior', () => {
       artist_primary: 'スピッツ',
       artist_ko: null,
       artist_aliases: ['Spitz'],
-      categories: ['jpop'],
       karaoke_numbers: { tj: '99999', ky: null, joysound: null },
       source_url: 'https://example.invalid/4',
       crawled_at: '2026-04-29T00:00:00.000Z',
@@ -462,22 +441,15 @@ describe('App tab behavior', () => {
     expect(host.querySelector('.result-list')).toBeNull();
   });
 
-  it('switching tabs resets input, category chip, and vendor chip to defaults', async () => {
+  it('switching tabs resets input and vendor chip to defaults', async () => {
     localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r1', 'r2', 'r3']));
     await mount();
 
-    // --- Browse tab: type a query, pick a category chip, pick a vendor chip ---
+    // --- Browse tab: type a query, pick a vendor chip ---
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     typeQuery(host, 'idol');
     vi.advanceTimersByTime(150);
     vi.useRealTimers();
-    await flushPromises();
-
-    // Pick the Anime category chip.
-    const chips = Array.from(host.querySelectorAll<HTMLButtonElement>('.chip-group .chip'));
-    const animeChip = chips.find((c) => c.textContent?.trim() === 'Anime');
-    expect(animeChip).toBeDefined();
-    animeChip?.click();
     await flushPromises();
 
     // Pick the TJ vendor chip.
@@ -496,13 +468,6 @@ describe('App tab behavior', () => {
     const inputAfter = host.querySelector<HTMLInputElement>('.search-input');
     expect(inputAfter?.value).toBe('');
 
-    // 전체 (All) chip must be selected (aria-checked="true").
-    const allChip = Array.from(host.querySelectorAll<HTMLButtonElement>('.chip-group .chip')).find(
-      (c) => c.textContent?.trim() === '전체',
-    );
-    expect(allChip).toBeDefined();
-    expect(allChip?.getAttribute('aria-checked')).toBe('true');
-
     // No vendor chip should be active.
     const activeVendorChips = Array.from(
       host.querySelectorAll<HTMLButtonElement>('.chip-group-vendor .chip'),
@@ -518,14 +483,9 @@ describe('App tab behavior', () => {
     tabs[0]?.click();
     await flushPromises();
 
-    // Still clean defaults: empty input, 전체 selected, no vendor active.
+    // Still clean defaults: empty input, no vendor active.
     const inputAfterBrowse = host.querySelector<HTMLInputElement>('.search-input');
     expect(inputAfterBrowse?.value).toBe('');
-
-    const allChipBrowse = Array.from(
-      host.querySelectorAll<HTMLButtonElement>('.chip-group .chip'),
-    ).find((c) => c.textContent?.trim() === '전체');
-    expect(allChipBrowse?.getAttribute('aria-checked')).toBe('true');
 
     const activeVendorChipsBrowse = Array.from(
       host.querySelectorAll<HTMLButtonElement>('.chip-group-vendor .chip'),

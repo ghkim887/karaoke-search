@@ -1,4 +1,4 @@
-import type { Category, SongRecord } from '@karaoke/schema';
+import type { SongRecord } from '@karaoke/schema';
 import MiniSearch from 'minisearch';
 import { normalize } from './normalize.js';
 import { fetchWithRetry } from './retry.js';
@@ -82,7 +82,6 @@ export type SearchVendor = 'tj' | 'ky' | 'joysound';
 
 export interface ApiSearchOptions {
   query: string;
-  category?: Category;
   vendor?: SearchVendor;
   limit?: number;
   fetchImpl?: typeof fetch;
@@ -105,9 +104,6 @@ export async function searchApi(baseUrl: string, options: ApiSearchOptions): Pro
   const url = new URL('api/search', `${baseUrl.replace(/\/+$/u, '')}/`);
   url.searchParams.set('q', options.query);
   url.searchParams.set('limit', String(options.limit ?? 50));
-  if (options.category !== undefined) {
-    url.searchParams.set('category', options.category);
-  }
   if (options.vendor !== undefined) {
     url.searchParams.set('vendor', options.vendor);
   }

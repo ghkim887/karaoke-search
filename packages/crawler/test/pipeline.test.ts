@@ -20,7 +20,6 @@ function record(over: Partial<SongRecord>): SongRecord {
     artist_primary: 'Some Artist',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-05-04T10:00:00Z',
     ...over,
   };
@@ -50,7 +49,6 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
       source_url: 'https://blog.test/100',
       title_primary: '夜に駆ける',
       artist_primary: 'YOASOBI｜요아소비',
-      categories: ['jpop'],
       karaoke_numbers: { tj: null, ky: null, joysound: '600001' },
     });
     const tj = record({
@@ -58,7 +56,6 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
       source_url: 'https://tj.test/200',
       title_primary: '夜に駆ける',
       artist_primary: '요아소비',
-      categories: ['jpop'],
       karaoke_numbers: { tj: '99999', ky: null, joysound: null },
     });
 
@@ -85,7 +82,6 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
       source_url: 'https://blog.test/1000',
       title_primary: 'Visual A',
       artist_primary: 'Aimer (Visual Artist)｜Aimer',
-      categories: ['jpop'],
       karaoke_numbers: { tj: null, ky: null, joysound: '700001' },
     });
     const aimerSinger = record({
@@ -93,7 +89,6 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
       source_url: 'https://blog.test/2000',
       title_primary: 'Singer S',
       artist_primary: 'Aimer (Singer)｜Aimer',
-      categories: ['jpop'],
       karaoke_numbers: { tj: null, ky: null, joysound: '700002' },
     });
     const bareAimer = record({
@@ -101,7 +96,6 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
       source_url: 'https://tj.test/9999',
       title_primary: 'Some Track',
       artist_primary: 'Aimer',
-      categories: ['jpop'],
       karaoke_numbers: { tj: '88888', ky: null, joysound: null },
     });
 
@@ -126,14 +120,12 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
       source_url: 'https://blog.test/1000',
       title_primary: 'Foo',
       artist_primary: 'Aimer (Visual Artist)｜Aimer',
-      categories: ['jpop'],
     });
     const b = record({
       id: 'blog-2000-0',
       source_url: 'https://blog.test/2000',
       title_primary: 'Bar',
       artist_primary: 'Aimer (Singer)｜Aimer',
-      categories: ['jpop'],
     });
 
     const outPath = join(outDir, 'songs.json');

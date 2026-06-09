@@ -39,13 +39,6 @@ describe('normalize — fixture-derived records', () => {
   });
   const records = raws.map((r) => normalize(r, CRAWLED_AT));
 
-  it('every record has categories=["jpop"] exactly (length 1, value "jpop")', () => {
-    for (const r of records) {
-      expect(r.categories).toHaveLength(1);
-      expect(r.categories[0]).toBe('jpop');
-    }
-  });
-
   it('every record has title_ko and artist_ko null', () => {
     for (const r of records) {
       expect(r.title_ko).toBeNull();
@@ -89,7 +82,6 @@ describe('normalize — direct unit cases', () => {
       artist_primary: 'Artist',
       artist_ko: null,
       karaoke_numbers: { tj: '12345', ky: null, joysound: null },
-      categories: ['jpop'],
       ...over,
     };
   }
@@ -98,12 +90,5 @@ describe('normalize — direct unit cases', () => {
     expect(() =>
       normalize(rawFor({ karaoke_numbers: { tj: null, ky: null, joysound: null } }), CRAWLED_AT),
     ).toThrow(/no TJ number/);
-  });
-
-  it('forces categories=["jpop"] regardless of incoming raw value', () => {
-    // Defensive: even if a parser variant drifted, the normalizer pins
-    // the category at the v2 spec's uniform value.
-    const r = normalize(rawFor({}), CRAWLED_AT);
-    expect(r.categories).toEqual(['jpop']);
   });
 });

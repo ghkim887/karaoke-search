@@ -12,10 +12,10 @@ interface VendorChipsProps {
 }
 
 /**
- * Three machine-vendor toggle chips. Mirrors `CategoryChips` (fieldset/legend,
- * arrow-key keyboard nav, `aria-pressed`). When any chips are selected, the OR
- * filter in `filterByVendors` keeps records that have a number on AT LEAST ONE
- * selected vendor. Composes with `filterByCategory` (single-select) and the search query as AND in `App.tsx`.
+ * Three machine-vendor toggle chips (fieldset/legend, arrow-key keyboard nav,
+ * `aria-pressed`). When any chips are selected, the OR filter in
+ * `filterByVendors` keeps records that have a number on AT LEAST ONE selected
+ * vendor. Composes with the search query as AND in `App.tsx`.
  */
 const CHIPS: ReadonlyArray<{ value: Vendor; label: string }> = [
   { value: 'tj', label: 'TJ' },

@@ -22,7 +22,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: '結束バンド',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
-    categories: ['anime'],
     crawled_at: '2026-01-01T00:00:00.000Z',
   },
 ];

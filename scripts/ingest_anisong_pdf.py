@@ -10,22 +10,19 @@ defense-in-depth. A validation gate in main() asserts the new output is clean
 before writing songs.json. The script is now idempotent: it drops existing
 tjpdf-* records before merging the freshly-parsed ones in.
 
-Behavior:
+Behavior (coverage-only):
   1. Parses scripts/data/anisong_utf8.txt (pdftotext -table output) and extracts
-     (tj_code, title, artist, section).
+     (tj_code, title, artist).
   2. Drops existing tjpdf-* records from apps/web/public/data/songs.json.
-  3. For TJ codes already in the corpus (non-tjpdf-* rows), adds the section
-     ('anime' or 'vocaloid') to categories. Mutual-exclusivity rule (priority
-     vocaloid > anime > jpop): every record ends with at most one of
-     {jpop, vocaloid, anime}. See `apply_category_exclusivity()` below.
-  4. For new TJ codes, inserts a new SongRecord with id 'tjpdf-{code}' and
-     categories=[section].
+  3. For new TJ codes (absent from the corpus), inserts a new SongRecord with
+     id 'tjpdf-{code}'. This is pure corpus coverage — the PDF is the only
+     source for ~632 anime/vocaloid karaoke numbers not present in the blog or
+     TJ-catalog adapters.
 
-Section detection: the PDF has an in-flow left-column divider that flips the
-active section. Pages 1-83 + 96-97 are tagged 'anime' (the latter is tokusatsu,
-which the schema collapses into anime). Pages 84-95 (starting at the '1925'
-row at L8281 of the cached text, marked by a left-column `보컬로이드,` cell)
-are tagged 'vocaloid'. See `_SECTION_DIVIDERS` for the full map.
+The category/section dimension (jpop/vocaloid/anime) was removed from the
+schema, so this script no longer reads PDF section dividers, applies any
+section/category tag, or mutates existing corpus rows. PDF codes that already
+exist in the corpus are simply skipped.
 
 NOT a recurring crawler — schema-equivalent to a side-channel monthly enrichment.
 Run from repo root: `python scripts/ingest_anisong_pdf.py`
@@ -61,7 +58,6 @@ from lib.artist_split import (  # noqa: E402
     load_drop_keys,
     normalize_for_match,
 )
-from lib.category_exclusivity import apply_category_exclusivity  # noqa: E402
 
 # Force stdout/stderr to UTF-8 at module load (idempotent).
 ensure_utf8_stdio()
@@ -103,18 +99,6 @@ CLUSTERING_RULES_SIDECAR = (
     / 'clustering-rules.json'
 )
 
-# Category-priority JSON sidecar produced by `scripts/export-category-priority.mjs`
-# (which reads `CATEGORY_PRIORITY` from the built dist of
-# `packages/schema/src/index.ts`). Tracked in git alongside the schema package.
-# Treated as graceful-degradation when missing or malformed: fall back to a
-# hardcoded copy of the priority tuple with a stderr warning.
-CATEGORY_PRIORITY_SIDECAR = (
-    REPO_ROOT
-    / 'packages'
-    / 'schema'
-    / 'category-priority.json'
-)
-
 # Anchor: a 4-or-5 digit number not adjacent to other digits or a decimal point.
 # (Most codes are 5 digits; ~33 legacy codes are 4 digits like 6479, 6899, 6943.)
 # Note: lookbehind also excludes '.' to defend against decimal-like patterns.
@@ -136,51 +120,6 @@ _BOILERPLATE_PATTERNS = [
     re.compile(r'반주기에 탑재'),                          # disclaimer
     re.compile(r'^일본 애니메이션 곡'),                    # page header
 ]
-
-# Section-divider tokens that appear as the LEFT-MOST cell of a record row, marking
-# the start of a new categorical section. Map from divider keyword (matched as the
-# first non-space token, with optional trailing comma) to the SongRecord category.
-#
-# Anchors observed in scripts/data/anisong_utf8.txt (TJ Anisong 2026-02 PDF):
-#   - L8281: `보컬로이드,       1925   28000  冨田悠斗(とみー/T-POCKET)`
-#       → first vocaloid track. The `보컬로이드,` (vocaloid) cell on the same line
-#         as `1925` is the in-flow divider — pages 84-95 (vocaloid/utaite/nicodō).
-#   - L9732: `특촬물  Alive A Life     28526  松本梨화`
-#       → first tokusatsu track (page 96). Tokusatsu / sentai is anime-adjacent
-#         live-action — per CLAUDE.md the schema only has jpop/vocaloid/anime, so
-#         it maps back to 'anime'.
-#
-# IMPORTANT: we do NOT use the page-header line `일본 애니메이션 곡 ... 보컬로이드,...`
-# as the divider, because page 84's page-header appears at L8178 but page 84's
-# initial records (L8180-L8279, Hypnosis Mic) are still anime — only the in-flow
-# left-column divider at L8281 is authoritative.
-_SECTION_DIVIDERS: dict[str, str] = {
-    '보컬로이드': 'vocaloid',
-    '특촬물': 'anime',
-}
-
-# Regex: leftmost token of a line == one of the divider keywords (with optional
-# trailing comma), followed by ≥2 spaces (column gap to title cell). Anchored at
-# the start of the original line; the divider must occupy column 0.
-_SECTION_DIVIDER_RE = re.compile(
-    r'^(보컬로이드|특촬물),?\s{2,}\S'
-)
-
-
-
-def detect_section_divider(line: str) -> str | None:
-    """If `line` starts with a known section divider, return the new category.
-
-    Returns None for non-divider lines. The caller is responsible for using this
-    BEFORE record emission so the divider's own row gets tagged with the new
-    category (e.g. '1925' itself is the first vocaloid track).
-    """
-    m = _SECTION_DIVIDER_RE.match(line)
-    if not m:
-        return None
-    keyword = m.group(1)
-    return _SECTION_DIVIDERS.get(keyword)
-
 
 def is_boilerplate(line: str) -> bool:
     return any(p.search(line) for p in _BOILERPLATE_PATTERNS)
@@ -494,18 +433,15 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
       - Korean transliteration lines are collected by `_collect_translit_lines` and
         column-aligned to title/artist positions by `_assign_translit`.
 
-    Section tracking: we maintain a `current_section` (default 'anime') that flips
-    when we encounter an in-flow left-column divider row (see `_SECTION_DIVIDERS`).
-    Each emitted record carries its section, used downstream as `categories[0]`.
+    Coverage-only: the category/section dimension was removed from the schema,
+    so `parse_pdf` no longer tracks PDF section dividers. Emitted records carry
+    only (tj, title, artist, title_ko, artist_ko, source_line).
     """
     records: list[dict] = []
     caveats: list[str] = []
 
     n = len(text_lines)
     i = 0
-    # Default section: anime. Flips to 'vocaloid' at line 8281 (`보컬로이드,...1925`)
-    # and back to 'anime' at line 9732 (`특촬물  Alive A Life`).
-    current_section: str = 'anime'
 
     while i < n:
         line = text_lines[i].rstrip('\n')
@@ -513,12 +449,6 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
         if is_boilerplate(line):
             i += 1
             continue
-
-        # Section divider detection BEFORE record emission: the divider row IS
-        # the first record of the new section (e.g. '1925' for vocaloid).
-        new_section = detect_section_divider(line)
-        if new_section is not None:
-            current_section = new_section
 
         anchor = extract_anchor(line)
         if anchor is None:
@@ -597,7 +527,6 @@ def parse_pdf(text_lines: list[str]) -> tuple[list[dict], list[str]]:
             'title_ko': title_ko,
             'artist_ko': artist_ko,
             'source_line': i,
-            'section': current_section,
         })
 
         # Advance past the lines we consumed for artist-wrap.
@@ -709,127 +638,6 @@ def _assign_translit(
     return title_ko, artist_ko
 
 
-
-
-# PDF vocaloid-section denylist (Fix 1, 2026-05-04 — see audit memory
-# `project_zutomayo_pdf_section_contamination.md` and TODO 1 from the
-# 2026-05-03 vocaloid-mistag audit).
-#
-# Why this exists: the TJ Media anisong PDF's `보컬로이드, 우타이테, 니코동 등`
-# section (pages 84-95) is trusted verbatim by `parse_pdf()` — but the section
-# actually mixes real Vocaloid producers with non-Vocaloid bands that have
-# anime / Nicodō tie-in tracks. The 7 acts below were confirmed by the
-# 2026-05-03 audit as PDF-section mistags. When the parser would tag one of
-# their tracks `vocaloid`, downgrade the tag to `anime` instead — these acts
-# are anime-tied, not Vocaloid producers.
-#
-# Pattern parallels `koreanArtistDropList.ts`: hand-curated, source-of-truth
-# in one place. Python is the only consumer of this list (it never escapes
-# the PDF ingest path), so no JSON sidecar is needed.
-#
-# Membership uses `artist_components_for_drop_check()` so collab forms hit
-# too (e.g. `HoneyWorks(Feat.GUMI)` → component `HoneyWorks` matches even
-# when the featured act is a real Vocaloid). This is intentional per spec:
-# every PDF-section HoneyWorks row is a human-vocal mistag; legitimate
-# HoneyWorks×Vocaloid records reach the corpus via the blog adapter (which
-# this filter does NOT touch — blog-path mistags are a separate vector).
-#
-# IMPLICIT COUPLING: `CHiCOwithHoneyWorks` denylist matching depends on
-# `DROP_SPLIT_RE` containing `\s+meets\s+` so the corpus surface form
-# `CHiCO with HoneyWorks meets 中川翔子` decomposes to a `HoneyWorks`
-# component that hits this set. Removing the `meets` token from the splitter
-# silently breaks the denylist; do not unhook one without the other.
-_PDF_VOCALOID_DENYLIST_RAW: tuple[str, ...] = (
-    'Gackt',
-    'GARNiDELiA',
-    'LIP×LIP',
-    '三月のパンタシア',
-    'Team.ねこかん[猫]',
-    'HoneyWorks',
-    'CHiCOwithHoneyWorks',
-)
-
-# Normalized at module-load time so the hot path is a single set membership
-# test per parsed PDF row. Matches `normalize_for_match` so PDF surface
-# forms (`CHiCOwithHoneyWorks`) and corpus surface forms (`CHiCO with
-# HoneyWorks`) collapse to the same key.
-_PDF_VOCALOID_DENYLIST: frozenset[str] = frozenset(
-    normalize_for_match(name) for name in _PDF_VOCALOID_DENYLIST_RAW
-)
-
-
-def is_artist_in_pdf_vocaloid_denylist(artist: str) -> bool:
-    """Return True if any component of `artist` is in the PDF vocaloid denylist.
-
-    Used by `main()` to downgrade `section='vocaloid'` to `section='anime'`
-    BEFORE the section value is written into `categories`, so the resulting
-    record has `['anime']` and is unaffected by `applyCategoryExclusivity`'s
-    `vocaloid > anime` priority.
-    """
-    if not _PDF_VOCALOID_DENYLIST:  # defensive — empty set means filter off
-        return False
-    for component in artist_components_for_drop_check(artist):
-        key = normalize_for_match(component)
-        if key and key in _PDF_VOCALOID_DENYLIST:
-            return True
-    return False
-
-
-# PDF vocaloid-section skip-list (2026-05-07): mainstream J-pop artists the
-# May 2026 PDF erroneously placed in its vocaloid section. Unlike the denylist
-# above (which downgrades vocaloid→anime for anime-tied acts), these artists'
-# tracks are NOT anime tie-ins — forcing them to `anime` would also be wrong.
-# The correct action is to skip section-tagging entirely and preserve whatever
-# categories the corpus record already carries.
-#
-# Checked BEFORE the denylist in `main()`. Skip-list match → no section tag
-# applied to the matched corpus record. Denylist match → downgrade to anime.
-# Non-match → normal section tag applied.
-#
-# Artists confirmed as all-mistakes from the May 2026 run:
-#   米津玄師: 9 vocaloid records (all jpop in corpus pre-PDF)
-#   ずっと真夜中でいいのに。: 11 vocaloid records (all jpop pre-PDF)
-#   Aimer: 2 vocaloid records (jpop pre-PDF; ポラリス/After Rain are My Hero
-#          Academia OPs but blog missed OP context — jpop is less wrong than
-#          vocaloid; anime-context detection for Aimer is a separate follow-up)
-_PDF_VOCALOID_SKIP_RAW: tuple[str, ...] = (
-    '米津玄師',
-    'ずっと真夜中でいいのに。',
-    'Aimer',
-)
-
-_PDF_VOCALOID_SKIP_LIST: frozenset[str] = frozenset(
-    normalize_for_match(name) for name in _PDF_VOCALOID_SKIP_RAW
-)
-
-
-def is_artist_in_pdf_vocaloid_skip_list(artist: str) -> bool:
-    """Return True if any component of `artist` is in the PDF vocaloid skip-list.
-
-    Used by `main()` to suppress section-tagging entirely for mainstream artists
-    the PDF mistakenly placed in its vocaloid section, whose tracks are NOT
-    anime tie-ins (so vocaloid→anime would also be wrong). Checked BEFORE
-    `is_artist_in_pdf_vocaloid_denylist` in the main loop.
-
-    Also strips trailing `(+co-vocalist)` / `（+co-vocalist）` parentheticals
-    from each component before matching — the blog adapter uses `+` notation for
-    co-vocalists (e.g. `米津玄師(+菅田将暉)`) which `DROP_SPLIT_RE` does not
-    split, so without this strip the lead artist would not be extracted and the
-    skip-list match would silently fail.
-    """
-    if not _PDF_VOCALOID_SKIP_LIST:  # defensive — empty set means filter off
-        return False
-    _co_vocalist_re = re.compile(r'\s*[（(]\+[^()（）]+[)）]\s*$')
-    for component in artist_components_for_drop_check(artist):
-        # Try the component as-is first, then with trailing (+co) stripped.
-        for candidate in (component, _co_vocalist_re.sub('', component)):
-            key = normalize_for_match(candidate)
-            if key and key in _PDF_VOCALOID_SKIP_LIST:
-                return True
-    return False
-
-
-
 def main() -> int:
     if not PDF_TEXT.exists():
         print(f'ERROR: missing {PDF_TEXT}', file=sys.stderr)
@@ -925,151 +733,73 @@ def main() -> int:
     # Load the drop-list sidecar (graceful degradation if missing/malformed).
     drop_keys = load_drop_keys(DROP_LIST_SIDECAR)
 
-    matched = 0
-    already_tagged = 0  # corpus rows that already had the section's tag
+    already_in_corpus = 0  # PDF codes already present (skipped — coverage-only)
     dropped_kpop = 0  # PDF rows skipped because the artist matched the drop list
-    vocaloid_downgraded = 0  # rows downgraded from vocaloid->anime by the PDF denylist
-    vocaloid_skipped = 0  # rows skipped entirely (skip-list: preserve original categories)
-    section_counts: dict[str, int] = {'anime': 0, 'vocaloid': 0}
     new_records: list[dict] = []
     title_fallbacks: list[str] = []  # codes where title_primary fell back to artist
 
     for r in unique:
         code = r['tj']
-        section = r.get('section', 'anime')
-        if section not in section_counts:
-            print(
-                f'WARN: unknown section {section!r} for tj={code} — defaulting to anime',
-                file=sys.stderr,
-            )
-            section = 'anime'
-        # PDF vocaloid-section skip-list (2026-05-07): mainstream artists the
-        # PDF mistakenly placed in its vocaloid section whose tracks are NOT
-        # anime tie-ins. Skip section-tagging entirely and scrub any stale
-        # `vocaloid` tag the corpus record may carry from a prior ingest run
-        # that fired before this skip-list existed. Checked BEFORE the denylist.
-        #
-        # Two-path handling (mirrors drop-list):
-        #   - Existing corpus row: scrub stale `vocaloid` if present, then skip
-        #     further processing (no new section tag added, no new record created).
-        #   - New record (code not in corpus): skip entirely — don't insert.
-        if section == 'vocaloid' and is_artist_in_pdf_vocaloid_skip_list(r['artist']):
-            vocaloid_skipped += 1
-            if code in tj_to_idx:
-                rec = corpus[tj_to_idx[code]]
-                cats = list(rec.get('categories', []))
-                if 'vocaloid' in cats:
-                    # Scrub the stale vocaloid tag and restore jpop if the record
-                    # would otherwise be left with an empty categories list.
-                    cats = [c for c in cats if c != 'vocaloid']
-                    if not cats:
-                        cats = ['jpop']
-                    rec['categories'] = cats
+        # Coverage-only: codes already present in the corpus are left untouched
+        # (no category/section dimension remains to mutate). Only brand-new
+        # codes are inserted.
+        if code in tj_to_idx:
+            already_in_corpus += 1
             continue
-        # PDF vocaloid-section denylist (Fix 1, 2026-05-04): the PDF's
-        # `보컬로이드,` section header is trusted by parse_pdf(), but the
-        # section actually mixes Vocaloid producers with non-Vocaloid bands
-        # that have anime/Nicodō tie-in tracks. Downgrade the 7 known
-        # mistagged acts to `anime` BEFORE the section value lands in
-        # `categories`, so applyCategoryExclusivity's vocaloid>anime priority
-        # can't silently re-elevate the tag during a later merge.
-        #
-        # Track the downgrade flag separately because the matched-existing-row
-        # path also needs it: a corpus row that already carries `vocaloid`
-        # (from a prior ingest's merge into a tj-* record) must have that
-        # stale tag REPLACED with `anime`, not unioned — the union path goes
-        # through applyCategoryExclusivity which would re-elevate vocaloid.
-        downgrade_triggered = (
-            section == 'vocaloid'
-            and is_artist_in_pdf_vocaloid_denylist(r['artist'])
-        )
-        if downgrade_triggered:
-            section = 'anime'
-            vocaloid_downgraded += 1
-        section_counts[section] = section_counts.get(section, 0) + 1
         # Drop-list filter: Korean acts that leak through both the TS adapter's
-        # filter chain AND the PDF ingest must be refused at this gate too.
-        # Skips both the patch-existing path AND the new-record-insert path so
-        # a tjpdf-* never gets created for a known Korean act, AND a corpus
-        # row matching such an artist doesn't get re-tagged anime/vocaloid.
+        # filter chain AND the PDF ingest must be refused at this gate too, so a
+        # tjpdf-* never gets created for a known Korean act.
         if is_artist_in_drop_list(r['artist'], drop_keys):
             dropped_kpop += 1
             continue
-        if code in tj_to_idx:
-            rec = corpus[tj_to_idx[code]]
-            cats = list(rec.get('categories', []))
-            # If we downgraded, strip any pre-existing `vocaloid` tag the row
-            # carried in from a prior merge. Without this scrub, the union +
-            # applyCategoryExclusivity step below sees `['vocaloid', 'anime']`
-            # and the vocaloid>anime priority re-elevates the tag — leaving
-            # stale-vocaloid records in the corpus. The downgrade is
-            # authoritative for these 7 acts: every PDF-section row of theirs
-            # is a non-Vocaloid track, so the prior-merge vocaloid tag was
-            # itself sourced from a now-corrected tjpdf-* sibling.
-            if downgrade_triggered and 'vocaloid' in cats:
-                cats = [c for c in cats if c != 'vocaloid']
-            if section in cats:
-                already_tagged += 1
-            else:
-                cats.append(section)
-            # Apply v2 mutual-exclusivity rule (priority vocaloid > anime > jpop):
-            # records tagged 'vocaloid' lose 'anime' and 'jpop'; records tagged
-            # 'anime' lose 'jpop'. See `apply_category_exclusivity()`.
-            rec['categories'] = apply_category_exclusivity(cats)
-            matched += 1
-        else:
-            # New record. Need non-empty title_primary; fall back to artist if title missing.
-            # Track this fallback as a caveat for the report.
-            if not r['title']:
-                title_fallbacks.append(code)
-            title = r['title'] or r['artist']
-            artist = r['artist']
-            # Preserve the original crawled_at for codes already in the corpus
-            # (byte-idempotency: unchanged inputs produce an identical file).
-            # Fall back to a fresh timestamp only for genuinely new tj codes.
-            crawled_at_for_record = tj_to_old_crawled_at.get(code) or iso_utc_now()
-            # Preserve artist_aliases from the prior tjpdf-* row when the artist
-            # identity is unchanged. The pre-pass drops the old row, so without
-            # this carry-forward every pipeline run silently strips aliases from
-            # tjpdf-* records (byte-instability + data loss). We compare on
-            # `normalize_for_match` of the canonical artist string so trivial
-            # surface differences (case, whitespace, full-width/ASCII variants)
-            # don't trigger a false-positive drop; if the PDF emits a genuinely
-            # different artist we decline to forward potentially-stale aliases.
-            preserved_aliases = tj_to_old_aliases.get(code)
-            if preserved_aliases is not None:
-                prior_artist = tj_to_old_artist_primary.get(code, '')
-                if normalize_for_match(prior_artist) != normalize_for_match(artist):
-                    preserved_aliases = None
-            new_record: dict = {
-                'id': f'tjpdf-{code}',
-                'source_url': SOURCE_URL,
-                'title_primary': title,
-                # title_ko: now populated when the column-aligned translit match
-                # produces a chunk for the title column. Polish-pass change —
-                # previously we threw it out (set to None) because of mechanical
-                # transliteration concerns, but column-aligned chunks are real
-                # Korean transliterations from the official PDF and provide
-                # meaningful search coverage for the JP→KR side.
-                'title_ko': r['title_ko'],
-                'artist_primary': artist,
-                'artist_ko': r['artist_ko'],
-            }
-            # Inject artist_aliases at the canonical position (after artist_ko,
-            # before karaoke_numbers — matches the merger's emission order in
-            # packages/crawler/src/merge.ts and the alias-resolver output).
-            if preserved_aliases:
-                new_record['artist_aliases'] = preserved_aliases
-            new_record.update({
-                'karaoke_numbers': {
-                    'tj': code,
-                    'ky': None,
-                    'joysound': None,
-                },
-                'categories': [section],
-                'crawled_at': crawled_at_for_record,
-            })
-            new_records.append(new_record)
+        # New record. Need non-empty title_primary; fall back to artist if title missing.
+        # Track this fallback as a caveat for the report.
+        if not r['title']:
+            title_fallbacks.append(code)
+        title = r['title'] or r['artist']
+        artist = r['artist']
+        # Preserve the original crawled_at for codes already seen in a prior
+        # tjpdf-* row (byte-idempotency: unchanged inputs produce an identical
+        # file). Fall back to a fresh timestamp only for genuinely new tj codes.
+        crawled_at_for_record = tj_to_old_crawled_at.get(code) or iso_utc_now()
+        # Preserve artist_aliases from the prior tjpdf-* row when the artist
+        # identity is unchanged. The pre-pass drops the old row, so without
+        # this carry-forward every pipeline run silently strips aliases from
+        # tjpdf-* records (byte-instability + data loss). We compare on
+        # `normalize_for_match` of the canonical artist string so trivial
+        # surface differences (case, whitespace, full-width/ASCII variants)
+        # don't trigger a false-positive drop; if the PDF emits a genuinely
+        # different artist we decline to forward potentially-stale aliases.
+        preserved_aliases = tj_to_old_aliases.get(code)
+        if preserved_aliases is not None:
+            prior_artist = tj_to_old_artist_primary.get(code, '')
+            if normalize_for_match(prior_artist) != normalize_for_match(artist):
+                preserved_aliases = None
+        new_record: dict = {
+            'id': f'tjpdf-{code}',
+            'source_url': SOURCE_URL,
+            'title_primary': title,
+            # title_ko: populated when the column-aligned translit match produces
+            # a chunk for the title column — real Korean transliterations from the
+            # official PDF that provide meaningful JP→KR search coverage.
+            'title_ko': r['title_ko'],
+            'artist_primary': artist,
+            'artist_ko': r['artist_ko'],
+        }
+        # Inject artist_aliases at the canonical position (after artist_ko,
+        # before karaoke_numbers — matches the merger's emission order in
+        # packages/crawler/src/merge.ts and the alias-resolver output).
+        if preserved_aliases:
+            new_record['artist_aliases'] = preserved_aliases
+        new_record.update({
+            'karaoke_numbers': {
+                'tj': code,
+                'ky': None,
+                'joysound': None,
+            },
+            'crawled_at': crawled_at_for_record,
+        })
+        new_records.append(new_record)
 
     corpus.extend(new_records)
 
@@ -1088,17 +818,11 @@ def main() -> int:
         f.write(f'Validation: artist_spill={artist_spill} title_spill={title_spill} '
                 f'title_eq_artist={title_eq_artist} ({title_eq_artist_ratio:.1%})\n')
         f.write(f'Pre-pass dropped existing tjpdf-* rows: {dropped_old_tjpdf}\n')
-        f.write(f'Section breakdown (parsed records by category):\n')
-        for sect_name in sorted(section_counts.keys()):
-            f.write(f'    {sect_name}: {section_counts[sect_name]}\n')
-        f.write(f'  Matched existing corpus rows (section tag added or kept): {matched}\n')
-        f.write(f'    of which already had the section tag: {already_tagged}\n')
+        f.write(f'  PDF codes already in corpus (skipped — coverage-only): {already_in_corpus}\n')
         f.write(f'  New records inserted: {len(new_records)}\n')
         f.write(f'    of which had to fall back title_primary->artist: {len(title_fallbacks)}\n')
         f.write(f'  Dropped (artist matched Korean-artist drop list): {dropped_kpop}\n')
         f.write(f'  Drop-list keys loaded: {len(drop_keys)}\n')
-        f.write(f'  Vocaloid->anime downgrades (PDF vocaloid-section denylist): {vocaloid_downgraded}\n')
-        f.write(f'  Vocaloid section skipped (skip-list, preserve original categories): {vocaloid_skipped}\n')
         f.write(f'Caveats / skipped: {len(caveats)}\n')
         for c in caveats:
             f.write(f'  - {c}\n')
@@ -1108,10 +832,9 @@ def main() -> int:
 
     print(
         f'parsed={len(parsed)} unique={len(unique)} '
-        f'dropped_old_tjpdf={dropped_old_tjpdf} matched={matched} '
+        f'dropped_old_tjpdf={dropped_old_tjpdf} '
+        f'already_in_corpus={already_in_corpus} '
         f'new={len(new_records)} dropped_kpop={dropped_kpop} '
-        f'voc_downgraded={vocaloid_downgraded} '
-        f'voc_skipped={vocaloid_skipped} '
         f'skipped={len(caveats)}'
     )
     print(f'report: {log_path}')

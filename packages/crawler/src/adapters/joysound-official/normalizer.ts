@@ -1,10 +1,9 @@
-import { type Category, type SongRecord, validateSongRecord } from '@karaoke/schema';
+import { type SongRecord, validateSongRecord } from '@karaoke/schema';
 import type { JoysoundDetail, JoysoundListItem } from './types.js';
 
 export interface NormalizeArgs {
   listItem: JoysoundListItem;
   detail?: JoysoundDetail;
-  category: Category;
   sourceUrl: string;
   crawledAt: string;
 }
@@ -44,11 +43,9 @@ export function normalizeJoysoundNumber(raw: string): string {
  *    is Japanese; Korean translations belong to the blog / TJ
  *    transliteration paths. Threading detail ruby data here would lie
  *    about provenance and contaminate the merger's KO_CHAIN.
- *  - `categories` = `[category]` — exactly one tag, pre-classified by the
- *    caller using the conservative classifier.
  */
 export function normalizeJoysoundRecord(args: NormalizeArgs): SongRecord {
-  const { listItem, detail, category, sourceUrl, crawledAt } = args;
+  const { listItem, detail, sourceUrl, crawledAt } = args;
 
   if (listItem.naviGroupId === '') {
     throw new Error('normalizeJoysoundRecord: listItem.naviGroupId is empty');
@@ -72,7 +69,6 @@ export function normalizeJoysoundRecord(args: NormalizeArgs): SongRecord {
       ky: null,
       joysound: normalizeJoysoundNumber(listItem.selSongNo),
     },
-    categories: [category],
     crawled_at: crawledAt,
   };
   validateSongRecord(record);

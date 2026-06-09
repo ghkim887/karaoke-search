@@ -61,7 +61,6 @@ def _make_synthetic_corpus(include_cpop: bool, include_anomaly: bool) -> list[di
             'artist_primary': 'YOASOBI',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '68425', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         },
         {
@@ -72,7 +71,6 @@ def _make_synthetic_corpus(include_cpop: bool, include_anomaly: bool) -> list[di
             'artist_primary': 'LiSA',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '68500', 'ky': None, 'joysound': None},
-            'categories': ['anime'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         },
     ]
@@ -85,7 +83,6 @@ def _make_synthetic_corpus(include_cpop: bool, include_anomaly: bool) -> list[di
             'artist_primary': 'BEYOND',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '70170', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         })
         base.append({
@@ -96,7 +93,6 @@ def _make_synthetic_corpus(include_cpop: bool, include_anomaly: bool) -> list[di
             'artist_primary': 'F4',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '80011', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         })
     if include_anomaly:
@@ -108,7 +104,6 @@ def _make_synthetic_corpus(include_cpop: bool, include_anomaly: bool) -> list[di
             'artist_primary': '-',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '72638', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         })
     return base

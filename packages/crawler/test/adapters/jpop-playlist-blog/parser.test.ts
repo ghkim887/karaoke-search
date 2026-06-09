@@ -47,12 +47,6 @@ describe('parseArtistPage — Ayase /449', () => {
   it('extracts an artist_primary from the lead blockquote', () => {
     expect(records[0]?.artist_primary).toBe('Ayase');
   });
-
-  it('parser leaves categories empty (the crawler tags them)', () => {
-    for (const r of records) {
-      expect(r.categories).toEqual([]);
-    }
-  });
 });
 
 describe('parseArtistPage — RADWIMPS /215', () => {

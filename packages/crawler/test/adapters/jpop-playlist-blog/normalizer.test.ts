@@ -12,7 +12,6 @@ function rawRecord(over: Partial<RawSongRecord>): RawSongRecord {
     artist_primary: 'Artist',
     artist_ko: '아티스트',
     karaoke_numbers: { tj: '1', ky: '2', joysound: '3' },
-    categories: [],
     ...over,
   };
 }
@@ -22,7 +21,6 @@ describe('normalizeRawRecords', () => {
     const recs = normalizeRawRecords(
       [rawRecord({}), rawRecord({}), rawRecord({})],
       '/449',
-      ['jpop'],
       CRAWLED_AT,
     );
     expect(recs.map((r) => r.id)).toEqual(['blog-449-0', 'blog-449-1', 'blog-449-2']);
@@ -31,35 +29,14 @@ describe('normalizeRawRecords', () => {
     }
   });
 
-  it('tags categories ["jpop"] for a /98-only artist', () => {
-    const recs = normalizeRawRecords([rawRecord({})], '/449', ['jpop'], CRAWLED_AT);
-    expect(recs[0]?.categories).toEqual(['jpop']);
-  });
-
-  it('tags categories ["vocaloid"] for a /417-only artist', () => {
-    const recs = normalizeRawRecords([rawRecord({})], '/418', ['vocaloid'], CRAWLED_AT);
-    expect(recs[0]?.categories).toEqual(['vocaloid']);
-  });
-
-  it('tags categories ["vocaloid"] for an artist in both indexes', () => {
-    // The crawler call site applies `applyCategoryExclusivity` to the
-    // jpop/vocaloid set-union BEFORE invoking the normalizer, so the
-    // pair `["jpop", "vocaloid"]` collapses to `["vocaloid"]` at
-    // normalize time. (The schema now enforces this rule directly, and
-    // the normalizer validates against the schema — passing `["jpop",
-    // "vocaloid"]` here would throw.)
-    const recs = normalizeRawRecords([rawRecord({})], '/100', ['vocaloid'], CRAWLED_AT);
-    expect(recs[0]?.categories).toEqual(['vocaloid']);
-  });
-
   it('threads the passed crawled_at through every record', () => {
-    const recs = normalizeRawRecords([rawRecord({}), rawRecord({})], '/449', ['jpop'], CRAWLED_AT);
+    const recs = normalizeRawRecords([rawRecord({}), rawRecord({})], '/449', CRAWLED_AT);
     for (const r of recs) {
       expect(r.crawled_at).toBe(CRAWLED_AT);
     }
   });
 
   it('throws when artistPath does not match /\\d+/', () => {
-    expect(() => normalizeRawRecords([rawRecord({})], 'invalid', ['jpop'], CRAWLED_AT)).toThrow();
+    expect(() => normalizeRawRecords([rawRecord({})], 'invalid', CRAWLED_AT)).toThrow();
   });
 });

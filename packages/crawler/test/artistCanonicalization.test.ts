@@ -134,7 +134,6 @@ function record(over: Partial<SongRecord>): SongRecord {
     artist_primary: 'Some Artist',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-05-04T10:00:00Z',
     ...over,
   };

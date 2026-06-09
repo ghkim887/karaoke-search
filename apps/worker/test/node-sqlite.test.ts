@@ -20,7 +20,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: '高橋洋子',
     artist_ko: null,
     karaoke_numbers: { tj: '068748', ky: null, joysound: '613446' },
-    categories: ['anime'],
     crawled_at: '2026-01-01T00:00:00.000Z',
   },
 ];

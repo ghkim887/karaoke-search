@@ -135,7 +135,7 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
     }
   });
 
-  it('with seeded cache: every emitted record has categories=["jpop"] and TJ number set', async () => {
+  it('with seeded cache: every emitted record has a TJ number set and tj/ky/joysound shape', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'tj-crawler-'));
     const cachePath = join(tmpDir, 'cache.json');
     try {
@@ -154,7 +154,6 @@ describe('TJDirectCrawler.crawl — fixture-stub HTTP', () => {
       // correct.
       expect(records.length).toBeGreaterThan(0);
       for (const r of records) {
-        expect(r.categories).toEqual(['jpop']);
         expect(r.karaoke_numbers.tj).toMatch(/^\d+$/);
         expect(r.karaoke_numbers.ky).toBeNull();
         expect(r.karaoke_numbers.joysound).toBeNull();

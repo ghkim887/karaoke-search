@@ -2,12 +2,6 @@ import Ajv, { type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 
 /**
- * Allowed song categories. Exactly these three values, no others.
- * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-v2-design.md, Data Model section.
- */
-export type Category = (typeof CATEGORY_VALUES)[number];
-
-/**
  * Karaoke machine catalog numbers per source. All values nullable so a record
  * can be created from a single source and merged with others later.
  */
@@ -46,8 +40,6 @@ export interface SongRecord {
   artist_aliases?: string[];
   /** Cross-source karaoke numbers. */
   karaoke_numbers: KaraokeNumbers;
-  /** At least one category, no duplicates. */
-  categories: Category[];
   /** ISO-8601 date-time when the source page was crawled. */
   crawled_at: string;
   /**
@@ -97,10 +89,7 @@ export interface RawSongRecord {
    */
   artist_aliases?: string[];
   karaoke_numbers: KaraokeNumbers;
-  categories: Category[];
 }
-
-const CATEGORY_VALUES = ['jpop', 'vocaloid', 'anime'] as const;
 
 /**
  * Ajv-compatible JSON Schema for `SongRecord`.
@@ -121,7 +110,6 @@ export const songRecordSchema = {
     'artist_primary',
     'artist_ko',
     'karaoke_numbers',
-    'categories',
     'crawled_at',
   ],
   properties: {
@@ -159,21 +147,6 @@ export const songRecordSchema = {
         // word "등록일" that landed in blog-826-175 before the parser guard.
         joysound: { type: ['string', 'null'], pattern: '^[0-9]+$' },
       },
-    },
-    categories: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 1,
-      uniqueItems: true,
-      items: {
-        type: 'string',
-        enum: CATEGORY_VALUES,
-      },
-      // Three-way mutual-exclusivity: at most one of
-      // `{jpop, vocaloid, anime}` per record. Enforced via `maxItems: 1`
-      // (the live enum currently has exactly these three values, so the
-      // constraint reduces to "exactly one tag"). Defense-in-depth alongside
-      // the runtime `applyCategoryExclusivity` helper in @karaoke/category-rules.
     },
     crawled_at: {
       type: 'string',

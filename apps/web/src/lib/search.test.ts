@@ -49,7 +49,6 @@ describe('search index — artist_aliases (spec 2026-05-04)', () => {
       artist_primary: 'ずっと真夜中でいいのに。',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['jpop'],
       crawled_at: '2026-05-04T00:00:00Z',
       ...over,
     };
@@ -139,7 +138,6 @@ describe('API search client', () => {
 
     const result = await searchModule.searchApi('https://api.example.test', {
       query: String.fromCodePoint(0x5929, 0x4f7f),
-      category: 'anime',
       vendor: 'tj',
       limit: 50,
       fetchImpl,
@@ -147,7 +145,7 @@ describe('API search client', () => {
 
     expect(result).toEqual([apiRecord]);
     expect(requested).toEqual([
-      'https://api.example.test/api/search?q=%E5%A4%A9%E4%BD%BF&limit=50&category=anime&vendor=tj',
+      'https://api.example.test/api/search?q=%E5%A4%A9%E4%BD%BF&limit=50&vendor=tj',
     ]);
   });
 });

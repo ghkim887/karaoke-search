@@ -39,13 +39,13 @@ function detail(over: Partial<JoysoundDetail>): JoysoundDetail {
   };
 }
 
-describe('classifyJoysoundRecord — vocaloid', () => {
+describe('classifyJoysoundRecord — admit via vocaloid signal', () => {
   it('marks 初音ミク records as vocaloid via artist name', () => {
     expect(
       classifyJoysoundRecord({
         listItem: listItem({ artistName: '初音ミク', songName: '千本桜' }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 
   it('marks records as vocaloid when the artist is feat. a known voicebank', () => {
@@ -53,7 +53,7 @@ describe('classifyJoysoundRecord — vocaloid', () => {
       classifyJoysoundRecord({
         listItem: listItem({ artistName: '黒うさP feat. 初音ミク', songName: '千本桜' }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 
   it('catches additional voicebank tokens (鏡音リン / GUMI / 重音テト / 可不)', () => {
@@ -70,7 +70,7 @@ describe('classifyJoysoundRecord — vocaloid', () => {
       expect(
         classifyJoysoundRecord({ listItem: listItem({ artistName: name }) }),
         `failed for ${name}`,
-      ).toBe('vocaloid');
+      ).toBe(true);
     }
   });
 
@@ -80,7 +80,7 @@ describe('classifyJoysoundRecord — vocaloid', () => {
         listItem: listItem({}),
         detail: detail({ genreNames: ['Vocaloid'] }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 
   it('catches ボカロ in songName', () => {
@@ -88,7 +88,7 @@ describe('classifyJoysoundRecord — vocaloid', () => {
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'ボカロメドレー', artistName: '某P' }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 
   it('catches プロジェクトセカイ in tieupInfo', () => {
@@ -100,7 +100,7 @@ describe('classifyJoysoundRecord — vocaloid', () => {
           tieupInfo: 'プロジェクトセカイ',
         }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 
   it('catches v flower only with artist-field vocaloid context', () => {
@@ -108,17 +108,17 @@ describe('classifyJoysoundRecord — vocaloid', () => {
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'UnderStand', artistName: 'BCNO feat.flower' }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
 
     expect(
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'Original Song', artistName: 'v flower' }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 });
 
-describe('classifyJoysoundRecord — anime', () => {
+describe('classifyJoysoundRecord — admit via anime signal', () => {
   it('marks アニメ tieupInfo as anime', () => {
     expect(
       classifyJoysoundRecord({
@@ -128,7 +128,7 @@ describe('classifyJoysoundRecord — anime', () => {
           tieupInfo: 'TVアニメ「鬼滅の刃」OP',
         }),
       }),
-    ).toBe('anime');
+    ).toBe(true);
   });
 
   it('marks 主題歌 / 挿入歌 with anime context as anime (via アニメ token)', () => {
@@ -138,7 +138,7 @@ describe('classifyJoysoundRecord — anime', () => {
           listItem: listItem({ tieupInfo: tieup }),
         }),
         `failed for ${tieup}`,
-      ).toBe('anime');
+      ).toBe(true);
     }
   });
 
@@ -147,7 +147,7 @@ describe('classifyJoysoundRecord — anime', () => {
       classifyJoysoundRecord({
         listItem: listItem({ tieupInfo: '特撮「仮面ライダー」OP' }),
       }),
-    ).toBe('anime');
+    ).toBe(true);
   });
 
   it('marks 劇場版 tieupInfo as anime', () => {
@@ -155,7 +155,7 @@ describe('classifyJoysoundRecord — anime', () => {
       classifyJoysoundRecord({
         listItem: listItem({ tieupInfo: '劇場版アニメOP' }),
       }),
-    ).toBe('anime');
+    ).toBe(true);
   });
 
   it('does NOT classify on 映画 or 主題歌 / 挿入歌 without anime context', () => {
@@ -168,7 +168,7 @@ describe('classifyJoysoundRecord — anime', () => {
           tieupInfo: '映画「X」',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
 
     // 映画 + 主題歌 — still no anime/特撮/character context → drop
     expect(
@@ -179,7 +179,7 @@ describe('classifyJoysoundRecord — anime', () => {
           tieupInfo: '映画「X」主題歌',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
 
     // bare 挿入歌 with no anime context → drop
     expect(
@@ -190,7 +190,7 @@ describe('classifyJoysoundRecord — anime', () => {
           tieupInfo: '挿入歌',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('does NOT classify Latin text containing OP/ED letter sequences as anime', () => {
@@ -204,7 +204,7 @@ describe('classifyJoysoundRecord — anime', () => {
           listItem: listItem({ songName, artistName }),
         }),
         `failed for ${songName} / ${artistName}`,
-      ).toBeNull();
+      ).toBe(false);
     }
   });
 
@@ -219,7 +219,7 @@ describe('classifyJoysoundRecord — anime', () => {
           detail: detail({ songName, songNameRuby, artistName }),
         }),
         `failed for ${songName} / ${artistName}`,
-      ).toBeNull();
+      ).toBe(false);
     }
   });
 
@@ -234,7 +234,7 @@ describe('classifyJoysoundRecord — anime', () => {
           tieupNames: ['TVアニメ「X」OP'],
         }),
       }),
-    ).toBe('anime');
+    ).toBe(true);
   });
 
   it('catches CV: / キャラクター tieup signals', () => {
@@ -242,15 +242,15 @@ describe('classifyJoysoundRecord — anime', () => {
       classifyJoysoundRecord({
         listItem: listItem({ tieupInfo: 'キャラクターソング' }),
       }),
-    ).toBe('anime');
+    ).toBe(true);
     expect(
       classifyJoysoundRecord({
         listItem: listItem({ artistName: '主人公(CV:山田太郎)' }),
       }),
-    ).toBe('anime');
+    ).toBe(true);
   });
 
-  it('vocaloid wins over anime when both fire (priority)', () => {
+  it('admits when both vocaloid and anime signals fire', () => {
     expect(
       classifyJoysoundRecord({
         listItem: listItem({
@@ -259,17 +259,17 @@ describe('classifyJoysoundRecord — anime', () => {
           tieupInfo: 'TVアニメ「Y」OP',
         }),
       }),
-    ).toBe('vocaloid');
+    ).toBe(true);
   });
 });
 
-describe('classifyJoysoundRecord — jpop', () => {
+describe('classifyJoysoundRecord — admit via kana signal', () => {
   it('marks pure-kana title songs as jpop', () => {
     expect(
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'よるにかける', artistName: 'YOASOBI' }),
       }),
-    ).toBe('jpop');
+    ).toBe(true);
   });
 
   it('does not drop Japanese rows just because the title contains a Korean-act token', () => {
@@ -277,7 +277,7 @@ describe('classifyJoysoundRecord — jpop', () => {
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'SEVENTEEN', artistName: 'あいみょん' }),
       }),
-    ).toBe('jpop');
+    ).toBe(true);
   });
 
   it('does not use detail ruby alone as J-pop evidence', () => {
@@ -286,7 +286,7 @@ describe('classifyJoysoundRecord — jpop', () => {
         listItem: listItem({ songName: 'Lemon', artistName: '米津玄師' }),
         detail: detail({ songName: 'Lemon', songNameRuby: 'レモン', artistName: '米津玄師' }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('drops pure-Latin foreign rows even when JOYSOUND supplies kana ruby', () => {
@@ -299,17 +299,17 @@ describe('classifyJoysoundRecord — jpop', () => {
           artistName: 'TAYLOR SWIFT',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 });
 
-describe('classifyJoysoundRecord — drop (null)', () => {
+describe('classifyJoysoundRecord — drop', () => {
   it('drops K-pop rows like Set The Tone / aespa', () => {
     expect(
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'Set The Tone', artistName: 'aespa' }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('drops Chaconne / ENHYPEN', () => {
@@ -317,7 +317,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'Chaconne', artistName: 'ENHYPEN' }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('drops pure-Latin K-pop rows even when JOYSOUND supplies kana ruby', () => {
@@ -330,7 +330,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           artistName: 'NCT DREAM',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('drops observed JOYSOUND katakana Korean-act aliases', () => {
@@ -345,7 +345,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           }),
         }),
         `failed for ${artistName}`,
-      ).toBeNull();
+      ).toBe(false);
     }
   });
 
@@ -370,7 +370,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           detail: detail({ songName, artistName }),
         }),
         `failed for ${artistName}`,
-      ).toBeNull();
+      ).toBe(false);
     }
   });
 
@@ -387,7 +387,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
       expect(
         classifyJoysoundRecord({ listItem: listItem({ songName, artistName }) }),
         `failed for ${artistName}`,
-      ).toBeNull();
+      ).toBe(false);
     }
   });
 
@@ -404,7 +404,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           artistName: 'QUEEN',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('does not drop Japanese artists whose names merely contain Western-act substrings', () => {
@@ -417,7 +417,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
       expect(
         classifyJoysoundRecord({ listItem: listItem({ songName, artistName }) }),
         `failed for ${artistName}`,
-      ).not.toBeNull();
+      ).toBe(true);
     }
   });
 
@@ -433,7 +433,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           listItem: listItem({ songName: 'ありがとう', artistName }),
         }),
         `failed for ${artistName}`,
-      ).toBe('jpop');
+      ).toBe(true);
     }
   });
 
@@ -442,7 +442,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
       classifyJoysoundRecord({
         listItem: listItem({ songName: 'Generic Latin', artistName: 'LatinArtist' }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('does not promote ordinary Latin flower/GUMI substrings as vocaloid', () => {
@@ -456,7 +456,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
       expect(
         classifyJoysoundRecord({ listItem: listItem({ songName, artistName }) }),
         `failed for ${songName} / ${artistName}`,
-      ).toBeNull();
+      ).toBe(false);
     }
   });
 
@@ -470,7 +470,7 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           artistName: '买辣椒也用券',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it('does not promote Latin-title rows from staff-only Japanese-script evidence', () => {
@@ -485,6 +485,6 @@ describe('classifyJoysoundRecord — drop (null)', () => {
           composer: 'さとう花子',
         }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 });

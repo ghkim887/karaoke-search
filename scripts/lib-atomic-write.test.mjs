@@ -180,7 +180,6 @@ describe('loadValidator', () => {
       artist_primary: 'TestArtist',
       artist_ko: null,
       karaoke_numbers: { tj: '12345', ky: null, joysound: null },
-      categories: ['jpop'],
       crawled_at: '2024-01-01T00:00:00.000Z',
     };
 

@@ -11,11 +11,9 @@ const WORKER_DIST_PATH = join(__dirname, '..', 'dist', 'index.js');
 const MIGRATIONS_DIR = join(__dirname, '..', 'migrations');
 const OLD_D1_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, sort_order INTEGER NOT NULL, source_url TEXT NOT NULL, title_primary TEXT NOT NULL, title_ko TEXT, artist_primary TEXT NOT NULL, artist_ko TEXT, artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1)), crawled_at TEXT NOT NULL, media_context_ko TEXT, title_ko_source TEXT, title_ko_confidence TEXT);
 CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, PRIMARY KEY (song_id, provider));
-CREATE TABLE IF NOT EXISTS song_categories (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), PRIMARY KEY (song_id, position));
 CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position));
 CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
-CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_song_categories_category ON song_categories(category);`;
+CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;`;
 
 const FIXTURE_RECORDS: SongRecord[] = [
   {
@@ -27,7 +25,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_ko: null,
     artist_aliases: ['Yoa Alias'],
     karaoke_numbers: { tj: '68000', ky: null, joysound: '123456' },
-    categories: ['jpop'],
     crawled_at: '2026-01-01T00:00:00.000Z',
   },
   {
@@ -38,7 +35,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: 'Kurousa P',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: '44999', joysound: null },
-    categories: ['vocaloid'],
     crawled_at: '2026-01-02T00:00:00.000Z',
   },
   {
@@ -49,7 +45,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: 'RADWIMPS',
     artist_ko: '래드윔프스',
     karaoke_numbers: { tj: '62466', ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-01-03T00:00:00.000Z',
   },
 ];
@@ -68,6 +63,16 @@ describe('worker D1 runtime integration', () => {
     expect(migration).toContain('CREATE TABLE IF NOT EXISTS search_texts');
     expect(migration).toContain('CREATE TABLE IF NOT EXISTS search_tokens');
     expect(migration).toContain('CREATE TABLE IF NOT EXISTS search_token_stats');
+  });
+
+  it('ships a migration that drops the category dimension from the D1 schema', () => {
+    const migration = readFileSync(join(MIGRATIONS_DIR, '0003_drop_categories.sql'), 'utf8');
+
+    expect(migration).toContain('DROP TABLE IF EXISTS song_categories');
+    expect(migration).toContain('DROP INDEX IF EXISTS idx_song_categories_category');
+    expect(migration).toContain('ALTER TABLE search_texts_new RENAME TO search_texts');
+    expect(migration).toContain('ALTER TABLE search_tokens_new RENAME TO search_tokens');
+    expect(migration).not.toMatch(/\bcategory\b/);
   });
 
   it('serves search results through Miniflare with a real D1 binding', async () => {
@@ -98,7 +103,7 @@ describe('worker D1 runtime integration', () => {
     await expect(byTitleInitial.json()).resolves.toMatchObject({ items: [FIXTURE_RECORDS[2]] });
   });
 
-  it('upgrades an old D1 schema with 0002 before no-schema import', async () => {
+  it('upgrades an old D1 schema with 0002 and 0003 before no-schema import', async () => {
     const records: SongRecord[] = [
       {
         ...FIXTURE_RECORDS[0],
@@ -109,6 +114,7 @@ describe('worker D1 runtime integration', () => {
     const db = await mf.getD1Database('DB');
     await db.exec(OLD_D1_SCHEMA_SQL);
     await db.exec(readFileSync(join(MIGRATIONS_DIR, '0002_search_index.sql'), 'utf8'));
+    await db.exec(readFileSync(join(MIGRATIONS_DIR, '0003_drop_categories.sql'), 'utf8'));
     await db.exec(buildD1ImportSql(records, { includeSchema: false }));
 
     const byNumberKey = await mf.dispatchFetch('https://karaoke.example/api/search?q=68000');

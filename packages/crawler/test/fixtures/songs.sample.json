@@ -11,9 +11,6 @@
       "ky": "44888",
       "joysound": "613446"
     },
-    "categories": [
-      "jpop"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -28,9 +25,6 @@
       "ky": "44856",
       "joysound": "611954"
     },
-    "categories": [
-      "jpop"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -45,9 +39,6 @@
       "ky": "44343",
       "joysound": "431361"
     },
-    "categories": [
-      "jpop"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -62,9 +53,6 @@
       "ky": null,
       "joysound": "492138"
     },
-    "categories": [
-      "jpop"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -79,9 +67,6 @@
       "ky": "57802",
       "joysound": "624629"
     },
-    "categories": [
-      "jpop"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -96,9 +81,6 @@
       "ky": "44078",
       "joysound": "689592"
     },
-    "categories": [
-      "jpop"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -113,9 +95,6 @@
       "ky": "43431",
       "joysound": "116054"
     },
-    "categories": [
-      "vocaloid"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -130,9 +109,6 @@
       "ky": null,
       "joysound": "695802"
     },
-    "categories": [
-      "vocaloid"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -147,9 +123,6 @@
       "ky": "44200",
       "joysound": "699094"
     },
-    "categories": [
-      "vocaloid"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   },
   {
@@ -164,9 +137,6 @@
       "ky": "57766",
       "joysound": "632002"
     },
-    "categories": [
-      "vocaloid"
-    ],
     "crawled_at": "2026-04-26T04:19:55.007Z"
   }
 ]

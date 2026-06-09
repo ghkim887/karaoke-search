@@ -19,9 +19,6 @@ export interface TranslitEnrichment {
  *
  *  - `id` is `tj-${karaoke_numbers.tj}` (e.g. `tj-68781`). The schema's
  *    `id` regex `^[a-z0-9-]+-\d+$` accepts this shape.
- *  - `categories` is uniformly `['jpop']`. No heuristic anime/vocaloid
- *    inference at this layer — those tags ride along through cross-source Tier A
- *    merges in the merger.
  *  - Korean fields (`title_ko`, `artist_ko`) come from the optional
  *    `enrichment` argument when supplied (sourced from TJ's `searchSong`
  *    API per the PR-1 translit pass). When omitted, they default to `null`
@@ -49,7 +46,6 @@ export function normalize(
     artist_primary: raw.artist_primary,
     artist_ko: enrichment?.sortSongKo ?? null,
     karaoke_numbers: { tj, ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: crawledAt,
   };
   validateSongRecord(record);

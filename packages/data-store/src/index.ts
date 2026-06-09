@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
+import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import {
   compactSearchText,
@@ -38,20 +38,18 @@ function sqlite(): SqliteModule {
 
 const D1_TABLE_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, sort_order INTEGER NOT NULL, source_url TEXT NOT NULL, title_primary TEXT NOT NULL, title_ko TEXT, artist_primary TEXT NOT NULL, artist_ko TEXT, artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1)), crawled_at TEXT NOT NULL, media_context_ko TEXT, title_ko_source TEXT, title_ko_confidence TEXT);
 CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, number_key TEXT, PRIMARY KEY (song_id, provider));
-CREATE TABLE IF NOT EXISTS song_categories (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), PRIMARY KEY (song_id, position));
 CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position));
-CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact));
-CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), weight INTEGER NOT NULL, category TEXT NOT NULL CHECK (category IN ('jpop', 'vocaloid', 'anime')), provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
+CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact));
+CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
 CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token));`;
 
 const D1_INDEX_SCHEMA_SQL = `CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_number ON karaoke_numbers(number, provider, song_id) WHERE number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_number_key ON karaoke_numbers(number_key, provider, song_id) WHERE number_key IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_song_categories_category ON song_categories(category);
-CREATE INDEX IF NOT EXISTS idx_search_texts_compact ON search_texts(text_compact, category, song_id);
+CREATE INDEX IF NOT EXISTS idx_search_texts_compact ON search_texts(text_compact, song_id);
 CREATE INDEX IF NOT EXISTS idx_search_texts_song ON search_texts(song_id);
-CREATE INDEX IF NOT EXISTS idx_search_tokens_lookup ON search_tokens(kind, token, category, song_id);
+CREATE INDEX IF NOT EXISTS idx_search_tokens_lookup ON search_tokens(kind, token, song_id);
 CREATE INDEX IF NOT EXISTS idx_search_tokens_song ON search_tokens(song_id);`;
 
 export const D1_SCHEMA_SQL = `${D1_TABLE_SCHEMA_SQL}
@@ -116,13 +114,9 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
   `);
   const insertImportId = db.prepare('INSERT INTO temp_import_song_ids (id) VALUES (?)');
   const deleteNumbers = db.prepare('DELETE FROM karaoke_numbers WHERE song_id = ?');
-  const deleteCategories = db.prepare('DELETE FROM song_categories WHERE song_id = ?');
   const deleteAliases = db.prepare('DELETE FROM artist_aliases WHERE song_id = ?');
   const insertNumber = db.prepare(
     'INSERT INTO karaoke_numbers (song_id, provider, number, number_key) VALUES (?, ?, ?, ?)',
-  );
-  const insertCategory = db.prepare(
-    'INSERT INTO song_categories (song_id, position, category) VALUES (?, ?, ?)',
   );
   const insertAlias = db.prepare(
     'INSERT INTO artist_aliases (song_id, position, alias) VALUES (?, ?, ?)',
@@ -134,9 +128,8 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
       text_norm,
       text_compact,
       weight,
-      category,
       provider_mask
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
   );
   const insertSearchToken = db.prepare(
     `INSERT INTO search_tokens (
@@ -145,9 +138,8 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
       song_id,
       field,
       weight,
-      category,
       provider_mask
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
   );
   const insertSearchTokenStat = db.prepare(
     'INSERT INTO search_token_stats (kind, token, df, idf_scaled) VALUES (?, ?, ?, ?)',
@@ -175,7 +167,6 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
       );
 
       deleteNumbers.run(record.id);
-      deleteCategories.run(record.id);
       deleteAliases.run(record.id);
 
       insertNumber.run(
@@ -197,9 +188,6 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
         karaokeNumberKey(record.karaoke_numbers.joysound),
       );
 
-      record.categories.forEach((category, categoryIndex) => {
-        insertCategory.run(record.id, categoryIndex, category);
-      });
       record.artist_aliases?.forEach((alias, aliasIndex) => {
         insertAlias.run(record.id, aliasIndex, alias);
       });
@@ -212,7 +200,6 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
         row.textNorm,
         row.textCompact,
         row.weight,
-        row.category,
         row.providerMask,
       );
     }
@@ -223,7 +210,6 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
         row.songId,
         row.field,
         row.weight,
-        row.category,
         row.providerMask,
       );
     }
@@ -260,18 +246,12 @@ export function exportSongs(db: SongDatabase): SongRecord[] {
     )
     .all() as unknown as StoredSongRow[];
 
-  const categoryQuery = db.prepare(
-    'SELECT category FROM song_categories WHERE song_id = ? ORDER BY position ASC',
-  );
   const numberQuery = db.prepare('SELECT provider, number FROM karaoke_numbers WHERE song_id = ?');
   const aliasQuery = db.prepare(
     'SELECT alias FROM artist_aliases WHERE song_id = ? ORDER BY position ASC',
   );
 
   return rows.map((row): SongRecord => {
-    const categories = (categoryQuery.all(row.id) as unknown as CategoryRow[]).map(
-      (categoryRow) => categoryRow.category,
-    );
     const karaokeNumbers: KaraokeNumbers = { tj: null, ky: null, joysound: null };
     for (const numberRow of numberQuery.all(row.id) as unknown as KaraokeNumberRow[]) {
       karaokeNumbers[numberRow.provider] = numberRow.number;
@@ -291,7 +271,6 @@ export function exportSongs(db: SongDatabase): SongRecord[] {
         ? { artist_aliases: aliases }
         : {}),
       karaoke_numbers: karaokeNumbers,
-      categories,
       crawled_at: row.crawled_at,
       ...(row.media_context_ko !== null ? { media_context_ko: row.media_context_ko } : {}),
       ...(row.title_ko_source !== null ? { title_ko_source: row.title_ko_source } : {}),
@@ -341,7 +320,6 @@ export function buildD1ImportSql(
     'DELETE FROM search_tokens;',
     'DELETE FROM search_texts;',
     'DELETE FROM artist_aliases;',
-    'DELETE FROM song_categories;',
     'DELETE FROM karaoke_numbers;',
     'DELETE FROM songs;',
   );
@@ -395,18 +373,6 @@ export function buildD1ImportSql(
 
   pushBatchedInsert(
     lines,
-    'song_categories',
-    ['song_id', 'position', 'category'],
-    songCategoryImportRows(records),
-    ([songId, position, category]) => [
-      sqlLiteral(songId),
-      sqlInteger(position),
-      sqlLiteral(category),
-    ],
-  );
-
-  pushBatchedInsert(
-    lines,
     'artist_aliases',
     ['song_id', 'position', 'alias'],
     artistAliasImportRows(records),
@@ -416,7 +382,7 @@ export function buildD1ImportSql(
   pushBatchedInsert(
     lines,
     'search_texts',
-    ['song_id', 'field', 'text_norm', 'text_compact', 'weight', 'category', 'provider_mask'],
+    ['song_id', 'field', 'text_norm', 'text_compact', 'weight', 'provider_mask'],
     searchIndex.texts,
     (row) => [
       sqlLiteral(row.songId),
@@ -424,7 +390,6 @@ export function buildD1ImportSql(
       sqlLiteral(row.textNorm),
       sqlLiteral(row.textCompact),
       sqlInteger(row.weight),
-      sqlLiteral(row.category),
       sqlInteger(row.providerMask),
     ],
   );
@@ -432,7 +397,7 @@ export function buildD1ImportSql(
   pushBatchedInsert(
     lines,
     'search_tokens',
-    ['kind', 'token', 'song_id', 'field', 'weight', 'category', 'provider_mask'],
+    ['kind', 'token', 'song_id', 'field', 'weight', 'provider_mask'],
     searchIndex.tokens,
     (row) => [
       sqlLiteral(row.kind),
@@ -440,7 +405,6 @@ export function buildD1ImportSql(
       sqlLiteral(row.songId),
       sqlLiteral(row.field),
       sqlInteger(row.weight),
-      sqlLiteral(row.category),
       sqlInteger(row.providerMask),
     ],
   );
@@ -514,10 +478,6 @@ function buildSearchIndexRows(records: readonly SongRecord[]): SearchIndexRows {
   const seenTokens = new Set<string>();
 
   for (const record of records) {
-    const category = record.categories[0];
-    if (category === undefined) {
-      throw new Error(`Song ${record.id} has no primary category`);
-    }
     const providerMask = karaokeProviderMask(record.karaoke_numbers);
 
     for (const input of searchTextInputs(record)) {
@@ -536,7 +496,6 @@ function buildSearchIndexRows(records: readonly SongRecord[]): SearchIndexRows {
           textNorm,
           textCompact,
           weight: input.weight,
-          category,
           providerMask,
         });
       }
@@ -547,7 +506,6 @@ function buildSearchIndexRows(records: readonly SongRecord[]): SearchIndexRows {
         value: input.value,
         textCompact,
         weight: input.weight,
-        category,
         providerMask,
       });
     }
@@ -646,7 +604,6 @@ function addSearchToken(
     songId: input.songId,
     field: input.field,
     weight: input.weight,
-    category: input.category,
     providerMask: input.providerMask,
   });
 }
@@ -773,16 +730,6 @@ function* karaokeNumberImportRows(
   }
 }
 
-function* songCategoryImportRows(
-  records: readonly SongRecord[],
-): Iterable<[string, number, Category]> {
-  for (const record of records) {
-    for (const [position, category] of record.categories.entries()) {
-      yield [record.id, position, category];
-    }
-  }
-}
-
 function* artistAliasImportRows(
   records: readonly SongRecord[],
 ): Iterable<[string, number, string]> {
@@ -870,7 +817,6 @@ interface SearchTextInput {
 interface SearchTokenInput extends SearchTextInput {
   songId: string;
   textCompact: string;
-  category: Category;
   providerMask: number;
 }
 
@@ -880,7 +826,6 @@ interface SearchTextRow {
   textNorm: string;
   textCompact: string;
   weight: number;
-  category: Category;
   providerMask: number;
 }
 
@@ -890,7 +835,6 @@ interface SearchTokenRow {
   songId: string;
   field: SearchField;
   weight: number;
-  category: Category;
   providerMask: number;
 }
 
@@ -913,10 +857,6 @@ interface StoredSongRow {
   media_context_ko: string | null;
   title_ko_source: TitleKoSource | null;
   title_ko_confidence: TitleKoConfidence | null;
-}
-
-interface CategoryRow {
-  category: Category;
 }
 
 interface KaraokeNumberRow {
