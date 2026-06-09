@@ -109,11 +109,16 @@ describe('featured artist chips against the production corpus', () => {
   ) as SongRecord[];
   it('keeps every featured artist pill wired to a query with real hits', () => {
     const index = buildIndex(productionRecords);
-    for (const artist of featured) {
-      const query = featuredArtistQuery(artist);
-      const label = featuredArtistLabel(artist);
-      const hits = index.search(query);
-      expect(hits.length, `featured artist ${label} should search via ${query}`).toBeGreaterThan(0);
+    for (const [section, artists] of Object.entries(featured)) {
+      for (const artist of artists) {
+        const query = featuredArtistQuery(artist);
+        const label = featuredArtistLabel(artist);
+        const hits = index.search(query);
+        expect(
+          hits.length,
+          `${section} featured artist ${label} should search via ${query}`,
+        ).toBeGreaterThan(0);
+      }
     }
   });
 });

@@ -4,32 +4,48 @@ interface EmptyStateProps {
   onPickArtist: (name: string) => void;
 }
 
+const SECTIONS: ReadonlyArray<{ key: keyof typeof featured; label: string }> = [
+  { key: 'jpop', label: 'J-POP' },
+  { key: 'vocaloid', label: 'Vocaloid' },
+  { key: 'anime', label: 'Anime' },
+];
+
 /**
  * Default landing view shown on the Browse tab when `query` is empty.
  * The favorites preview previously rendered here lives on the Favorites tab
- * now (see TabBar + App.tsx). EmptyState is purely featured-artist content —
- * a single unlabeled chip list (no category section grouping).
+ * now (see TabBar + App.tsx). EmptyState is purely featured-artist content.
  */
 export function EmptyState({ onPickArtist }: EmptyStateProps) {
   return (
     <div class="empty-state">
-      <section class="empty-section">
-        {featured.length === 0 ? (
-          <p class="empty-section-placeholder">아직 없음 / Not yet</p>
-        ) : (
-          <div class="empty-section-chips">
-            {featured.map((artist) => {
-              const label = featuredArtistLabel(artist);
-              const query = featuredArtistQuery(artist);
-              return (
-                <button key={label} type="button" class="chip" onClick={() => onPickArtist(query)}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {SECTIONS.map((section) => {
+        const artists = featured[section.key];
+        return (
+          <section key={section.key} class="empty-section">
+            <h2 class="empty-section-title">{section.label}</h2>
+            {artists.length === 0 ? (
+              <p class="empty-section-placeholder">아직 없음 / Not yet</p>
+            ) : (
+              <div class="empty-section-chips">
+                {artists.map((artist) => {
+                  const label = featuredArtistLabel(artist);
+                  const query = featuredArtistQuery(artist);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      class="chip"
+                      onClick={() => onPickArtist(query)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }
