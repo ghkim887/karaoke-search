@@ -34,7 +34,7 @@ describe('classifyJoysoundRecordWithReason — injected JP-artist admit path (F2
         listItem: listItem({ songName: '感電', artistName: '米津玄師' }),
         isKnownJapaneseArtist: (a) => a === '米津玄師',
       }),
-    ).toEqual({ category: 'jpop', reason: 'admit-jp-artist' });
+    ).toEqual({ admit: true, reason: 'admit-jp-artist' });
   });
 
   it('admits an ASCII-only-title row by a corpus JP artist as admit-jp-artist', () => {
@@ -43,7 +43,7 @@ describe('classifyJoysoundRecordWithReason — injected JP-artist admit path (F2
         listItem: listItem({ songName: 'Pretender', artistName: 'Official髭男dism' }),
         isKnownJapaneseArtist: (a) => a === 'Official髭男dism',
       }),
-    ).toEqual({ category: 'jpop', reason: 'admit-jp-artist' });
+    ).toEqual({ admit: true, reason: 'admit-jp-artist' });
   });
 
   it('the foreign-act gate WINS over the JP-artist admit path', () => {
@@ -55,7 +55,7 @@ describe('classifyJoysoundRecordWithReason — injected JP-artist admit path (F2
         listItem: listItem({ songName: 'なみだ', artistName: 'aespa' }),
         isKnownJapaneseArtist: () => true,
       }),
-    ).toEqual({ category: null, reason: 'foreign-korean' });
+    ).toEqual({ admit: false, reason: 'foreign-korean' });
   });
 
   it('a positive kana/anime/vocaloid signal still wins over the JP-artist path', () => {
@@ -66,7 +66,7 @@ describe('classifyJoysoundRecordWithReason — injected JP-artist admit path (F2
         listItem: listItem({ songName: 'よるにかける', artistName: 'YOASOBI' }),
         isKnownJapaneseArtist: () => true,
       }),
-    ).toEqual({ category: 'jpop', reason: 'admit-jpop-kana' });
+    ).toEqual({ admit: true, reason: 'admit-jpop-kana' });
   });
 
   it('does NOT admit when the predicate says the artist is unknown', () => {
@@ -75,7 +75,7 @@ describe('classifyJoysoundRecordWithReason — injected JP-artist admit path (F2
         listItem: listItem({ songName: '感電', artistName: '無名歌手' }),
         isKnownJapaneseArtist: () => false,
       }),
-    ).toEqual({ category: null, reason: 'drop-han-only' });
+    ).toEqual({ admit: false, reason: 'drop-han-only' });
   });
 
   it('with NO predicate injected, a Han-only row still drops (production unchanged)', () => {
@@ -83,12 +83,12 @@ describe('classifyJoysoundRecordWithReason — injected JP-artist admit path (F2
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: '感電', artistName: '米津玄師' }),
       }),
-    ).toEqual({ category: null, reason: 'drop-han-only' });
+    ).toEqual({ admit: false, reason: 'drop-han-only' });
 
     expect(
       classifyJoysoundRecord({
         listItem: listItem({ songName: '感電', artistName: '米津玄師' }),
       }),
-    ).toBeNull();
+    ).toBe(false);
   });
 });

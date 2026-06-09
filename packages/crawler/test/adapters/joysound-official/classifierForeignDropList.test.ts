@@ -39,7 +39,7 @@ describe('classifyJoysoundRecordWithReason — production drop-list foreign-act 
   ] as const)('drops Korean drop-list act %s as foreign-korean', (artistName, songName) => {
     expect(
       classifyJoysoundRecordWithReason({ listItem: listItem({ artistName, songName }) }),
-    ).toEqual({ category: null, reason: 'foreign-korean' });
+    ).toEqual({ admit: false, reason: 'foreign-korean' });
   });
 
   // Chinese drop-list members (foreign-chinese).
@@ -52,7 +52,7 @@ describe('classifyJoysoundRecordWithReason — production drop-list foreign-act 
   ] as const)('drops Chinese drop-list act %s as foreign-chinese', (artistName, songName) => {
     expect(
       classifyJoysoundRecordWithReason({ listItem: listItem({ artistName, songName }) }),
-    ).toEqual({ category: null, reason: 'foreign-chinese' });
+    ).toEqual({ admit: false, reason: 'foreign-chinese' });
   });
 
   it('still admits a genuine Japanese act whose name is not on any drop list', () => {
@@ -60,6 +60,6 @@ describe('classifyJoysoundRecordWithReason — production drop-list foreign-act 
       classifyJoysoundRecordWithReason({
         listItem: listItem({ artistName: 'YOASOBI', songName: 'よるにかける' }),
       }),
-    ).toEqual({ category: 'jpop', reason: 'admit-jpop-kana' });
+    ).toEqual({ admit: true, reason: 'admit-jpop-kana' });
   });
 });

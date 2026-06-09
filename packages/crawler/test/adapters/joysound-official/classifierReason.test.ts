@@ -21,7 +21,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ artistName: '初音ミク', songName: '千本桜' }),
       }),
-    ).toEqual({ category: 'vocaloid', reason: 'admit-vocaloid' });
+    ).toEqual({ admit: true, reason: 'admit-vocaloid' });
   });
 
   it('admit-anime for アニメ tieup', () => {
@@ -33,7 +33,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
           tieupInfo: 'TVアニメ「鬼滅の刃」OP',
         }),
       }),
-    ).toEqual({ category: 'anime', reason: 'admit-anime' });
+    ).toEqual({ admit: true, reason: 'admit-anime' });
   });
 
   it('admit-jpop-kana for a pure-kana title', () => {
@@ -41,7 +41,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'よるにかける', artistName: 'YOASOBI' }),
       }),
-    ).toEqual({ category: 'jpop', reason: 'admit-jpop-kana' });
+    ).toEqual({ admit: true, reason: 'admit-jpop-kana' });
   });
 
   it('foreign-korean for a known Korean act', () => {
@@ -49,7 +49,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'Set The Tone', artistName: 'aespa' }),
       }),
-    ).toEqual({ category: null, reason: 'foreign-korean' });
+    ).toEqual({ admit: false, reason: 'foreign-korean' });
   });
 
   it('foreign-western for a known Western act', () => {
@@ -57,7 +57,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'WE WILL ROCK YOU', artistName: 'QUEEN' }),
       }),
-    ).toEqual({ category: null, reason: 'foreign-western' });
+    ).toEqual({ admit: false, reason: 'foreign-western' });
   });
 
   it('drop-han-only for a Han-but-no-kana title/artist', () => {
@@ -65,7 +65,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: '起风了', artistName: '买辣椒也用券' }),
       }),
-    ).toEqual({ category: null, reason: 'drop-han-only' });
+    ).toEqual({ admit: false, reason: 'drop-han-only' });
   });
 
   it('drop-ascii-only for a Latin-only title/artist', () => {
@@ -73,7 +73,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'Generic Latin', artistName: 'LatinArtist' }),
       }),
-    ).toEqual({ category: null, reason: 'drop-ascii-only' });
+    ).toEqual({ admit: false, reason: 'drop-ascii-only' });
   });
 
   it('drop-no-signal when title/artist carries neither Han nor Latin nor kana', () => {
@@ -81,7 +81,7 @@ describe('classifyJoysoundRecordWithReason — gate reasons', () => {
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: '?!', artistName: '???' }),
       }),
-    ).toEqual({ category: null, reason: 'drop-no-signal' });
+    ).toEqual({ admit: false, reason: 'drop-no-signal' });
   });
 });
 
@@ -103,12 +103,12 @@ describe('classifyJoysoundRecordWithReason — override paths', () => {
           isAllow: () => false,
         },
       }),
-    ).toEqual({ category: null, reason: 'reviewed-drop' });
+    ).toEqual({ admit: false, reason: 'reviewed-drop' });
   });
 
   it('reviewed-allow admits a Korean act before the foreign-act gate fires', () => {
     // aespa would normally drop foreign-korean; an exact-number ALLOW pins it
-    // in. With no kana/anime/vocaloid signal it falls back to jpop.
+    // in and admits with reason `reviewed-allow`.
     expect(
       classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'Set The Tone', artistName: 'aespa', selSongNo: '222-222' }),
@@ -117,10 +117,12 @@ describe('classifyJoysoundRecordWithReason — override paths', () => {
           isAllow: (n) => n === '222-222',
         },
       }),
-    ).toEqual({ category: 'jpop', reason: 'reviewed-allow' });
+    ).toEqual({ admit: true, reason: 'reviewed-allow' });
   });
 
-  it('reviewed-allow keeps the best normal-gate category (anime/vocaloid) when present', () => {
+  it('reviewed-allow admits regardless of any positive signal present (anime/vocaloid)', () => {
+    // Even when a positive anime signal would otherwise fire, an exact-number
+    // ALLOW admits with the `reviewed-allow` reason (the curated verdict wins).
     expect(
       classifyJoysoundRecordWithReason({
         listItem: listItem({
@@ -134,7 +136,7 @@ describe('classifyJoysoundRecordWithReason — override paths', () => {
           isAllow: (n) => n === '333-333',
         },
       }),
-    ).toEqual({ category: 'anime', reason: 'reviewed-allow' });
+    ).toEqual({ admit: true, reason: 'reviewed-allow' });
   });
 
   it('with empty production overrides, the layer is a no-op', () => {

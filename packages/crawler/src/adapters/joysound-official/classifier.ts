@@ -1,4 +1,3 @@
-import type { Category } from '@karaoke/schema';
 import { splitArtistCollab } from '../../clustering.js';
 import { isInChineseDropList } from '../tj-media-direct/chineseArtistDropList.js';
 import { isInDropList } from '../tj-media-direct/koreanArtistDropList.js';
@@ -211,8 +210,12 @@ interface ClassifyArgs {
 }
 
 /**
- * Which gate decided a JOYSOUND row. Admit reasons carry a non-null category;
- * the three `drop-*` reasons and `reviewed-drop` / `foreign-*` carry `null`.
+ * Which gate decided a JOYSOUND row. The `admit-*` and `reviewed-allow` reasons
+ * are ADMIT verdicts; the three `drop-*` reasons plus `reviewed-drop` /
+ * `foreign-*` are DROP verdicts. The reason label is the FP/FN audit value — it
+ * records WHY a row was admitted or dropped (the old jpop/anime/vocaloid signal
+ * kinds survive in the `admit-*` labels even though the schema category
+ * dimension was removed).
  *
  *  - `reviewed-allow` / `reviewed-drop` — exact-number curated override hit.
  *  - `foreign-korean` / `foreign-chinese` / `foreign-western` — hard negative
@@ -220,8 +223,8 @@ interface ClassifyArgs {
  *    Korean / Chinese drop lists (and the classifier's own Korean patterns);
  *    `foreign-western` from the Western-act components.
  *  - `admit-vocaloid` / `admit-anime` / `admit-jpop-kana` — positive gates.
- *  - `admit-jp-artist` — admitted (jpop) because an INJECTED known-Japanese
- *    -artist predicate matched a row that would otherwise drop for lack of a
+ *  - `admit-jp-artist` — admitted because an INJECTED known-Japanese-artist
+ *    predicate matched a row that would otherwise drop for lack of a
  *    kana/anime/vocaloid signal. Sweep-layer-only: production injects nothing.
  *  - `drop-han-only` — title/artist has Han but no kana (Mandopop-ambiguous).
  *  - `drop-ascii-only` — title/artist is Latin-only, weak Japanese evidence.
@@ -245,6 +248,16 @@ const DEFAULT_OVERRIDES: JoysoundOverridePredicates = {
   isAllow: isReviewedJoysoundAllow,
   isDrop: isReviewedJoysoundDrop,
 };
+
+/**
+ * The positive-signal kind a row earns from the normal admit gates, in priority
+ * order `vocaloid` > `anime` > `jpop` (kana), or `null` when no positive signal
+ * fires. This is a LOCAL classifier concept — the surviving FP/FN audit signal
+ * that drives the `admit-*` reason labels — NOT the removed schema `Category`
+ * dimension. It never escapes this module; the public contract is a boolean
+ * admit/drop plus a reason.
+ */
+type PositiveSignalKind = 'vocaloid' | 'anime' | 'jpop' | null;
 
 /**
  * Conservatively classify a JOYSOUND new-release row.
@@ -275,33 +288,32 @@ const DEFAULT_OVERRIDES: JoysoundOverridePredicates = {
  *   metadata is also excluded from admission because it does not identify the
  *   song itself.
  *
- * Drop (null):
+ * Drop (false):
  *   known Korean/Western-act alias, or no script signal and no token match.
  *   Examples: `Set The Tone / aespa`, `Chaconne / ENHYPEN`, `WE WILL ROCK YOU
  *   《LIVEカラオケ》 / QUEEN`, and katakana aliases like `チョンソミ`. These
- *   foreign rows would otherwise wrongly enter the JPop catalog.
+ *   foreign rows would otherwise wrongly enter the catalog.
  */
-export function classifyJoysoundRecord(args: ClassifyArgs): Category | null {
-  return classifyJoysoundRecordWithReason(args).category;
+export function classifyJoysoundRecord(args: ClassifyArgs): boolean {
+  return classifyJoysoundRecordWithReason(args).admit;
 }
 
 /**
- * Reason-rich classification: returns the resolved category alongside the gate
- * that fired. `classifyJoysoundRecord` delegates here and returns `.category`,
- * so the public `Category | null` contract — and the crawler that consumes it —
- * is unchanged.
+ * Reason-rich classification: returns the admit/drop verdict alongside the gate
+ * that fired. `classifyJoysoundRecord` delegates here and returns `.admit`, so
+ * the public boolean contract — and the crawler that consumes it — is unchanged.
  *
  * Order (mirrors TJ's allow-precedes-droplist policy):
  *   1. override DROP   → drop first, before any admit gate.
- *   2. override ALLOW  → admit before the foreign-act gate; picks the best
- *      normal-gate category, falling back to `jpop` when no signal fires.
+ *   2. override ALLOW  → admit before the foreign-act gate, reason
+ *      `reviewed-allow`.
  *   3. foreign-act gate (Korean drop list / Korean patterns / Chinese drop list
  *      / Western) → hard negative. Consulting the production drop lists keeps
  *      this gate in lock-step with the audit's `isAuditForeignAct` (Fix F1).
  *   4. positive gates: vocaloid > anime > jpop-kana.
- *   5. injected known-Japanese-artist admit (Fix F2) → jpop. Runs AFTER the
- *      foreign-act gate so a foreign act that also has corpus presence (e.g.
- *      BoA) stays dropped; opt-in only, no-op in production.
+ *   5. injected known-Japanese-artist admit (Fix F2). Runs AFTER the foreign-act
+ *      gate so a foreign act that also has corpus presence (e.g. BoA) stays
+ *      dropped; opt-in only, no-op in production.
  *   6. fall-through drop, split by script signal for diagnostic richness.
  */
 export function classifyJoysoundRecordWithReason({
@@ -309,7 +321,7 @@ export function classifyJoysoundRecordWithReason({
   detail,
   overrides = DEFAULT_OVERRIDES,
   isKnownJapaneseArtist,
-}: ClassifyArgs): { category: Category | null; reason: JoysoundClassifyReason } {
+}: ClassifyArgs): { admit: boolean; reason: JoysoundClassifyReason } {
   const titleArtistParts: string[] = [listItem.songName, listItem.artistName];
   const surfaceParts: string[] = [listItem.songName, listItem.artistName, listItem.tieupInfo ?? ''];
   const artistFields: string[] = [listItem.artistName];
@@ -328,64 +340,64 @@ export function classifyJoysoundRecordWithReason({
   const artistSurface = artistFields.join(' ');
 
   // 1. Curated DROP override wins first.
-  if (overrides.isDrop(listItem.selSongNo)) return { category: null, reason: 'reviewed-drop' };
+  if (overrides.isDrop(listItem.selSongNo)) return { admit: false, reason: 'reviewed-drop' };
 
-  // The best positive category from the normal gates, computed once so both the
-  // ALLOW path (which keeps a real anime/vocaloid tag rather than forcing jpop)
-  // and the normal cascade share it.
-  const positiveCategory = positiveSignalCategory({ surface, artistSurface, titleArtist });
+  // The positive signal kind from the normal gates, computed once so both the
+  // ALLOW path (whose reason is `reviewed-allow` regardless) and the normal
+  // cascade (which maps the kind to its `admit-*` reason) share it.
+  const positiveKind = positiveSignalKind({ surface, artistSurface, titleArtist });
 
   // 2. Curated ALLOW override admits BEFORE the foreign-act gate.
   if (overrides.isAllow(listItem.selSongNo)) {
-    return { category: positiveCategory ?? 'jpop', reason: 'reviewed-allow' };
+    return { admit: true, reason: 'reviewed-allow' };
   }
 
   // 3. Hard negative foreign-act gate. The classifier's own Korean patterns +
   //    the production Korean drop list both resolve to `foreign-korean`; the
   //    production Chinese drop list resolves to `foreign-chinese` (Fix F1).
-  if (artistFields.some(isKnownKoreanAct)) return { category: null, reason: 'foreign-korean' };
+  if (artistFields.some(isKnownKoreanAct)) return { admit: false, reason: 'foreign-korean' };
   for (const field of artistFields) {
     const kind = dropListForeignKind(field);
-    if (kind === 'korean') return { category: null, reason: 'foreign-korean' };
-    if (kind === 'chinese') return { category: null, reason: 'foreign-chinese' };
+    if (kind === 'korean') return { admit: false, reason: 'foreign-korean' };
+    if (kind === 'chinese') return { admit: false, reason: 'foreign-chinese' };
   }
-  if (artistFields.some(isKnownWesternAct)) return { category: null, reason: 'foreign-western' };
+  if (artistFields.some(isKnownWesternAct)) return { admit: false, reason: 'foreign-western' };
 
   // 4. Positive gates.
-  if (positiveCategory === 'vocaloid') return { category: 'vocaloid', reason: 'admit-vocaloid' };
-  if (positiveCategory === 'anime') return { category: 'anime', reason: 'admit-anime' };
-  if (positiveCategory === 'jpop') return { category: 'jpop', reason: 'admit-jpop-kana' };
+  if (positiveKind === 'vocaloid') return { admit: true, reason: 'admit-vocaloid' };
+  if (positiveKind === 'anime') return { admit: true, reason: 'admit-anime' };
+  if (positiveKind === 'jpop') return { admit: true, reason: 'admit-jpop-kana' };
 
   // 5. Injected known-Japanese-artist admit (Fix F2). Opt-in recall path: a row
-  //    with no positive script signal but a confirmed corpus JP artist admits
-  //    as jpop. The foreign-act gate above already excluded foreign acts, so a
-  //    predicate hit here is genuinely Japanese. No predicate → skipped, so the
+  //    with no positive script signal but a confirmed corpus JP artist admits.
+  //    The foreign-act gate above already excluded foreign acts, so a predicate
+  //    hit here is genuinely Japanese. No predicate → skipped, so the
   //    production classifier/crawler contract is unchanged.
   if (isKnownJapaneseArtist) {
     for (const field of artistFields) {
       if (field !== '' && isKnownJapaneseArtist(field)) {
-        return { category: 'jpop', reason: 'admit-jp-artist' };
+        return { admit: true, reason: 'admit-jp-artist' };
       }
     }
   }
 
   // 6. Fall-through drop — split by script signal for diagnostic richness.
-  if (hasHanScript(titleArtist)) return { category: null, reason: 'drop-han-only' };
-  if (hasAsciiLetter(titleArtist)) return { category: null, reason: 'drop-ascii-only' };
-  return { category: null, reason: 'drop-no-signal' };
+  if (hasHanScript(titleArtist)) return { admit: false, reason: 'drop-han-only' };
+  if (hasAsciiLetter(titleArtist)) return { admit: false, reason: 'drop-ascii-only' };
+  return { admit: false, reason: 'drop-no-signal' };
 }
 
 /**
- * The positive-signal category (vocaloid > anime > jpop) a row would earn,
+ * The positive-signal kind (vocaloid > anime > jpop) a row would earn,
  * independent of the foreign-act gate. Returns `null` when no positive signal
  * fires. Shared by the ALLOW path and the normal cascade so the two never
  * drift.
  */
-function positiveSignalCategory(parts: {
+function positiveSignalKind(parts: {
   surface: string;
   artistSurface: string;
   titleArtist: string;
-}): Category | null {
+}): PositiveSignalKind {
   if (
     containsAny(parts.surface, VOCALOID_SURFACE_TOKENS) ||
     matchesAny(parts.artistSurface, VOCALOID_ARTIST_PATTERNS)

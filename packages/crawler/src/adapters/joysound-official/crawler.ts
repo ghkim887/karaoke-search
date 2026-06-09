@@ -256,7 +256,7 @@ export class JoysoundOfficialCrawler implements Crawler {
 
   /**
    * Fetch the detail endpoint for `item`, classify the augmented row, and
-   * (when the classifier returns a non-null category) emit a normalized
+   * (when the classifier admits the row) emit a normalized
    * `SongRecord`. Detail-fetch failures (robots block / persistent non-2xx
    * after one retry) increment `skippedDetailRows`, log a warn, and return
    * `null` so the caller advances to the next item.

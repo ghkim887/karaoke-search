@@ -1,4 +1,3 @@
-import type { Category } from '@karaoke/schema';
 import {
   type JoysoundClassifyReason,
   type JoysoundOverridePredicates,
@@ -21,7 +20,6 @@ export interface DecisionRecord {
   artist: string;
   tieupInfo: string | null;
   decision: 'admit' | 'drop';
-  category: Category | null;
   reason: JoysoundClassifyReason;
   /**
    * `true` when the LISTING-ONLY verdict could change if per-song detail
@@ -36,14 +34,14 @@ export interface DecisionRecord {
  *
  * Heuristic: detail adds `genreNames` (vocaloid signal) and `tieupNames` (anime
  * signal) that the listing row lacks. So:
- *   - `admit-jpop-kana` — admitted as plain jpop, but detail genre/tieup could
- *     reveal it is really vocaloid or an anime tie-in.
- *   - `admit-jp-artist` — admitted as plain jpop on the strength of the
- *     known-Japanese-artist seam without any kana/anime/vocaloid signal; detail
- *     genre/tieup could refine the category to vocaloid or anime.
+ *   - `admit-jpop-kana` — admitted on a kana signal alone, but detail genre/tieup
+ *     could reveal a stronger vocaloid/anime signal (the admit verdict holds, the
+ *     reason could sharpen).
+ *   - `admit-jp-artist` — admitted on the known-Japanese-artist seam without any
+ *     kana/anime/vocaloid signal; detail genre/tieup could surface one.
  *   - `drop-han-only` / `drop-ascii-only` / `drop-no-signal` — dropped for lack
  *     of a positive signal, but detail genre/tieup could reveal an
- *     anime/vocaloid tie-in that would admit it.
+ *     anime/vocaloid tie-in that would FLIP the verdict to admit.
  * The remaining reasons are NOT flip-risk:
  *   - `reviewed-allow` / `reviewed-drop` — adjudicated at the exact number,
  *     detail cannot override a human decision.
@@ -98,8 +96,8 @@ export interface BuildJoysoundDecisionOptions {
 
 /**
  * Run the reason-rich classifier over a single JOYSOUND listing row (LISTING
- * LEVEL — no per-song detail) and emit a {@link DecisionRecord}. `decision` is
- * `admit` iff a non-null category was assigned.
+ * LEVEL — no per-song detail) and emit a {@link DecisionRecord}. `decision`
+ * mirrors the classifier's boolean `admit` verdict.
  *
  * Accepts either the bare production override predicates (back-compat: the
  * second positional argument may be a `JoysoundOverridePredicates`) or a
@@ -128,7 +126,7 @@ export function buildJoysoundDecision(
   optionsOrOverrides?: BuildJoysoundDecisionOptions | JoysoundOverridePredicates,
 ): DecisionRecord {
   const options = normalizeBuildOptions(optionsOrOverrides);
-  const { category, reason } = classifyJoysoundRecordWithReason({
+  const { admit, reason } = classifyJoysoundRecordWithReason({
     listItem,
     ...(options.overrides ? { overrides: options.overrides } : {}),
     ...(options.isKnownJapaneseArtist
@@ -142,8 +140,7 @@ export function buildJoysoundDecision(
     title: listItem.songName,
     artist: listItem.artistName,
     tieupInfo: listItem.tieupInfo ?? null,
-    decision: category !== null ? 'admit' : 'drop',
-    category,
+    decision: admit ? 'admit' : 'drop',
     reason,
     detailFlipRisk: isDetailFlipRisk(reason),
   };

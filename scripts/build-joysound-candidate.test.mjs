@@ -26,7 +26,6 @@ function blogRecord(overrides = {}) {
     artist_primary: '米津玄師',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-06-01T00:00:00.000Z',
     ...overrides,
   };
@@ -43,7 +42,6 @@ describe('build-joysound-candidate transforms', () => {
       artist: '米津玄師',
       tieupInfo: null,
       decision: 'admit',
-      category: 'jpop',
       reason: 'admit-jp-artist',
     };
 
@@ -67,7 +65,6 @@ describe('build-joysound-candidate transforms', () => {
       artist_primary: '米津玄師',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: '640256' },
-      categories: ['jpop'],
       crawled_at: CRAWLED_AT,
     });
   });
@@ -80,11 +77,10 @@ describe('build-joysound-candidate transforms', () => {
       artist: 'アーティスト',
       tieupInfo: null,
       decision: 'admit',
-      category: 'anime',
     };
     const record = buildJoysoundRecord(entry, CRAWLED_AT);
     expect(record.karaoke_numbers.joysound).toBe('190001');
-    expect(record.categories).toEqual(['anime']);
+    expect(record.id).toBe('joysound-900000');
   });
 
   // (b) conflict number -> blog record's joysound nulled; benign overlap left intact.
@@ -116,7 +112,6 @@ describe('build-joysound-candidate transforms', () => {
         title: '米津玄師の新曲',
         artist: '米津玄師',
         decision: 'admit',
-        category: 'jpop',
       },
       // Same song, same number -> benign overlap -> leave the blog number alone.
       {
@@ -125,7 +120,6 @@ describe('build-joysound-candidate transforms', () => {
         title: 'さよなら',
         artist: '米津玄師',
         decision: 'admit',
-        category: 'jpop',
       },
     ];
 
@@ -156,7 +150,6 @@ describe('build-joysound-candidate transforms', () => {
         title: 'abc',
         artist: 'artist name',
         decision: 'admit',
-        category: 'jpop',
       },
     ];
     const { records, conflictsResolved, benignOverlaps } = resolveExistingNumberConflicts(
@@ -184,7 +177,6 @@ describe('mutation classification', () => {
       artist_primary: 'A',
       artist_ko: null,
       karaoke_numbers: { tj: '100', ky: null, joysound: '200' },
-      categories: ['jpop'],
       crawled_at: '2026-05-30T00:00:00.000Z',
       ...overrides,
     };
@@ -305,7 +297,6 @@ describe('conservative conflict nulling', () => {
       artist_primary: '椎名林檎',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: '26766' },
-      categories: ['jpop'],
       crawled_at: '2026-05-30T00:00:00.000Z',
       ...overrides,
     };

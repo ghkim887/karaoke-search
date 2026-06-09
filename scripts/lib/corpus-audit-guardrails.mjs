@@ -1334,7 +1334,7 @@ function collectJoysoundDatabaseIssues({ decisionLog, records }) {
             bucket: 'categoryAmbiguous',
             priority: 'P3',
             entry,
-            why: 'admitted but listing-level category may flip with per-song detail',
+            why: 'admitted but the listing-level verdict may flip with per-song detail',
             suggested: 'NEEDS_MORE_EVIDENCE',
           }),
         );

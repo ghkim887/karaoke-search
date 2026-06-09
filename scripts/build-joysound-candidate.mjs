@@ -122,7 +122,6 @@ export function buildJoysoundRecord(entry, crawledAt) {
   const sourceUrl = `${SONG_PAGE_BASE}/${encodeURIComponent(listItem.naviGroupId)}`;
   return _normalizeJoysoundRecord({
     listItem,
-    category: entry.category,
     sourceUrl,
     crawledAt,
   });
@@ -494,16 +493,6 @@ function readJsonlAdmits(path) {
   return { admits, total };
 }
 
-function categoryCounts(records) {
-  const counts = {};
-  for (const record of records) {
-    for (const category of record?.categories ?? []) {
-      counts[category] = (counts[category] ?? 0) + 1;
-    }
-  }
-  return counts;
-}
-
 async function main() {
   for (const [label, p] of [
     ['normalizer dist', normalizerJsPath],
@@ -683,14 +672,12 @@ async function main() {
         badReasons,
         before: {
           karaoke_numbers: record.karaoke_numbers,
-          categories: record.categories,
           title_primary: record.title_primary,
           artist_primary: record.artist_primary,
           title_ko: record.title_ko,
         },
         after: {
           karaoke_numbers: after.karaoke_numbers,
-          categories: after.categories,
           title_primary: after.title_primary,
           artist_primary: after.artist_primary,
           title_ko: after.title_ko,
@@ -740,10 +727,6 @@ async function main() {
     unexpectedMutations: unexpectedMutations.length,
     unexpectedMutationsSample: unexpectedMutations.slice(0, 20),
     compareCorpora: delta,
-    categorySplit: {
-      candidate: categoryCounts(candidateRecords),
-      joysoundAdded: categoryCounts(joysoundRecords),
-    },
   };
   writeJsonAtomic(deltaOutPath, deltaReport, { indent: 2, trailingNewline: true });
 
@@ -775,14 +758,6 @@ async function main() {
   console.log(
     `Rich-field loss        : ${delta.summary.richFieldLoss}  (= conflict joysound nulls)`,
   );
-  console.log('Candidate category split:');
-  for (const [cat, n] of Object.entries(deltaReport.categorySplit.candidate).sort()) {
-    console.log(`  ${cat}: ${n}`);
-  }
-  console.log('JOYSOUND-added category split:');
-  for (const [cat, n] of Object.entries(deltaReport.categorySplit.joysoundAdded).sort()) {
-    console.log(`  ${cat}: ${n}`);
-  }
   if (unexpectedMutations.length > 0) {
     console.log('');
     console.log('!! UNEXPECTED MUTATIONS (first 5):');
@@ -814,7 +789,7 @@ export function stableStringify(value) {
 }
 
 // Fields whose ANY change is genuine corruption — the JOYSOUND merge must never
-// rewrite these on an existing record (it only unions numbers/categories/aliases
+// rewrite these on an existing record (it only unions numbers/aliases
 // and refreshes crawled_at).
 const IMMUTABLE_TEXT_FIELDS = [
   'id',
@@ -843,15 +818,13 @@ const IMMUTABLE_TEXT_FIELDS = [
  *      number was a duplicate/mis-attribution for the same song).
  *   - `conflict-joysound-null` — joysound value -> null, the conflict-resolution
  *      step's intended null-out that no same-song JOYSOUND record re-supplied.
- *   - `categories-union`       — categories changed but stayed within the
- *      set-union of before+after (Tier set-union + applyCategoryExclusivity).
  *   - `artist-aliases-added`   — artist_aliases is a pure superset of before
  *      (alias-resolver propagation).
  *
  * UNEXPECTED (badReasons): any change to an immutable text field, a tj/ky cell
  * losing or swapping its value, a joysound cell being emptied for a non-conflict
- * reason (already covered by conflict-joysound-null otherwise), categories going
- * empty, or artist_aliases dropping entries.
+ * reason (already covered by conflict-joysound-null otherwise), or
+ * artist_aliases dropping entries.
  */
 export function classifyMutation(before, after) {
   const reasons = [];
@@ -890,16 +863,6 @@ export function classifyMutation(before, after) {
       reasons.push('conflict-joysound-null');
     } else {
       badReasons.push('karaoke-number-corrupted:joysound');
-    }
-  }
-
-  if (JSON.stringify(before.categories) !== JSON.stringify(after.categories)) {
-    const bCats = Array.isArray(before.categories) ? before.categories : [];
-    const aCats = Array.isArray(after.categories) ? after.categories : [];
-    if (aCats.length === 0) {
-      badReasons.push('categories-emptied');
-    } else {
-      reasons.push('categories-union');
     }
   }
 

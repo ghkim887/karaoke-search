@@ -34,7 +34,6 @@ describe('buildJoysoundDecision', () => {
       artist: 'YOASOBI',
       tieupInfo: null,
       decision: 'admit',
-      category: 'jpop',
       reason: 'admit-jpop-kana',
       detailFlipRisk: true,
     });
@@ -58,7 +57,6 @@ describe('buildJoysoundDecision', () => {
       artist: 'aespa',
       tieupInfo: null,
       decision: 'drop',
-      category: null,
       reason: 'foreign-korean',
       detailFlipRisk: false,
     });
@@ -82,7 +80,6 @@ describe('buildJoysoundDecision', () => {
       artist: '买辣椒也用券',
       tieupInfo: null,
       decision: 'drop',
-      category: null,
       reason: 'drop-han-only',
       detailFlipRisk: true,
     });
@@ -106,7 +103,6 @@ describe('buildJoysoundDecision', () => {
       artist: 'LatinArtist',
       tieupInfo: null,
       decision: 'drop',
-      category: null,
       reason: 'drop-ascii-only',
       detailFlipRisk: true,
     });
@@ -137,7 +133,6 @@ describe('buildJoysoundDecision', () => {
       artist: 'aespa',
       tieupInfo: null,
       decision: 'admit',
-      category: 'jpop',
       reason: 'reviewed-allow',
       detailFlipRisk: false,
     });
@@ -155,7 +150,6 @@ describe('buildJoysoundDecision', () => {
     );
     expect(rec.tieupInfo).toBe('TVアニメ「鬼滅の刃」OP');
     expect(rec.decision).toBe('admit');
-    expect(rec.category).toBe('anime');
     expect(rec.reason).toBe('admit-anime');
     expect(rec.detailFlipRisk).toBe(false);
   });
