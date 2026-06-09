@@ -304,15 +304,13 @@ export class JoysoundOfficialCrawler implements Crawler {
       return null;
     }
 
-    const category = classifyJoysoundRecord({ listItem: item, detail });
-    if (category === null) return null;
+    if (!classifyJoysoundRecord({ listItem: item, detail })) return null;
 
     const sourceUrl = `${SONG_PAGE_BASE}/${encodeURIComponent(item.naviGroupId)}`;
     try {
       return normalizeJoysoundRecord({
         listItem: item,
         detail,
-        category,
         sourceUrl,
         crawledAt,
       });

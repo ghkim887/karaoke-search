@@ -202,7 +202,6 @@ function sampleRecord(record) {
     source_url: record.source_url ?? null,
     title_primary: record.title_primary ?? null,
     artist_primary: record.artist_primary ?? null,
-    categories: asArray(record.categories),
     tj: record.karaoke_numbers?.tj ?? null,
     ky: record.karaoke_numbers?.ky ?? null,
     joysound: record.karaoke_numbers?.joysound ?? null,
@@ -386,7 +385,6 @@ export function analyzeCorpus(records) {
   if (!Array.isArray(records)) throw new Error('analyzeCorpus: records must be an array');
 
   const sourceCounts = {};
-  const categoryCounts = {};
   const buckets = makeBucketStore([
     'knownKoreanAct',
     'knownWesternAct',
@@ -402,7 +400,6 @@ export function analyzeCorpus(records) {
 
   for (const record of records) {
     addCount(sourceCounts, sourceOf(record));
-    for (const category of asArray(record.categories)) addCount(categoryCounts, category);
     const officialJoysoundSource = isOfficialJoysoundSource(record);
     const hasJoysoundNumber = typeof record?.karaoke_numbers?.joysound === 'string';
     if (officialJoysoundSource) officialJoysoundSourceRecords++;
@@ -434,7 +431,6 @@ export function analyzeCorpus(records) {
       nonOfficialRecordsWithJoysoundNumber,
     },
     sourceCounts,
-    categoryCounts,
     ...bucketData,
   };
 }
@@ -591,7 +587,6 @@ function evidenceRow({
     tj,
     current_id: record?.id ?? '',
     current_source: record ? sourceOf(record) : '',
-    current_category: record ? asArray(record.categories).join(',') : '',
     current_title: record?.title_primary ?? '',
     current_artist: record?.artist_primary ?? '',
     official_title: official ? officialTitle(official) : '',
@@ -1231,14 +1226,6 @@ function sourceCountsFor(records) {
   return counts;
 }
 
-function categoryCountsFor(records) {
-  const counts = {};
-  for (const record of records) {
-    for (const category of asArray(record.categories)) addCount(counts, category);
-  }
-  return counts;
-}
-
 function providerNumberCounts(records) {
   const counts = { tj: 0, ky: 0, joysound: 0 };
   for (const record of records) {
@@ -1329,12 +1316,6 @@ export function compareCorpora(baselineRecords, candidateRecords) {
       candidate: sourceCountsFor(candidateRecords),
       added: sourceCountsFor(added),
       removed: sourceCountsFor(removed),
-    },
-    categoryCounts: {
-      baseline: categoryCountsFor(baselineRecords),
-      candidate: categoryCountsFor(candidateRecords),
-      added: categoryCountsFor(added),
-      removed: categoryCountsFor(removed),
     },
     providerNumberCounts: {
       baseline: providerNumberCounts(baselineRecords),
@@ -1473,7 +1454,6 @@ const TJ_REVIEW_COLUMNS = [
   'tj',
   'current_id',
   'current_source',
-  'current_category',
   'current_title',
   'current_artist',
   'official_title',

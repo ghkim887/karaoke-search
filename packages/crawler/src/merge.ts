@@ -1,5 +1,4 @@
-import { applyCategoryExclusivity as applyCategoryExclusivitySet } from '@karaoke/category-rules';
-import type { Category, KaraokeNumbers, SongRecord } from '@karaoke/schema';
+import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { getLeadComponent } from './clustering.js';
 import { normalize } from './normalize.js';
 
@@ -81,25 +80,6 @@ function tierCKey(r: SongRecord): string | null {
   const a = getLeadComponent(r.artist_primary);
   if (t === '' || a === '') return null;
   return `${t}|${a}`;
-}
-
-/**
- * Does `artist_primary` carry a `(Feat. X)` / `(feat. X)` / `(Prod. X)` /
- * `(prod. X)` parenthetical? Uses the same inner-paren shape as `FEAT_PAREN_RE`
- * in `clustering.ts` (outer `\s*` dropped because
- * `.test()` doesn't need anchoring) so the merger's feat-asymmetry detection
- * is consistent with the parser's collab-component splitter.
- *
- * Used by the Tier C cross-source gate's feat-asymmetry exception (Bug 3 fix
- * 2026-05-03): same-source clusters where EXACTLY ONE member has a feat-paren
- * and the others do NOT are admitted, since the same source publishing the
- * same song with-and-without a feat. credit is the 40mP-class duplicate
- * pattern. The BTS-IDOL guard is preserved because both BTS-IDOL records
- * share the same feat-decoration state (both with, or both without) — the
- * asymmetry condition fails.
- */
-function hasFeatParen(artist: string): boolean {
-  return /\(\s*(?:feat|prod)\.\s*[^()]+?\)/i.test(artist);
 }
 
 /**
@@ -273,22 +253,8 @@ function hasMultipleSourceSlugs(records: SongRecord[], idxs: number[]): boolean 
   return slugs.size >= 2;
 }
 
-function hasVocaloidFeatAsymmetry(records: SongRecord[], idxs: number[]): boolean {
-  let withFeat = 0;
-  let withoutFeat = 0;
-  let allVocaloid = true;
-  for (const i of idxs) {
-    // biome-ignore lint/style/noNonNullAssertion: i in bounds
-    const r = records[i]!;
-    if (hasFeatParen(r.artist_primary)) withFeat++;
-    else withoutFeat++;
-    if (!r.categories.includes('vocaloid')) allVocaloid = false;
-  }
-  return withFeat === 1 && withoutFeat >= 1 && allVocaloid;
-}
-
 function shouldUnionTierCGroup(records: SongRecord[], idxs: number[]): boolean {
-  return hasMultipleSourceSlugs(records, idxs) || hasVocaloidFeatAsymmetry(records, idxs);
+  return hasMultipleSourceSlugs(records, idxs);
 }
 
 function collectClusters(uf: UnionFind, size: number): Map<number, number[]> {
@@ -414,40 +380,10 @@ function mergeKaraokeNumbers(
 }
 
 /**
- * Array-flavored adapter over `applyCategoryExclusivitySet` (priority:
- * vocaloid > anime > jpop). Used by the merger's `mergeCategories` and by
- * `merge.test.ts`. The rationale for the priority is that PDF-section signal
- * (vocaloid) is more specific than blog-adapter keyword matching (anime),
- * which in turn is more specific than the catch-all `jpop`.
- *
- * Examples:
- *   ['jpop']                       -> ['jpop']      (unchanged)
- *   ['jpop', 'anime']              -> ['anime']
- *   ['jpop', 'vocaloid']           -> ['vocaloid']
- *   ['anime', 'vocaloid']          -> ['vocaloid']  (vocaloid wins)
- *   ['jpop', 'anime', 'vocaloid']  -> ['vocaloid']
- */
-export function applyCategoryExclusivity(cats: Category[]): Category[] {
-  const set = new Set(cats);
-  applyCategoryExclusivitySet(set);
-  return [...set].sort();
-}
-
-function mergeCategories(cluster: SongRecord[]): Category[] {
-  const set = new Set<Category>();
-  for (const r of cluster) {
-    for (const c of r.categories) set.add(c);
-  }
-  applyCategoryExclusivitySet(set);
-  return [...set].sort();
-}
-
-/**
  * Union the cluster's `artist_aliases` arrays (preserving first-seen order),
  * filter out any alias equal to the merged record's `artist_primary`, and
  * return undefined when the union is empty (the schema prefers absence over
- * `[]` for storage compactness — see `applyCategoryExclusivity` mirror in
- * §2.B of the alias-dedup spec).
+ * `[]` for storage compactness — see §2.B of the alias-dedup spec).
  *
  * The canonical-only filter (`a === mergedArtistPrimary`) is correct because
  * upstream propagation (Phase 3 of `resolveArtistAliases`) guarantees that by
@@ -620,7 +556,6 @@ function mergeCluster(
     // non-resolver-emitted canonical via `pickByOwnership`).
     ...(mergedAliases !== undefined ? { artist_aliases: mergedAliases } : {}),
     karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
-    categories: mergeCategories(cluster),
     crawled_at: latestCrawledAt(cluster),
     ...optionalKoFields(koDonor),
   };
@@ -646,16 +581,12 @@ function mergeCluster(
  *   Tier C (cross-source primary-token match): residual singletons after
  *   Tier B are grouped by `normalize(title) | getLeadComponent(artist)`
  *   — the latter strips collab/feat. decoration so e.g. `椎名もた(Feat.鏡音リン)`
- *   matches `椎名もた｜ぽわぽわP`. A Tier C cluster fires when ≥ 2 distinct
- *   source prefixes are represented (cross-source case) OR when a same-source
- *   cluster satisfies the feat-asymmetry+vocaloid exception (Bug 3 fix
- *   2026-05-03): EXACTLY ONE member has a `(Feat. X)` / `(Prod. X)` paren
- *   while the others do not, AND every member is tagged `vocaloid`. This
- *   catches the 40mP-class same-source duplicate (same Vocaloid producer
- *   track published twice — once crediting the voicebank, once without) while
- *   the `vocaloid` gate blocks BTS-IDOL (`jpop`, feat-asymmetric same-source
- *   pair that is a genuinely distinct collab release). Each fired cluster emits
- *   a `MergeConflict { field: 'tier_c_merge' }` for crawl-PR-body visibility
+ *   matches `椎名もた｜ぽわぽわP`. A Tier C cluster fires ONLY when ≥ 2 distinct
+ *   source prefixes are represented (cross-source case). Same-source clusters
+ *   never union: this preserves the BTS-IDOL guard (`tj-98374 IDOL/방탄소년단`
+ *   vs `tj-98392 IDOL/방탄소년단(Feat.Nicki Minaj)` are distinct releases that
+ *   share a primary token). Each fired cluster emits a
+ *   `MergeConflict { field: 'tier_c_merge' }` for crawl-PR-body visibility
  *   (sunset cadence per design doc §3.C).
  *
  *   Per-cluster ownership: each output field is taken from the
@@ -718,8 +649,9 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   for (const idxs of tierCGroups.values()) {
     if (idxs.length < 2) continue;
     // Cross-source gate: clusters where ≥2 distinct source prefixes are
-    // represented always admit. Same-source clusters require an additional
-    // signal of duplication.
+    // represented admit. Same-source clusters never union (preserves the
+    // BTS-IDOL guard — same-source twins sharing a primary token are
+    // distinct releases, not duplicates).
     if (!shouldUnionTierCGroup(records, idxs)) continue;
     for (const root of unionIndexGroups(uf, [idxs])) tierCRoots.add(root);
   }

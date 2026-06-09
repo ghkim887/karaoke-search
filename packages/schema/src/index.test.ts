@@ -1,7 +1,6 @@
 import { expectTypeOf } from 'expect-type';
 import { describe, expect, it } from 'vitest';
 import {
-  type Category,
   type KaraokeNumbers,
   type RawSongRecord,
   type SongRecord,
@@ -18,7 +17,6 @@ const BASE_RECORD: SongRecord = {
   artist_primary: 'Bar',
   artist_ko: null,
   karaoke_numbers: BASE_KARAOKE_NUMBERS,
-  categories: ['jpop'],
   crawled_at: '2026-04-26T10:00:00Z',
 };
 
@@ -46,7 +44,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       artist_primary: 'imase',
       artist_ko: '이마세',
       karaoke_numbers: { tj: '68318', ky: null, joysound: null },
-      categories: ['jpop'],
     });
 
     expect(() => validateSongRecord(record)).not.toThrow();
@@ -63,7 +60,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: '68425', ky: '48374', joysound: '631234' },
-      categories: ['anime'],
     });
 
     expect(() => validateSongRecord(record)).not.toThrow();
@@ -78,7 +74,6 @@ describe('validateSongRecord — worked examples (spec lines 117-146)', () => {
       artist_primary: '米津玄師',
       artist_ko: '요네즈 켄시',
       karaoke_numbers: { tj: '28335', ky: '84555', joysound: null },
-      categories: ['jpop'],
     });
 
     expect(() => validateSongRecord(record)).not.toThrow();
@@ -140,41 +135,6 @@ describe('karaoke_numbers.joysound — digit-pattern guard', () => {
   });
 });
 
-describe('validateSongRecord — Category enum coverage', () => {
-  it('accepts records for each of the three live category values', () => {
-    const liveValues: Category[] = ['jpop', 'vocaloid', 'anime'];
-    for (const value of liveValues) {
-      expect(() => validateSongRecord(makeRecord({ categories: [value] }))).not.toThrow();
-    }
-  });
-});
-
-describe('categories — rejection cases', () => {
-  // Note: `['anime', 'vocaloid']` (and any other multi-tag combination) is
-  // rejected by the schema's `maxItems: 1` constraint, NOT by category
-  // priority. Priority (`vocaloid > anime > jpop`) lives in
-  // `applyCategoryExclusivity` and runs BEFORE validation.
-  it.each<[unknown[]]>([
-    [['proseka']], // not in enum
-    [['vtuber']], // not in enum
-    [[]], // minItems violation
-    [['anime', 'vocaloid']], // maxItems violation (NOT priority)
-    [['jpop', 'anime']], // maxItems violation
-    [['jpop', 'vocaloid']], // maxItems violation
-    [['jpop', 'anime', 'vocaloid']], // maxItems violation
-  ])('rejects categories=%j', (cats) => {
-    expect(() => validateSongRecord(makeRecord({ categories: cats as Category[] }))).toThrowError(
-      /categories/,
-    );
-  });
-});
-
-describe('categories — accepted single-tag values', () => {
-  it.each<[Category]>([['jpop'], ['anime'], ['vocaloid']])('accepts categories: [%j]', (cat) => {
-    expect(() => validateSongRecord(makeRecord({ categories: [cat] }))).not.toThrow();
-  });
-});
-
 describe('artist_aliases — optional field (spec 2026-05-04)', () => {
   function recordWithAliases(aliases: unknown): unknown {
     return { ...makeRecord(), artist_aliases: aliases };
@@ -211,7 +171,6 @@ describe('SongRecord — media_context_ko', () => {
           title_primary: 'Somewhere',
           artist_primary: 'Some Artist',
           karaoke_numbers: { tj: '1', ky: null, joysound: null },
-          categories: ['anime'],
           crawled_at: '2026-05-06T00:00:00.000Z',
           media_context_ko: '(슬레이어즈 TRY OST)',
         }),
@@ -328,7 +287,6 @@ describe('SongRecord — title_ko_confidence', () => {
 describe('RawSongRecord type shape', () => {
   // Type-level checks. These are compile-time assertions; placement inside a
   // describe block is purely organizational — they run regardless of position.
-  expectTypeOf<SongRecord['categories']>().toEqualTypeOf<Category[]>();
   expectTypeOf<SongRecord['karaoke_numbers']>().toEqualTypeOf<KaraokeNumbers>();
 
   it('compiles a raw pre-normalization record', () => {
@@ -339,7 +297,6 @@ describe('RawSongRecord type shape', () => {
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['jpop'],
     };
 
     expect(raw.title_primary).toBe('アイドル');

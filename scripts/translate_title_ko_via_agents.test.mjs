@@ -308,7 +308,6 @@ describe('applyDecisionsToCorpus', () => {
         artist_primary: 'A',
         artist_ko: null,
         karaoke_numbers: { tj: '1', ky: null, joysound: null },
-        categories: ['jpop'],
         crawled_at: '2026-05-06T00:00:00.000Z',
       },
     ];

@@ -40,7 +40,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_ko: null,
     artist_aliases: ['Yoasobi Alias', 'Yoasobi Alt'],
     karaoke_numbers: { tj: '68000', ky: null, joysound: '123456' },
-    categories: ['jpop'],
     crawled_at: '2026-01-01T00:00:00.000Z',
     title_ko_source: 'manual',
   },
@@ -52,7 +51,6 @@ const FIXTURE_RECORDS: SongRecord[] = [
     artist_primary: 'PinocchioP',
     artist_ko: null,
     karaoke_numbers: { tj: '68222', ky: '44999', joysound: null },
-    categories: ['vocaloid'],
     crawled_at: '2026-01-02T00:00:00.000Z',
     media_context_ko: '(Vocaloid)',
   },
@@ -67,7 +65,6 @@ const CJK_SEARCH_RECORD: SongRecord = {
   artist_ko: '비즈',
   artist_aliases: ['Mrs. GREEN APPLE'],
   karaoke_numbers: { tj: '068748', ky: null, joysound: '613446' },
-  categories: ['anime'],
   crawled_at: '2026-01-03T00:00:00.000Z',
 };
 
@@ -213,7 +210,6 @@ describe('SQLite song store', () => {
       'text_norm',
       'text_compact',
       'weight',
-      'category',
       'provider_mask',
     ]);
 
@@ -273,7 +269,7 @@ describe('SQLite song store', () => {
 
     const exactTexts = db
       .prepare(
-        `SELECT field, text_compact, weight, category, provider_mask
+        `SELECT field, text_compact, weight, provider_mask
         FROM search_texts
         WHERE song_id = ?
         ORDER BY field ASC, text_compact ASC`,
@@ -282,7 +278,6 @@ describe('SQLite song store', () => {
       field: string;
       text_compact: string;
       weight: number;
-      category: string;
       provider_mask: number;
     }>;
     expect(exactTexts).toEqual(
@@ -291,14 +286,12 @@ describe('SQLite song store', () => {
           field: 'title_primary',
           text_compact: '残酷な天使のテーゼ',
           weight: 5,
-          category: 'anime',
           provider_mask: 5,
         },
         {
           field: 'artist_alias',
           text_compact: 'mrsgreenapple',
           weight: 2,
-          category: 'anime',
           provider_mask: 5,
         },
       ]),

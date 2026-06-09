@@ -15,8 +15,8 @@ const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
 
 /**
  * Two-button tab strip for switching between Browse and Favorites views.
- * Mirrors `CategoryChips`/`VendorChips` for refs-array + arrow-key focus
- * cycling, but uses `<div role="tablist">` (not `<fieldset>`) because
+ * Mirrors `VendorChips` for refs-array + arrow-key focus cycling, but uses
+ * `<div role="tablist">` (not `<fieldset>`) because
  * `role="tablist"` is semantically incompatible with form-control children.
  * Active-tab click is a hard no-op at the source — parents don't dedupe.
  */

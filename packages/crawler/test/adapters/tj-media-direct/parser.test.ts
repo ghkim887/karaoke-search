@@ -55,7 +55,6 @@ describe('parseCatalogResponse — per-record nationalcode confirmation (path 1)
     expect(idol?.artist_primary).toBe('YOASOBI');
     expect(idol?.title_ko).toBeNull();
     expect(idol?.artist_ko).toBeNull();
-    expect(idol?.categories).toEqual(['jpop']);
   });
 
   it('drops a record when its pro is KOR-tagged (only JPN passes)', () => {
@@ -585,7 +584,7 @@ describe('parseCatalogResponse — direct unit cases', () => {
     ).toThrow(/items is not an array/);
   });
 
-  it('every kept record has Korean fields null and categories=["jpop"]', () => {
+  it('every kept record has Korean fields null and only the tj vendor number set', () => {
     const cache = emptyCache();
     // Tag every artist in the fixture so the filter passes everything.
     cache.artistNationalityMap.yoasobi = jpnArtist();
@@ -602,7 +601,6 @@ describe('parseCatalogResponse — direct unit cases', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.title_ko).toBeNull();
     expect(records[0]?.artist_ko).toBeNull();
-    expect(records[0]?.categories).toEqual(['jpop']);
     expect(records[0]?.karaoke_numbers.ky).toBeNull();
     expect(records[0]?.karaoke_numbers.joysound).toBeNull();
   });

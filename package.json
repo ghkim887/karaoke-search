@@ -12,7 +12,7 @@
     "format": "biome format --write .",
     "build": "corepack pnpm -r build",
     "test": "corepack pnpm -r test",
-    "typecheck": "corepack pnpm --filter @karaoke/schema build && corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/category-rules build && corepack pnpm -r typecheck"
+    "typecheck": "corepack pnpm --filter @karaoke/schema build && corepack pnpm --filter @karaoke/search build && corepack pnpm -r typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

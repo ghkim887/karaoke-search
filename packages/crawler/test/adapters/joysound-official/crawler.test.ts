@@ -119,7 +119,6 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
     expect(recs).toHaveLength(1);
     expect(recs[0]?.id).toBe('joysound-190001');
     expect(recs[0]?.karaoke_numbers.joysound).toBe('190001');
-    expect(recs[0]?.categories).toEqual(['jpop']);
     expect(recs[0]?.title_ko).toBeNull();
     expect(recs[0]?.artist_ko).toBeNull();
 
@@ -160,7 +159,6 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
 
     expect(recs).toHaveLength(1);
     expect(recs[0]?.id).toBe('joysound-500003');
-    expect(recs[0]?.categories).toEqual(['anime']);
   });
 
   it('honors a multi-record limit and stops fetching details once limit is hit', async () => {
@@ -294,7 +292,6 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
     expect(crawler.name).toBe('joysound-official-full-catalog');
     expect(recs).toHaveLength(1);
     expect(recs[0]?.id).toBe('joysound-930002');
-    expect(recs[0]?.categories).toEqual(['anime']);
     expect(fetched).toContain(`${FULL_SONGLIST_BASE}/${encodeURIComponent('ア')}?page=1`);
     expect(fetched).toContain(`${FULL_SONGLIST_BASE}/${encodeURIComponent('ア')}?page=2`);
     expect(fetched).toContain(`${FULL_SONGLIST_BASE}/${encodeURIComponent('カ')}?page=1`);
@@ -397,7 +394,6 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
     // The 1st detail fetch failed; the 2nd should be the one that yields.
     expect(recs).toHaveLength(1);
     expect(recs[0]?.id).toBe('joysound-900002');
-    expect(recs[0]?.categories).toEqual(['vocaloid']);
   });
 
   it('skips a record when detail.naviGroupId does not match the listing item', async () => {

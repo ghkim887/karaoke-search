@@ -139,12 +139,7 @@ if (before.length === 0) {
   process.exit(1);
 }
 const sample = before[0];
-if (
-  !sample ||
-  typeof sample.id !== 'string' ||
-  typeof sample.karaoke_numbers !== 'object' ||
-  !Array.isArray(sample.categories)
-) {
+if (!sample || typeof sample.id !== 'string' || typeof sample.karaoke_numbers !== 'object') {
   console.error('[replay-merger] first record does not look like a SongRecord');
   console.error(JSON.stringify(sample, null, 2));
   process.exit(1);

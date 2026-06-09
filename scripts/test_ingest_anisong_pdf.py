@@ -1,12 +1,17 @@
-"""Regression tests for `scripts/ingest_anisong_pdf.py`.
+"""Regression tests for `scripts/ingest_anisong_pdf.py` (coverage-only).
 
-Stdlib-only (`unittest`, no extra deps). Covers the three helpers most prone to
-silent regression: category exclusivity, anchor extraction (false-positive
-floor + rightmost-pick), and Hangul→non-Hangul transition splitting.
+Stdlib-only (`unittest`, no extra deps). Covers the helpers most prone to
+silent regression: anchor extraction (false-positive floor + rightmost-pick)
+and Hangul→non-Hangul transition splitting.
 
 Also includes fixture-based end-to-end tests for `parse_pdf()` against synthetic
 PDF-text snippets (TestParsePdfFixtures) and an idempotency round-trip test
 (TestIngestIdempotent).
+
+The category/section dimension was removed from the schema, so the ingest is
+now coverage-only: it inserts brand-new `tjpdf-{code}` records for PDF codes
+absent from the corpus and skips codes that already exist. New records carry no
+`categories` field.
 
 Run:
     python -m unittest scripts/test_ingest_anisong_pdf.py
@@ -29,43 +34,6 @@ _spec = importlib.util.spec_from_file_location('ingest_anisong_pdf', _SCRIPT_PAT
 assert _spec is not None and _spec.loader is not None
 ingest = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ingest)
-
-
-class TestApplyCategoryExclusivity(unittest.TestCase):
-    """Mirrors the TS test in `packages/schema/src/index.test.ts`.
-
-    Priority: vocaloid > anime > jpop. After the rule is applied, every
-    record has at most one of {jpop, vocaloid, anime}. All 7 non-empty
-    input combinations are covered.
-    """
-
-    def test_jpop_alone_unchanged(self) -> None:
-        self.assertEqual(ingest.apply_category_exclusivity(['jpop']), ['jpop'])
-
-    def test_anime_alone_unchanged(self) -> None:
-        self.assertEqual(ingest.apply_category_exclusivity(['anime']), ['anime'])
-
-    def test_vocaloid_alone_unchanged(self) -> None:
-        self.assertEqual(ingest.apply_category_exclusivity(['vocaloid']), ['vocaloid'])
-
-    def test_jpop_anime_collapses_to_anime(self) -> None:
-        self.assertEqual(ingest.apply_category_exclusivity(['jpop', 'anime']), ['anime'])
-
-    def test_jpop_vocaloid_collapses_to_vocaloid(self) -> None:
-        self.assertEqual(
-            ingest.apply_category_exclusivity(['jpop', 'vocaloid']), ['vocaloid']
-        )
-
-    def test_anime_vocaloid_collapses_to_vocaloid(self) -> None:
-        self.assertEqual(
-            ingest.apply_category_exclusivity(['anime', 'vocaloid']), ['vocaloid']
-        )
-
-    def test_all_three_collapse_to_vocaloid(self) -> None:
-        self.assertEqual(
-            ingest.apply_category_exclusivity(['jpop', 'anime', 'vocaloid']),
-            ['vocaloid'],
-        )
 
 
 class TestExtractAnchor(unittest.TestCase):
@@ -139,18 +107,16 @@ class TestParsePdfFixtures(unittest.TestCase):
     state.
 
     `parse_pdf()` returns (records, caveats) where each record dict contains:
-      'tj', 'title', 'artist', 'title_ko', 'artist_ko', 'source_line', 'section'
+      'tj', 'title', 'artist', 'title_ko', 'artist_ko', 'source_line'
 
-    The 'section' field is the category string ('anime' or 'vocaloid') that
-    main() later writes into `categories`.
+    The parser no longer tracks PDF section dividers (the category dimension
+    was removed from the schema), so records carry no 'section' field.
     """
 
     def test_parse_pdf_anime_row(self) -> None:
-        """A single anime section header followed by one anime data row.
-
-        Expected: exactly one record with section=='anime', the correct TJ
-        number, title_primary candidate (title field), and artist_primary
-        candidate (artist field).
+        """A single data row parses into one record with the correct TJ
+        number, title candidate (title field), and artist candidate
+        (artist field).
 
         The snippet mimics pdftotext -table column layout:
           col 0-19:   anime-name (Hangul)
@@ -169,23 +135,20 @@ class TestParsePdfFixtures(unittest.TestCase):
         records, caveats = ingest.parse_pdf(lines)
         self.assertEqual(len(records), 1, f'expected 1 record, got {len(records)}: {records}')
         rec = records[0]
-        self.assertEqual(rec['section'], 'anime')
+        self.assertNotIn('section', rec, 'parse_pdf must no longer emit a section field')
         self.assertEqual(rec['tj'], '68001')
         self.assertIn('紅蓮の弓矢', rec['title'], f"title should contain the JP title, got {rec['title']!r}")
         self.assertIn('Linked Horizon', rec['artist'], f"artist should contain artist name, got {rec['artist']!r}")
 
-    def test_parse_pdf_vocaloid_section_transition(self) -> None:
-        """Anime header → 1 anime row → 보컬로이드, divider → 1 vocaloid row.
+    def test_parse_pdf_multiple_rows(self) -> None:
+        """Two data rows (one separated by the former vocaloid divider line)
+        parse into two records. The leftmost-column token (formerly a section
+        divider) is now treated as just another anime-name cell — both rows
+        emit normally with no section semantics.
 
-        Expected: 2 records. First has section=='anime', second has
-        section=='vocaloid'. This exercises the _SECTION_DIVIDERS state-machine
-        transition: the divider line is recognised BEFORE the anchor on the same
-        line, so the divider row itself belongs to the new section.
+        Note: 1925 is below _MIN_TJ_CODE (5000) and is ignored; 28000 / 28500
+        are the real TJ codes.
         """
-        # The vocaloid divider line from the real PDF (line 8280):
-        #   보컬로이드,       1925                                    28000  冨田悠斗(とみー/T-POCKET)
-        # Note: 1925 is below _MIN_TJ_CODE (5000) and is ignored; 28000 is the
-        # real TJ code on the same line, so the divider row DOES emit a record.
         lines = [
             '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon\n',
             '                   홍련의 궁시                          링크드 호라이즌\n',
@@ -195,108 +158,10 @@ class TestParsePdfFixtures(unittest.TestCase):
         ]
         records, caveats = ingest.parse_pdf(lines)
         self.assertEqual(len(records), 2, f'expected 2 records, got {len(records)}: {records}')
-        self.assertEqual(records[0]['section'], 'anime',
-                         f"first record should be anime, got {records[0]['section']!r}")
-        self.assertEqual(records[1]['section'], 'vocaloid',
-                         f"second record should be vocaloid, got {records[1]['section']!r}")
-        # Also verify the TJ codes are correct.
+        for rec in records:
+            self.assertNotIn('section', rec)
         self.assertEqual(records[0]['tj'], '68001')
         self.assertEqual(records[1]['tj'], '28500')
-
-    def test_parse_pdf_unknown_section_defaults_to_anime(self) -> None:
-        """Unknown section name defaults to 'anime' with a stderr warning.
-
-        `parse_pdf()` itself only tracks section via `_SECTION_DIVIDERS`; it
-        cannot produce an unknown section string from its own parsing. The
-        warning for unknown sections lives in `main()`, which processes the
-        parsed output. We verify both sides:
-
-        1. `detect_section_divider()` returns None for an unknown keyword, so
-           `parse_pdf()` stays at the default 'anime' section — confirming the
-           parse layer never produces an unknown section string.
-
-        2. The `main()` warning path: we construct a parsed record dict with
-           section='tokusatsu' (unknown) and exercise the warning branch by
-           patching ingest module paths and calling main() with a minimal
-           synthetic corpus. The warning must appear on stderr and the record
-           must be written with categories=['anime'].
-        """
-        # Part 1: detect_section_divider with an unknown keyword returns None.
-        unknown_line = '토쿠사츠,    千本桜                       28500  黒うさP'
-        result = ingest.detect_section_divider(unknown_line)
-        self.assertIsNone(result,
-            'detect_section_divider should return None for unknown keyword')
-
-        # Part 2: parse_pdf never produces an unknown section — all lines that
-        # don't match a known divider keep the current_section (defaults to anime).
-        lines = [
-            '토쿠사츠,    千本桜                       28500  黒うさP\n',
-        ]
-        records, _caveats = ingest.parse_pdf(lines)
-        self.assertEqual(len(records), 1)
-        self.assertEqual(records[0]['section'], 'anime',
-            f"unknown-keyword line should keep section='anime', got {records[0]['section']!r}")
-
-        # Part 3: exercise the main() warning branch by patching SONGS_JSON and
-        # PDF_TEXT to point at synthetic temp files. We inject a record with an
-        # unknown section via a synthetic PDF text file, then confirm the stderr
-        # warning is emitted and the resulting record gets categories=['anime'].
-        #
-        # The only way to get an unknown section into main()'s loop is to inject
-        # it into the `unique` list that parse_pdf() produces. Since parse_pdf()
-        # can't produce an unknown section (Part 2 above), we patch parse_pdf
-        # itself to return a synthetic record with section='tokusatsu'.
-        synthetic_song = {
-            'id': 'blog-99999',
-            'source_url': 'https://example.com',
-            'title_primary': '千本桜',
-            'title_ko': '센본자쿠라',
-            'artist_primary': '黒うさP',
-            'artist_ko': '쿠로우사P',
-            'karaoke_numbers': {'tj': '28500', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
-            'crawled_at': '2026-01-01T00:00:00+00:00',
-        }
-        fake_parse_result = ([{
-            'tj': '99901',
-            'title': '千本桜',
-            'artist': '黒うさP',
-            'title_ko': None,
-            'artist_ko': None,
-            'source_line': 0,
-            'section': 'tokusatsu',  # unknown section
-        }], [])
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            # Minimal PDF text (content doesn't matter — parse_pdf is patched).
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([synthetic_song], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-
-            stderr_buf = io.StringIO()
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-                patch('sys.stderr', stderr_buf),
-            ):
-                exit_code = ingest.main()
-
-            self.assertEqual(exit_code, 0, 'main() should succeed')
-            stderr_output = stderr_buf.getvalue()
-            self.assertIn('tokusatsu', stderr_output,
-                f'expected stderr warning mentioning unknown section, got: {stderr_output!r}')
-
-            # The new record with the unknown section must default to anime.
-            result_corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            new_recs = [r for r in result_corpus if r.get('id', '').startswith('tjpdf-')]
-            self.assertEqual(len(new_recs), 1, f'expected 1 new tjpdf- record, got {new_recs}')
-            self.assertEqual(new_recs[0]['categories'], ['anime'],
-                f"unknown section should default to anime, got {new_recs[0]['categories']!r}")
 
 
 class TestIngestIdempotent(unittest.TestCase):
@@ -308,12 +173,16 @@ class TestIngestIdempotent(unittest.TestCase):
     the temp files rather than the real repo paths.
 
     Synthetic corpus has 3 records:
-      - 1 TJ-numbered record (TJ 68001) — will get its category updated.
+      - 1 TJ-numbered record (TJ 68001) — already present, so the matching PDF
+        row is skipped (coverage-only).
       - 1 record without a TJ number — untouched by the ingest.
-      - 1 existing tjpdf-* record — will be dropped and re-inserted.
+      - 1 existing tjpdf-* record (TJ 28500) — dropped by the pre-pass; the PDF
+        also carries 28500, but the corpus already has a non-tjpdf row for it?
+        No — 28500 only exists as the tjpdf-* row, which is dropped, so the PDF
+        row re-inserts it.
     """
 
-    # Minimal synthetic PDF text with two anime records (TJ 68001 and TJ 28500)
+    # Minimal synthetic PDF text with two data rows (TJ 68001 and TJ 28500)
     # using realistic pdftotext -table column spacing.
     _SYNTHETIC_PDF = (
         '진격의 거인         紅蓮の弓矢                   68001  Linked Horizon\n'
@@ -333,7 +202,6 @@ class TestIngestIdempotent(unittest.TestCase):
                 'artist_primary': 'Linked Horizon',
                 'artist_ko': '링크드 호라이즌',
                 'karaoke_numbers': {'tj': '68001', 'ky': None, 'joysound': None},
-                'categories': ['jpop'],
                 'crawled_at': '2026-01-01T00:00:00+00:00',
             },
             {
@@ -344,7 +212,6 @@ class TestIngestIdempotent(unittest.TestCase):
                 'artist_primary': 'Some Artist',
                 'artist_ko': None,
                 'karaoke_numbers': {'tj': None, 'ky': None, 'joysound': None},
-                'categories': ['jpop'],
                 'crawled_at': '2026-01-01T00:00:00+00:00',
             },
             {
@@ -355,12 +222,11 @@ class TestIngestIdempotent(unittest.TestCase):
                 'artist_primary': '黒うさP',
                 'artist_ko': '쿠로우사P',
                 'karaoke_numbers': {'tj': '28500', 'ky': None, 'joysound': None},
-                'categories': ['anime'],
                 'crawled_at': '2026-03-01T00:00:00+00:00',
             },
         ]
 
-    def test_apply_categories_to_existing_records_idempotent(self) -> None:
+    def test_coverage_only_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             songs_path = Path(tmpdir) / 'songs.json'
             pdf_path = Path(tmpdir) / 'anisong.txt'
@@ -394,13 +260,89 @@ class TestIngestIdempotent(unittest.TestCase):
                 'second ingest run must produce byte-identical output (idempotency)'
             )
 
-            # Sanity-check the first run's output: the blog-68001 record should
-            # have been updated to categories=['anime'] (anime wins over jpop).
             corpus = json.loads(output_1.decode('utf-8'))
-            blog_rec = next((r for r in corpus if r['id'] == 'blog-68001'), None)
+            by_id = {r['id']: r for r in corpus}
+
+            # The blog-68001 record (already present) must be untouched — no
+            # categories key added, all original fields intact.
+            blog_rec = by_id.get('blog-68001')
             self.assertIsNotNone(blog_rec, 'blog-68001 should still be present')
-            self.assertEqual(blog_rec['categories'], ['anime'],  # type: ignore[index]
-                f"blog-68001 categories should be ['anime'], got {blog_rec['categories']!r}")  # type: ignore[index]
+            assert blog_rec is not None
+            self.assertNotIn('categories', blog_rec,
+                'coverage-only ingest must not add a categories field')
+            self.assertEqual(blog_rec['title_primary'], '紅蓮の弓矢')
+
+            # The tjpdf-28500 record was dropped by the pre-pass and re-inserted
+            # from the PDF row (28500 has no non-tjpdf corpus row).
+            tjpdf_rec = by_id.get('tjpdf-28500')
+            self.assertIsNotNone(tjpdf_rec, 'tjpdf-28500 should be re-inserted')
+            assert tjpdf_rec is not None
+            self.assertNotIn('categories', tjpdf_rec,
+                'new tjpdf-* record must not carry a categories field')
+
+    def test_new_record_has_no_categories_field(self) -> None:
+        """A brand-new PDF code (absent from the corpus) is inserted as a
+        tjpdf-* record WITHOUT a categories field — the category dimension was
+        removed from the schema.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            pdf_path.write_text(self._SYNTHETIC_PDF, encoding='utf-8')
+            # Empty corpus — both PDF codes are brand-new.
+            songs_path.write_text(
+                json.dumps([], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            self.assertEqual(len(corpus), 2, f'expected 2 new records, got {len(corpus)}')
+            for rec in corpus:
+                self.assertTrue(rec['id'].startswith('tjpdf-'))
+                self.assertNotIn('categories', rec,
+                    f"new record {rec['id']} must not carry categories, got {rec.keys()}")
+                # Canonical shape minus categories.
+                self.assertIn('karaoke_numbers', rec)
+                self.assertIn('crawled_at', rec)
+                self.assertIn('title_primary', rec)
+                self.assertIn('artist_primary', rec)
+
+    def test_existing_code_skipped_not_duplicated(self) -> None:
+        """A PDF code that already exists in the corpus (non-tjpdf row) is
+        skipped — no duplicate tjpdf-* record is created.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            pdf_path.write_text(self._SYNTHETIC_PDF, encoding='utf-8')
+            # Corpus has only blog-68001 (TJ 68001). 28500 is brand-new.
+            songs_path.write_text(
+                json.dumps([self._make_corpus()[0]], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            ids = sorted(r['id'] for r in corpus)
+            # 68001 stays as blog-68001 (skipped, no tjpdf-68001 created).
+            self.assertIn('blog-68001', ids)
+            self.assertNotIn('tjpdf-68001', ids,
+                'existing code must not produce a duplicate tjpdf-* record')
+            # 28500 is brand-new → inserted.
+            self.assertIn('tjpdf-28500', ids)
 
     def test_tjpdf_record_artist_aliases_preserved_across_runs(self) -> None:
         """Regression: the pre-pass drops every tjpdf-* row and the new-record
@@ -425,7 +367,7 @@ class TestIngestIdempotent(unittest.TestCase):
                       'artist_primary', 'artist_ko'):
                 canonical[k] = tjpdf_rec[k]
             canonical['artist_aliases'] = ['黒うさ', '黒うさＰ']
-            for k in ('karaoke_numbers', 'categories', 'crawled_at'):
+            for k in ('karaoke_numbers', 'crawled_at'):
                 canonical[k] = tjpdf_rec[k]
             corpus[corpus.index(tjpdf_rec)] = canonical
             songs_path.write_text(
@@ -464,8 +406,7 @@ class TestIngestIdempotent(unittest.TestCase):
 
 class TestDropListFilter(unittest.TestCase):
     """Drop-list filter (post-Phase-2 Gap 3): a parsed PDF row whose artist
-    matches the Korean-artist drop set must NOT be inserted as a new record
-    OR be used to patch an existing record's categories.
+    matches the Korean-artist drop set must NOT be inserted as a new record.
 
     Exercises `is_artist_in_drop_list` directly + the main()-level integration
     against a synthetic drop-list sidecar.
@@ -528,14 +469,12 @@ class TestDropListFilter(unittest.TestCase):
 
     def test_main_skips_kpop_row_with_sidecar_present(self) -> None:
         """End-to-end: a parsed PDF row for 東方神起 / TVXQ must not produce
-        a tjpdf-* record when the sidecar contains the act's keys, AND must
-        not patch an existing corpus row's categories.
+        a tjpdf-* record when the sidecar contains the act's keys.
 
         We patch parse_pdf to return one drop-list-matching row + one normal
         row (28500 / 黒うさP). Expected post-run state:
           - tjpdf-26709 NOT inserted (drop-list match)
-          - tjpdf-28500 inserted (normal vocaloid row)
-          - dropped_kpop counter == 1
+          - tjpdf-28500 inserted (normal row)
         """
         synthetic_sidecar = {
             'version': 1,
@@ -551,7 +490,6 @@ class TestDropListFilter(unittest.TestCase):
                     'title_ko': None,
                     'artist_ko': None,
                     'source_line': 0,
-                    'section': 'anime',
                 },
                 {
                     'tj': '28500',
@@ -560,7 +498,6 @@ class TestDropListFilter(unittest.TestCase):
                     'title_ko': '센본자쿠라',
                     'artist_ko': '쿠로우사P',
                     'source_line': 1,
-                    'section': 'vocaloid',
                 },
             ],
             [],
@@ -610,7 +547,6 @@ class TestDropListFilter(unittest.TestCase):
                     'title_ko': None,
                     'artist_ko': None,
                     'source_line': 0,
-                    'section': 'anime',
                 },
             ],
             [],
@@ -644,531 +580,12 @@ class TestDropListFilter(unittest.TestCase):
             self.assertIn('tjpdf-26709', ids)
 
 
-class TestPdfVocaloidDenylist(unittest.TestCase):
-    """PDF vocaloid-section denylist (Fix 1, 2026-05-04 — TODO 1 from the
-    2026-05-03 vocaloid-mistag audit).
-
-    The PDF's `보컬로이드,` section mixes real Vocaloid producers with non-
-    Vocaloid bands that have anime/Nicodō tie-in tracks. The 7-entry denylist
-    downgrades known-mistagged acts from `vocaloid` to `anime` at ingest time.
-    Mirrors the membership semantics of `is_artist_in_drop_list` (any
-    component of the artist string can match).
-    """
-
-    def test_helper_matches_lead_artist(self) -> None:
-        # Bare denylisted lead → match.
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_denylist('HoneyWorks'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_denylist('Gackt'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_denylist('GARNiDELiA'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_denylist('LIP×LIP'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_denylist('三月のパンタシア'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_denylist('Team.ねこかん[猫]'))
-
-    def test_helper_matches_collab_lead(self) -> None:
-        # `(Feat.X)` parenthetical: lead component still matches even though
-        # the featured act is a real Vocaloid (per spec — every PDF-section
-        # HoneyWorks row is a human-vocal mistag; legitimate HoneyWorks×
-        # Vocaloid records reach the corpus via the blog adapter).
-        self.assertTrue(
-            ingest.is_artist_in_pdf_vocaloid_denylist('HoneyWorks(Feat.GUMI)')
-        )
-        self.assertTrue(
-            ingest.is_artist_in_pdf_vocaloid_denylist('HoneyWorks(Feat.初音ミク)')
-        )
-
-    def test_helper_matches_with_collab_form(self) -> None:
-        # `CHiCO with HoneyWorks` and `CHiCOwithHoneyWorks` collapse to the
-        # same normalized key after whitespace strip — both must match.
-        self.assertTrue(
-            ingest.is_artist_in_pdf_vocaloid_denylist('CHiCOwithHoneyWorks')
-        )
-        self.assertTrue(
-            ingest.is_artist_in_pdf_vocaloid_denylist('CHiCO with HoneyWorks')
-        )
-
-    def test_helper_matches_meets_collab_form(self) -> None:
-        # Regression guard for MAJOR finding (code-review pass, 2026-05-04):
-        # `_DROP_SPLIT_RE` previously lacked `\s+meets\s+`, so the corpus
-        # record `tj-68335` ('CHiCO with HoneyWorks meets 中川翔子') produced
-        # components ['CHiCO with HoneyWorks meets 中川翔子', 'CHiCO',
-        # 'HoneyWorks meets 中川翔子'] — none of which matched 'HoneyWorks'.
-        # The fix adds `\s+meets\s+` to `_DROP_SPLIT_RE` so 'HoneyWorks'
-        # surfaces as a standalone component and triggers the denylist.
-        self.assertTrue(
-            ingest.is_artist_in_pdf_vocaloid_denylist(
-                'CHiCO with HoneyWorks meets 中川翔子'
-            )
-        )
-
-    def test_helper_misses_legitimate_vocaloid_producer(self) -> None:
-        # Real Vocaloid producers must NOT match. Sanity sample.
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_denylist('黒うさP'))
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_denylist('ryo(supercell)'))
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_denylist('ナノウ'))
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_denylist('冨田悠斗'))
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_denylist('YOASOBI'))
-
-    def test_main_downgrades_denylisted_vocaloid_row(self) -> None:
-        """End-to-end: a parsed PDF row with section='vocaloid' AND a
-        denylisted artist must be inserted as a tjpdf-* record with
-        categories=['anime'], not ['vocaloid'].
-
-        Co-tested: a non-denylisted vocaloid row in the same batch keeps its
-        vocaloid tag — regression guard.
-        """
-        fake_parse_result = (
-            [
-                {
-                    'tj': '28898',
-                    'title': 'Gokuraku Jodo',
-                    'artist': 'GARNiDELiA',
-                    'title_ko': None,
-                    'artist_ko': None,
-                    'source_line': 0,
-                    'section': 'vocaloid',  # PDF said vocaloid…
-                },
-                {
-                    'tj': '28500',
-                    'title': '千本桜',
-                    'artist': '黒うさP',
-                    'title_ko': '센본자쿠라',
-                    'artist_ko': '쿠로우사P',
-                    'source_line': 1,
-                    'section': 'vocaloid',  # …but this one is a real Vocaloid producer.
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            by_id = {r['id']: r for r in corpus}
-
-            self.assertIn('tjpdf-28898', by_id)
-            self.assertEqual(
-                by_id['tjpdf-28898']['categories'],
-                ['anime'],
-                f"GARNiDELiA should downgrade to anime, got {by_id['tjpdf-28898']['categories']!r}",
-            )
-
-            self.assertIn('tjpdf-28500', by_id)
-            self.assertEqual(
-                by_id['tjpdf-28500']['categories'],
-                ['vocaloid'],
-                f"黒うさP should stay vocaloid, got {by_id['tjpdf-28500']['categories']!r}",
-            )
-
-
-class TestPdfVocaloidSkipList(unittest.TestCase):
-    """PDF vocaloid-section skip-list (2026-05-07).
-
-    Mainstream artists the PDF erroneously placed in its vocaloid section whose
-    tracks are NOT anime tie-ins. Skip-list rows skip section-tagging entirely —
-    the corpus record's existing categories are preserved unchanged.
-
-    Processed BEFORE the denylist: skip-list match suppresses both vocaloid AND
-    anime tagging; denylist match (non-skip) downgrades vocaloid→anime.
-    """
-
-    def test_helper_matches_skip_list_artists(self) -> None:
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('米津玄師'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('ずっと真夜中でいいのに。'))
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('Aimer'))
-
-    def test_helper_matches_co_vocalist_form(self) -> None:
-        # Blog adapter emits `米津玄師(+菅田将暉)` for co-vocalist tracks.
-        # The `(+X)` parenthetical is not split by _DROP_SPLIT_RE, so the helper
-        # must strip it before the key lookup to get `米津玄師` as the lead.
-        self.assertTrue(ingest.is_artist_in_pdf_vocaloid_skip_list('米津玄師(+菅田将暉)'))
-
-    def test_helper_misses_denylist_artist(self) -> None:
-        # HoneyWorks is on the denylist, NOT the skip-list.
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('HoneyWorks'))
-
-    def test_helper_misses_yonezu_vocaloid_alias(self) -> None:
-        # ハチ is Yonezu's Vocaloid alias — a different artist_primary string.
-        # The skip-list matches `米津玄師` only, not `ハチ`.
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('ハチ'))
-
-    def test_helper_misses_unrelated_artist(self) -> None:
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('YOASOBI'))
-        self.assertFalse(ingest.is_artist_in_pdf_vocaloid_skip_list('黒うさP'))
-
-    def test_main_skips_section_tag_for_skip_list_artist(self) -> None:
-        """End-to-end: a parsed PDF row with section='vocaloid' AND a skip-list
-        artist must NOT modify the existing corpus record's categories, AND must
-        NOT insert a new tjpdf-* record.
-
-        Fixture: one existing corpus record (tj 98001) for 米津玄師 with
-        categories=['jpop']. One vocaloid-section PDF row for the same code.
-        After ingest, the record must still have categories=['jpop'].
-
-        Co-tested: a normal vocaloid row in the same batch (黒うさP / tj 28500)
-        still gets its vocaloid tag — skip-list is not a blanket suppressor.
-        """
-        existing_song = {
-            'id': 'tj-98001',
-            'source_url': 'https://www.tjmedia.com/legacy/api/newSongOfMonth',
-            'title_primary': 'Lemon',
-            'title_ko': None,
-            'artist_primary': '米津玄師',
-            'artist_ko': None,
-            'karaoke_numbers': {'tj': '98001', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
-            'crawled_at': '2026-01-01T00:00:00+00:00',
-        }
-        fake_parse_result = (
-            [
-                {
-                    'tj': '98001',
-                    'title': 'Lemon',
-                    'artist': '米津玄師',
-                    'title_ko': None,
-                    'artist_ko': None,
-                    'source_line': 0,
-                    'section': 'vocaloid',  # PDF said vocaloid — but skip-list match
-                },
-                {
-                    'tj': '28500',
-                    'title': '千本桜',
-                    'artist': '黒うさP',
-                    'title_ko': '센본자쿠라',
-                    'artist_ko': '쿠로우사P',
-                    'source_line': 1,
-                    'section': 'vocaloid',  # normal vocaloid row — must stay vocaloid
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([existing_song], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            by_id = {r['id']: r for r in corpus}
-
-            # 米津玄師 record must be unchanged — still jpop, no vocaloid added.
-            self.assertIn('tj-98001', by_id)
-            self.assertEqual(
-                by_id['tj-98001']['categories'],
-                ['jpop'],
-                f"米津玄師 should keep jpop, got {by_id['tj-98001']['categories']!r}",
-            )
-
-            # No new tjpdf-98001 record should have been created (skip continues).
-            self.assertNotIn('tjpdf-98001', by_id,
-                'skip-list match must not insert a new tjpdf-* record')
-
-            # Normal vocaloid row must still be inserted with vocaloid tag.
-            self.assertIn('tjpdf-28500', by_id)
-            self.assertEqual(
-                by_id['tjpdf-28500']['categories'],
-                ['vocaloid'],
-                f"黒うさP should stay vocaloid, got {by_id['tjpdf-28500']['categories']!r}",
-            )
-
-    def test_main_scrubs_stale_vocaloid_on_skip_list_artist(self) -> None:
-        """Stale-vocaloid scrub: an existing corpus row carrying `vocaloid` from
-        a prior ingest that ran BEFORE the skip-list existed must have that tag
-        removed when the current ingest's PDF row triggers the skip-list.
-
-        Without the scrub, re-running the ingest after a prior bad run would
-        leave the stale vocaloid tag in place forever (the `continue` alone only
-        prevents NEW section tags — it can't retroactively clean prior runs).
-        """
-        existing_song_stale = {
-            'id': 'tj-98001',
-            'source_url': 'https://www.tjmedia.com/legacy/api/newSongOfMonth',
-            'title_primary': 'Lemon',
-            'title_ko': None,
-            'artist_primary': '米津玄師',
-            'artist_ko': None,
-            'karaoke_numbers': {'tj': '98001', 'ky': None, 'joysound': None},
-            'categories': ['vocaloid'],  # stale tag from a prior bad ingest run
-            'crawled_at': '2026-01-01T00:00:00+00:00',
-        }
-        fake_parse_result = (
-            [
-                {
-                    'tj': '98001',
-                    'title': 'Lemon',
-                    'artist': '米津玄師',
-                    'title_ko': None,
-                    'artist_ko': None,
-                    'source_line': 0,
-                    'section': 'vocaloid',
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([existing_song_stale], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            by_id = {r['id']: r for r in corpus}
-
-            self.assertIn('tj-98001', by_id)
-            cats = by_id['tj-98001']['categories']
-            self.assertNotIn(
-                'vocaloid', cats,
-                f"stale vocaloid must be scrubbed for skip-list artist, got {cats!r}",
-            )
-            # After scrubbing vocaloid the record must have a valid non-empty category.
-            self.assertTrue(len(cats) > 0, f"categories must not be empty after scrub, got {cats!r}")
-
-
 class TestDropSplitReContents(unittest.TestCase):
     """Parity-protection tests for `DROP_SPLIT_RE` character contents."""
 
     def test_drop_split_re_contains_full_width_pipe_for_ts_parity(self):
         """U+FF5C parity with TS SPLIT_RE — protects against future regex tidying."""
         self.assertIn('｜', ingest.DROP_SPLIT_RE.pattern)
-
-    def test_main_downgrades_collab_lead_match(self) -> None:
-        """A `HoneyWorks(Feat.GUMI)` row in section='vocaloid' must downgrade
-        to `anime` — the lead component matches the denylist, so the tag
-        flips even though the featured act `GUMI` is a real Vocaloid.
-
-        This documents the spec: every PDF-section HoneyWorks row is treated
-        as a human-vocal anime track. Legitimate HoneyWorks×Vocaloid records
-        reach the corpus via the blog adapter (which this filter never
-        touches).
-        """
-        fake_parse_result = (
-            [
-                {
-                    'tj': '28275',
-                    'title': '可愛くなりたい',
-                    'artist': 'HoneyWorks(Feat.GUMI)',
-                    'title_ko': None,
-                    'artist_ko': None,
-                    'source_line': 0,
-                    'section': 'vocaloid',
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            self.assertEqual(len(corpus), 1)
-            self.assertEqual(
-                corpus[0]['categories'],
-                ['anime'],
-                f"HoneyWorks(Feat.GUMI) should downgrade to anime, got {corpus[0]['categories']!r}",
-            )
-
-    def test_main_scrubs_stale_vocaloid_on_existing_row(self) -> None:
-        """An existing corpus row (e.g. tj-27967) carrying a stale `vocaloid`
-        tag from a prior ingest's tjpdf-* merge MUST have that tag scrubbed
-        when the current ingest's PDF row triggers the denylist downgrade.
-
-        Without the scrub, the union + applyCategoryExclusivity path sees
-        `['vocaloid', 'anime']` and the vocaloid>anime priority re-elevates
-        the tag — leaving the row mistagged forever. The scrub is what makes
-        Fix 1 actually retag the merger-propagated tj-* rows the audit called
-        out.
-        """
-        existing_song = {
-            'id': 'tj-27967',
-            'source_url': 'https://www.tjmedia.com/legacy/api/newSongOfMonth',
-            'title_primary': '可愛くなりたい',
-            'title_ko': None,
-            'artist_primary': 'HoneyWorks(Feat.GUMI)',
-            'artist_ko': None,
-            'karaoke_numbers': {'tj': '27967', 'ky': None, 'joysound': None},
-            'categories': ['vocaloid'],  # stale tag from prior merge
-            'crawled_at': '2026-01-01T00:00:00+00:00',
-        }
-        fake_parse_result = (
-            [
-                {
-                    'tj': '27967',
-                    'title': '可愛くなりたい',
-                    'artist': 'HoneyWorks(Feat.GUMI)',
-                    'title_ko': None,
-                    'artist_ko': None,
-                    'source_line': 0,
-                    'section': 'vocaloid',  # PDF still says vocaloid…
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([existing_song], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            tj_rec = next((r for r in corpus if r['id'] == 'tj-27967'), None)
-            self.assertIsNotNone(tj_rec, 'tj-27967 must still be present')
-            assert tj_rec is not None
-            self.assertEqual(
-                tj_rec['categories'],
-                ['anime'],
-                f'stale vocaloid must be scrubbed when downgrade triggers, '
-                f"got {tj_rec['categories']!r}",
-            )
-
-    def test_main_does_not_scrub_vocaloid_on_non_denylisted_row(self) -> None:
-        """Regression guard: a non-denylisted vocaloid row's existing
-        `vocaloid` tag must NOT be scrubbed. Only the denylist match triggers
-        the scrub.
-        """
-        existing_song = {
-            'id': 'tj-28500',
-            'source_url': 'https://www.tjmedia.com/legacy/api/newSongOfMonth',
-            'title_primary': '千本桜',
-            'title_ko': '센본자쿠라',
-            'artist_primary': '黒うさP',
-            'artist_ko': '쿠로우사P',
-            'karaoke_numbers': {'tj': '28500', 'ky': None, 'joysound': None},
-            'categories': ['vocaloid'],
-            'crawled_at': '2026-01-01T00:00:00+00:00',
-        }
-        fake_parse_result = (
-            [
-                {
-                    'tj': '28500',
-                    'title': '千本桜',
-                    'artist': '黒うさP',
-                    'title_ko': '센본자쿠라',
-                    'artist_ko': '쿠로우사P',
-                    'source_line': 0,
-                    'section': 'vocaloid',
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([existing_song], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            tj_rec = next((r for r in corpus if r['id'] == 'tj-28500'), None)
-            self.assertIsNotNone(tj_rec)
-            assert tj_rec is not None
-            self.assertEqual(
-                tj_rec['categories'],
-                ['vocaloid'],
-                f"non-denylisted vocaloid must stay vocaloid, got {tj_rec['categories']!r}",
-            )
-
-    def test_main_does_not_downgrade_anime_section_denylist_match(self) -> None:
-        """The denylist only fires inside `section='vocaloid'`. A denylisted
-        artist parsed from the anime section keeps `categories=['anime']`
-        unchanged — defensive guard so we don't accidentally recategorize
-        legitimately anime-tagged records.
-        """
-        fake_parse_result = (
-            [
-                {
-                    'tj': '68044',
-                    'title': 'まいふぇいばりっと',
-                    'artist': 'LIP×LIP',
-                    'title_ko': None,
-                    'artist_ko': None,
-                    'source_line': 0,
-                    'section': 'anime',  # already anime — denylist must be a no-op
-                },
-            ],
-            [],
-        )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            songs_path = Path(tmpdir) / 'songs.json'
-            pdf_path = Path(tmpdir) / 'anisong.txt'
-            pdf_path.write_text('dummy\n', encoding='utf-8')
-            songs_path.write_text(
-                json.dumps([], ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-            with (
-                patch.object(ingest, 'PDF_TEXT', pdf_path),
-                patch.object(ingest, 'SONGS_JSON', songs_path),
-                patch.object(ingest, 'parse_pdf', return_value=fake_parse_result),
-            ):
-                exit_code = ingest.main()
-            self.assertEqual(exit_code, 0)
-            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
-            self.assertEqual(len(corpus), 1)
-            self.assertEqual(
-                corpus[0]['categories'],
-                ['anime'],
-                f"LIP×LIP from anime section should stay anime (no-op), got {corpus[0]['categories']!r}",
-            )
 
 
 class TestIsoUtcNow(unittest.TestCase):

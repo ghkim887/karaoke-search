@@ -183,7 +183,6 @@ class TestMainAtomicWrite(unittest.TestCase):
                 'artist_primary': 'A',
                 'artist_ko': None,
                 'karaoke_numbers': {'tj': '1', 'ky': None, 'joysound': None},
-                'categories': ['jpop'],
                 'crawled_at': '2026-05-06T00:00:00.000Z',
             },
             {
@@ -194,7 +193,6 @@ class TestMainAtomicWrite(unittest.TestCase):
                 'artist_primary': 'B',
                 'artist_ko': None,
                 'karaoke_numbers': {'tj': None, 'ky': None, 'joysound': None},
-                'categories': ['jpop'],
                 'crawled_at': '2026-05-06T00:00:00.000Z',
             },
         ]
@@ -223,7 +221,6 @@ class TestMainAtomicWrite(unittest.TestCase):
                 'artist_primary': 'A',
                 'artist_ko': None,
                 'karaoke_numbers': {'tj': '1', 'ky': None, 'joysound': None},
-                'categories': ['jpop'],
                 'crawled_at': '2026-05-06T00:00:00.000Z',
             },
         ]

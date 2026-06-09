@@ -33,7 +33,6 @@ function record(overrides = {}) {
     artist_primary: '米津玄師',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-06-01T00:00:00.000Z',
     ...overrides,
   };

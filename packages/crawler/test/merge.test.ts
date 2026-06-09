@@ -1,6 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
-import { applyCategoryExclusivity, mergeRecords } from '../src/merge.js';
+import { mergeRecords } from '../src/merge.js';
 
 function record(over: Partial<SongRecord>): SongRecord {
   return {
@@ -11,7 +11,6 @@ function record(over: Partial<SongRecord>): SongRecord {
     artist_primary: 'ヨルシカ',
     artist_ko: null,
     karaoke_numbers: { tj: null, ky: null, joysound: null },
-    categories: ['jpop'],
     crawled_at: '2026-04-26T10:00:00Z',
     ...over,
   };
@@ -85,7 +84,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       artist_primary: 'YOASOBI',
       artist_ko: null,
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const blog = record({
       id: 'blog-1-0',
@@ -95,7 +93,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
-      categories: ['jpop'],
     });
 
     const { records, conflicts } = mergeRecords([tj, blog]);
@@ -281,7 +278,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
       title_ko: '멜트',
       artist_primary: 'ryo',
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([tjpdf]);
@@ -338,138 +334,6 @@ describe('mergeRecords — v2 two-tier match key + per-field ownership', () => {
   });
 });
 
-describe('applyCategoryExclusivity — priority vocaloid > anime > jpop', () => {
-  it('leaves [jpop] unchanged', () => {
-    expect(applyCategoryExclusivity(['jpop'])).toEqual(['jpop']);
-  });
-
-  it('drops jpop from [jpop, anime] -> [anime]', () => {
-    expect(applyCategoryExclusivity(['anime', 'jpop'])).toEqual(['anime']);
-  });
-
-  it('drops jpop from [jpop, vocaloid] -> [vocaloid]', () => {
-    expect(applyCategoryExclusivity(['jpop', 'vocaloid'])).toEqual(['vocaloid']);
-  });
-
-  it('collapses [jpop, anime, vocaloid] -> [vocaloid]', () => {
-    expect(applyCategoryExclusivity(['anime', 'jpop', 'vocaloid'])).toEqual(['vocaloid']);
-  });
-
-  it('drops anime from [anime, vocaloid] -> [vocaloid] (vocaloid wins)', () => {
-    expect(applyCategoryExclusivity(['anime', 'vocaloid'])).toEqual(['vocaloid']);
-  });
-
-  it('leaves [anime] unchanged', () => {
-    expect(applyCategoryExclusivity(['anime'])).toEqual(['anime']);
-  });
-
-  it('leaves [vocaloid] unchanged', () => {
-    expect(applyCategoryExclusivity(['vocaloid'])).toEqual(['vocaloid']);
-  });
-});
-
-describe('mergeRecords — category exclusivity (priority vocaloid > anime > jpop)', () => {
-  it('strips jpop when a Tier A cluster set-unions to jpop+anime', () => {
-    const tj = record({
-      id: 'tj-50000',
-      source_url: 'https://tj.test/50000',
-      title_primary: '夜に駆ける',
-      artist_primary: 'YOASOBI',
-      karaoke_numbers: { tj: '50000', ky: null, joysound: null },
-      categories: ['jpop'],
-    });
-    const blog = record({
-      id: 'blog-200-0',
-      source_url: 'https://blog.test/200',
-      title_primary: '夜に駆ける',
-      artist_primary: 'YOASOBI',
-      karaoke_numbers: { tj: '50000', ky: null, joysound: null },
-      categories: ['anime'],
-    });
-
-    const { records } = mergeRecords([tj, blog]);
-    expect(records).toHaveLength(1);
-    expect(records[0]?.categories).toEqual(['anime']);
-  });
-
-  it('collapses [jpop, anime, vocaloid] -> [vocaloid] when a Tier A cluster set-unions across all three', () => {
-    const tj = record({
-      id: 'tj-50001',
-      source_url: 'https://tj.test/50001',
-      title_primary: 'メルト',
-      artist_primary: 'ryo',
-      karaoke_numbers: { tj: '50001', ky: null, joysound: null },
-      categories: ['jpop'],
-    });
-    const blog = record({
-      id: 'blog-201-0',
-      source_url: 'https://blog.test/201',
-      title_primary: 'メルト',
-      artist_primary: 'ryo',
-      karaoke_numbers: { tj: '50001', ky: null, joysound: null },
-      categories: ['anime'],
-    });
-    const tjpdf = record({
-      id: 'tjpdf-300',
-      source_url: 'https://tjpdf.test/300',
-      title_primary: 'メルト',
-      artist_primary: 'ryo',
-      karaoke_numbers: { tj: '50001', ky: null, joysound: null },
-      categories: ['vocaloid'],
-    });
-
-    const { records } = mergeRecords([tj, blog, tjpdf]);
-    expect(records).toHaveLength(1);
-    expect(records[0]?.categories).toEqual(['vocaloid']);
-  });
-
-  it('two single-tag inputs anime + vocaloid collapse to [vocaloid] (vocaloid wins)', () => {
-    const a = record({
-      id: 'tj-50100',
-      source_url: 'https://tj.test/50100',
-      title_primary: 'Sample',
-      artist_primary: 'Artist',
-      karaoke_numbers: { tj: '50100', ky: null, joysound: null },
-      categories: ['anime'],
-    });
-    const b = record({
-      id: 'blog-300-0',
-      source_url: 'https://blog.test/300',
-      title_primary: 'Sample',
-      artist_primary: 'Artist',
-      karaoke_numbers: { tj: '50100', ky: null, joysound: null },
-      categories: ['vocaloid'],
-    });
-
-    const { records } = mergeRecords([a, b]);
-    expect(records).toHaveLength(1);
-    expect(records[0]?.categories).toEqual(['vocaloid']);
-  });
-
-  it('two anime inputs stay [anime] under set-union', () => {
-    const a = record({
-      id: 'tj-50200',
-      source_url: 'https://tj.test/50200',
-      title_primary: 'Anime A',
-      artist_primary: 'X',
-      karaoke_numbers: { tj: '50200', ky: null, joysound: null },
-      categories: ['anime'],
-    });
-    const b = record({
-      id: 'blog-301-0',
-      source_url: 'https://blog.test/301',
-      title_primary: 'Anime A',
-      artist_primary: 'X',
-      karaoke_numbers: { tj: '50200', ky: null, joysound: null },
-      categories: ['anime'],
-    });
-
-    const { records } = mergeRecords([a, b]);
-    expect(records).toHaveLength(1);
-    expect(records[0]?.categories).toEqual(['anime']);
-  });
-});
-
 // ---------------------------------------------------------------------
 // Tier C — cross-source primary-artist-token merge with cross-source gate
 // ---------------------------------------------------------------------
@@ -481,7 +345,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '少女A',
       artist_primary: '椎名もた(Feat.鏡音リン)',
       karaoke_numbers: { tj: '52498', ky: null, joysound: null },
-      categories: ['vocaloid'],
     });
     const blog = record({
       id: 'blog-487-1',
@@ -490,7 +353,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       artist_primary: '椎名もた｜ぽわぽわP',
       title_ko: '소녀A',
       karaoke_numbers: { tj: null, ky: null, joysound: '672848' },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([tj, blog]);
@@ -505,7 +367,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     expect(m.artist_primary).toBe('椎名もた(Feat.鏡音リン)');
     // blog wins title_ko via the ko chain (blog > tjpdf > tj).
     expect(m.title_ko).toBe('소녀A');
-    expect(m.categories).toEqual(['vocaloid']);
     // id/source_url tiebreak: blog (rank 1) wins over tj (rank 3).
     expect(m.id).toBe('blog-487-1');
 
@@ -524,7 +385,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: 'IDOL',
       artist_primary: '방탄소년단',
       karaoke_numbers: { tj: '98374', ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const idolFeat = record({
       id: 'tj-98392',
@@ -532,7 +392,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: 'IDOL',
       artist_primary: '방탄소년단(Feat.Nicki Minaj)',
       karaoke_numbers: { tj: '98392', ky: null, joysound: null },
-      categories: ['jpop'],
     });
 
     const { records, conflicts } = mergeRecords([idol, idolFeat]);
@@ -542,19 +401,16 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
 
-  it('merges two blog-source ナユタン星人 太陽系デスコ records via feat-asymmetry+vocaloid exception', () => {
-    // Previously documented as "does NOT merge" (cross-source gate). That was
-    // a false negative — this pair is structurally identical to the 40mP-class
-    // duplicate (same vocaloid producer, same song, one record with the
-    // voicebank feat-credit and one without). The Bug 3 fix (2026-05-03) now
-    // correctly merges them via the feat-asymmetry+vocaloid exception.
+  it('does NOT merge two blog-source ナユタン星人 太陽系デスコ records (same-source gate, no feat-asymmetry exception)', () => {
+    // With the category dimension removed, the feat-asymmetry+vocaloid
+    // exception is gone — same-source clusters never union. This same-source
+    // feat-asymmetric pair therefore stays as two records.
     const a = record({
       id: 'blog-429-1',
       source_url: 'https://blog.test/429',
       title_primary: '太陽系デスコ',
       artist_primary: 'ナユタン星人(Feat.初音ミク)',
       karaoke_numbers: { tj: null, ky: null, joysound: '111111' },
-      categories: ['vocaloid'],
     });
     const b = record({
       id: 'blog-429-58',
@@ -562,16 +418,13 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '太陽系デスコ',
       artist_primary: 'ナユタン星人',
       karaoke_numbers: { tj: null, ky: null, joysound: '222222' },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([a, b]);
 
-    // feat-asymmetry + both vocaloid → Tier C merges them.
-    expect(records).toHaveLength(1);
-    const tierC = conflicts.filter((c) => c.field === 'tier_c_merge');
-    expect(tierC).toHaveLength(1);
-    expect(tierC[0]?.values.map((v) => v.value).sort()).toEqual(['blog-429-1', 'blog-429-58']);
+    // Same-source → no Tier C merge.
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
 
   it('does NOT cluster 中森明菜 少女A with 椎名もた 少女A (different primary tokens)', () => {
@@ -581,7 +434,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '少女A',
       artist_primary: '中森明菜',
       karaoke_numbers: { tj: null, ky: null, joysound: '999999' },
-      categories: ['jpop'],
     });
     const tj = record({
       id: 'tj-52498',
@@ -589,7 +441,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '少女A',
       artist_primary: '椎名もた(Feat.鏡音リン)',
       karaoke_numbers: { tj: '52498', ky: null, joysound: null },
-      categories: ['vocaloid'],
     });
     const blog = record({
       id: 'blog-487-1',
@@ -597,12 +448,11 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '少女A',
       artist_primary: '椎名もた｜ぽわぽわP',
       karaoke_numbers: { tj: null, ky: null, joysound: '672848' },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([akina, tj, blog]);
 
-    // 椎名もた pair merges (Tier C, via cross-source path; feat-asymmetry exception not invoked); 中森明菜 stays separate (different token).
+    // 椎名もた pair merges (Tier C, cross-source path); 中森明菜 stays separate (different token).
     expect(records).toHaveLength(2);
     const akinaOut = records.find((r) => r.artist_primary === '中森明菜');
     expect(akinaOut).toBeDefined();
@@ -645,7 +495,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '月光',
       artist_primary: 'キタニタツヤ(Feat.はるまきごはん)',
       karaoke_numbers: { tj: '68689', ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const blog = record({
       id: 'blog-262-57',
@@ -653,7 +502,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: '月光',
       artist_primary: 'キタニタツヤ',
       karaoke_numbers: { tj: null, ky: null, joysound: '500001' },
-      categories: ['vocaloid'],
     });
     const tjpdf = record({
       id: 'tjpdf-9001',
@@ -662,7 +510,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       artist_primary: 'キタニタツヤ & はるまきごはん',
       title_ko: '월광',
       karaoke_numbers: { tj: null, ky: '40001', joysound: null },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([tj, blog, tjpdf]);
@@ -672,8 +519,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
     if (!m) throw new Error('no record');
     // All three vendor numbers union across sources.
     expect(m.karaoke_numbers).toEqual({ tj: '68689', ky: '40001', joysound: '500001' });
-    // Categories collapse to [vocaloid] via priority (vocaloid > jpop).
-    expect(m.categories).toEqual(['vocaloid']);
     // ko chain blog→tj→tjpdf→joysound: tjpdf wins (blog has null title_ko).
     expect(m.title_ko).toBe('월광');
 
@@ -685,22 +530,17 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
   });
 
   // -------------------------------------------------------------------
-  // Feat-asymmetry + vocaloid exception (Bug 3 fix 2026-05-03)
-  // Same-source clusters where EXACTLY ONE member carries a feat-paren, the
-  // others do not, AND all members are tagged `vocaloid` are admitted via
-  // Tier C. This catches the 40mP-class duplicate: the same Vocaloid
-  // producer track published twice, once crediting the voicebank feat. and
-  // once without. The vocaloid-category gate is what distinguishes this from
-  // the BTS-IDOL class (jpop, genuinely distinct collab release).
+  // Same-source clusters never union (Tier C is cross-source-only).
+  // The feat-asymmetry+vocaloid exception was removed with the category
+  // dimension; same-source twins sharing a primary token stay distinct.
   // -------------------------------------------------------------------
-  it('merges same-source 40mP pair (feat-asymmetric, both vocaloid) via feat-asymmetry+vocaloid exception', () => {
+  it('does NOT merge a same-source 40mP feat-asymmetric pair (same-source gate)', () => {
     const plain = record({
       id: 'blog-440-0',
       source_url: 'https://blog.test/440',
       title_primary: 'Tell Your World',
       artist_primary: '40mP',
       karaoke_numbers: { tj: null, ky: null, joysound: '700001' },
-      categories: ['vocaloid'],
     });
     const feat = record({
       id: 'blog-440-1',
@@ -708,82 +548,22 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: 'Tell Your World',
       artist_primary: '40mP(Feat.初音ミク)',
       karaoke_numbers: { tj: null, ky: null, joysound: '700002' },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([plain, feat]);
 
-    // feat-asymmetric + both vocaloid → Tier C merges the same-source pair.
-    expect(records).toHaveLength(1);
-    const tierC = conflicts.filter((c) => c.field === 'tier_c_merge');
-    expect(tierC).toHaveLength(1);
-    expect(tierC[0]?.values.map((v) => v.source).sort()).toEqual(['blog', 'blog']);
-  });
-
-  it('does NOT merge same-source vocaloid pair when BOTH members have feat-parens (asymmetry fails)', () => {
-    // Asymmetry condition fails (withFeat=2, withoutFeat=0) — the vocaloid
-    // gate passes but the feat-asymmetry gate does not. No merge.
-    const featA = record({
-      id: 'blog-500-0',
-      source_url: 'https://blog.test/500',
-      title_primary: 'Collab Song',
-      artist_primary: 'VocaProd(Feat.初音ミク)',
-      karaoke_numbers: { tj: null, ky: null, joysound: '710001' },
-      categories: ['vocaloid'],
-    });
-    const featB = record({
-      id: 'blog-500-1',
-      source_url: 'https://blog.test/500',
-      title_primary: 'Collab Song',
-      artist_primary: 'VocaProd(Feat.鏡音リン)',
-      karaoke_numbers: { tj: null, ky: null, joysound: '710002' },
-      categories: ['vocaloid'],
-    });
-
-    const { records, conflicts } = mergeRecords([featA, featB]);
-
+    // Same-source → no Tier C merge.
     expect(records).toHaveLength(2);
     expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
 
-  it('does NOT merge same-source jpop pair even with feat-asymmetry (category gate blocks)', () => {
-    // Same structural shape as the 40mP case (feat-asymmetric, same-source,
-    // same primary token after getLeadComponent) but `jpop` category.
-    // The vocaloid-category gate blocks the merge — BTS-IDOL class.
-    const plain = record({
-      id: 'tj-98374',
-      source_url: 'https://tj.test/98374',
-      title_primary: 'IDOL',
-      artist_primary: '방탄소년단',
-      karaoke_numbers: { tj: '98374', ky: null, joysound: null },
-      categories: ['jpop'],
-    });
-    const feat = record({
-      id: 'tj-98392',
-      source_url: 'https://tj.test/98392',
-      title_primary: 'IDOL',
-      artist_primary: '방탄소년단(Feat.Nicki Minaj)',
-      karaoke_numbers: { tj: '98392', ky: null, joysound: null },
-      categories: ['jpop'],
-    });
-
-    const { records, conflicts } = mergeRecords([plain, feat]);
-
-    // jpop → category gate fails → no merge (preserves BTS-IDOL guard).
-    expect(records).toHaveLength(2);
-    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
-  });
-
-  it('Tier C does NOT merge same-source vocaloid cluster when 2 of 3 members have feat-paren (asymmetry condition fails)', () => {
-    // withFeat=2, withoutFeat=1 → `withFeat === 1` is false → gate rejects.
-    // Pins the off-by-one boundary: only EXACTLY ONE feat-paren member admits.
+  it('does NOT merge a same-source cluster when 2 of 3 members have a feat-paren', () => {
     const plain = record({
       id: 'blog-430-0',
       source_url: 'https://blog.test/430',
       title_primary: 'エイリアンエイリアン',
       artist_primary: 'ナユタン星人',
       karaoke_numbers: { tj: null, ky: null, joysound: '800001' },
-      categories: ['vocaloid'],
     });
     const featMiku = record({
       id: 'blog-430-1',
@@ -791,7 +571,6 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: 'エイリアンエイリアン',
       artist_primary: 'ナユタン星人(Feat.初音ミク)',
       karaoke_numbers: { tj: null, ky: null, joysound: '800002' },
-      categories: ['vocaloid'],
     });
     const featRin = record({
       id: 'blog-430-2',
@@ -799,12 +578,11 @@ describe('mergeRecords — Tier C cross-source primary-token merge', () => {
       title_primary: 'エイリアンエイリアン',
       artist_primary: 'ナユタン星人(Feat.鏡音リン)',
       karaoke_numbers: { tj: null, ky: null, joysound: '800003' },
-      categories: ['vocaloid'],
     });
 
     const { records, conflicts } = mergeRecords([plain, featMiku, featRin]);
 
-    // withFeat=2 fails the `withFeat === 1` check — no same-source Tier C merge.
+    // All same-source → no Tier C merge.
     expect(records).toHaveLength(3);
     expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(0);
   });
@@ -941,7 +719,6 @@ describe('mergeRecords — title_ko optional-field trio preservation (FIX-1)', (
       media_context_ko: '(초음 미크 오리지널)',
       title_ko_source: 'llm-translated',
       title_ko_confidence: 'medium',
-      categories: ['vocaloid'],
     });
 
     const { records } = mergeRecords([full]);
@@ -955,7 +732,6 @@ describe('mergeRecords — title_ko optional-field trio preservation (FIX-1)', (
     expect(m.title_ko).toBe('멜트');
     expect(m.artist_primary).toBe('ryo｜supercell');
     expect(m.artist_ko).toBeNull();
-    expect(m.categories).toEqual(['vocaloid']);
 
     // Optional fields — none should be missing.
     expect(m.artist_aliases).toEqual(['supercell']);
@@ -1062,7 +838,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_primary: 'YOASOBI',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: '190-001' },
-      categories: ['jpop'],
       ...over,
     });
   }
@@ -1087,7 +862,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const js = joysoundRec();
 
@@ -1118,7 +892,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_primary: 'YOASOBI',
       artist_ko: null,
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const js = joysoundRec();
 
@@ -1150,7 +923,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_primary: 'YOASOBI',
       artist_ko: '요아소비',
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const tj = record({
       id: 'tj-68923',
@@ -1160,7 +932,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_primary: 'YOASOBI',
       artist_ko: null,
       karaoke_numbers: { tj: '68923', ky: null, joysound: null },
-      categories: ['jpop'],
     });
     const js = joysoundRec();
 
@@ -1265,7 +1036,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_ko: '요아소비',
       // Dashless — the form every blog joysound number is stored in.
       karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
-      categories: ['jpop'],
     });
     const js = record({
       id: 'joysound-190001',
@@ -1277,7 +1047,6 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
       artist_ko: null,
       // Dashless, post-normalizer form (was '190-001' on the JOYSOUND surface).
       karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
-      categories: ['jpop'],
     });
 
     const { records } = mergeRecords([blog, js]);

@@ -53,13 +53,11 @@ class TestAtomicWriteCorpus(unittest.TestCase):
                 'id': 'blog-1',
                 'title_primary': '夜に駆ける',
                 'artist_primary': 'YOASOBI',
-                'categories': ['jpop'],
             },
             {
                 'id': 'tj-2',
                 'title_primary': '紅蓮華',
                 'artist_primary': 'LiSA',
-                'categories': ['anime'],
             },
         ]
 

@@ -13,7 +13,6 @@ function rawFor(over: Partial<RawSongRecord> & { tj: string }): RawSongRecord {
     artist_primary: `artist-${tj}`,
     artist_ko: null,
     karaoke_numbers: { tj, ky: null, joysound: null },
-    categories: ['jpop'],
     ...rest,
   };
 }

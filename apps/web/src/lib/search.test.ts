@@ -49,7 +49,6 @@ describe('search index — artist_aliases (spec 2026-05-04)', () => {
       artist_primary: 'ずっと真夜中でいいのに。',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['jpop'],
       crawled_at: '2026-05-04T00:00:00Z',
       ...over,
     };
@@ -110,16 +109,11 @@ describe('featured artist chips against the production corpus', () => {
   ) as SongRecord[];
   it('keeps every featured artist pill wired to a query with real hits', () => {
     const index = buildIndex(productionRecords);
-    for (const [section, artists] of Object.entries(featured)) {
-      for (const artist of artists) {
-        const query = featuredArtistQuery(artist);
-        const label = featuredArtistLabel(artist);
-        const hits = index.search(query);
-        expect(
-          hits.length,
-          `${section} featured artist ${label} should search via ${query}`,
-        ).toBeGreaterThan(0);
-      }
+    for (const artist of featured) {
+      const query = featuredArtistQuery(artist);
+      const label = featuredArtistLabel(artist);
+      const hits = index.search(query);
+      expect(hits.length, `featured artist ${label} should search via ${query}`).toBeGreaterThan(0);
     }
   });
 });
@@ -139,7 +133,6 @@ describe('API search client', () => {
 
     const result = await searchModule.searchApi('https://api.example.test', {
       query: String.fromCodePoint(0x5929, 0x4f7f),
-      category: 'anime',
       vendor: 'tj',
       limit: 50,
       fetchImpl,
@@ -147,7 +140,7 @@ describe('API search client', () => {
 
     expect(result).toEqual([apiRecord]);
     expect(requested).toEqual([
-      'https://api.example.test/api/search?q=%E5%A4%A9%E4%BD%BF&limit=50&category=anime&vendor=tj',
+      'https://api.example.test/api/search?q=%E5%A4%A9%E4%BD%BF&limit=50&vendor=tj',
     ]);
   });
 });

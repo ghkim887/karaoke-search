@@ -40,7 +40,6 @@ function hasTjNumber(song) {
 }
 
 const source = {};
-const category = {};
 const rescueWhitelistCandidateSource = {};
 const rescueWhitelistCandidates = [];
 const suspicious = {
@@ -54,7 +53,6 @@ for (const song of songs) {
   const sourceKey = sourceOf(song);
   const text = textOf(song);
   addCount(source, sourceKey);
-  for (const cat of song.categories ?? ['(empty)']) addCount(category, cat);
 
   if (hasTjNumber(song)) {
     addCount(rescueWhitelistCandidateSource, sourceKey);
@@ -83,7 +81,6 @@ function sample(records, limit = 20) {
     source_url: song.source_url,
     title_primary: song.title_primary,
     artist_primary: song.artist_primary,
-    categories: song.categories,
     tj: song.karaoke_numbers?.tj ?? null,
   }));
 }
@@ -92,7 +89,6 @@ const report = {
   songsPath,
   total: songs.length,
   source,
-  category,
   scriptSignals: {
     kanaAny: songs.filter((song) => RE_KANA.test(textOf(song))).length,
     hangulNoKana: suspicious.hangulNoKana.length,

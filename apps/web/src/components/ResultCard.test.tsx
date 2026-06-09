@@ -10,7 +10,6 @@ const sample: SongRecord = {
   title_ko: '아이돌',
   artist_primary: 'YOASOBI',
   artist_ko: '요아소비',
-  categories: ['jpop'],
   karaoke_numbers: { tj: '12345', ky: null, joysound: null },
   source_url: 'https://example.invalid/yoasobi',
   crawled_at: '2026-04-29T00:00:00.000Z',
@@ -67,7 +66,6 @@ describe('ResultCard artist_aliases display (spec 2026-05-04)', () => {
       artist_primary: 'スピッツ',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['jpop'],
       crawled_at: '2026-05-04T00:00:00Z',
       ...over,
     };
@@ -141,7 +139,6 @@ describe('ResultCard — media_context_ko', () => {
       artist_primary: 'BAAD',
       artist_ko: null,
       karaoke_numbers: { tj: '1234', ky: null, joysound: null },
-      categories: ['anime'],
       crawled_at: '2026-05-06T00:00:00.000Z',
       media_context_ko: '(슬램덩크 OP)',
     };
@@ -162,7 +159,6 @@ describe('ResultCard — media_context_ko', () => {
       artist_primary: '和田光司',
       artist_ko: null,
       karaoke_numbers: { tj: '5678', ky: null, joysound: null },
-      categories: ['anime'],
       crawled_at: '2026-05-06T00:00:00.000Z',
       media_context_ko: '(디지몬 어드벤처 OP)',
     };
@@ -181,7 +177,6 @@ describe('ResultCard — media_context_ko', () => {
       artist_primary: 'X',
       artist_ko: null,
       karaoke_numbers: { tj: null, ky: null, joysound: null },
-      categories: ['anime'],
       crawled_at: '2026-05-06T00:00:00.000Z',
       media_context_ko: '(진격의 거인 OP)',
     };

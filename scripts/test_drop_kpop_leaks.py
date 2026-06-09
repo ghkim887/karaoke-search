@@ -57,7 +57,6 @@ def _make_synthetic_corpus(include_kpop: bool) -> list[dict]:
             'artist_primary': 'YOASOBI',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '68425', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         },
         {
@@ -68,7 +67,6 @@ def _make_synthetic_corpus(include_kpop: bool) -> list[dict]:
             'artist_primary': 'LiSA',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '68500', 'ky': None, 'joysound': None},
-            'categories': ['anime'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         },
     ]
@@ -81,7 +79,6 @@ def _make_synthetic_corpus(include_kpop: bool) -> list[dict]:
             'artist_primary': '방탄소년단',
             'artist_ko': None,
             'karaoke_numbers': {'tj': '99999', 'ky': None, 'joysound': None},
-            'categories': ['jpop'],
             'crawled_at': '2026-01-01T00:00:00+00:00',
         })
     return base

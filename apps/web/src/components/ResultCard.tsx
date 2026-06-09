@@ -97,13 +97,6 @@ export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardP
         )}
       </h2>
       <div class="result-artist">{artistText}</div>
-      <div class="result-tags">
-        {record.categories.map((c) => (
-          <span key={c} class={`badge badge-category badge-category-${c}`}>
-            {c}
-          </span>
-        ))}
-      </div>
       <div class="result-numbers">
         <NumberBadge label="TJ" value={record.karaoke_numbers.tj} testId="badge-tj" />
         <NumberBadge label="KY" value={record.karaoke_numbers.ky} testId="badge-ky" />
