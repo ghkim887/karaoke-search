@@ -42,7 +42,7 @@ Related machinery:
 - `reviewedSongOverrides.ts` is TS-only (no JSON sidecar, no Python
   consumer), keyed by leading-zero-normalized TJ number, with structured
   per-entry metadata. Admits emit `via: 'song-override'`.
-- `GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST` (same file): generic bucket names
+- `GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST` (`filterSteps.ts`): generic bucket names
   (`variousartists`, `オムニバス`, …) must never blanket-admit on a JPN
   artist tag, and `blog-rescue` refuses to rescue a generic lead component.
 - Per-record enrichment uses `searchSongByPro` (exact TJ-number lookup,

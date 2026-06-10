@@ -40,7 +40,7 @@ From the deploy runbook (on the feature branch:
 
 ## 3. title_ko review CSV backlog
 
-`scripts/data/llm-review.csv` carries ~241 medium/low-confidence LLM
+`scripts/data/llm-review.csv` carries ~255 medium/low-confidence LLM
 translations pending human spot-check. Workflow: spot a wrong entry → append
 a `{id, title_primary, title_ko}` row to
 `scripts/data/title-ko-manual-fixes.json` → commit; the next post-crawl
@@ -68,8 +68,9 @@ by: owner appetite for PR-CI wall-time.
 
 ## 6. D1 free-tier 500 MB vs the JOYSOUND-scale corpus
 
-The streamed D1 SQL export for the ~221k–236k candidate measured ~946 MB —
-well past the 500 MB Cloudflare D1 free-tier cap. Deploy-time check:
+The streamed D1 SQL export for the ~221k–236k candidate measured ~946 MB
+during the 2026-06 JOYSOUND candidate dry-run — well past the 500 MB
+Cloudflare D1 free-tier cap. Deploy-time check:
 `wrangler d1 info --remote` after import. The planned escape hatch is the
 **self-hosted search API** (`apps/worker/src/node-server.ts`,
 `pnpm --filter @karaoke/worker serve:node`, landed in `008d453`) over the
