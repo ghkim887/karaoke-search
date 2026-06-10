@@ -80,8 +80,48 @@ later move to R2 is a one-line `url` change). The tracked baseline
   `--skip-download-if-valid`. Shared consumer for local dev, D1 import, and
   the self-host SQLite build.
 
-The release-publishing workflow and the first publish/import land in
-follow-up PRs (see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) item 1).
+Verification is CI's job, composition is not: the corpus's composition
+inputs (the JOYSOUND decision log, the candidate builder) live on the
+operator's machine / feature branch, and an ~85 MB file cannot be a
+workflow input — so the operator composes and publishes locally, then
+`.github/workflows/full-corpus.yml` re-downloads the asset and regenerates
+the manifest from the actual bytes (trust-no-one: CI never accepts an
+uploaded manifest). `ci.yml` additionally shape-validates the tracked
+manifest on every PR via `scripts/verify-manifest.mjs` (no download; no-op
+until the first manifest lands). The first actual publish/import is still
+ahead (see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) item 1).
+
+#### Publishing a full-corpus release (operator runbook)
+
+Asset-naming convention: the corpus asset on the release must be named
+exactly **`full-corpus.json`**; an optional decision-log asset named exactly
+`decision-log.jsonl.gz` gets its sha256 recorded as the manifest's
+`decisionLogSha`. Other assets (e.g. a prebuilt `.sqlite`) may coexist.
+
+1. Compose the full corpus locally and note the commit it was composed
+   against (`git rev-parse HEAD` in the composing checkout).
+2. Dry-run sanity (schema-validates every record, ~221k):
+   `node scripts/publish-full-corpus.mjs --input <full-corpus.json> --url PENDING`
+   — do NOT commit the resulting PENDING manifest; the ci.yml gate rejects
+   PENDING urls by design.
+3. Create the release with the asset(s):
+   `gh release create data/<date> full-corpus.json [decision-log.jsonl.gz] --notes "..."`.
+4. Hand off to CI:
+   `gh workflow run full-corpus.yml -f release_tag=data/<date> [-f baseline_commit=<sha>]`
+   — `baseline_commit` is the composition commit from step 1 (provenance
+   metadata in the manifest). It defaults to the sha the workflow runs on,
+   which is only correct when `main` has not moved since composition — when
+   in doubt, pass it explicitly.
+5. Review and merge the PR the workflow opens (label `full-corpus`, branch
+   `data/full-corpus-manifest-<tag-slug>`): it commits the regenerated
+   `data/full-corpus.manifest.json` with CI-computed sha256 and
+   record/vendor counts in the PR body. Re-dispatching the workflow for the
+   same tag force-updates that existing branch/PR rather than opening a
+   duplicate (deliberate — peter-evans/create-pull-request v8 behavior).
+
+Consumers (`scripts/fetch-full-corpus.mjs` for local dev, D1 import, and
+the self-host SQLite build) read the merged manifest and verify sha256 +
+size on download.
 
 ## Two search paths
 
@@ -119,6 +159,14 @@ lockfile install).
   the Playwright suite against `astro preview` over a fallback-mode build
   (no `PUBLIC_KARAOKE_API_BASE_URL`), so UI breakage is caught at PR time
   instead of post-merge at the required deploy gate.
+  The `verify` job also shape-validates `data/full-corpus.manifest.json`
+  when it exists (`scripts/verify-manifest.mjs` — cheap, no asset download).
+- **`full-corpus.yml`** (dispatch only): trust-no-one verification gate for
+  an operator-published full-corpus release — downloads the
+  `full-corpus.json` asset from the given `release_tag`, schema-validates
+  every record, recomputes sha256/size/counts itself, and opens a PR
+  (label `full-corpus`) committing the regenerated manifest. See the
+  operator runbook above.
 - **`crawl.yml`** (weekly cron + dispatch): build, sidecar-drift gate, full
   crawl into `songs.json.tmp`, then `run-post-crawl-pipeline.mjs`, then opens
   a PR labeled `crawl-output` (requires the repo setting "Allow Actions to

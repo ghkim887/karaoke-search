@@ -1,0 +1,181 @@
+name: full-corpus
+
+# Trust-no-one verification gate for a full-corpus GitHub Release (data
+# topology: docs/ARCHITECTURE.md "Full-corpus distribution"). The ~85 MB
+# corpus is composed LOCALLY by the operator — its composition inputs (the
+# JOYSOUND decision log, the candidate builder) live outside CI, and an
+# 85 MB file cannot be a workflow input — and uploaded as a release asset
+# with `gh release create`. This workflow then:
+#
+#   1. downloads the corpus asset back from the given release tag,
+#   2. schema-validates every record and recomputes sha256 / size /
+#      record+vendor counts ITSELF from the downloaded bytes (it never
+#      trusts an operator-uploaded manifest), and
+#   3. opens a PR committing the regenerated data/full-corpus.manifest.json
+#      (label `full-corpus`, branch data/full-corpus-manifest-<tag-slug>).
+#
+# Asset-naming convention: the corpus asset must be named EXACTLY
+# `full-corpus.json` (GitHub release asset names are unique per release, so
+# there is at most one; the count guard below documents and enforces the
+# convention). Other assets may coexist on the same release — if one is
+# named exactly `decision-log.jsonl.gz` it is downloaded too and its sha256
+# recorded as the manifest's `decisionLogSha`.
+#
+# `baseline_commit` input: the manifest's baselineCommit records the
+# corpus's PROVENANCE — the commit the operator composed it against. CI
+# cannot know that, so the operator passes it as a dispatch input; it
+# defaults to the sha this workflow runs on, which is only correct when
+# main has not moved since composition.
+#
+# The workflow fails loudly when the release tag does not exist, the corpus
+# asset is missing (or its name matches more than once), or any record is
+# schema-invalid (publish-full-corpus.mjs exits non-zero).
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag carrying the full-corpus.json asset (e.g. data/2026-06-15)'
+        required: true
+        type: string
+      baseline_commit:
+        description: 'Git sha the corpus was composed against (7-40 hex; defaults to this workflow sha)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-corpus
+  cancel-in-progress: false
+
+jobs:
+  verify-and-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup toolchain and install dependencies
+        uses: ./.github/actions/setup
+
+      - name: Build schema dist
+        # publish-full-corpus.mjs schema-validates every record via
+        # packages/schema/dist — scoped build, nothing else is needed.
+        run: pnpm --filter @karaoke/schema build
+
+      - name: Locate and download the release assets
+        # Inputs are passed via env (never interpolated into the script) —
+        # same shell-injection defense as crawl.yml's LIMIT handling.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          BASELINE_COMMIT: ${{ inputs.baseline_commit || github.sha }}
+          CORPUS_ASSET: full-corpus.json
+          DECISION_LOG_ASSET: decision-log.jsonl.gz
+        run: |
+          # Fail fast on a malformed baseline_commit BEFORE burning an ~85 MB
+          # download + a 221k-record validation pass (the manifest validator
+          # would reject it anyway, but only at the very end).
+          if [[ ! "$BASELINE_COMMIT" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::baseline_commit must be a 7-40 char lowercase hex git sha (got '$BASELINE_COMMIT')"
+            exit 1
+          fi
+
+          assets_json="$RUNNER_TEMP/release-assets.json"
+          # Fails loudly here when the release tag does not exist.
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets' > "$assets_json"
+
+          count=$(jq --arg name "$CORPUS_ASSET" '[.[] | select(.name == $name)] | length' "$assets_json")
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected exactly one asset named '$CORPUS_ASSET' on release '$RELEASE_TAG', found $count"
+            echo "Assets on this release:"
+            jq -r '.[].name' "$assets_json"
+            exit 1
+          fi
+
+          asset_url=$(jq -r --arg name "$CORPUS_ASSET" '.[] | select(.name == $name) | .url' "$assets_json")
+          echo "ASSET_URL=$asset_url" >> "$GITHUB_ENV"
+          gh release download "$RELEASE_TAG" --pattern "$CORPUS_ASSET" --output "$RUNNER_TEMP/$CORPUS_ASSET"
+          ls -l "$RUNNER_TEMP/$CORPUS_ASSET"
+          # Single source for the downloaded-asset path — the regenerate step
+          # consumes this instead of re-deriving the name.
+          echo "CORPUS_PATH=$RUNNER_TEMP/$CORPUS_ASSET" >> "$GITHUB_ENV"
+
+          # Optional decision-log asset: when present, hash it into the
+          # manifest's decisionLogSha (recomputed from the downloaded bytes,
+          # same trust-no-one stance as the corpus itself).
+          dl_count=$(jq --arg name "$DECISION_LOG_ASSET" '[.[] | select(.name == $name)] | length' "$assets_json")
+          if [ "$dl_count" -eq 1 ]; then
+            gh release download "$RELEASE_TAG" --pattern "$DECISION_LOG_ASSET" --output "$RUNNER_TEMP/$DECISION_LOG_ASSET"
+            echo "DECISION_LOG_PATH=$RUNNER_TEMP/$DECISION_LOG_ASSET" >> "$GITHUB_ENV"
+          fi
+
+          # Branch-safe slug of the release tag (slashes etc. become '-').
+          tag_slug=$(printf '%s' "$RELEASE_TAG" | tr -c 'A-Za-z0-9._-' '-')
+          echo "TAG_SLUG=$tag_slug" >> "$GITHUB_ENV"
+
+      - name: Regenerate the manifest from the downloaded asset
+        # CI computes sha256 + record/vendor counts itself and fails on any
+        # schema-invalid record. baselineCommit is provenance metadata — see
+        # the header comment.
+        env:
+          BASELINE_COMMIT: ${{ inputs.baseline_commit || github.sha }}
+        run: |
+          args=(
+            --input "$CORPUS_PATH"
+            --url "$ASSET_URL"
+            --baseline-commit "$BASELINE_COMMIT"
+            --manifest-out data/full-corpus.manifest.json
+          )
+          if [ -n "${DECISION_LOG_PATH:-}" ]; then
+            args+=( --decision-log "$DECISION_LOG_PATH" )
+          fi
+          node scripts/publish-full-corpus.mjs "${args[@]}"
+
+      - name: Run the same manifest gate ci.yml runs
+        # Belt-and-braces: prove the regenerated manifest passes the per-PR
+        # shape gate before opening the PR that carries it.
+        run: node scripts/verify-manifest.mjs --manifest data/full-corpus.manifest.json
+
+      - name: Compose PR body
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          manifest=data/full-corpus.manifest.json
+          {
+            echo "Regenerated full-corpus manifest from release \`$RELEASE_TAG\` (asset \`full-corpus.json\`)."
+            echo
+            echo "- records: $(jq -r '.recordCount' "$manifest")"
+            echo "- size: $(jq -r '.sizeBytes' "$manifest") bytes"
+            echo "- sha256: \`$(jq -r '.sha256' "$manifest")\`"
+            echo "- baseline commit: $(jq -r '.baselineCommit' "$manifest")"
+            echo "- url: $(jq -r '.url' "$manifest")"
+            echo "- decision-log sha256: $(jq -r '.decisionLogSha // "(no decision-log asset on the release)"' "$manifest")"
+            echo
+            echo "Vendor counts:"
+            echo
+            echo "| vendor | records with a number |"
+            echo "| --- | --- |"
+            jq -r '.vendorCounts | to_entries[] | "| \(.key) | \(.value) |"' "$manifest"
+            echo
+            echo "All values were recomputed by CI from the downloaded release asset"
+            echo "(every record schema-validated; sha256/size/counts never taken from"
+            echo "an uploaded manifest). Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } > "$RUNNER_TEMP/pr_body.md"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          branch: "data/full-corpus-manifest-${{ env.TAG_SLUG }}"
+          commit-message: "data: full-corpus manifest for release ${{ inputs.release_tag }}"
+          title: "data: full-corpus manifest for release ${{ inputs.release_tag }}"
+          body-path: ${{ runner.temp }}/pr_body.md
+          labels: full-corpus
+          add-paths: |
+            data/full-corpus.manifest.json
