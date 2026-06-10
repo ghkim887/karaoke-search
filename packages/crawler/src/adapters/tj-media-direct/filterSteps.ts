@@ -2,17 +2,9 @@
  * Typed FilterStep[] reducer for the TJ-direct classifyRecord filter chain.
  *
  * CLAUDE.md gotcha: the filter chain ORDER IS LOAD-BEARING. Do NOT reorder
- * FILTER_STEPS. The 7-step order is:
- *   0. reviewed-song-drop  — audited TJ-number false positives stay out
- *   1. non-jpn-pro-reject  — explicit non-JPN pro overrides every admit path
- *   2. reviewed-song-allow — curated exact-TJ-number K-pop Japanese releases
- *   3. drop-list-reject    — Korean/Chinese artist deny (any-component)
- *   4. jpn-admit-pro       — exact per-pro JPN admit
- *   5. jpn-admit-artist    — lead-component-only per-artist JPN admit (§2.B)
- *   6. blog-rescue         — safety net for TJ-search index gaps
- * drop-list-reject precedes the JPN admit paths so a drop-listed Korean act
- * carrying a JPN pro tag (and NOT curated into reviewed-song-allow) is rejected
- * before jpn-admit-pro can leak it into the corpus.
+ * FILTER_STEPS. Authoritative order: see the numbered list on the
+ * FILTER_STEPS array at the bottom of this file — that docblock is the ONE
+ * source of truth for the step order; everything else points here.
  *
  * Each step returns a tagged FilterVerdict:
  *   - { decision: 'admit'; via: KeepVerdict }  → stop, keep the record
@@ -73,8 +65,26 @@ export interface FilterStep {
   evaluate: (ctx: FilterContext) => FilterVerdict;
 }
 
+/**
+ * Lead component of a pre-split `FilterContext.components` array.
+ *
+ * `splitArtistCollab` places the whole input string at index 0 and the lead
+ * component at index 1 when any split fired — so the lead is index 1 for ≥2
+ * elements, else index 0 (single artist, the whole string IS the lead).
+ * Returns `undefined` for an empty array.
+ *
+ * Deliberately NOT clustering.ts's `getLeadComponent(artist)`: that helper
+ * takes the RAW string and re-splits + normalizes internally, which would
+ * diverge whenever `ctx.components` was built separately from `ctx.artist`
+ * (the unit tests do exactly that). This operates on the precomputed array.
+ */
+function leadComponentOf(components: string[]): string | undefined {
+  return components.length >= 2 ? components[1] : components[0];
+}
+
 // ---------------------------------------------------------------------------
-// Step implementations (one per CLAUDE.md §2 filter chain step)
+// Step implementations, declared in pipeline order (see FILTER_STEPS below
+// for the authoritative order — the array literal defines execution order)
 // ---------------------------------------------------------------------------
 
 /**
@@ -87,6 +97,24 @@ const reviewedSongDropStep: FilterStep = {
   name: 'reviewed-song-drop',
   evaluate({ tj }): FilterVerdict {
     if (isReviewedTjSongDrop(tj)) return { decision: 'reject', reason: 'reviewed-song-drop' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * Step 1 — Explicit non-JPN pro reject.
+ *
+ * CLAUDE.md gotcha: an explicit non-JPN `nationalcode` from the searchSong
+ * enrichment overrules every admit path (including reviewed-song-allow and the
+ * blog rescue). Defense against stale or overly broad blog rescue data.
+ */
+const nonJpnProRejectStep: FilterStep = {
+  name: 'non-jpn-pro-reject',
+  evaluate({ tj, cache }): FilterVerdict {
+    const proEntry = cache.proEnrichmentMap[tj];
+    if (proEntry?.nationalcode && proEntry.nationalcode !== 'JPN') {
+      return { decision: 'reject', reason: 'pro-non-jpn' };
+    }
     return { decision: 'pass' };
   },
 };
@@ -131,47 +159,6 @@ const dropListRejectStep: FilterStep = {
 };
 
 /**
- * Step 1 — Explicit non-JPN pro reject.
- *
- * CLAUDE.md gotcha: an explicit non-JPN `nationalcode` from the searchSong
- * enrichment overrules every admit path (including reviewed-song-allow and the
- * blog rescue). Defense against stale or overly broad blog rescue data.
- */
-const nonJpnProRejectStep: FilterStep = {
-  name: 'non-jpn-pro-reject',
-  evaluate({ tj, cache }): FilterVerdict {
-    const proEntry = cache.proEnrichmentMap[tj];
-    if (proEntry?.nationalcode && proEntry.nationalcode !== 'JPN') {
-      return { decision: 'reject', reason: 'pro-non-jpn' };
-    }
-    return { decision: 'pass' };
-  },
-};
-
-/**
- * Step 5 — Per-artist JPN tag, lead-component-only (§2.B).
- *
- * CLAUDE.md gotcha: the "lead" is index 1 when splitArtistCollab produced ≥2
- * elements (index 0 is the whole string), else index 0. Featured-artist
- * components do NOT contribute to admission — that admit rule was the path that
- * leaked the `Charlie Puth(Feat.宇多田ヒカル)` case pre-fix.
- */
-const jpnAdmitStep: FilterStep = {
-  name: 'jpn-admit-artist',
-  evaluate({ components, cache }): FilterVerdict {
-    if (components.length === 0) return { decision: 'pass' };
-    const lead = components.length >= 2 ? components[1] : components[0];
-    if (lead === undefined) return { decision: 'pass' };
-    const leadKey = normalizeForMatch(lead);
-    if (leadKey === '') return { decision: 'pass' };
-    if (GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) return { decision: 'pass' };
-    const entry = cache.artistNationalityMap[leadKey];
-    if (entry?.code === 'JPN') return { decision: 'admit', via: 'artist' };
-    return { decision: 'pass' };
-  },
-};
-
-/**
  * Step 4 — Per-pro JPN tag.
  *
  * CLAUDE.md gotcha: catches the case where the artist scan was AMBIGUOUS or
@@ -188,17 +175,47 @@ const proJpnAdmitStep: FilterStep = {
 };
 
 /**
+ * Step 5 — Per-artist JPN tag, lead-component-only (§2.B).
+ *
+ * CLAUDE.md gotcha: the "lead" is index 1 when splitArtistCollab produced ≥2
+ * elements (index 0 is the whole string), else index 0. Featured-artist
+ * components do NOT contribute to admission — that admit rule was the path that
+ * leaked the `Charlie Puth(Feat.宇多田ヒカル)` case pre-fix.
+ *
+ * This is the PRIMARY confirmation path: per-record title-search historically
+ * had high miss rates (33% in PR-1's pre-seed: 1,950 / 5,961 title-search
+ * calls returned no `pro` match). The per-artist scan (`searchSong?strType=2`)
+ * side-steps that gap and crucially admits Latin-titled Japanese acts
+ * (GRANRODEO, halyosy, fripSide, …) where title-search returns nothing.
+ */
+const jpnAdmitStep: FilterStep = {
+  name: 'jpn-admit-artist',
+  evaluate({ components, cache }): FilterVerdict {
+    if (components.length === 0) return { decision: 'pass' };
+    const lead = leadComponentOf(components);
+    if (lead === undefined) return { decision: 'pass' };
+    const leadKey = normalizeForMatch(lead);
+    if (leadKey === '') return { decision: 'pass' };
+    if (GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) return { decision: 'pass' };
+    const entry = cache.artistNationalityMap[leadKey];
+    if (entry?.code === 'JPN') return { decision: 'admit', via: 'artist' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
  * Step 6 — Blog-whitelist rescue.
  *
  * CLAUDE.md gotcha: safety net for residual TJ-search index gaps. Already
  * gated by step 1's explicit non-JPN pro reject above. This is NOT dead code —
  * a high `admittedByRescue` count in KeepStats signals real JPN records the
- * searchSong index can't see.
+ * searchSong index can't see. The blog adapter has been hand-validated for
+ * 21k+ Japanese records over time, so a TJ# the blog already knows is JPN.
  */
 const blogRescueStep: FilterStep = {
   name: 'blog-rescue',
   evaluate({ tj, force, components }): FilterVerdict {
-    const lead = components.length >= 2 ? components[1] : components[0];
+    const lead = leadComponentOf(components);
     const leadKey = lead === undefined ? '' : normalizeForMatch(lead);
     if (leadKey !== '' && GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) {
       return { decision: 'pass' };
@@ -213,7 +230,8 @@ const blogRescueStep: FilterStep = {
 // ---------------------------------------------------------------------------
 
 /**
- * Load-bearing filter step order per CLAUDE.md "TJ-direct filter chain" gotcha:
+ * AUTHORITATIVE filter step order (single source of truth — the file-top
+ * docblock, parser.ts, and the drop-list modules all point here):
  *   0. reviewed-song-drop    — audited TJ-number false positives
  *   1. non-jpn-pro-reject    — explicit non-JPN pro overrides all admit paths
  *   2. reviewed-song-allow   — audited TJ-number K-pop Japanese releases
