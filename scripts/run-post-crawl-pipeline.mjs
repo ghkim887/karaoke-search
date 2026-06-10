@@ -86,11 +86,11 @@ export function buildSteps(corpus = DEFAULT_CORPUS) {
     },
     {
       name: 'drop-kpop-leaks',
-      command: ['python', 'scripts/drop_kpop_leaks.py'],
+      command: [node, 'scripts/drop-artist-leaks.mjs', '--list', 'korean'],
     },
     {
       name: 'drop-cpop-leaks',
-      command: ['python', 'scripts/drop_cpop_leaks.py'],
+      command: [node, 'scripts/drop-artist-leaks.mjs', '--list', 'chinese'],
     },
     {
       // Stage 2 LLM cache replay is a nice-to-have enhancement layer — if a

@@ -1,7 +1,9 @@
 """Shared artist-splitting and drop-list helpers for the karaoke data pipeline.
 
-Extracted from `scripts/ingest_anisong_pdf.py`. Used by every script that
-needs to check whether an artist string matches a Korean or Chinese drop-list.
+Extracted from `scripts/ingest_anisong_pdf.py`. Used by every Python script
+that needs to check whether an artist string matches the Korean drop-list.
+(The corpus cleanup pass lives in `scripts/drop-artist-leaks.mjs`, which
+imports the TS splitter from the crawler dist instead of this mirror.)
 
 The splitter delimiter pattern is loaded from the `clustering-rules.json`
 sidecar at import time (graceful fallback to a hardcoded copy if absent).

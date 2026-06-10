@@ -124,6 +124,19 @@ describe('splitArtistCollab — feat. parenthetical collabs', () => {
       '宇多田ヒカル',
     ]);
   });
+
+  // Documented limitation (2026-06, drop-artist-leaks refactor review): when
+  // a feat/prod parenthetical glues two names together with NO delimiter
+  // around it, the paren is replaced by a single space BEFORE the delimiter
+  // split, so the residue surfaces as ONE glued `A B` component rather than
+  // separate `A` + `B` components (a space is not a split delimiter). The
+  // pattern is unobserved in the live corpus. Both the crawl-time parser
+  // (classifyRecord drop-list scan) and the corpus-level cleanup
+  // (scripts/drop-artist-leaks.mjs) consume THIS function, so they are
+  // aligned by construction — a future fix here heals both at once.
+  it('pins the glued-paren residue: `A(Feat.X)B` → whole + `A B` + `X` (documented limitation)', () => {
+    expect(splitArtistCollab('A(Feat.X)B')).toEqual(['A(Feat.X)B', 'A B', 'X']);
+  });
 });
 
 describe('splitArtistCollab — `(Prod. X)` producer-credit collabs (post-Phase-2 Gap 2)', () => {

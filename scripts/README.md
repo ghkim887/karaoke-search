@@ -17,15 +17,14 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | `ingest_anisong_pdf.py` | CI / data ingest (coverage-only PDF records) | Weekly | After JS crawl, in `crawl.yml` |
 | `normalize_tj_title_ko.py` | CI / title_ko Stage 1 (strip TJ transliterations, salvage `media_context_ko`) | Weekly | After PDF ingest, in `crawl.yml` |
 | `replay-merger.mjs` | CI / merger replay | Weekly | After Stage 1, in `crawl.yml` |
-| `drop_kpop_leaks.py` | CI / Korean-artist leak cleanup | Weekly | After merger replay, in `crawl.yml` (also runnable manually after drop-list updates) |
-| `drop_cpop_leaks.py` | CI / Chinese-artist (Cantopop/Mandopop) leak cleanup | Weekly | After KPOP drop, in `crawl.yml` |
+| `drop-artist-leaks.mjs --list korean` | CI / Korean-artist leak cleanup | Weekly | After merger replay, in `crawl.yml` (also runnable manually after drop-list updates) |
+| `drop-artist-leaks.mjs --list chinese` | CI / Chinese-artist (Cantopop/Mandopop) leak cleanup (+ catalog-anomaly IDs) | Weekly | After KPOP drop, in `crawl.yml` |
 | `translate_title_ko_via_agents.mjs` | CI / title_ko Stage 2 (`merge` replays the cached LLM translations) + manual `prep` chunking for operator-dispatched agent runs | Weekly (`merge`) | `crawl.yml` Stage 2 replay; `prep` is manual |
 | `apply-manual-title-ko-fixes.mjs` | CI / manual title_ko sidecar replay | Weekly | After Stage 2 replay, in `crawl.yml` |
 | `prune-artist-nationality-cache.mjs` | CI / tj-search-cache pruning (drops unreachable `artistNationalityMap` keys) | Weekly | Before schema validation, in `crawl.yml` |
 | `validate-songs-json.mjs` | CI / data quality gate | Weekly | Final gate, in `crawl.yml` |
 | `compose-crawl-pr-body.mjs` | CI / crawl PR-body composer | Weekly | In `crawl.yml`, stdout redirected to `$RUNNER_TEMP/pr_body.md` |
 | `export-drop-list.mjs` | Build chain (Korean drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
-| `export-chinese-drop-list.mjs` | Build chain (Chinese drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `export-clustering-rules.mjs` | Build chain (`SPLIT_RE` splitter-pattern JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `audit-corpus-guardrails.mjs` | Ad-hoc corpus audit | As-needed | Manual |
 | `audit-crawler-quality.mjs` | Ad-hoc crawler-quality report | As-needed | Manual |
@@ -47,8 +46,10 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
   `packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json`.
   The sidecar JSON is **tracked in git** so a TS-edited-without-regen drift
   is visible at code-review time. CI also has a sidecar drift guard step
-  (`Verify all sidecars are in sync`), which covers the Korean and Chinese
-  drop-list sidecars plus `clustering-rules.json`.
+  (`Verify all sidecars are in sync`), which covers the Korean drop-list
+  sidecar plus `clustering-rules.json`. (The Chinese drop list has no sidecar:
+  its only consumer is `drop-artist-leaks.mjs`, which imports the TS-built
+  dist directly.)
 - **`replay-merger.mjs` honors the `CI` env var.** In CI mode it does NOT
   auto-rebuild the crawler; it trusts the previous `pnpm -r build` step and
   errors out if `dist/merge.js` is missing. Locally it auto-rebuilds when
