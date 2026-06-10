@@ -19,7 +19,9 @@
       "**/test/fixtures/**",
       "scripts/data/llm-translations-chunk-*.json",
       "scripts/data/.stage2-stale/**",
-      "packages/crawler/src/adapters/tj-media-direct/chinese-artist-drop-list.json"
+      "packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json",
+      "packages/crawler/src/adapters/tj-media-direct/chinese-artist-drop-list.json",
+      "packages/crawler/src/clustering-rules.json"
     ]
   },
   "organizeImports": {
