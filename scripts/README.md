@@ -13,13 +13,23 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 
 | Script | Role | Frequency | Invocation context |
 |---|---|---|---|
-| `ingest_anisong_pdf.py` | CI / data ingest | Weekly | After JS crawl, in `crawl.yml` |
-| `validate-songs-json.mjs` | CI / data quality gate | Per crawl | After ingest, in `crawl.yml` |
-| `replay-merger.mjs` | CI / merger replay | Per crawl | After ingest, before validate |
-| `export-drop-list.mjs` | Build chain | On every `pnpm build` | Auto-invoked by `package.json` `build` script |
-| `drop_kpop_leaks.py` | Ad-hoc cleanup | As-needed | Manual, after drop-list updates |
-| `test_ingest_anisong_pdf.py` | Tests | CI / local | `python -m unittest scripts/test_ingest_anisong_pdf.py` |
-| `test_drop_kpop_leaks.py` | Tests | CI / local | `python -m unittest scripts/test_drop_kpop_leaks.py` |
+| `ingest_anisong_pdf.py` | CI / data ingest (coverage-only PDF records) | Weekly | After JS crawl, in `crawl.yml` |
+| `normalize_tj_title_ko.py` | CI / title_ko Stage 1 (strip TJ transliterations, salvage `media_context_ko`) | Weekly | After PDF ingest, in `crawl.yml` |
+| `replay-merger.mjs` | CI / merger replay | Weekly | After Stage 1, in `crawl.yml` |
+| `drop_kpop_leaks.py` | CI / Korean-artist leak cleanup | Weekly | After merger replay, in `crawl.yml` (also runnable manually after drop-list updates) |
+| `drop_cpop_leaks.py` | CI / Chinese-artist (Cantopop/Mandopop) leak cleanup | Weekly | After KPOP drop, in `crawl.yml` |
+| `translate_title_ko_via_agents.mjs` | CI / title_ko Stage 2 (`merge` replays the cached LLM translations) + manual `prep` chunking for operator-dispatched agent runs | Weekly (`merge`) | `crawl.yml` Stage 2 replay; `prep` is manual |
+| `apply-manual-title-ko-fixes.mjs` | CI / manual title_ko sidecar replay | Weekly | After Stage 2 replay, in `crawl.yml` |
+| `prune-artist-nationality-cache.mjs` | CI / tj-search-cache pruning (drops unreachable `artistNationalityMap` keys) | Weekly | Before schema validation, in `crawl.yml` |
+| `validate-songs-json.mjs` | CI / data quality gate | Weekly | Final gate, in `crawl.yml` |
+| `export-drop-list.mjs` | Build chain (Korean drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
+| `export-chinese-drop-list.mjs` | Build chain (Chinese drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
+| `export-clustering-rules.mjs` | Build chain (`SPLIT_RE` splitter-pattern JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
+| `audit-corpus-guardrails.mjs` | Ad-hoc corpus audit | As-needed | Manual |
+| `audit-crawler-quality.mjs` | Ad-hoc crawler-quality report | As-needed | Manual |
+| `manual-fix-title-ko.mjs` | Ad-hoc single-record title_ko fix | As-needed | Manual |
+| `test_*.py` | Tests (Python) | CI / local | `python -m unittest discover -s scripts -p "test_*.py"` (CI runs `test_splitter_parity.py` in `crawl.yml`) |
+| `*.test.mjs` | Tests (JS) | Local | `corepack pnpm exec vitest run scripts` |
 
 ## Operational notes
 
@@ -28,14 +38,15 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
   writes never reach `apps/web/public/data/songs.json`.
 - **`replay-merger.mjs` is gated by safety thresholds.** Refuses to write
   when the corpus shrinks by more than `MAX_DELTA_THRESHOLD` records
-  (currently 30) — see the constants block at the top of the file. A
+  (currently 1000) — see the constants block at the top of the file. A
   negative delta (more output than input) is treated as fatal and aborts.
 - **`export-drop-list.mjs` runs as a post-build step.** Reads
   `packages/crawler/dist/.../koreanArtistDropList.js`, writes
   `packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json`.
   The sidecar JSON is **tracked in git** so a TS-edited-without-regen drift
   is visible at code-review time. CI also has a sidecar drift guard step
-  (`Verify drop-list sidecar is in sync`).
+  (`Verify all sidecars are in sync`), which covers the Korean and Chinese
+  drop-list sidecars plus `clustering-rules.json`.
 - **`replay-merger.mjs` honors the `CI` env var.** In CI mode it does NOT
   auto-rebuild the crawler; it trusts the previous `pnpm -r build` step and
   errors out if `dist/merge.js` is missing. Locally it auto-rebuilds when
