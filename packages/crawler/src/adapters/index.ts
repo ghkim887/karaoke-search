@@ -56,18 +56,29 @@ function buildOptInAdapters(http: HttpClient): Crawler[] {
   return [new JoysoundOfficialCrawler(http)];
 }
 
+const defaultHttpClient = new HttpClient();
+const optInHttpClient = new HttpClient();
+
 /**
  * Default adapter set bound to a single shared `HttpClient`. The CLI consumes
  * this for a no-`--source` run. Tests that need adapter isolation should call
  * `buildAdapters(new HttpClient())` instead.
  */
-export const adapters: Crawler[] = buildAdapters(new HttpClient());
+export const adapters: Crawler[] = buildAdapters(defaultHttpClient);
 
 /**
- * Opt-in adapter set bound to the same shared `HttpClient`. Not run unless an
+ * Opt-in adapter set bound to its own shared `HttpClient`. Not run unless an
  * explicit `--source` names one of them.
  */
-export const optInAdapters: Crawler[] = buildOptInAdapters(new HttpClient());
+export const optInAdapters: Crawler[] = buildOptInAdapters(optInHttpClient);
+
+/**
+ * The shared `HttpClient` instances backing `adapters` / `optInAdapters`.
+ * Cache persistence is batched, so whoever owns the run lifecycle (the CLI)
+ * must `flush()` these at end-of-run or the last batch of cache stores is
+ * lost.
+ */
+export const sharedHttpClients: readonly HttpClient[] = [defaultHttpClient, optInHttpClient];
 
 /**
  * Resolve the adapter run set for a `--source` selection.
