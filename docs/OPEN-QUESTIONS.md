@@ -47,26 +47,7 @@ a `{id, title_primary, title_ko}` row to
 pipeline run applies it. Unblocked by: owner review time (incremental — any
 subset helps).
 
-## 4. `deploy.yml` e2e must build in FALLBACK mode before/with the API-first deploy
-
-The e2e job currently tests the API-first build (built with
-`PUBLIC_KARAOKE_API_BASE_URL` set). Once full API-first removes the bundled
-runtime fallback (feature-branch work), e2e needs a FALLBACK-mode build (no
-`PUBLIC_KARAOKE_API_BASE_URL`) so it exercises the offline MiniSearch path
-without depending on a live Worker. This is NOT deferred polish: e2e is a
-**required deploy gate** since `f260f53` (`deploy` job
-`needs: [build, e2e]`), so a red e2e blocks every Pages deploy. Must land
-BEFORE or WITH the API-first deploy.
-
-## 5. PR CI runs no Playwright e2e
-
-`ci.yml` has no e2e job — Playwright runs only in `deploy.yml` (post-merge).
-A PR that breaks the UI can merge green and then block all deploys (see
-item 4: e2e is required). Options: add a (slower) e2e job to PR CI, a
-label-gated e2e job, or accept the post-merge detection latency. Unblocked
-by: owner appetite for PR-CI wall-time.
-
-## 6. D1 free-tier 500 MB vs the JOYSOUND-scale corpus
+## 4. D1 free-tier 500 MB vs the JOYSOUND-scale corpus
 
 The streamed D1 SQL export for the ~221k–236k candidate measured ~946 MB
 during the 2026-06 JOYSOUND candidate dry-run — well past the 500 MB
@@ -77,7 +58,7 @@ Cloudflare D1 free-tier cap. Deploy-time check:
 same SQLite schema — the owner plans self-hosting as the expected path.
 Unblocked by: the actual post-import measurement + hosting decision.
 
-## 7. Post-JOYSOUND refactor backlog (deferred to avoid feature-branch conflicts)
+## 5. Post-JOYSOUND refactor backlog (deferred to avoid feature-branch conflicts)
 
 Parked because the touched files are in flight on the feature branch:
 
@@ -100,7 +81,7 @@ Parked because the touched files are in flight on the feature branch:
 - the agent-chunk prep/merge pattern (title_ko Stage 2, JOYSOUND
   adjudication) duplicates chunk-file plumbing — extract a shared lib.
 
-## 8. Chinese-leak detection future work
+## 6. Chinese-leak detection future work
 
 The flat Chinese drop list + hardcoded catalog-anomaly IDs catch known leaks,
 but TJ surfaces more non-Japanese rows over time. The right detector for
