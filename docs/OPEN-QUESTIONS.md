@@ -29,7 +29,7 @@ manifest [+ optional SQLite]) and `scripts/fetch-full-corpus.mjs`
   → `gh release create` with the corpus asset → manifest-update PR. Weekly
   `crawl.yml` stays unchanged (baseline path preserved).
 - **PR-3 (first publish/import):** publish the first release, manual D1
-  import, `wrangler d1 info` 500 MB measurement (see item 6), then the
+  import, `wrangler d1 info` 500 MB measurement (see item 4), then the
   worker/web deploy.
 
 ## 2. JOYSOUND runbook owner checkpoints
