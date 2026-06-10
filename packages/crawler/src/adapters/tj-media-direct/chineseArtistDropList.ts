@@ -18,9 +18,10 @@ export type { DropListEntry };
  *     vote-tally signal in `tj-search-cache.json` cannot demote them because
  *     they don't show up on the JPOP-chart bootstrap or the KPOP-chart
  *     bootstrap. The drop list is the only deterministic gate.
- *   - The drop list runs at the same site as the Korean drop list
- *     (`classifyRecord` step 0) — any-component scan, applied BEFORE every
- *     admit path including the blog rescue.
+ *   - The drop list runs at the same site as the Korean drop list — the
+ *     `drop-list-reject` step (authoritative order: see FILTER_STEPS in
+ *     filterSteps.ts) — any-component scan, applied BEFORE every JPN admit
+ *     path including the blog rescue.
  *
  * Schema: `DropListEntry` (same as `koreanArtistDropList.ts`) — shared type,
  * not duplicated. Each entry has `canonical` (primary display name), `variants`

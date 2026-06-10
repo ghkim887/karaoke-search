@@ -22,42 +22,14 @@ import { extractCatalogItems } from './normalize.js';
  *
  * --- PR-2 filter chain (replaced the legacy JP-regex + Chinese denylist) ---
  *
- * Three independent admit signals; first to confirm JPN keeps the record.
- * None say JPN -> drop. The reading order below is primary -> secondary ->
- * safety net. The ORDER IS LOAD-BEARING (see the authoritative order block on
- * `classifyRecord` below and FILTER_STEPS in filterSteps.ts): drop-list-reject
- * MUST run before the JPN admit steps (jpn-admit-pro / jpn-admit-artist /
- * blog-rescue), otherwise a drop-listed Korean act carrying a JPN pro tag
- * leaks in. reviewed-song-allow is the one curated exact-TJ-number exception
- * that precedes drop-list-reject. Reordering can change which records are kept,
- * not just which path gets credit in `KeepStats`.
+ * Classification is a typed FilterStep[] reducer. The ORDER IS LOAD-BEARING;
+ * authoritative order: see the numbered list on FILTER_STEPS in
+ * filterSteps.ts (per-step rationale lives on each step's docblock there).
+ * Reordering can change which records are kept, not just which path gets
+ * credit in `KeepStats`.
  *
- *   1. **Per-artist JPN tag (primary).** Split `artist` via
- *      `splitArtistCollab` (whole-string scan PLUS per-component scan for
- *      collab strings like `imase & なとり`, `IDOLiSH7,TRIGGER,Re:vale`,
- *      `Charlie Puth(Feat.宇多田ヒカル)`, …). If ANY component has
- *      `cache.artistNationalityMap[normalize(component)].code === 'JPN'`,
- *      keep. This is the primary path because per-record title-search has
- *      empirically high miss rates (33% in PR-1's pre-seed: 1,950 / 5,961
- *      title-search calls returned no `pro` match). Per-artist scanning
- *      uses `searchSong?strType=2` (artist field) which side-steps that gap
- *      — and crucially admits Latin-titled Japanese acts (GRANRODEO,
- *      halyosy, fripSide etc.) where title-search returns nothing.
- *
- *   2. **Per-record JPN tag (backup).** If
- *      `cache.proEnrichmentMap[pro].nationalcode === 'JPN'`, keep. Populated
- *      by the translit pass's `searchSong?strType=1` exact-`pro`-match. This
- *      catches the case where the artist scan classified an artist as
- *      AMBIGUOUS (mixed JPN/KOR votes) but the specific `pro` is JPN.
- *
- *   3. **Blog-whitelist rescue (safety net).** If `pro` is in
- *      `forceIncludeTjNumbers`, keep. The blog adapter has been hand-
- *      validated for 21k+ Japanese records over time, so a TJ# the blog
- *      already knows about is JPN. Defense-in-depth for residual TJ-search
- *      index gaps neither searchSong path could see.
- *
- * Otherwise, the record is **dropped** — Korean, English, Chinese, Mandopop,
- * any artist `searchSong` hasn't confirmed JPN.
+ * A record no step admits is **dropped** — Korean, English, Chinese,
+ * Mandopop, any artist `searchSong` hasn't confirmed JPN.
  *
  * `KeepStats` (returned alongside the records) tallies which path admitted
  * each kept record (first-to-fire wins). The crawler logs these so we can
@@ -191,20 +163,10 @@ export function parseCatalogResponse(
  * Exported for unit tests so we can exercise the filter logic directly
  * without going through the JSON-extraction wrapper.
  *
- * Filter chain order (post 2026-06 FP/FN audit) — implemented as a typed
- * FilterStep[] reducer in filterSteps.ts. CLAUDE.md gotcha: this order is
- * LOAD-BEARING; do not reorder FILTER_STEPS.
- *   0. reviewed-song-drop  — audited TJ-number false positives
- *   1. non-jpn-pro-reject  — explicit non-JPN pro overrides all admit paths
- *   2. reviewed-song-allow — audited TJ-number K-pop Japanese releases
- *   3. drop-list-reject    — Korean/Chinese artist deny, any-component (§2.E)
- *   4. jpn-admit-pro       — per-pro JPN tag
- *   5. jpn-admit-artist    — per-artist JPN tag, lead-component-only (§2.B)
- *   6. blog-rescue         — blog-whitelist rescue (safety net, NOT dead code)
- *
- * drop-list-reject (step 3) precedes jpn-admit-pro so a drop-listed Korean act
- * carrying a JPN pro tag (and not curated into reviewed-song-allow) drops.
- * If no step admits, drop.
+ * Filter chain (post 2026-06 FP/FN audit) — implemented as a typed
+ * FilterStep[] reducer. CLAUDE.md gotcha: the order is LOAD-BEARING; do not
+ * reorder. Authoritative order: see the numbered list on FILTER_STEPS in
+ * filterSteps.ts. If no step admits, drop.
  */
 export type KeepVerdict = 'artist' | 'pro' | 'song-override' | 'rescue' | 'drop';
 
