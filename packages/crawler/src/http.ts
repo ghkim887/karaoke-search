@@ -136,8 +136,7 @@ export interface HostConfig {
  *   adapter only issues one POST per crawl run, so the cadence almost never
  *   actually applies, but the entry documents the per-host posture.
  *
- * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-v2-design.md
- *       — "Operational discipline" table.
+ * Design notes: docs/PROJECT-KNOWLEDGE.md (HTTP client).
  */
 const HOST_CONFIG: Record<string, HostConfig> = {
   'www.tjmedia.com': {

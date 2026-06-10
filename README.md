@@ -17,21 +17,32 @@ The app is optimized for quick phone use at karaoke: search a song, filter by ka
 
 No account is required. Favorites are stored only in your browser.
 
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — workspace map, end-to-end data flow, the two search paths, CI workflows.
+- [docs/PROJECT-KNOWLEDGE.md](docs/PROJECT-KNOWLEDGE.md) — durable invariants, gotchas, and policy decisions contributors must know.
+- [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) — live undecided items and what unblocks each.
+
 ## Current data snapshot
 
-The current checked-in corpus contains **25,902 songs** from two main sources:
+The checked-in corpus contains **~25.8k songs**.
+
+<!-- Counts below are a snapshot of the committed apps/web/public/data/songs.json
+     and go stale between crawls. Regenerate with:
+     node -e "const r=JSON.parse(require('fs').readFileSync('apps/web/public/data/songs.json','utf8'));const by={},v={};for(const s of r){const p=s.id.split('-')[0];by[p]=(by[p]||0)+1;for(const k in s.karaoke_numbers)if(s.karaoke_numbers[k]!=null)v[k]=(v[k]||0)+1}console.log(r.length,by,v)" -->
 
 | Source | Records | Notes |
 | --- | ---: | --- |
 | j-pop-playlist.tistory.com | 21,390 | Korean blog source with TJ/KY/JOYSOUND mappings and Korean title/artist metadata. |
-| TJ Media catalog | 4,512 | TJ public catalog API records admitted through Japanese-relevance filters and cache-backed rescue rules. |
+| TJ Media catalog | 3,820 | TJ public catalog API records admitted through Japanese-relevance filters and cache-backed rescue rules. |
+| Anime songbook PDF | 632 | Coverage-only `tjpdf-*` records for TJ codes absent from the other sources. |
 
 Vendor-number coverage, with overlap because one song can have multiple karaoke systems:
 
 | Vendor | Records with number |
 | --- | ---: |
-| JOYSOUND | 20,897 |
-| TJ | 6,160 |
+| JOYSOUND | 20,896 |
+| TJ | 6,100 |
 | KY | 1,244 |
 
 Korean metadata coverage:
@@ -39,7 +50,7 @@ Korean metadata coverage:
 - `title_ko`: 17,952 records
   - 15,390 from the blog source
   - 2,560 LLM-translated TJ-only titles
-  - 2 manual fixes
+  - manual fixes replayed from the tracked sidecar `scripts/data/title-ko-manual-fixes.json`
 - `media_context_ko`: 1,008 records with salvaged Korean anime/OST/OP/ED context
 - `artist_aliases`: 1,893 records with normalized alias metadata
 
@@ -66,16 +77,19 @@ A big thanks to the j-pop-playlist blog author for maintaining the source resour
 
 ## Architecture
 
-This is a pnpm + TypeScript monorepo.
+This is a pnpm + TypeScript monorepo. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full structural map and data flow.
 
 | Path | Purpose |
 | --- | --- |
 | `apps/web` | Astro static site with a Preact search island and MiniSearch client-side index. |
+| `apps/worker` | Cloudflare Worker search API backed by D1, plus a self-hostable Node server over the same SQLite schema. |
 | `packages/schema` | Shared `SongRecord` schema and Ajv validation. |
-| `packages/crawler` | Adapter-based crawler pipeline and two-tier record merger. |
-| `scripts/` | Data post-processing, validation, PDF ingest, translation-cache replay, and regression tests. |
+| `packages/search` | Shared search-text primitives (normalization, n-grams, Hangul initials, number-query parsing). |
+| `packages/crawler` | Adapter-based crawler pipeline and three-tier record merger. |
+| `packages/data-store` | SQLite/D1 search-index builder and streamed D1 SQL export. |
+| `scripts/` | Data post-processing pipeline, validation, PDF ingest, translation-cache replay, and regression tests. |
 | `.github/workflows/crawl.yml` | Weekly/dispatch data refresh workflow that opens crawl-output PRs. |
-| `.github/workflows/deploy.yml` | GitHub Pages build/deploy workflow for `main`. |
+| `.github/workflows/deploy.yml` | GitHub Pages build/deploy workflow for `main` (Playwright e2e is a required gate). |
 
 Frontend stack: Astro, Preact, MiniSearch, self-hosted Geist/Inter/Pretendard fonts.
 

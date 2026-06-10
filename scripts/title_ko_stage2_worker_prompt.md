@@ -48,10 +48,9 @@ You are a Stage-2 worker for a J-pop karaoke search app's `title_ko`
    `title_ko` verdict — a record can have `title_ko=null` AND
    `media_context_ko` set (Latin-titled anime tracks).
 
-3. Use `artist_primary` and `categories` as context. Categories are
-   `jpop | vocaloid | anime` (single-element). Vocaloid songs often have
-   well-known Korean fan translations; anime tie-ins often have official
-   Korean release titles.
+3. Use `artist_primary` as context. Vocaloid songs often have well-known
+   Korean fan translations; anime tie-ins often have official Korean
+   release titles.
 
 **Output:** write JSON array to `{CHUNK_OUTPUT_PATH}`. One entry per
 input record (preserve input order). Shape per entry:

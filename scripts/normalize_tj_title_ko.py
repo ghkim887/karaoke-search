@@ -10,7 +10,7 @@ via the shared `atomic_write_corpus` helper from `lib/corpus_io.py`
 (indent=2 + trailing newline) so output stays byte-compatible with the
 rest of the pipeline.
 
-Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
+Design notes: docs/PROJECT-KNOWLEDGE.md (title_ko backfill pipeline).
 """
 
 from __future__ import annotations

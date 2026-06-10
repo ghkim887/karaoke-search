@@ -9,7 +9,7 @@
  *                                    into the corpus (atomic write) and
  *                                    write low-confidence review CSV.
  *
- * Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
+ * Design notes: docs/PROJECT-KNOWLEDGE.md (title_ko backfill pipeline).
  *
  * The agent dispatch BETWEEN prep and merge is human-driven from a
  * Claude Code session — see scripts/title_ko_stage2_howto.md.

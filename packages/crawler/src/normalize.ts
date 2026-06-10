@@ -6,7 +6,7 @@
  *   3. Strip every code point outside `\p{L}` (letters), `\p{N}` (numbers),
  *      and `\p{M}` (combining marks).
  *
- * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-design.md, Data Model.
+ * Design notes: docs/PROJECT-KNOWLEDGE.md (Merger and alias resolution).
  */
 export function normalize(s: string): string {
   return s
