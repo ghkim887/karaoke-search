@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalize } from './normalize.js';
 
 describe('normalize (web mirror of crawler normalize)', () => {
-  // The 7 worked examples from docs/superpowers/specs/2026-04-26-karaoke-search-design.md.
+  // The 7 worked examples pinned when the normalizer was designed.
   // Parity with packages/crawler/src/normalize.ts is required.
   const cases: ReadonlyArray<readonly [string, string]> = [
     ['DECO*27', 'deco27'],

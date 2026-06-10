@@ -36,12 +36,16 @@ Wall-clock: ~5-15 min depending on web-search rate.
 ```
 node scripts/translate_title_ko_via_agents.mjs merge \
   apps/web/public/data/songs.json \
-  scripts/data
+  scripts/data \
+  --review-csv scripts/data/llm-review.csv
 ```
 
-Reads all `llm-translations-chunk-*.json`, applies decisions to the
-corpus (atomic write), writes `scripts/data/llm-review.csv` with the
-low-confidence subset for human spot-check.
+Reads all `llm-translations-chunk-NN.json` (output files only — the
+`-input` files are ignored), applies decisions to the corpus (atomic
+write), and — when `--review-csv` is passed — writes the review CSV
+with the medium/low-confidence subset for human spot-check. The CI
+cache-replay invocation (`scripts/run-post-crawl-pipeline.mjs`, step
+`title-ko-stage2-replay`) runs `merge` without `--review-csv`.
 
 ## Verifying
 
@@ -57,24 +61,16 @@ committing.
 
 ## Running the orchestrator's tests
 
-The repo doesn't have a root-level vitest config — vitest is hoisted into per-package `node_modules` only. To run the orchestrator's tests, invoke vitest from one of the workspace packages with `--root` pointing at the repo root.
-
-PowerShell (this host's default):
-
-```powershell
-Set-Location packages/crawler
-corepack pnpm exec vitest run `
-  --root=(Resolve-Path ..\..).Path `
-  scripts/translate_title_ko_via_agents.test.mjs
-```
-
-bash / WSL / macOS / Linux:
+`scripts/` is the `@karaoke/scripts` workspace package with its own vitest
+config; its test script also builds the crawler first (some script tests
+import the crawler dist):
 
 ```bash
-cd packages/crawler
-corepack pnpm exec vitest run \
-  --root="$(realpath ../..)" \
-  scripts/translate_title_ko_via_agents.test.mjs
+corepack pnpm --filter @karaoke/scripts test
 ```
 
-Note the path math: starting from `packages/crawler`, the repo root is two parents up (`../..`), not one. Vitest resolves the positional path argument relative to `--root`, so `scripts/translate_title_ko_via_agents.test.mjs` ends up correctly pointing at `<repo-root>/scripts/translate_title_ko_via_agents.test.mjs`.
+To run only this orchestrator's suite:
+
+```bash
+corepack pnpm --filter @karaoke/scripts exec vitest run translate_title_ko_via_agents.test.mjs
+```

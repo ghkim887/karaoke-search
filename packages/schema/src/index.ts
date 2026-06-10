@@ -35,7 +35,7 @@ export interface SongRecord {
    * known alias of another canonical. NEVER used as the canonical key.
    * Empty/absent when the record has no known aliases.
    *
-   * Spec: docs/superpowers/specs/2026-05-04-artist-alias-dedup-design.md.
+   * Design notes: docs/PROJECT-KNOWLEDGE.md (Merger and alias resolution).
    */
   artist_aliases?: string[];
   /** Cross-source karaoke numbers. */
@@ -48,7 +48,7 @@ export interface SongRecord {
    * → media_context_ko "(슬레이어즈 TRY OST)". Independent of title_ko —
    * a record may have one, both, or neither.
    *
-   * Spec: docs/superpowers/specs/2026-05-06-title-ko-backfill-design.md.
+   * Design notes: docs/PROJECT-KNOWLEDGE.md (title_ko backfill pipeline).
    */
   media_context_ko?: string;
   /**
