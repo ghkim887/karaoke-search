@@ -21,12 +21,7 @@ jobs:
       PUBLIC_KARAOKE_API_BASE_URL: https://karaoke-search-api.ghkim887.workers.dev
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-      - uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9  # v6.0.8
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm -r build
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
@@ -45,15 +40,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-      - uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9  # v6.0.8
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-      - name: Install dependencies
-        # Still required: Playwright CLI runs from node_modules. The savings
-        # come from skipping `pnpm -r build` (the slow step).
-        run: pnpm install --frozen-lockfile
+      - name: Setup toolchain and install dependencies
+        # The install is still required: Playwright CLI runs from node_modules.
+        # The savings come from skipping `pnpm -r build` (the slow step).
+        uses: ./.github/actions/setup
       - name: Download dist artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:

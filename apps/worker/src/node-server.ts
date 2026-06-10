@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { type D1DatabaseLike, handleRequest } from './index.js';
 import { openSqliteD1Database } from './sqlite-adapter.js';
 
-export interface RateLimitOptions {
+interface RateLimitOptions {
   windowMs: number;
   maxRequests: number;
   now?: () => number;
@@ -53,7 +53,7 @@ export function createKaraokeSearchNodeServer(options: NodeServerOptions): Serve
   });
 }
 
-export function startFromEnv(env: NodeJS.ProcessEnv = process.env): Server {
+function startFromEnv(env: NodeJS.ProcessEnv = process.env): Server {
   const dbPath = env.KARAOKE_SQLITE_DB_PATH;
   if (dbPath === undefined || dbPath.trim() === '') {
     throw new Error('KARAOKE_SQLITE_DB_PATH is required');

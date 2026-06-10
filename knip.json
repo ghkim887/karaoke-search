@@ -1,6 +1,18 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["scripts/*.mjs", "scripts/*.test.mjs", "scripts/lib-atomic-write.test.mjs"],
-  "project": ["scripts/**/*.mjs"],
-  "tags": ["-lintignore"]
+  "tags": ["-lintignore"],
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": []
+    },
+    "apps/web": {},
+    "apps/worker": {},
+    "packages/*": {},
+    "scripts": {
+      "entry": ["*.mjs"],
+      "project": ["**/*.mjs"],
+      "ignoreDependencies": ["@karaoke/crawler", "@karaoke/schema"]
+    }
+  }
 }
