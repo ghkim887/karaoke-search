@@ -60,7 +60,14 @@ const SAMPLE_DISAPPEARED_LIMIT = 5;
 // writing.
 export const MIN_NON_FATAL_DELTA = 0;
 
-const defaultSongsPath = resolve(repoRoot, 'apps/web/public/data/songs.json');
+// KARAOKE_SONGS_JSON: corpus-path override exported by
+// scripts/run-post-crawl-pipeline.mjs when its --corpus flag is used, so the
+// whole pipeline can be exercised against a copy. Unset in CI/default runs.
+// (Tests injecting an explicit `songsPath` via runReplay options are
+// unaffected — the env override only feeds the default.)
+const defaultSongsPath = process.env.KARAOKE_SONGS_JSON
+  ? resolve(process.env.KARAOKE_SONGS_JSON)
+  : resolve(repoRoot, 'apps/web/public/data/songs.json');
 const defaultMergeJsPath = resolve(repoRoot, 'packages/crawler/dist/merge.js');
 const mergeTsPath = resolve(repoRoot, 'packages/crawler/src/merge.ts');
 const defaultAliasesJsPath = resolve(repoRoot, 'packages/crawler/dist/aliases.js');

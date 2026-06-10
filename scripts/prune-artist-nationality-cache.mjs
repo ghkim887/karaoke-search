@@ -51,7 +51,13 @@ import { writeJsonAtomic } from './lib/atomic-write.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
-const SONGS_PATH = resolve(REPO_ROOT, 'apps/web/public/data/songs.json');
+// KARAOKE_SONGS_JSON: corpus-path override exported by
+// scripts/run-post-crawl-pipeline.mjs when its --corpus flag is used, so the
+// whole pipeline can be exercised against a copy. Unset in CI/default runs.
+// (The cache file itself is NOT corpus-dependent and keeps its repo path.)
+const SONGS_PATH = process.env.KARAOKE_SONGS_JSON
+  ? resolve(process.env.KARAOKE_SONGS_JSON)
+  : resolve(REPO_ROOT, 'apps/web/public/data/songs.json');
 const CACHE_PATH = resolve(REPO_ROOT, 'apps/web/public/data/tj-search-cache.json');
 const CLUSTERING_DIST = resolve(REPO_ROOT, 'packages/crawler/dist/clustering.js');
 

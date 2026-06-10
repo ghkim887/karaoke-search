@@ -57,6 +57,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -69,7 +70,14 @@ from lib.corpus_io import atomic_write_corpus, ensure_utf8_stdio
 from lib.artist_split import is_artist_in_drop_list, load_drop_keys
 
 REPO_ROOT = _HERE.parent
-SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
+# KARAOKE_SONGS_JSON: corpus-path override exported by
+# scripts/run-post-crawl-pipeline.mjs when its --corpus flag is used, so the
+# whole pipeline can be exercised against a copy. Unset in CI/default runs.
+SONGS_JSON = (
+    Path(os.environ['KARAOKE_SONGS_JSON']).resolve()
+    if os.environ.get('KARAOKE_SONGS_JSON')
+    else REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
+)
 DROP_LIST_SIDECAR = (
     REPO_ROOT
     / 'packages'

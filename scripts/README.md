@@ -13,6 +13,7 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 
 | Script | Role | Frequency | Invocation context |
 |---|---|---|---|
+| `run-post-crawl-pipeline.mjs` | CI / post-crawl chain runner (atomic rename → … → schema validation) | Weekly | Single step in `crawl.yml`; runnable locally (`--corpus`, `--skip`) |
 | `ingest_anisong_pdf.py` | CI / data ingest (coverage-only PDF records) | Weekly | After JS crawl, in `crawl.yml` |
 | `normalize_tj_title_ko.py` | CI / title_ko Stage 1 (strip TJ transliterations, salvage `media_context_ko`) | Weekly | After PDF ingest, in `crawl.yml` |
 | `replay-merger.mjs` | CI / merger replay | Weekly | After Stage 1, in `crawl.yml` |
@@ -22,6 +23,7 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | `apply-manual-title-ko-fixes.mjs` | CI / manual title_ko sidecar replay | Weekly | After Stage 2 replay, in `crawl.yml` |
 | `prune-artist-nationality-cache.mjs` | CI / tj-search-cache pruning (drops unreachable `artistNationalityMap` keys) | Weekly | Before schema validation, in `crawl.yml` |
 | `validate-songs-json.mjs` | CI / data quality gate | Weekly | Final gate, in `crawl.yml` |
+| `compose-crawl-pr-body.mjs` | CI / crawl PR-body composer | Weekly | In `crawl.yml`, stdout redirected to `$RUNNER_TEMP/pr_body.md` |
 | `export-drop-list.mjs` | Build chain (Korean drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `export-chinese-drop-list.mjs` | Build chain (Chinese drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `export-clustering-rules.mjs` | Build chain (`SPLIT_RE` splitter-pattern JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
