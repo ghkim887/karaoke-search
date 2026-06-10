@@ -70,7 +70,7 @@ export const adapters: Crawler[] = buildAdapters(defaultHttpClient);
  * Opt-in adapter set bound to its own shared `HttpClient`. Not run unless an
  * explicit `--source` names one of them.
  */
-export const optInAdapters: Crawler[] = buildOptInAdapters(optInHttpClient);
+const optInAdapters: Crawler[] = buildOptInAdapters(optInHttpClient);
 
 /**
  * The shared `HttpClient` instances backing `adapters` / `optInAdapters`.
