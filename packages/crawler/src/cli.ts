@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveAdaptersForSources } from './adapters/index.js';
+import { resolveAdaptersForSources, sharedHttpClients } from './adapters/index.js';
 import { headlineConflicts } from './merge.js';
 import { runPipeline } from './pipeline.js';
 
@@ -132,11 +132,18 @@ async function main(): Promise<void> {
     ...(parsed.limit > 0 ? { limit: parsed.limit } : {}),
     ...(conflictsOutPath ? { conflictsOutPath } : {}),
   };
-  const { written, conflicts } = await runPipeline(pipelineOpts);
-  process.stdout.write(`wrote ${written} records to ${outPath}\n`);
-  const headline = headlineConflicts(conflicts);
-  if (headline.length > 0) {
-    process.stdout.write(`merge conflicts: ${headline.length}\n`);
+  try {
+    const { written, conflicts } = await runPipeline(pipelineOpts);
+    process.stdout.write(`wrote ${written} records to ${outPath}\n`);
+    const headline = headlineConflicts(conflicts);
+    if (headline.length > 0) {
+      process.stdout.write(`merge conflicts: ${headline.length}\n`);
+    }
+  } finally {
+    // Cache persistence is batched; flush the shared clients so the last
+    // batch of HTTP cache stores survives the run (even on pipeline failure,
+    // so a re-run can resume from the cache).
+    await Promise.all(sharedHttpClients.map((client) => client.flush()));
   }
 }
 

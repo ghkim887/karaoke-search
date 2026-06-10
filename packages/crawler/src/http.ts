@@ -111,6 +111,19 @@ export interface HostConfig {
   minIntervalMs?: number;
   /** Overrides DEFAULT_RATE_LIMIT_JITTER_MS. */
   jitterMs?: number;
+  /**
+   * When `false`, GET responses from this host are neither stored in nor
+   * served from the on-disk conditional-request cache. Defaults to `true`.
+   * Intended for hosts where the response volume makes the cache file a
+   * liability (e.g. a full-catalog sweep) — opt out per host only when
+   * evidence supports it.
+   *
+   * NOTE: opting a host out does NOT prune its already-cached entries from
+   * `.cache/http.json` — they are retained and re-serialized on every
+   * persist. A one-time manual prune of the file is the operational
+   * follow-up when flipping this off for a host with existing entries.
+   */
+  cache?: boolean;
 }
 
 /**
@@ -132,6 +145,37 @@ const HOST_CONFIG: Record<string, HostConfig> = {
     jitterMs: 100,
   },
 };
+
+/**
+ * Cache-persist batching defaults. Persisting rewrites the ENTIRE cache file
+ * atomically, so persist-per-store is O(n²) total IO over a long crawl (the
+ * JOYSOUND full-catalog sweep performs hundreds of thousands of GETs against
+ * an ever-growing multi-MB JSON file). Instead we persist at most once per
+ * `DEFAULT_CACHE_PERSIST_EVERY` stores or once per
+ * `DEFAULT_CACHE_PERSIST_MAX_AGE_MS`, whichever comes first, plus a final
+ * `flush()` at end-of-run. Trade-off: a crash loses at most the last
+ * un-flushed batch — acceptable because this is a cache, and those URLs are
+ * simply re-fetched on the next run.
+ */
+const DEFAULT_CACHE_PERSIST_EVERY = 200;
+const DEFAULT_CACHE_PERSIST_MAX_AGE_MS = 30_000;
+
+/** Construction-time tuning knobs for `HttpClient`. All optional. */
+export interface HttpClientOptions {
+  /** Persist the cache at most once per this many stores. Default 200. */
+  cachePersistEvery?: number;
+  /**
+   * Also persist when this much time has passed since the last persist and a
+   * store arrives. Default 30s.
+   */
+  cachePersistMaxAgeMs?: number;
+  /**
+   * Per-host config overrides merged over the static `HOST_CONFIG` table
+   * (field-level, override wins). Lets a one-off run (or a test) adjust
+   * rate-limits or disable caching for a host without editing the table.
+   */
+  hostConfigOverrides?: Record<string, HostConfig>;
+}
 
 interface CacheEntry {
   body: string;
@@ -183,7 +227,9 @@ async function writeJsonFileAtomic(path: string, value: unknown): Promise<void> 
  *  - robots.txt is fetched once per host and consulted BEFORE the rate-limit
  *    timestamp is recorded — disallowed requests do not consume a slot.
  *  - ETag / Last-Modified disk cache at `.cache/http.json` (cwd-relative). On
- *    a 304 response, the cached body is replayed.
+ *    a 304 response, the cached body is replayed. Persistence is batched (see
+ *    DEFAULT_CACHE_PERSIST_EVERY); callers that own the client lifecycle MUST
+ *    call `flush()` at end-of-run or the last batch of stores is lost.
  *  - First contact with each host logs the resolved UA + rate-limit values
  *    once for run-log auditability.
  */
@@ -193,6 +239,18 @@ export class HttpClient {
   private lastRequestAt = 0;
   private robotsByHost = new Map<string, Promise<RobotsRules>>();
   private loggedHosts = new Set<string>();
+  private readonly cachePersistEvery: number;
+  private readonly cachePersistMaxAgeMs: number;
+  private readonly hostConfigOverrides: Record<string, HostConfig>;
+  private pendingCacheStores = 0;
+  private lastPersistAt = Date.now();
+  private flushInFlight: Promise<void> | undefined;
+
+  constructor(options: HttpClientOptions = {}) {
+    this.cachePersistEvery = options.cachePersistEvery ?? DEFAULT_CACHE_PERSIST_EVERY;
+    this.cachePersistMaxAgeMs = options.cachePersistMaxAgeMs ?? DEFAULT_CACHE_PERSIST_MAX_AGE_MS;
+    this.hostConfigOverrides = options.hostConfigOverrides ?? {};
+  }
 
   private async loadCache(): Promise<void> {
     if (this.cacheLoaded) return;
@@ -205,12 +263,61 @@ export class HttpClient {
     await writeJsonFileAtomic(CACHE_PATH, this.cache);
   }
 
+  /**
+   * Record one in-memory cache store and persist if either batching threshold
+   * (store count or elapsed time since last persist) has been crossed.
+   */
+  private async recordCacheStore(): Promise<void> {
+    this.pendingCacheStores++;
+    if (
+      this.pendingCacheStores >= this.cachePersistEvery ||
+      Date.now() - this.lastPersistAt >= this.cachePersistMaxAgeMs
+    ) {
+      await this.flush();
+    }
+  }
+
+  /**
+   * Persist any un-flushed cache stores to disk. No-op when nothing is
+   * pending. Callers that own the client lifecycle (the CLI, sweep scripts)
+   * must invoke this at end-of-run; a crash before flush loses at most the
+   * last batch (acceptable — it's a cache).
+   *
+   * Concurrent calls are serialized: a flush that arrives while a persist is
+   * in flight joins the in-flight promise instead of starting a second write.
+   * This keeps the pending counter from going negative (two overlapping
+   * flushes would otherwise both subtract the same batch) AND prevents
+   * interleaved writes to the shared tmp file inside persistCache.
+   */
+  flush(): Promise<void> {
+    if (this.flushInFlight) return this.flushInFlight;
+    if (this.pendingCacheStores === 0) return Promise.resolve();
+    this.flushInFlight = (async () => {
+      try {
+        // Reset the pending counter only AFTER the persist succeeds: if the
+        // write throws (ENOSPC, AV-locked tmp rename on Windows), the stores
+        // stay pending so a later flush() — e.g. the CLI's finally-flush —
+        // retries instead of silently dropping the batch. Subtract the
+        // flushed count (rather than zeroing) so stores landing while the
+        // write is in flight remain pending.
+        const flushed = this.pendingCacheStores;
+        await this.persistCache();
+        this.pendingCacheStores -= flushed;
+        this.lastPersistAt = Date.now();
+      } finally {
+        this.flushInFlight = undefined;
+      }
+    })();
+    return this.flushInFlight;
+  }
+
   private resolveHostConfig(host: string): Required<HostConfig> {
-    const cfg = HOST_CONFIG[host] ?? {};
+    const cfg: HostConfig = { ...HOST_CONFIG[host], ...this.hostConfigOverrides[host] };
     return {
       userAgent: cfg.userAgent ?? DEFAULT_USER_AGENT,
       minIntervalMs: cfg.minIntervalMs ?? DEFAULT_RATE_LIMIT_BASE_MS,
       jitterMs: cfg.jitterMs ?? DEFAULT_RATE_LIMIT_JITTER_MS,
+      cache: cfg.cache ?? true,
     };
   }
 
@@ -278,7 +385,7 @@ export class HttpClient {
 
     await this.waitForRateLimit(hostCfg.minIntervalMs, hostCfg.jitterMs);
 
-    const cached = this.cache[url];
+    const cached = hostCfg.cache ? this.cache[url] : undefined;
     const headers: Record<string, string> = { 'user-agent': hostCfg.userAgent };
     if (cached?.etag) headers['if-none-match'] = cached.etag;
     if (cached?.lastModified) headers['if-modified-since'] = cached.lastModified;
@@ -299,12 +406,12 @@ export class HttpClient {
     const etag = typeof etagHeader === 'string' ? etagHeader : undefined;
     const lastModified = typeof lastModifiedHeader === 'string' ? lastModifiedHeader : undefined;
 
-    if (status >= 200 && status < 300) {
+    if (status >= 200 && status < 300 && hostCfg.cache) {
       const entry: CacheEntry = { body };
       if (etag !== undefined) entry.etag = etag;
       if (lastModified !== undefined) entry.lastModified = lastModified;
       this.cache[url] = entry;
-      await this.persistCache();
+      await this.recordCacheStore();
     }
 
     const result: FetchResult = { status, body };
