@@ -38,12 +38,10 @@ jobs:
         #
         # Sidecars covered:
         #   korean-artist-drop-list.json  — from koreanArtistDropList.ts
-        #   chinese-artist-drop-list.json — from chineseArtistDropList.ts
         #   clustering-rules.json         — from clustering.ts SPLIT_RE_SOURCE/FLAGS
         run: |
           for sidecar in \
             packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json \
-            packages/crawler/src/adapters/tj-media-direct/chinese-artist-drop-list.json \
             packages/crawler/src/clustering-rules.json; do
             git diff --exit-code -- "$sidecar" || { echo "Sidecar drift detected: $sidecar"; exit 1; }
           done
@@ -52,10 +50,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run Python script tests
-        # All scripts/test_*.py unittest suites (splitter parity, KPOP/Cpop
-        # leak drops, anisong PDF ingest, title_ko Stage 1, lib helpers).
-        # Previously these only ran weekly in crawl.yml — and only the
-        # splitter-parity suite at that.
+        # All scripts/test_*.py unittest suites (splitter parity, anisong PDF
+        # ingest, title_ko Stage 1, lib helpers). Previously these only ran
+        # weekly in crawl.yml — and only the splitter-parity suite at that.
         run: python -m unittest discover -s scripts -p "test_*.py"
       - name: Verify D1 SQL export metrics
         run: pnpm --filter @karaoke/worker d1:verify-sql

@@ -4,9 +4,11 @@
  *
  * The TS source of truth is `packages/crawler/src/adapters/tj-media-direct/
  * koreanArtistDropList.ts`. The Python ingest (`scripts/ingest_anisong_pdf.py`)
- * and the cleanup script (`scripts/drop_kpop_leaks.py`) need the same drop set
- * so they can refuse to insert/patch records whose artist matches a known
- * Korean act. Rather than maintain two copies, this script reads the built
+ * needs the same drop set so it can refuse to insert/patch records whose
+ * artist matches a known Korean act. (The corpus cleanup pass moved to
+ * `scripts/drop-artist-leaks.mjs`, which imports the crawler dist directly
+ * and does not consume this sidecar.) Rather than maintain two copies, this
+ * script reads the built
  * dist (`packages/crawler/dist/...`) and writes the pre-normalized lookup keys
  * to a sidecar JSON file alongside the TS source.
  *
@@ -17,7 +19,7 @@
  * review (the staleness footgun is visible). Tracking in git means ad-hoc
  * local Python runs against the corpus pick up the latest list without first
  * rebuilding the crawler. The previous location under `dist/` was gitignored,
- * so a maintainer who edited the TS source then ran `drop_kpop_leaks.py`
+ * so a maintainer who edited the TS source then ran the Python ingest
  * locally without rebuilding would silently use a stale list. The Python
  * loader has been updated to read from the new tracked path.
  *
