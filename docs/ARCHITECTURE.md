@@ -60,6 +60,29 @@ adapters → TJ filter chain → alias resolution (aliases.ts, pre-merge)
   validation). `crawl.yml` invokes it as one step; it also runs locally
   (`--corpus`, `--skip` supported).
 
+### Full-corpus distribution (decided)
+
+The post-JOYSOUND **full** corpus (~221k records, ~85 MB) will NOT be
+tracked in git — it ships as a GitHub Release asset, and git tracks only a
+small manifest at `data/full-corpus.manifest.json`
+(`{ version, url, sha256, sizeBytes, recordCount, vendorCounts,
+generatedAt, baselineCommit, decisionLogSha? }` — store-agnostic, so a
+later move to R2 is a one-line `url` change). The tracked baseline
+`songs.json` above stays exactly as today.
+
+- `scripts/publish-full-corpus.mjs` — schema-validates a composed corpus,
+  computes sha256 + record/vendor counts, writes the manifest atomically
+  (optionally also builds the self-host SQLite via the worker's
+  `build-sqlite-db.mjs`).
+- `scripts/fetch-full-corpus.mjs` — downloads `manifest.url` (http(s) or
+  `file://`), verifies sha256 + size **before** an atomic rename (a failed
+  or corrupt download never leaves a torn file), idempotent re-fetch via
+  `--skip-download-if-valid`. Shared consumer for local dev, D1 import, and
+  the self-host SQLite build.
+
+The release-publishing workflow and the first publish/import land in
+follow-up PRs (see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) item 1).
+
 ## Two search paths
 
 1. **Offline / bundled (MiniSearch)** — `apps/web/src/lib/search.ts` builds a

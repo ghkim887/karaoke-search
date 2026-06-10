@@ -6,21 +6,31 @@ Items referencing the JOYSOUND feature branch
 (`feat/joysound-full-catalog-sweep`) describe in-progress work that is NOT on
 `main` yet.
 
-## 1. Post-JOYSOUND data topology (decision REQUIRED before the ~291k merge)
+## 1. Post-JOYSOUND data topology (DECIDED 2026-06-10)
 
-The JOYSOUND full-catalog merge would grow the corpus far past what the
-current "tracked `songs.json` baked into the static build" model supports
-(GitHub Pages / Cloudflare Pages enforce a 25 MB per-file cap, and a ~291k
-corpus also breaks the PR-CI schema-validation economics). Options on the
-table:
+**Decision (owner-approved, hybrid):** the tracked
+`apps/web/public/data/songs.json` baseline (~25.8k) stays exactly as today
+(offline bundle + weekly crawl PR diff); the post-JOYSOUND full corpus
+(~221k, ~85 MB) lives OUTSIDE git as a GitHub Release asset, and git tracks
+only a small manifest (`data/full-corpus.manifest.json`:
+sha256/url/sizeBytes/record+vendor counts). D1 imports and the self-host
+SQLite build consume the release asset via the manifest. Rationale: the
+full corpus breaks both git limits (85 MB vs the 100 MB hard block) and
+client-side index-build UX (~316 MB heap / ~5.7 s on desktop Node — worse
+on phones), while a Release asset needs zero new secrets and the
+store-agnostic manifest makes a later R2 swap a one-line `url` change.
 
-- move the corpus out of git — R2 bucket vs GitHub Release asset as the
-  artifact store;
-- D1-only search (drop the bundled MiniSearch corpus entirely or keep a
-  small bundled subset for offline fallback).
+Tooling landed (PR-1): `scripts/publish-full-corpus.mjs` (validate →
+manifest [+ optional SQLite]) and `scripts/fetch-full-corpus.mjs`
+(download → sha256+size verify → atomic write), shared logic in
+`scripts/lib/manifest.mjs`. Remaining open sub-items:
 
-Unblocked by: an owner decision on artifact storage + offline-fallback
-posture. Until then the committed corpus stays at its current baseline.
+- **PR-2 (workflow):** a `workflow_dispatch` full-corpus pipeline — compose
+  → `gh release create` with the corpus asset → manifest-update PR. Weekly
+  `crawl.yml` stays unchanged (baseline path preserved).
+- **PR-3 (first publish/import):** publish the first release, manual D1
+  import, `wrangler d1 info` 500 MB measurement (see item 6), then the
+  worker/web deploy.
 
 ## 2. JOYSOUND runbook owner checkpoints
 
