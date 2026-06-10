@@ -69,6 +69,15 @@ describe('D1 import workflow', () => {
     expect(deployWorkflow).toContain(
       'PUBLIC_KARAOKE_API_BASE_URL: https://karaoke-search-api.ghkim887.workers.dev',
     );
+    // Fallback e2e gates: the API-first env var must be SET (`NAME:` with a
+    // colon — comments mention the bare name) exactly once in deploy.yml, on
+    // the build job only. The e2e jobs in BOTH workflows build the web app in
+    // fallback mode (no API base URL) so neither gate depends on a live
+    // Worker, and ci.yml must actually run the Playwright suite on PRs.
+    expect(deployWorkflow.match(/PUBLIC_KARAOKE_API_BASE_URL:/g)).toHaveLength(1);
+    expect(deployWorkflow).toContain('pnpm --filter @karaoke/web... build');
+    expect(ciWorkflow).toContain('pnpm --filter @karaoke/web... build');
+    expect(ciWorkflow).toContain('test:e2e');
   });
 
   it('reports D1 SQL metrics and fails statements over D1 limits', async () => {

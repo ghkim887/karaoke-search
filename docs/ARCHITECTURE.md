@@ -85,22 +85,29 @@ comment; upgrades must update both. Every job bootstraps through the shared
 composite action `.github/actions/setup` (pnpm + Node from `.nvmrc` + frozen
 lockfile install).
 
-- **`ci.yml`** (every PR + main push): `pnpm lint` / `typecheck` / `test` /
-  `build`; sidecar-drift gate (auto-generated JSON sidecars must be
-  byte-identical to their committed versions after the build); Python
-  unittest suites (`python -m unittest discover -s scripts -p "test_*.py"`);
+- **`ci.yml`** (every PR + main push): `verify` job — `pnpm lint` /
+  `typecheck` / `test` / `build`; sidecar-drift gate (auto-generated JSON
+  sidecars must be byte-identical to their committed versions after the
+  build); Python unittest suites
+  (`python -m unittest discover -s scripts -p "test_*.py"`);
   `d1:verify-sql` (exports D1 SQL from the committed corpus — this
   **schema-validates every committed record on every PR** — then checks SQL
-  statement-size metrics); Worker deploy dry-run.
+  statement-size metrics); Worker deploy dry-run. A parallel `e2e` job runs
+  the Playwright suite against `astro preview` over a fallback-mode build
+  (no `PUBLIC_KARAOKE_API_BASE_URL`), so UI breakage is caught at PR time
+  instead of post-merge at the required deploy gate.
 - **`crawl.yml`** (weekly cron + dispatch): build, sidecar-drift gate, full
   crawl into `songs.json.tmp`, then `run-post-crawl-pipeline.mjs`, then opens
   a PR labeled `crawl-output` (requires the repo setting "Allow Actions to
   create and approve pull requests"). Data lands on `main` by PR review,
   never by direct push.
-- **`deploy.yml`** (main push + dispatch): `build` job (API-first env var set)
-  → `e2e` job (Playwright against `astro preview` serving the exact build
-  artifact) → `deploy` job with `needs: [build, e2e]`. **e2e is a required
-  gate** — a red e2e blocks the Pages deploy.
+- **`deploy.yml`** (main push + dispatch): parallel `build` job (API-first
+  env var set; produces the Pages artifact) and `e2e` job (builds its own
+  FALLBACK-mode dist — no `PUBLIC_KARAOKE_API_BASE_URL` — and runs Playwright
+  against `astro preview`, so the gate exercises the offline MiniSearch path
+  and never depends on a live Worker) → `deploy` job with
+  `needs: [build, e2e]`. **e2e is a required gate** — a red e2e blocks the
+  Pages deploy.
 
 ## JOYSOUND status (one-liner)
 

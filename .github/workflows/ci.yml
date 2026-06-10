@@ -53,3 +53,47 @@ jobs:
         run: pnpm --filter @karaoke/worker d1:verify-sql
       - name: Worker deploy dry-run
         run: pnpm --filter @karaoke/worker deploy:dry-run
+
+  e2e:
+    # Playwright smoke suite on every PR. Without this, a UI-breaking PR merges
+    # green and is only caught post-merge by deploy.yml's required e2e gate —
+    # which then blocks ALL Pages deploys. Runs in parallel with `verify` (no
+    # `needs:` — independent jobs, no shared outputs) and builds in FALLBACK
+    # mode (no PUBLIC_KARAOKE_API_BASE_URL) so PR CI exercises the offline
+    # MiniSearch path and never depends on a live Worker. Mirrors deploy.yml's
+    # e2e job step-for-step. PR-only: on a main push deploy.yml runs the
+    # identical fallback e2e as the required deploy gate, so running it here
+    # too would duplicate the same suite on the same commit.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - uses: ./.github/actions/setup
+      - name: Build web app in fallback mode (no API base URL)
+        # `--filter @karaoke/web...` selects the web app plus its workspace
+        # dependencies (@karaoke/schema must emit dist/ before the web build).
+        run: pnpm --filter @karaoke/web... build
+      - name: Install Playwright browsers
+        timeout-minutes: 10
+        run: pnpm --filter @karaoke/web exec playwright install --with-deps chromium
+      - name: Start preview server and wait until ready
+        run: |
+          nohup pnpm --filter @karaoke/web exec astro preview --host 127.0.0.1 --port 4321 > /tmp/preview.log 2>&1 &
+          echo $! > /tmp/preview.pid
+          disown
+          deadline=$((SECONDS + 30))
+          while (( SECONDS < deadline )); do
+            if curl -fsS http://127.0.0.1:4321/karaoke-search/ > /dev/null; then
+              echo "preview ready after $((SECONDS))s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "preview did not start within 30s. Server log:"
+          cat /tmp/preview.log
+          exit 1
+      - name: Run E2E tests
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4321/karaoke-search/
+        run: pnpm --filter @karaoke/web test:e2e
