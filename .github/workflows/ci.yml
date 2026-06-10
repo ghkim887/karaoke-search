@@ -27,6 +27,36 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: Verify all sidecars are in sync
+        # The JSON sidecars below are auto-generated from their TS sources during
+        # `pnpm build` (above). After the build, each sidecar must be
+        # byte-identical to its committed version. If it isn't, a maintainer
+        # edited the TS source without re-running the build / forgot to commit
+        # the regenerated sidecar — fail loudly so silent drift never reaches
+        # a deploy. (Mirrors the same gate in crawl.yml, which only runs weekly;
+        # this copy gates every PR.)
+        #
+        # Sidecars covered:
+        #   korean-artist-drop-list.json  — from koreanArtistDropList.ts
+        #   chinese-artist-drop-list.json — from chineseArtistDropList.ts
+        #   clustering-rules.json         — from clustering.ts SPLIT_RE_SOURCE/FLAGS
+        run: |
+          for sidecar in \
+            packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json \
+            packages/crawler/src/adapters/tj-media-direct/chinese-artist-drop-list.json \
+            packages/crawler/src/clustering-rules.json; do
+            git diff --exit-code -- "$sidecar" || { echo "Sidecar drift detected: $sidecar"; exit 1; }
+          done
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.11'
+      - name: Run Python script tests
+        # All scripts/test_*.py unittest suites (splitter parity, KPOP/Cpop
+        # leak drops, anisong PDF ingest, title_ko Stage 1, lib helpers).
+        # Previously these only ran weekly in crawl.yml — and only the
+        # splitter-parity suite at that.
+        run: python -m unittest discover -s scripts -p "test_*.py"
       - name: Verify D1 SQL export metrics
         run: pnpm --filter @karaoke/worker d1:verify-sql
       - name: Worker deploy dry-run
