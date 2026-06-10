@@ -1,0 +1,14 @@
+{
+  "name": "@karaoke/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "corepack pnpm --filter @karaoke/crawler build && vitest run"
+  },
+  "devDependencies": {
+    "@karaoke/crawler": "workspace:*",
+    "@karaoke/schema": "workspace:*",
+    "vitest": "^2.1.8"
+  }
+}
