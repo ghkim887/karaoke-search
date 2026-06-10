@@ -26,6 +26,8 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | `compose-crawl-pr-body.mjs` | CI / crawl PR-body composer | Weekly | In `crawl.yml`, stdout redirected to `$RUNNER_TEMP/pr_body.md` |
 | `export-drop-list.mjs` | Build chain (Korean drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `export-clustering-rules.mjs` | Build chain (`SPLIT_RE` splitter-pattern JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
+| `publish-full-corpus.mjs` | Full-corpus publish (validate → `data/full-corpus.manifest.json` [+ optional SQLite]) | Per full-corpus release | Manual until the PR-2 workflow lands |
+| `fetch-full-corpus.mjs` | Full-corpus fetch (manifest-driven download, sha256+size verify, atomic write) | As-needed | Local dev / D1 import / self-host (shared logic in `lib/manifest.mjs`) |
 | `audit-corpus-guardrails.mjs` | Ad-hoc corpus audit | As-needed | Manual |
 | `audit-crawler-quality.mjs` | Ad-hoc crawler-quality report | As-needed | Manual |
 | `manual-fix-title-ko.mjs` | Ad-hoc single-record title_ko fix | As-needed | Manual |
