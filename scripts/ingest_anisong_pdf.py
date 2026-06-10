@@ -64,7 +64,14 @@ ensure_utf8_stdio()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PDF_TEXT = REPO_ROOT / 'scripts' / 'data' / 'anisong_utf8.txt'
-SONGS_JSON = REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
+# KARAOKE_SONGS_JSON: corpus-path override exported by
+# scripts/run-post-crawl-pipeline.mjs when its --corpus flag is used, so the
+# whole pipeline can be exercised against a copy. Unset in CI/default runs.
+SONGS_JSON = (
+    Path(os.environ['KARAOKE_SONGS_JSON']).resolve()
+    if os.environ.get('KARAOKE_SONGS_JSON')
+    else REPO_ROOT / 'apps' / 'web' / 'public' / 'data' / 'songs.json'
+)
 SOURCE_URL = 'https://www.tjmedia.com/support/poster?cate_cd=P06'
 
 # Korean-artist drop-list JSON sidecar produced by `scripts/export-drop-list.mjs`
