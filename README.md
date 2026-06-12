@@ -82,11 +82,11 @@ This is a pnpm + TypeScript monorepo. See [docs/ARCHITECTURE.md](docs/ARCHITECTU
 | Path | Purpose |
 | --- | --- |
 | `apps/web` | Astro static site with a Preact search island and MiniSearch client-side index. |
-| `apps/worker` | Cloudflare Worker search API backed by D1, plus a self-hostable Node server over the same SQLite schema. |
+| `apps/worker` | Self-hostable Node search API (`serve:node`) over a SQLite search database built from the committed corpus (`sqlite:build`). |
 | `packages/schema` | Shared `SongRecord` schema and Ajv validation. |
 | `packages/search` | Shared search-text primitives (normalization, n-grams, Hangul initials, number-query parsing). |
 | `packages/crawler` | Adapter-based crawler pipeline and three-tier record merger. |
-| `packages/data-store` | SQLite/D1 search-index builder and streamed D1 SQL export. |
+| `packages/data-store` | SQLite search-index store: schema, corpus import/export, and derived search-index builder. |
 | `scripts/` | Data post-processing pipeline, validation, PDF ingest, translation-cache replay, and regression tests. |
 | `.github/workflows/crawl.yml` | Weekly/dispatch data refresh workflow that opens crawl-output PRs. |
 | `.github/workflows/deploy.yml` | GitHub Pages build/deploy workflow for `main` (Playwright e2e is a required gate). |
@@ -166,13 +166,13 @@ Pushing to `main` triggers `.github/workflows/deploy.yml`:
 
 1. install dependencies with pnpm
 2. build all packages
-3. build the Astro static site with `PUBLIC_KARAOKE_API_BASE_URL` set to the Worker API (`https://karaoke-search-api.ghkim887.workers.dev`)
+3. build the Astro static site in fallback mode (bundled MiniSearch index; no `PUBLIC_KARAOKE_API_BASE_URL` is set)
 4. upload `apps/web/dist` to GitHub Pages
-5. run Playwright E2E against the built artifact in a parallel verification job
+5. run Playwright E2E against a fallback-mode build in a parallel verification job (a red E2E blocks the deploy)
 
-The web app remains client-side/static, but Browse searches are API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the Worker API currently accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index.
+The web app remains client-side/static, but Browse searches become API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the API accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index. The deploy currently sets no API base URL, so the live site runs fully offline until the self-hosted API below is reachable.
 
-For a local API-first web smoke, run the Worker/Node API and then build or serve the web app with the same public env var:
+For a local API-first web smoke, run the self-hosted API and then build or serve the web app with the same public env var:
 
 ```bash
 PUBLIC_KARAOKE_API_BASE_URL=http://127.0.0.1:8787 corepack pnpm --filter @karaoke/web dev
@@ -180,40 +180,33 @@ PUBLIC_KARAOKE_API_BASE_URL=http://127.0.0.1:8787 corepack pnpm --filter @karaok
 
 The weekly crawl workflow runs separately and opens a `crawl-output` pull request instead of pushing data directly to `main`.
 
-### Cloudflare Worker/D1 import workflow
+### Self-hosted search API
 
-The D1-backed API lives in `apps/worker`. Local D1 state and generated SQL dumps are scratch artifacts under `apps/worker/.wrangler/` and must not be committed.
+The search API lives in `apps/worker` as a plain Node HTTP server over a SQLite database. (The previous Cloudflare Workers + D1 deploy path was removed on 2026-06-13; CF account teardown is handled outside this repo.)
 
-```bash
-# Generate a D1 import dump from the committed product corpus. The dump omits schema;
-# apply migrations first so Wrangler/D1 owns schema changes.
-corepack pnpm --filter @karaoke/worker run d1:export-sql
-
-# Local smoke database.
-corepack pnpm --filter @karaoke/worker run d1:migrate:local
-corepack pnpm --filter @karaoke/worker run d1:import:local
-```
-
-Remote D1 mutations are guarded. Before running the remote scripts, replace the placeholder `database_id` in `apps/worker/wrangler.toml`, verify the target Cloudflare account/database, then set `KARAOKE_D1_REMOTE_OK=1` for the command:
+Build the SQLite search database from the committed corpus, then serve it:
 
 ```bash
-KARAOKE_D1_REMOTE_OK=1 corepack pnpm --filter @karaoke/worker run d1:migrate:remote
-KARAOKE_D1_REMOTE_OK=1 KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK=1 corepack pnpm --filter @karaoke/worker run d1:import:remote
+# Build apps/worker/.wrangler/sqlite/songs.sqlite from apps/web/public/data/songs.json
+# (the output directory name is historical; it is ignored scratch space).
+corepack pnpm --filter @karaoke/worker run sqlite:build
+
+# Compile and start the API server.
+corepack pnpm --filter @karaoke/worker build
+KARAOKE_SQLITE_DB_PATH=apps/worker/.wrangler/sqlite/songs.sqlite corepack pnpm --filter @karaoke/worker run serve:node
 ```
 
-PowerShell equivalent:
+`sqlite:build` accepts `--input`/`--output` overrides. Server environment variables:
 
-```powershell
-$env:KARAOKE_D1_REMOTE_OK = '1'
-corepack pnpm --filter @karaoke/worker run d1:migrate:remote
-$env:KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK = '1'
-corepack pnpm --filter @karaoke/worker run d1:import:remote
-```
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `KARAOKE_SQLITE_DB_PATH` | (required) | Path to the SQLite database built by `sqlite:build`. |
+| `HOST` / `PORT` | `127.0.0.1` / `8787` | Listen address. |
+| `KARAOKE_CORS_ORIGIN` | unset | Value for `Access-Control-Allow-Origin` when serving a browser frontend. |
+| `KARAOKE_RATE_LIMIT_PER_MINUTE` | unset (off) | Per-client request cap per minute. |
+| `KARAOKE_TRUST_PROXY_HEADERS` | unset (off) | Trust `X-Forwarded-For`/`CF-Connecting-IP` for rate-limit client keys (set only behind a trusted proxy). |
 
-
-`d1:import:remote` is chunked because a full 170MB import file and 90KB statements can hit `SQLITE_NOMEM` on real D1. The chunked replacement is **not atomic across the whole corpus**: it preflights all chunks before mutating, and the first chunk clears derived/canonical tables so a retry from the beginning replaces a partial import, but a mid-run failure can still leave the live DB partial until the retry finishes. Prefer importing into a staging D1 database and switching the Worker binding after row-count/API smoke verification when avoiding live partial-state risk matters. Set `KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK=1` only when you intentionally accept that recovery procedure.
-
-Do not use the remote D1 scripts from feature branches unless you intentionally want to mutate that D1 database; static GitHub Pages deployment still only happens from `main`.
+CI runs `sqlite:build` against the committed corpus on every PR — it schema-validates every record, rejects duplicate ids, and proves the self-host database builds.
 
 ## License
 

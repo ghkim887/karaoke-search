@@ -1,14 +1,5 @@
-import { once } from 'node:events';
-import {
-  createWriteStream,
-  existsSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import type { Writable } from 'node:stream';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import {
@@ -36,7 +27,6 @@ const SEARCH_TEXT_FIELDS = [
   { field: 'artist_alias', weight: 2 },
 ] as const;
 const MAX_PREFIX_LENGTH = 12;
-const MAX_D1_SQL_STATEMENT_BYTES = 16_000;
 
 type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
 type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';
@@ -61,6 +51,12 @@ CREATE INDEX IF NOT EXISTS idx_search_texts_song ON search_texts(song_id);
 CREATE INDEX IF NOT EXISTS idx_search_tokens_lookup ON search_tokens(kind, token, song_id);
 CREATE INDEX IF NOT EXISTS idx_search_tokens_song ON search_tokens(song_id);`;
 
+/**
+ * The canonical schema for the self-hosted SQLite search database
+ * (`createSongDatabase` / the worker's `sqlite:build` + `serve:node` path).
+ * The `D1_` prefix is historical — the schema started life on Cloudflare D1
+ * (removed 2026-06-13) and the name is kept to avoid churn.
+ */
 export const D1_SCHEMA_SQL = `${D1_TABLE_SCHEMA_SQL}
 ${D1_INDEX_SCHEMA_SQL}`;
 
@@ -301,193 +297,6 @@ export interface ExportSongsJsonArgs {
   outputPath: string;
 }
 
-export interface BuildD1ImportSqlOptions {
-  includeSchema?: boolean;
-}
-
-export interface ExportD1ImportSqlJsonArgs {
-  inputPath: string;
-  outputPath: string;
-  includeSchema?: boolean;
-}
-
-/**
- * Yields the D1 import SQL one statement (or blank-line separator) at a time so
- * neither the generator nor its consumers ever buffer the whole corpus as a
- * single string. The yielded items are exactly the lines that
- * `buildD1ImportSql` joins with `\n`, so `[...iter].join('\n') + '\n'` is
- * byte-identical to the legacy whole-string builder. Each INSERT chunk is
- * batched under `MAX_D1_SQL_STATEMENT_BYTES`, bounding the largest yielded
- * statement regardless of corpus size.
- */
-export function* iterD1ImportSqlStatements(
-  records: readonly SongRecord[],
-  options: BuildD1ImportSqlOptions = {},
-): Generator<string> {
-  validateSongCorpus(records);
-  const searchIndex = buildSearchIndexRows(records);
-  const includeSchema = options.includeSchema ?? true;
-
-  if (includeSchema) {
-    yield D1_SCHEMA_SQL.trim();
-    yield '';
-  }
-
-  yield 'DELETE FROM search_token_stats;';
-  yield 'DELETE FROM search_tokens;';
-  yield 'DELETE FROM search_texts;';
-  yield 'DELETE FROM artist_aliases;';
-  yield 'DELETE FROM karaoke_numbers;';
-  yield 'DELETE FROM songs;';
-
-  yield* iterBatchedInserts(
-    'songs',
-    [
-      'id',
-      'sort_order',
-      'source_url',
-      'title_primary',
-      'title_ko',
-      'artist_primary',
-      'artist_ko',
-      'artist_aliases_present',
-      'crawled_at',
-      'media_context_ko',
-      'title_ko_source',
-      'title_ko_confidence',
-    ],
-    enumerate(records),
-    ([record, index]) => [
-      sqlLiteral(record.id),
-      sqlInteger(index),
-      sqlLiteral(record.source_url),
-      sqlLiteral(record.title_primary),
-      sqlLiteral(record.title_ko),
-      sqlLiteral(record.artist_primary),
-      sqlLiteral(record.artist_ko),
-      sqlInteger(record.artist_aliases === undefined ? 0 : 1),
-      sqlLiteral(record.crawled_at),
-      sqlLiteral(record.media_context_ko ?? null),
-      sqlLiteral(record.title_ko_source ?? null),
-      sqlLiteral(record.title_ko_confidence ?? null),
-    ],
-  );
-
-  yield* iterBatchedInserts(
-    'karaoke_numbers',
-    ['song_id', 'provider', 'number', 'number_key'],
-    karaokeNumberImportRows(records),
-    ([songId, provider, number]) => [
-      sqlLiteral(songId),
-      sqlLiteral(provider),
-      sqlLiteral(number),
-      sqlLiteral(karaokeNumberKey(number)),
-    ],
-  );
-
-  yield* iterBatchedInserts(
-    'artist_aliases',
-    ['song_id', 'position', 'alias'],
-    artistAliasImportRows(records),
-    ([songId, position, alias]) => [sqlLiteral(songId), sqlInteger(position), sqlLiteral(alias)],
-  );
-
-  yield* iterBatchedInserts(
-    'search_texts',
-    ['song_id', 'field', 'text_norm', 'text_compact', 'weight', 'provider_mask'],
-    searchIndex.texts,
-    (row) => [
-      sqlLiteral(row.songId),
-      sqlLiteral(row.field),
-      sqlLiteral(row.textNorm),
-      sqlLiteral(row.textCompact),
-      sqlInteger(row.weight),
-      sqlInteger(row.providerMask),
-    ],
-  );
-
-  yield* iterBatchedInserts(
-    'search_tokens',
-    ['kind', 'token', 'song_id', 'field', 'weight', 'provider_mask'],
-    searchIndex.tokens,
-    (row) => [
-      sqlLiteral(row.kind),
-      sqlLiteral(row.token),
-      sqlLiteral(row.songId),
-      sqlLiteral(row.field),
-      sqlInteger(row.weight),
-      sqlInteger(row.providerMask),
-    ],
-  );
-
-  yield* iterBatchedInserts(
-    'search_token_stats',
-    ['kind', 'token', 'df', 'idf_scaled'],
-    searchIndex.tokenStats,
-    (row) => [
-      sqlLiteral(row.kind),
-      sqlLiteral(row.token),
-      sqlInteger(row.df),
-      sqlInteger(row.idfScaled),
-    ],
-  );
-}
-
-export function buildD1ImportSql(
-  records: readonly SongRecord[],
-  options: BuildD1ImportSqlOptions = {},
-): string {
-  return `${Array.from(iterD1ImportSqlStatements(records, options)).join('\n')}\n`;
-}
-
-/**
- * Streams the D1 import SQL to a writable, honouring backpressure so the output
- * is bounded by the per-statement batch size rather than total corpus size.
- * The bytes written are identical to `buildD1ImportSql(records, options)`.
- */
-export async function writeD1ImportSql(
-  records: readonly SongRecord[],
-  writable: Writable,
-  options: BuildD1ImportSqlOptions = {},
-): Promise<void> {
-  let first = true;
-  for (const statement of iterD1ImportSqlStatements(records, options)) {
-    const chunk = first ? statement : `\n${statement}`;
-    first = false;
-    if (!writable.write(chunk)) {
-      await once(writable, 'drain');
-    }
-  }
-  if (!writable.write('\n')) {
-    await once(writable, 'drain');
-  }
-}
-
-export async function exportD1ImportSqlJson({
-  inputPath,
-  outputPath,
-  includeSchema,
-}: ExportD1ImportSqlJsonArgs): Promise<void> {
-  const parsed = JSON.parse(readFileSync(inputPath, 'utf8')) as unknown;
-  if (!Array.isArray(parsed)) {
-    throw new Error(`exportD1ImportSqlJson: expected an array in ${inputPath}`);
-  }
-  const records = parsed as SongRecord[];
-  // Validate the corpus up front so a malformed record fails before the output
-  // file is created or truncated, matching the all-or-nothing contract of the
-  // previous `writeFileSync(buildD1ImportSql(...))` path.
-  validateSongCorpus(records);
-
-  const options = includeSchema === undefined ? {} : { includeSchema };
-  const writable = createWriteStream(outputPath, { encoding: 'utf8' });
-  try {
-    await writeD1ImportSql(records, writable, options);
-  } finally {
-    writable.end();
-    await once(writable, 'close');
-  }
-}
-
 export function importSongsJson({ inputPath, dbPath }: ImportSongsJsonArgs): void {
   const parsed = JSON.parse(readFileSync(inputPath, 'utf8')) as unknown;
   if (!Array.isArray(parsed)) {
@@ -703,86 +512,6 @@ function searchFieldWeight(field: SearchField): number {
     throw new Error(`Unknown search field: ${field}`);
   }
   return config.weight;
-}
-
-function sqlLiteral(value: string | null | undefined): string {
-  if (value === null || value === undefined) {
-    return 'NULL';
-  }
-  if (value.includes('\u0000')) {
-    throw new Error('SQL text literals cannot contain NUL characters');
-  }
-  return `'${value.replaceAll("'", "''")}'`;
-}
-
-function sqlInteger(value: number): string {
-  if (!Number.isSafeInteger(value)) {
-    throw new Error(`SQL integer is outside JavaScript's safe integer range: ${value}`);
-  }
-  return String(value);
-}
-
-function* iterBatchedInserts<T>(
-  tableName: string,
-  columns: readonly string[],
-  rows: Iterable<T>,
-  sqlValues: (row: T) => readonly string[],
-): Generator<string> {
-  const prefix = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES `;
-  const emptyBatchBytes = Buffer.byteLength(`${prefix};`, 'utf8');
-  let batch: string[] = [];
-  let batchBytes = emptyBatchBytes;
-
-  for (const row of rows) {
-    const tuple = `(${sqlValues(row).join(', ')})`;
-    const tupleBytes = Buffer.byteLength(`${batch.length === 0 ? '' : ', '}${tuple}`, 'utf8');
-    const singleStatementBytes = Buffer.byteLength(`${prefix}${tuple};`, 'utf8');
-    if (singleStatementBytes > MAX_D1_SQL_STATEMENT_BYTES) {
-      throw new Error(
-        `D1 SQL insert row for ${tableName} exceeds ${MAX_D1_SQL_STATEMENT_BYTES} bytes`,
-      );
-    }
-    if (batch.length > 0 && batchBytes + tupleBytes > MAX_D1_SQL_STATEMENT_BYTES) {
-      yield `${prefix}${batch.join(', ')};`;
-      batch = [];
-      batchBytes = emptyBatchBytes;
-    }
-    batch.push(tuple);
-    batchBytes += tupleBytes;
-  }
-
-  if (batch.length > 0) {
-    yield `${prefix}${batch.join(', ')};`;
-  }
-}
-
-function* enumerate<T>(items: readonly T[]): Iterable<[T, number]> {
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    if (item !== undefined) {
-      yield [item, index];
-    }
-  }
-}
-
-function* karaokeNumberImportRows(
-  records: readonly SongRecord[],
-): Iterable<[string, (typeof KARAOKE_PROVIDERS)[number], string | null]> {
-  for (const record of records) {
-    for (const provider of KARAOKE_PROVIDERS) {
-      yield [record.id, provider, record.karaoke_numbers[provider]];
-    }
-  }
-}
-
-function* artistAliasImportRows(
-  records: readonly SongRecord[],
-): Iterable<[string, number, string]> {
-  for (const record of records) {
-    for (const [position, alias] of (record.artist_aliases ?? []).entries()) {
-      yield [record.id, position, alias];
-    }
-  }
 }
 
 function validateSongCorpus(records: readonly SongRecord[]): void {

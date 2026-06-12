@@ -17,11 +17,11 @@ invariants, gotchas, and policy decisions see
 | Workspace | Package | Purpose |
 | --- | --- | --- |
 | `apps/web` | `@karaoke/web` | Astro static site with one Preact island (`src/components/App.tsx`). Client-side MiniSearch index over the bundled corpus, plus an API-first search path (see below). Device-local favorites via `localStorage`. |
-| `apps/worker` | `@karaoke/worker` | Cloudflare Worker search API (`GET /api/search`) backed by D1, plus a self-hostable Node server (`serve:node`, `src/node-server.ts`) over the same SQLite schema. `scripts/` holds the D1 export/import/verify tooling. |
+| `apps/worker` | `@karaoke/worker` | Self-hostable Node search API (`GET /api/search`; `serve:node`, `src/node-server.ts`) over a SQLite search database built by `sqlite:build` (`scripts/build-sqlite-db.mjs`). The package name is historical — the Cloudflare Workers + D1 deploy path was removed 2026-06-13. |
 | `packages/schema` | `@karaoke/schema` | Universal `SongRecord` type + Ajv validator. Both crawler and web depend on the compiled `dist/` output (build before runtime imports). |
 | `packages/search` | `@karaoke/search` | Shared search-text primitives: normalization, tokenization, character n-grams, Hangul-initials expansion, karaoke-number query parsing. Consumed by the worker and the data store so index-time and query-time text processing cannot drift. |
 | `packages/crawler` | `@karaoke/crawler` | Pluggable adapter pipeline (`Crawler` interface yields `SongRecord`), per-host rate-limited/cached HTTP client, artist-alias resolution, and the three-tier record merger. CLI at `dist/cli.js` after build. |
-| `packages/data-store` | `@karaoke/data-store` | SQLite/D1 store: builds the search-index tables from a corpus JSON and streams D1-compatible SQL (streaming writer proven at ~236k records / ~946 MB SQL, measured during the 2026-06 JOYSOUND candidate dry-run). |
+| `packages/data-store` | `@karaoke/data-store` | SQLite store: schema (`D1_SCHEMA_SQL` — name historical), corpus import/export, and the derived search-index table builder. |
 | `scripts/` | `@karaoke/scripts` | Post-crawl data pipeline, validation, PDF ingest, title_ko backfill tooling, and their Vitest + Python unittest suites. `corepack pnpm --filter @karaoke/scripts test` runs the JS tests. |
 
 ## Data flow (end to end)
@@ -77,8 +77,8 @@ later move to R2 is a one-line `url` change). The tracked baseline
 - `scripts/fetch-full-corpus.mjs` — downloads `manifest.url` (http(s) or
   `file://`), verifies sha256 + size **before** an atomic rename (a failed
   or corrupt download never leaves a torn file), idempotent re-fetch via
-  `--skip-download-if-valid`. Shared consumer for local dev, D1 import, and
-  the self-host SQLite build.
+  `--skip-download-if-valid`. Shared consumer for local dev and the
+  self-host SQLite build.
 
 Verification is CI's job, composition is not: the corpus's composition
 inputs (the JOYSOUND decision log, the candidate builder) live on the
@@ -119,9 +119,9 @@ exactly **`full-corpus.json`**; an optional decision-log asset named exactly
    same tag force-updates that existing branch/PR rather than opening a
    duplicate (deliberate — peter-evans/create-pull-request v8 behavior).
 
-Consumers (`scripts/fetch-full-corpus.mjs` for local dev, D1 import, and
-the self-host SQLite build) read the merged manifest and verify sha256 +
-size on download.
+Consumers (`scripts/fetch-full-corpus.mjs` for local dev and the self-host
+SQLite build) read the merged manifest and verify sha256 + size on
+download.
 
 ## Two search paths
 
@@ -129,17 +129,21 @@ size on download.
    MiniSearch index over 5 fields (`title_primary`, `title_ko`,
    `artist_primary`, `artist_ko`, `artist_aliases`) from the bundled
    `songs.json`. Always available; the fallback path.
-2. **API-first (Worker + D1)** — when `PUBLIC_KARAOKE_API_BASE_URL` is set at
-   build time, Browse searches call the Worker `GET /api/search` (D1-backed
-   custom index: token/prefix/n-gram/Hangul-initials tables built by
-   `@karaoke/data-store`). The Worker currently accepts **one** vendor filter
+2. **API-first (self-hosted Node + SQLite)** — when
+   `PUBLIC_KARAOKE_API_BASE_URL` is set at build time, Browse searches call
+   `GET /api/search` on the self-hosted API
+   (`apps/worker/src/node-server.ts`, `pnpm --filter @karaoke/worker
+   serve:node`, SQLite-backed custom index:
+   token/prefix/n-gram/Hangul-initials tables built by
+   `@karaoke/data-store`). The API currently accepts **one** vendor filter
    per request; the web app falls back to the bundled MiniSearch index when
    the API is absent/unreachable or multiple vendor chips are selected, and
    the favorites tab is always served locally.
 
-A self-hosted Node variant of the same API exists
-(`apps/worker/src/node-server.ts`, `pnpm --filter @karaoke/worker serve:node`)
-as the escape hatch if D1 free-tier limits bind (see OPEN-QUESTIONS).
+The Cloudflare Workers + D1 variant of this API was removed 2026-06-13;
+self-hosting is the only serving path. Until the self-host API is deployed
+and reachable, `deploy.yml` sets no API base URL and the live site runs
+entirely on path 1.
 
 ## CI workflows (`.github/workflows/`)
 
@@ -153,9 +157,10 @@ lockfile install).
   sidecars must be byte-identical to their committed versions after the
   build); Python unittest suites
   (`python -m unittest discover -s scripts -p "test_*.py"`);
-  `d1:verify-sql` (exports D1 SQL from the committed corpus — this
-  **schema-validates every committed record on every PR** — then checks SQL
-  statement-size metrics); Worker deploy dry-run. A parallel `e2e` job runs
+  `sqlite:build` (imports the committed corpus into the self-host SQLite
+  database — this **schema-validates every committed record on every PR**,
+  rejects duplicate ids, and proves the database builds). A parallel `e2e`
+  job runs
   the Playwright suite against `astro preview` over a fallback-mode build
   (no `PUBLIC_KARAOKE_API_BASE_URL`), so UI breakage is caught at PR time
   instead of post-merge at the required deploy gate.
@@ -172,11 +177,11 @@ lockfile install).
   a PR labeled `crawl-output` (requires the repo setting "Allow Actions to
   create and approve pull requests"). Data lands on `main` by PR review,
   never by direct push.
-- **`deploy.yml`** (main push + dispatch): parallel `build` job (API-first
-  env var set; produces the Pages artifact) and `e2e` job (builds its own
-  FALLBACK-mode dist — no `PUBLIC_KARAOKE_API_BASE_URL` — and runs Playwright
-  against `astro preview`, so the gate exercises the offline MiniSearch path
-  and never depends on a live Worker) → `deploy` job with
+- **`deploy.yml`** (main push + dispatch): parallel `build` job (fallback
+  mode — no `PUBLIC_KARAOKE_API_BASE_URL`; produces the Pages artifact) and
+  `e2e` job (builds its own fallback-mode dist and runs Playwright against
+  `astro preview`, so the gate exercises the offline MiniSearch path and
+  never depends on a live search API) → `deploy` job with
   `needs: [build, e2e]`. **e2e is a required gate** — a red e2e blocks the
   Pages deploy.
 

@@ -115,9 +115,10 @@ Related machinery:
 - Runtime imports need `pnpm -r build` first — `@karaoke/schema` exports
   `dist/index.js`, not `src/index.ts`.
 - **The committed corpus is schema-validated on every PR**, not just during
-  crawls: `ci.yml`'s `d1:verify-sql` step runs
-  `apps/worker/scripts/export-d1-sql.mjs`, which calls `validateSongRecord`
-  on each committed record. Consequence: tightening a schema constraint
+  crawls: `ci.yml`'s `sqlite:build` step imports the committed corpus through
+  `@karaoke/data-store`'s `importSongsJson`, which calls `validateSongRecord`
+  on each committed record (plus duplicate-id detection) while building the
+  self-host SQLite database. Consequence: tightening a schema constraint
   fails PR CI immediately unless the committed corpus already satisfies it —
   you cannot defer enforcement "until the next crawl". Either clean the
   offending committed records in the same PR or land the constraint with a
