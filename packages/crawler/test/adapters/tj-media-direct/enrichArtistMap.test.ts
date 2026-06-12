@@ -1,7 +1,15 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { RawSongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
-import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
+import { emptyCache, loadCache, saveCache } from '../../../src/adapters/tj-media-direct/cache.js';
 import { enrichArtistMap } from '../../../src/adapters/tj-media-direct/enrichArtistMap.js';
+import { classifyRecord } from '../../../src/adapters/tj-media-direct/parser.js';
+import {
+  isReviewedTjSongAllow,
+  isReviewedTjSongDrop,
+} from '../../../src/adapters/tj-media-direct/reviewedSongOverrides.js';
 import type { FetchResult, HttpClient } from '../../../src/http.js';
 
 function rawFor(over: Partial<RawSongRecord> & { tj: string; artist: string }): RawSongRecord {
@@ -394,5 +402,194 @@ describe('verdictFromVotes — Phase 1 §2.A threshold rule', () => {
 
   it('0/0 votes → UNKNOWN', async () => {
     expect(await verdictFor({ JPN: 0, KOR: 0 })).toBe('UNKNOWN');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Item A — persist non-JPN nationalcode into proEnrichmentMap for ALL rows.
+//
+// The per-artist scan's searchSong items each carry an authoritative `pro` +
+// `nationalcode`. Pre-fix, only KEPT (JPN) survivors got a `proEnrichmentMap`
+// entry (written by enrichTranslit / the JP-likely rescue), so the strongest
+// negative signal `non-jpn-pro-reject` had ~0 cached KOR/ENG data to act on in
+// steady state. The scan now persists the authoritative non-JPN code per exact
+// pro so the veto has data — and we avoid re-fetching/re-voting next crawl.
+// ---------------------------------------------------------------------------
+
+describe('enrichArtistMap — persist non-JPN proEnrichmentMap entries (Item A)', () => {
+  it('persists an authoritative KOR nationalcode into proEnrichmentMap keyed by the exact pro', async () => {
+    const records = [rawFor({ tj: '1', artist: 'BTS' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() =>
+      searchResp([
+        { pro: 28779, indexTitle: 't1', indexSong: 'BTS', nationalcode: 'KOR' },
+        { pro: 28780, indexTitle: 't2', indexSong: 'BTS', nationalcode: 'KOR' },
+        { pro: 28781, indexTitle: 't3', indexSong: 'BTS', nationalcode: 'KOR' },
+      ]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+
+    // The artist is classified KOR (as before)...
+    expect(cache.artistNationalityMap.bts?.code).toBe('KOR');
+    // ...AND each scanned KOR row now lands in proEnrichmentMap under its exact
+    // pro (the same key shape classifyRecord/non-jpn-pro-reject reads: the
+    // stringified TJ catalog number). Previously these were dropped entirely.
+    expect(cache.proEnrichmentMap['28779']?.nationalcode).toBe('KOR');
+    expect(cache.proEnrichmentMap['28780']?.nationalcode).toBe('KOR');
+    expect(cache.proEnrichmentMap['28781']?.nationalcode).toBe('KOR');
+    // lastSeen is stamped so the 90-day TTL applies to these entries too.
+    expect(cache.proEnrichmentMap['28779']?.lastSeen).toBe('2026-04-29T00:00:00.000Z');
+  });
+
+  it('persists an authoritative ENG nationalcode too (non-JPN, not just KOR)', async () => {
+    const records = [rawFor({ tj: '1', artist: 'Ed Sheeran' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() =>
+      searchResp([{ pro: 50001, indexTitle: 't1', indexSong: 'Ed Sheeran', nationalcode: 'ENG' }]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+    expect(cache.proEnrichmentMap['50001']?.nationalcode).toBe('ENG');
+  });
+
+  it('does NOT persist a JPN nationalcode from the artist scan (JPN write stays owned by the translit pass)', async () => {
+    // The translit pass + JP-likely rescue own the JPN proEnrichmentMap writes
+    // (they carry the full sortTitleKo/sortSongKo payload for kept rows). The
+    // artist scan only feeds the negative-signal veto, so it must NOT shadow a
+    // JPN pro with a payload-less stub.
+    const records = [rawFor({ tj: '1', artist: 'YOASOBI' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() =>
+      searchResp([
+        { pro: 60001, indexTitle: 't1', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+        { pro: 60002, indexTitle: 't2', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+        { pro: 60003, indexTitle: 't3', indexSong: 'YOASOBI', nationalcode: 'JPN' },
+      ]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+    expect(cache.artistNationalityMap.yoasobi?.code).toBe('JPN');
+    expect(cache.proEnrichmentMap['60001']).toBeUndefined();
+    expect(cache.proEnrichmentMap['60002']).toBeUndefined();
+  });
+
+  it('only persists codes tied to an EXACT artist match — no fuzzy/neighbor leak', async () => {
+    // A KOR artist query returns one exact-match row AND one row by a DIFFERENT
+    // artist (search index noise). Only the exact-match pro is cached; the
+    // unrelated neighbor row's pro must NOT be persisted under this artist.
+    const records = [rawFor({ tj: '1', artist: 'BTS' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() =>
+      searchResp([
+        { pro: 28779, indexTitle: 't1', indexSong: 'BTS', nationalcode: 'KOR' },
+        // Different artist surfaced by the search index — NOT an exact match.
+        { pro: 99999, indexTitle: 'noise', indexSong: 'SomeOtherAct', nationalcode: 'KOR' },
+      ]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+    expect(cache.proEnrichmentMap['28779']?.nationalcode).toBe('KOR');
+    expect(cache.proEnrichmentMap['99999']).toBeUndefined();
+  });
+
+  it('skips items carrying no nationalcode (null) — nothing to veto with', async () => {
+    const records = [rawFor({ tj: '1', artist: 'UntaggedAct' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() =>
+      searchResp([{ pro: 70001, indexTitle: 't1', indexSong: 'UntaggedAct' }]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+    expect(cache.proEnrichmentMap['70001']).toBeUndefined();
+  });
+
+  it('LOAD-BEARING: non-jpn-pro-reject now vetoes a row whose pro the scan cached as KOR, even when the artist path (step 5) would admit it', async () => {
+    // Construct the exact leak the fix closes: a record whose artist the cache
+    // would (hypothetically) classify JPN — the weaker positive admit path
+    // jpn-admit-artist (step 5) — but whose SPECIFIC pro was discovered as KOR
+    // during the artist scan. With the scan now persisting that KOR code,
+    // non-jpn-pro-reject (step 1) fires BEFORE jpn-admit-artist (step 5) and
+    // drops the row.
+    //
+    // The TJ number MUST be off both reviewed-song override lists: a number on
+    // REVIEWED_TJ_SONG_ALLOW would admit at reviewed-song-allow (step 2) — never
+    // descending to step 5 — and the assertion would prove "step 1 beats step 2"
+    // instead of the documented "step 1 beats step 5". `91234` is verified clean
+    // against reviewedSongOverrides.ts (ALLOW range ends at 68976; not on the
+    // 9-entry DROP list). Pin that invariant so the test can never silently
+    // regress to short-circuiting at step 2.
+    const TJ = '91234';
+    expect(isReviewedTjSongAllow(TJ)).toBe(false);
+    expect(isReviewedTjSongDrop(TJ)).toBe(false);
+
+    const records = [rawFor({ tj: TJ, artist: 'MixedSignalAct' })];
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+    const { client } = buildHttp(() =>
+      searchResp([
+        // Exact-match row tagged KOR — this populates proEnrichmentMap['91234'].
+        { pro: 91234, indexTitle: 't1', indexSong: 'MixedSignalAct', nationalcode: 'KOR' },
+      ]),
+    );
+    await enrichArtistMap(client, records, cache, {
+      now: new Date('2026-04-29T00:00:00.000Z'),
+      logger: silentLogger(),
+    });
+
+    // Sanity: the scan persisted the KOR veto datum.
+    expect(cache.proEnrichmentMap[TJ]?.nationalcode).toBe('KOR');
+
+    // Force the weaker positive admit path to be live: tag the artist JPN so
+    // that, absent the pro veto, jpn-admit-artist (step 5) WOULD admit. With
+    // TJ off both override lists, the row genuinely descends to step 5 pre-fix,
+    // so this setup is the path being overridden (not dead code).
+    cache.artistNationalityMap.mixedsignalact = {
+      code: 'JPN',
+      votes: { JPN: 3, KOR: 0, ENG: 0 },
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+
+    // The veto now has data → drop. Pre-fix proEnrichmentMap['91234'] was empty,
+    // step 1 passed, steps 2-4 passed, and jpn-admit-artist (step 5) admitted —
+    // the KOR row leaked.
+    expect(classifyRecord(TJ, 'MixedSignalAct', cache)).toBe('drop');
+  });
+
+  it('round-trips the new non-JPN entries through saveCache/loadCache (exact pro key only)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tj-itemA-'));
+    try {
+      const records = [rawFor({ tj: '1', artist: 'BTS' })];
+      const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+      const { client } = buildHttp(() =>
+        searchResp([
+          { pro: 28779, indexTitle: 't1', indexSong: 'BTS', nationalcode: 'KOR' },
+          { pro: 28780, indexTitle: 't2', indexSong: 'BTS', nationalcode: 'KOR' },
+          { pro: 28781, indexTitle: 't3', indexSong: 'BTS', nationalcode: 'KOR' },
+        ]),
+      );
+      await enrichArtistMap(client, records, cache, {
+        now: new Date('2026-04-29T00:00:00.000Z'),
+        logger: silentLogger(),
+      });
+
+      const path = join(dir, 'tj-search-cache.json');
+      await saveCache(path, cache);
+      const reloaded = await loadCache(path);
+      expect(reloaded.proEnrichmentMap['28779']?.nationalcode).toBe('KOR');
+      expect(reloaded.proEnrichmentMap['28780']?.nationalcode).toBe('KOR');
+      expect(reloaded.proEnrichmentMap['99999']).toBeUndefined();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

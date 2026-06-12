@@ -82,10 +82,18 @@ export type SearchVendor = 'tj' | 'ky' | 'joysound';
 
 export interface ApiSearchOptions {
   query: string;
+  /** Single-vendor filter. Mutually exclusive in practice with `vendors`; when
+   *  both are set, `vendors` wins. Kept for the existing single-select call sites. */
   vendor?: SearchVendor;
+  /** Multi-vendor filter (UNION). Sent as a comma-joined `vendor` param. A
+   *  single-element array behaves identically to the singular `vendor` option. */
+  vendors?: SearchVendor[];
   limit?: number;
   fetchImpl?: typeof fetch;
 }
+
+/** Worker `/api/songs` per-request id cap (mirrors the worker's MAX_LIMIT). */
+const SONGS_BY_ID_BATCH = 100;
 
 interface ApiSearchResponse {
   items?: SongRecord[];
@@ -104,8 +112,16 @@ export async function searchApi(baseUrl: string, options: ApiSearchOptions): Pro
   const url = new URL('api/search', `${baseUrl.replace(/\/+$/u, '')}/`);
   url.searchParams.set('q', options.query);
   url.searchParams.set('limit', String(options.limit ?? 50));
-  if (options.vendor !== undefined) {
-    url.searchParams.set('vendor', options.vendor);
+  // `vendors` (multi-select UNION) takes precedence; the worker accepts a
+  // comma-joined `vendor` param and treats it as a union (single value still works).
+  const vendors =
+    options.vendors !== undefined && options.vendors.length > 0
+      ? options.vendors
+      : options.vendor !== undefined
+        ? [options.vendor]
+        : [];
+  if (vendors.length > 0) {
+    url.searchParams.set('vendor', vendors.join(','));
   }
   const fetchImpl = options.fetchImpl ?? fetch;
   const response = await fetchImpl(url.toString());
@@ -117,4 +133,40 @@ export async function searchApi(baseUrl: string, options: ApiSearchOptions): Pro
     throw new Error('Search API response missing items array');
   }
   return body.items;
+}
+
+/**
+ * Hydrate full `SongRecord`s by id via the worker `GET /api/songs?ids=...`
+ * endpoint. The worker caps each request at 100 ids, so callers that may exceed
+ * that (e.g. a large favorites set) are batched into parallel requests of
+ * `SONGS_BY_ID_BATCH` ids each and concatenated. The worker does NOT guarantee
+ * result order — callers that need a specific order must re-sort.
+ */
+export async function fetchSongsByIds(
+  baseUrl: string,
+  ids: string[],
+  fetchImpl: typeof fetch = fetch,
+): Promise<SongRecord[]> {
+  if (ids.length === 0) return [];
+  const base = `${baseUrl.replace(/\/+$/u, '')}/`;
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += SONGS_BY_ID_BATCH) {
+    batches.push(ids.slice(i, i + SONGS_BY_ID_BATCH));
+  }
+  const results = await Promise.all(
+    batches.map(async (batch) => {
+      const url = new URL('api/songs', base);
+      url.searchParams.set('ids', batch.join(','));
+      const response = await fetchImpl(url.toString());
+      if (!response.ok) {
+        throw new Error(`Songs API failed: HTTP ${response.status}`);
+      }
+      const body = (await response.json()) as ApiSearchResponse;
+      if (!Array.isArray(body.items)) {
+        throw new Error('Songs API response missing items array');
+      }
+      return body.items;
+    }),
+  );
+  return results.flat();
 }

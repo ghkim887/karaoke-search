@@ -148,4 +148,130 @@ describe('API search client', () => {
       'https://api.example.test/api/search?q=%E5%A4%A9%E4%BD%BF&limit=50&vendor=tj',
     ]);
   });
+
+  it('sends a comma-joined vendor param when multiple vendors are passed', async () => {
+    const apiRecord = records[0];
+    if (!apiRecord) throw new Error('fixture record missing');
+    const requested: string[] = [];
+    const fetchImpl = async (input: RequestInfo | URL) => {
+      requested.push(String(input));
+      return new Response(JSON.stringify({ items: [apiRecord], nextCursor: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    const result = await searchModule.searchApi('https://api.example.test', {
+      query: 'idol',
+      vendors: ['tj', 'ky'],
+      limit: 50,
+      fetchImpl,
+    });
+
+    expect(result).toEqual([apiRecord]);
+    expect(requested).toEqual([
+      'https://api.example.test/api/search?q=idol&limit=50&vendor=tj%2Cky',
+    ]);
+  });
+
+  it('treats a single-element vendors array like the singular vendor option', async () => {
+    const apiRecord = records[0];
+    if (!apiRecord) throw new Error('fixture record missing');
+    const requested: string[] = [];
+    const fetchImpl = async (input: RequestInfo | URL) => {
+      requested.push(String(input));
+      return new Response(JSON.stringify({ items: [apiRecord], nextCursor: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    await searchModule.searchApi('https://api.example.test', {
+      query: 'idol',
+      vendors: ['joysound'],
+      limit: 50,
+      fetchImpl,
+    });
+
+    expect(requested).toEqual([
+      'https://api.example.test/api/search?q=idol&limit=50&vendor=joysound',
+    ]);
+  });
+});
+
+describe('fetchSongsByIds', () => {
+  it('builds a /api/songs request with comma-joined encoded ids and parses items', async () => {
+    const apiRecord = records[0];
+    if (!apiRecord) throw new Error('fixture record missing');
+    const requested: string[] = [];
+    const fetchImpl = async (input: RequestInfo | URL) => {
+      requested.push(String(input));
+      return new Response(JSON.stringify({ items: [apiRecord] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    const result = await searchModule.fetchSongsByIds(
+      'https://api.example.test',
+      ['a', 'b', 'c'],
+      fetchImpl,
+    );
+
+    expect(result).toEqual([apiRecord]);
+    expect(requested).toEqual(['https://api.example.test/api/songs?ids=a%2Cb%2Cc']);
+  });
+
+  it('returns an empty array without issuing a request when ids is empty', async () => {
+    let called = false;
+    const fetchImpl = async (input: RequestInfo | URL) => {
+      called = true;
+      return new Response(JSON.stringify({ items: [String(input)] }), { status: 200 });
+    };
+    const result = await searchModule.fetchSongsByIds('https://api.example.test', [], fetchImpl);
+    expect(result).toEqual([]);
+    expect(called).toBe(false);
+  });
+
+  it('throws on a non-ok response', async () => {
+    const fetchImpl = async () => new Response('nope', { status: 400 });
+    await expect(
+      searchModule.fetchSongsByIds('https://api.example.test', ['a'], fetchImpl),
+    ).rejects.toThrow(/HTTP 400/);
+  });
+
+  it('throws when the response is missing an items array', async () => {
+    const fetchImpl = async () =>
+      new Response(JSON.stringify({ nope: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    await expect(
+      searchModule.fetchSongsByIds('https://api.example.test', ['a'], fetchImpl),
+    ).rejects.toThrow(/missing items array/);
+  });
+
+  it('batches >100 ids into multiple requests of <=100 and concatenates results', async () => {
+    const ids = Array.from({ length: 250 }, (_, i) => `id-${i}`);
+    const batches: string[][] = [];
+    const fetchImpl = async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      const idsParam = url.searchParams.get('ids') ?? '';
+      const batch = idsParam.split(',');
+      batches.push(batch);
+      // Echo one record per id so we can assert the concat behavior + count.
+      const items = batch.map((id) => ({ id }) as unknown as SongRecord);
+      return new Response(JSON.stringify({ items }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    const result = await searchModule.fetchSongsByIds('https://api.example.test', ids, fetchImpl);
+
+    // 250 ids → batches of 100, 100, 50.
+    expect(batches.map((b) => b.length)).toEqual([100, 100, 50]);
+    expect(result.length).toBe(250);
+    expect(result.map((r) => r.id)).toEqual(ids);
+  });
 });

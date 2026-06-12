@@ -55,7 +55,7 @@ function detailJson(it: FakeItem): string {
     newFlg: null,
     lyricIntro: null,
     genreList: [],
-    tieupList: it.tieupInfo ? [{ name: it.tieupInfo }] : [],
+    tieupList: it.tieupInfo ? [{ tieupId: 't1', tieupName: it.tieupInfo }] : [],
     aplList: [],
   });
 }

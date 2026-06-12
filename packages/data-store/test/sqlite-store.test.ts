@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Writable } from 'node:stream';
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runDataStoreCli } from '../src/cli.js';
@@ -13,8 +14,42 @@ import {
   exportSongsJson,
   importSongs,
   importSongsJson,
+  iterD1ImportSqlStatements,
   openSongDatabase,
+  writeD1ImportSql,
 } from '../src/index.js';
+
+const MAX_D1_SQL_STATEMENT_BYTES = 16_000;
+
+function collectWritable(): { writable: Writable; toString(): string } {
+  const buffers: Buffer[] = [];
+  const writable = new Writable({
+    write(chunk: Buffer | string, encoding, callback) {
+      buffers.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
+      callback();
+    },
+  });
+  return {
+    writable,
+    toString: () => Buffer.concat(buffers).toString('utf8'),
+  };
+}
+
+function makeSyntheticRecords(count: number): SongRecord[] {
+  return Array.from({ length: count }, (_, index): SongRecord => {
+    const songNumber = 100000 + index;
+    return {
+      id: `joysound-${songNumber}`,
+      source_url: `https://example.com/joysound/${songNumber}`,
+      title_primary: `Song ${songNumber}`,
+      title_ko: null,
+      artist_primary: `Artist ${songNumber}`,
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: String(songNumber) },
+      crawled_at: '2026-01-01T00:00:00.000Z',
+    };
+  });
+}
 
 const openDatabases: Array<{ close(): void }> = [];
 
@@ -397,26 +432,110 @@ describe('SQLite song store', () => {
     expect(exportSongs(db)).toEqual(records);
   });
 
-  it('writes a schema-prefixed D1 SQL import file from a JSON corpus', () => {
+  it('writes a schema-prefixed D1 SQL import file from a JSON corpus', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
     const inputPath = join(dir, 'songs.json');
     const outputPath = join(dir, 'songs-d1.sql');
     writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
 
-    exportD1ImportSqlJson({ inputPath, outputPath });
+    await exportD1ImportSqlJson({ inputPath, outputPath });
 
     const db = openMemoryDb();
     db.exec(readFileSync(outputPath, 'utf8'));
     expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
   });
 
-  it('supports exporting a D1 SQL file through the data-store CLI runner', () => {
+  it('supports exporting a D1 SQL file through the data-store CLI runner', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
     const inputPath = join(dir, 'songs.json');
     const outputPath = join(dir, 'songs-d1-cli.sql');
     writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
 
-    runDataStoreCli(['export-d1-sql', '--input', inputPath, '--output', outputPath]);
+    await runDataStoreCli(['export-d1-sql', '--input', inputPath, '--output', outputPath]);
+
+    const db = openMemoryDb();
+    db.exec(readFileSync(outputPath, 'utf8'));
+    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
+  });
+
+  it('streams D1 import SQL byte-identically to the in-memory builder', async () => {
+    const records = cloneRecords(FIXTURE_RECORDS);
+    const sink = collectWritable();
+
+    await writeD1ImportSql(records, sink.writable);
+
+    expect(sink.toString()).toBe(buildD1ImportSql(records));
+  });
+
+  it('streams a schema-less D1 import SQL byte-identically to the builder', async () => {
+    const records = [CJK_SEARCH_RECORD];
+    const sink = collectWritable();
+
+    await writeD1ImportSql(records, sink.writable, { includeSchema: false });
+
+    expect(sink.toString()).toBe(buildD1ImportSql(records, { includeSchema: false }));
+  });
+
+  it('produces a statement iterator whose join reproduces buildD1ImportSql output', () => {
+    const records = cloneRecords(FIXTURE_RECORDS);
+
+    const statements = Array.from(iterD1ImportSqlStatements(records));
+
+    expect(`${statements.join('\n')}\n`).toBe(buildD1ImportSql(records));
+  });
+
+  it('bounds every yielded INSERT statement under the D1 statement-size cap', () => {
+    const records = makeSyntheticRecords(2_000);
+
+    let yielded = 0;
+    let maxInsertBytes = 0;
+    for (const statement of iterD1ImportSqlStatements(records)) {
+      yielded += 1;
+      if (statement.startsWith('INSERT INTO')) {
+        maxInsertBytes = Math.max(maxInsertBytes, Buffer.byteLength(`${statement};`, 'utf8'));
+      }
+    }
+
+    expect(yielded).toBeGreaterThan(1);
+    expect(maxInsertBytes).toBeGreaterThan(0);
+    expect(maxInsertBytes).toBeLessThanOrEqual(MAX_D1_SQL_STATEMENT_BYTES);
+  });
+
+  it('drives a large synthetic corpus through the iterator without materializing one big string', () => {
+    const recordCount = 20_000;
+    const records = makeSyntheticRecords(recordCount);
+
+    let statementCount = 0;
+    let maxChunkBytes = 0;
+    for (const statement of iterD1ImportSqlStatements(records, { includeSchema: false })) {
+      statementCount += 1;
+      maxChunkBytes = Math.max(maxChunkBytes, Buffer.byteLength(`${statement};`, 'utf8'));
+    }
+
+    // Far more statements than rows-per-batch would imply: the corpus is split,
+    // never emitted as one mega-statement.
+    expect(statementCount).toBeGreaterThan(recordCount / 100);
+    expect(maxChunkBytes).toBeLessThanOrEqual(MAX_D1_SQL_STATEMENT_BYTES);
+  });
+
+  it('streams deterministic, byte-identical output across repeated runs', async () => {
+    const records = makeSyntheticRecords(500);
+    const first = collectWritable();
+    const second = collectWritable();
+
+    await writeD1ImportSql(records, first.writable);
+    await writeD1ImportSql(records, second.writable);
+
+    expect(first.toString()).toBe(second.toString());
+  });
+
+  it('writes a streamed D1 SQL import file that round-trips through SQLite', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
+    const inputPath = join(dir, 'songs.json');
+    const outputPath = join(dir, 'songs-d1-streamed.sql');
+    writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
+
+    await exportD1ImportSqlJson({ inputPath, outputPath });
 
     const db = openMemoryDb();
     db.exec(readFileSync(outputPath, 'utf8'));

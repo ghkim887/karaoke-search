@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { main as assertRemoteD1Guard } from './guard-remote-d1.mjs';
@@ -21,16 +22,29 @@ export function assertRemoteChunkedImportAllowed(env = process.env) {
   }
 }
 
-export function splitSqlStatements(sqlText) {
-  const statements = [];
-  let current = '';
-  let inString = false;
-  for (let index = 0; index < sqlText.length; index += 1) {
-    const character = sqlText[index];
+function assertNoTransactionControl(statement) {
+  if (/^\s*(?:BEGIN|COMMIT|ROLLBACK)\b/iu.test(statement)) {
+    throw new Error(
+      'D1 remote chunked import refuses transaction control statements; chunks execute independently.',
+    );
+  }
+}
+
+/**
+ * Statement-boundary state machine. Feeds an incremental text fragment through
+ * the same `'`/`''`/`;` rules the legacy whole-string splitter used and invokes
+ * `onStatement` for each completed statement. `state` carries `{ current,
+ * inString }` across fragments so callers can stream a file in pieces without
+ * buffering it whole. Returns the (mutated) state.
+ */
+function feedSqlFragment(fragment, state, onStatement) {
+  let { current, inString } = state;
+  for (let index = 0; index < fragment.length; index += 1) {
+    const character = fragment[index];
     current += character;
     if (character === "'") {
-      if (inString && sqlText[index + 1] === "'") {
-        current += sqlText[index + 1];
+      if (inString && fragment[index + 1] === "'") {
+        current += fragment[index + 1];
         index += 1;
         continue;
       }
@@ -40,27 +54,66 @@ export function splitSqlStatements(sqlText) {
     if (!inString && character === ';') {
       const statement = current.trim();
       if (statement.length > 0) {
-        statements.push(statement);
+        onStatement(statement);
       }
       current = '';
     }
   }
+  state.current = current;
+  state.inString = inString;
+  return state;
+}
 
-  const trailingStatement = current.trim();
+export function splitSqlStatements(sqlText) {
+  const statements = [];
+  const state = feedSqlFragment(sqlText, { current: '', inString: false }, (statement) => {
+    assertNoTransactionControl(statement);
+    statements.push(statement);
+  });
+
+  const trailingStatement = state.current.trim();
   if (trailingStatement.length > 0) {
     throw new Error('D1 import SQL contains a trailing statement without a terminating semicolon.');
-  }
-  for (const statement of statements) {
-    if (/^\s*(?:BEGIN|COMMIT|ROLLBACK)\b/iu.test(statement)) {
-      throw new Error(
-        'D1 remote chunked import refuses transaction control statements; chunks execute independently.',
-      );
-    }
   }
   return statements;
 }
 
-export function splitSqlIntoChunks({ sqlPath, chunksDir, maxBytes }) {
+/**
+ * Streams SQL statements out of a file without ever buffering the whole file as
+ * a single string. Reads line-by-line via `readline`, re-appending the line
+ * separator the reader strips, and threads each line through the shared
+ * statement-boundary state machine. Preserves the exact splitting semantics of
+ * `splitSqlStatements`, including multi-line statements and `'`-quoted `;`.
+ */
+async function streamSqlStatements(sqlPath, onStatement) {
+  const input = createReadStream(sqlPath, { encoding: 'utf8' });
+  const reader = createInterface({ input, crlfDelay: Number.POSITIVE_INFINITY });
+  const state = { current: '', inString: false };
+  let firstLine = true;
+  try {
+    for await (const line of reader) {
+      // `readline` strips the trailing line terminator; restore it as `\n` so
+      // statements that span lines (and `'`-quoted newlines) round-trip the
+      // same way the legacy `readFileSync` + char loop saw them.
+      const fragment = firstLine ? line : `\n${line}`;
+      firstLine = false;
+      feedSqlFragment(fragment, state, (statement) => {
+        assertNoTransactionControl(statement);
+        onStatement(statement);
+      });
+    }
+  } finally {
+    reader.close();
+    input.destroy();
+  }
+
+  const trailingStatement = state.current.trim();
+  if (trailingStatement.length > 0) {
+    throw new Error('D1 import SQL contains a trailing statement without a terminating semicolon.');
+  }
+}
+
+export async function splitSqlIntoChunks({ sqlPath, chunksDir, maxBytes }) {
   if (!existsSync(sqlPath)) {
     throw new Error(`D1 import SQL file does not exist: ${sqlPath}`);
   }
@@ -68,10 +121,8 @@ export function splitSqlIntoChunks({ sqlPath, chunksDir, maxBytes }) {
   rmSync(chunksDir, { recursive: true, force: true });
   mkdirSync(chunksDir, { recursive: true });
 
-  const sql = readFileSync(sqlPath, 'utf8');
-  const statements = splitSqlStatements(sql);
-
   const chunks = [];
+  let sourceStatements = 0;
   let current = [];
   let currentBytes = 0;
 
@@ -88,7 +139,8 @@ export function splitSqlIntoChunks({ sqlPath, chunksDir, maxBytes }) {
     currentBytes = 0;
   };
 
-  for (const statement of statements) {
+  await streamSqlStatements(sqlPath, (statement) => {
+    sourceStatements += 1;
     const statementLine = `${statement}\n`;
     const statementBytes = Buffer.byteLength(statementLine);
     if (statementBytes > maxBytes) {
@@ -101,10 +153,10 @@ export function splitSqlIntoChunks({ sqlPath, chunksDir, maxBytes }) {
     }
     current.push(statement);
     currentBytes += statementBytes;
-  }
+  });
   flush();
 
-  return { sourceBytes: statSync(sqlPath).size, sourceStatements: statements.length, chunks };
+  return { sourceBytes: statSync(sqlPath).size, sourceStatements, chunks };
 }
 
 export function quoteWindowsCommandArg(arg) {
@@ -184,7 +236,7 @@ export function parseArgs(argv) {
   };
 }
 
-export function main(argv = process.argv.slice(2), env = process.env) {
+export async function main(argv = process.argv.slice(2), env = process.env) {
   assertRemoteD1Guard([], env);
   assertRemoteChunkedImportAllowed(env);
   const options = parseArgs(argv);
@@ -192,7 +244,7 @@ export function main(argv = process.argv.slice(2), env = process.env) {
     throw new Error(`Invalid --max-bytes value: ${options.maxBytes}`);
   }
 
-  const plan = splitSqlIntoChunks({
+  const plan = await splitSqlIntoChunks({
     sqlPath: options.sqlPath,
     chunksDir: options.chunksDir,
     maxBytes: options.maxBytes,
@@ -217,10 +269,8 @@ export function main(argv = process.argv.slice(2), env = process.env) {
 
 const entrypointPath = process.argv[1];
 if (entrypointPath !== undefined && import.meta.url === pathToFileURL(entrypointPath).href) {
-  try {
-    main();
-  } catch (error) {
+  main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
-  }
+  });
 }

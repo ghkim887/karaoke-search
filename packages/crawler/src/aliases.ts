@@ -119,6 +119,35 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
   const aliasDisplay = new Map<string, string>();
   const canonicalDisplay = new Map<string, string>();
 
+  // Seed the alias map for one (canonical, aliases) pair. Shared by the
+  // pipe-form path and the A1 adapter-emitted path (below) so both feed
+  // collision detection (Phase 2) and propagation (`aliasesByCanonical`)
+  // uniformly. Registers `canonicalDisplay[canonicalKey]` and, for each alias
+  // that doesn't degenerate onto its own canonical, an `aliasMap` edge
+  // alias→canonical plus its display form.
+  const seedAliasMap = (canonical: string, aliases: string[]): void => {
+    const canonicalKey = normalize(canonical);
+    if (!canonicalDisplay.has(canonicalKey)) {
+      canonicalDisplay.set(canonicalKey, canonical);
+    }
+    for (const a of aliases) {
+      const aliasKey = normalize(a);
+      // Don't index the alias if it normalizes to the same key as the
+      // canonical (degenerate case: `"X｜X"` produces no useful alias map
+      // entry; the alias would just collapse onto its own canonical). The
+      // record still carries the alias in `artist_aliases` for display, but
+      // the map is suppressed so it cannot collide.
+      if (aliasKey === canonicalKey) continue;
+      if (aliasKey === '') continue;
+      if (!aliasDisplay.has(aliasKey)) {
+        aliasDisplay.set(aliasKey, a);
+      }
+      const set = aliasMap.get(aliasKey);
+      if (set) set.add(canonicalKey);
+      else aliasMap.set(aliasKey, new Set([canonicalKey]));
+    }
+  };
+
   // Phase 1 mutation: produce a parallel array of records (cloned where the
   // pipe-split fires; identity-passed otherwise). We finish Phase 1 before
   // computing Phase 2 collisions because alias map population is order-
@@ -126,7 +155,17 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
   const phase1: SongRecord[] = records.map((r) => {
     const segments = splitOnPipe(r.artist_primary);
     if (segments.length === 0) {
-      // No pipe in input — pass through unchanged.
+      // No pipe in input — pass through unchanged. A1 (b): when a bare record
+      // carries an adapter-emitted `artist_aliases` (e.g. the JOYSOUND
+      // normalizer's native-name alias), seed the alias map with its declared
+      // canonical (= `artist_primary`) so the alias (i) participates in
+      // collision detection — one alias under two distinct canonicals stays
+      // un-merged + warned — and (ii) propagates to same-canonical bare records
+      // via `aliasesByCanonical`. The record itself is still identity-passed
+      // (its `artist_aliases` is preserved untouched — A1 (a)).
+      if (r.artist_aliases && r.artist_aliases.length > 0) {
+        seedAliasMap(r.artist_primary, dedupePreserveOrder(r.artist_aliases));
+      }
       return r;
     }
     if (segments.length < 2) {
@@ -145,28 +184,7 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
     // segments.length >= 2 by the check above, so segments[0] is defined.
     const canonical = segments[0] as string;
     const aliases = dedupePreserveOrder(segments.slice(1));
-    const canonicalKey = normalize(canonical);
-
-    if (!canonicalDisplay.has(canonicalKey)) {
-      canonicalDisplay.set(canonicalKey, canonical);
-    }
-
-    for (const a of aliases) {
-      const aliasKey = normalize(a);
-      // Don't index the alias if it normalizes to the same key as the
-      // canonical (degenerate case: `"X｜X"` produces no useful alias map
-      // entry; the alias would just collapse onto its own canonical). The
-      // record still carries the alias in `artist_aliases` for display, but
-      // the map is suppressed so it cannot collide.
-      if (aliasKey === canonicalKey) continue;
-      if (aliasKey === '') continue;
-      if (!aliasDisplay.has(aliasKey)) {
-        aliasDisplay.set(aliasKey, a);
-      }
-      const set = aliasMap.get(aliasKey);
-      if (set) set.add(canonicalKey);
-      else aliasMap.set(aliasKey, new Set([canonicalKey]));
-    }
+    seedAliasMap(canonical, aliases);
 
     return {
       ...r,
@@ -206,40 +224,36 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
 
   // Pre-Phase-3 helper: a reverse map from normalized canonical key →
   // ordered list of (un-normalized) alias surface forms. Built by walking
-  // the pipe-form records of Phase 1 once. Used in Phase 3's "already
-  // canonical" branch so a record whose `artist_primary` is the canonical
-  // surface form still picks up known aliases for search coverage. Without
-  // this enhancement, only records that arrived as a pipe-form OR that were
-  // re-keyed from a bare alias would carry the alias — bare records that
-  // happened to use the canonical Japanese name would silently lose the
-  // Latin alias for search. (Spec §6 promises "searchable" + "visible";
-  // omitting this lookup would create a search-coverage gap on records
-  // that incidentally arrived in canonical form.)
-  // PROPAGATION INVARIANT: `aliasesByCanonical` is populated ONLY from Phase 1
-  // pipe-form records (those whose original `artist_primary` contained the
-  // full-width pipe separator). Aliases emitted directly via the
-  // `RawSongRecord.artist_aliases` field (which the schema permits — see
-  // `packages/schema/src/index.ts:71-72`) are NOT indexed here, so they will
-  // NOT be propagated to bare records sharing the same canonical. In the live
-  // corpus this is safe because every canonical with aliases originates from a
-  // pipe-form blog seed. If a future adapter starts emitting `artist_aliases`
-  // directly, the population loop below must be widened to also walk those
-  // rows (i.e. drop the `includes(FULLWIDTH_PIPE)` guard and key on whatever
-  // canonical is declared in that adapter's output).
+  // Phase 1 once. Used in Phase 3's "already canonical" branch so a record
+  // whose `artist_primary` is the canonical surface form still picks up known
+  // aliases for search coverage. Without this enhancement, only records that
+  // arrived as a pipe-form OR that were re-keyed from a bare alias would carry
+  // the alias — bare records that happened to use the canonical Japanese name
+  // would silently lose the Latin alias for search. (Spec §6 promises
+  // "searchable" + "visible"; omitting this lookup would create a
+  // search-coverage gap on records that incidentally arrived in canonical
+  // form.)
+  //
+  // PROPAGATION SOURCE (A1, 2026-06-09 — invariant WIDENED): `aliasesByCanonical`
+  // is now populated from BOTH (1) Phase 1 pipe-form records (canonical =
+  // segments[0]) AND (2) bare records carrying an adapter-emitted
+  // `artist_aliases` (the schema permits this on `RawSongRecord` — see
+  // `packages/schema/src/index.ts:79-92`; the JOYSOUND normalizer emits the
+  // native artist name this way). For (2) the canonical IS the record's own
+  // (unchanged) `artist_primary`. Both sources keyed identically, so an
+  // adapter-emitted alias propagates to same-canonical bare records exactly as
+  // a pipe-form alias does. Collision safety is unchanged: an alias declared
+  // under two distinct canonicals (whether by pipe-form or adapter) lands in
+  // `aliasMap` with set size > 1 → `collidingKeys` → Phase 3 leaves the bare
+  // alias-record untouched + warns. The propagation branch keys on the
+  // CANONICAL (not the alias), so it never crosses a collision boundary.
   const aliasesByCanonical = new Map<string, string[]>();
-  for (let i = 0; i < records.length; i++) {
-    const original = records[i];
-    const resolvedRec = phase1[i];
-    if (!original || !resolvedRec) continue;
-    if (!original.artist_primary.includes(FULLWIDTH_PIPE)) continue;
-    const aliases = resolvedRec.artist_aliases;
-    if (!aliases || aliases.length === 0) continue;
-    const canonicalKey = normalize(resolvedRec.artist_primary);
+  const addAliases = (canonicalKey: string, aliases: readonly string[]): void => {
     const existing = aliasesByCanonical.get(canonicalKey);
     if (existing) {
-      // Union order-preserving across multiple pipe-form records sharing the
-      // same canonical (e.g. several `スピッツ｜Spitz` rows from different
-      // Tistory posts).
+      // Union order-preserving across multiple records sharing the same
+      // canonical (e.g. several `スピッツ｜Spitz` rows from different Tistory
+      // posts, or a pipe-form + adapter-emitted pair).
       const seen = new Set(existing);
       for (const a of aliases) {
         if (!seen.has(a)) {
@@ -250,15 +264,24 @@ export function resolveArtistAliases(records: SongRecord[]): AliasResolutionResu
     } else {
       aliasesByCanonical.set(canonicalKey, [...aliases]);
     }
+  };
+  for (const resolvedRec of phase1) {
+    // (1) pipe-form: canonical is the Phase-1-resolved `artist_primary`.
+    // (2) adapter-emitted on a bare record: canonical is the unchanged
+    //     `artist_primary`. Both reduce to "the resolved record's
+    //     `artist_primary` is the canonical and its `artist_aliases` are the
+    //     known aliases" — so a single keyed-on-resolved-primary path covers
+    //     both, no pipe-form-only guard needed.
+    const aliases = resolvedRec.artist_aliases;
+    if (!aliases || aliases.length === 0) continue;
+    addAliases(normalize(resolvedRec.artist_primary), aliases);
   }
 
   // Phase 3: re-key bare records (and propagate known aliases onto bare-
   // canonical records — see `aliasesByCanonical` rationale above).
-  // NOTE: the propagation source is exclusively the pipe-form Phase 1 rows
-  // indexed into `aliasesByCanonical`. Adapter-emitted `artist_aliases` (via
-  // `RawSongRecord.artist_aliases`) are not propagated here. See the
-  // PROPAGATION INVARIANT comment above for the full constraint and the action
-  // required if a future adapter starts emitting aliases directly.
+  // NOTE: the propagation source is `aliasesByCanonical`, populated from BOTH
+  // pipe-form Phase 1 rows AND bare records carrying adapter-emitted
+  // `artist_aliases` (A1, 2026-06-09). See the PROPAGATION SOURCE comment above.
   const phase3 = phase1.map((r) => {
     if (r.artist_primary.includes(FULLWIDTH_PIPE)) {
       // Pipe-form records were already canonicalized in Phase 1. Skip.

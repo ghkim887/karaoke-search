@@ -4,7 +4,14 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useFavorites } from '../lib/favorites.js';
 import { filterByVendors } from '../lib/filter.js';
 import type { IndexBundle } from '../lib/search.js';
-import { type SearchVendor, getApiSearchBaseUrl, loadIndex, searchApi } from '../lib/search.js';
+import {
+  type SearchVendor,
+  buildIndex,
+  fetchSongsByIds,
+  getApiSearchBaseUrl,
+  loadIndex,
+  searchApi,
+} from '../lib/search.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';
@@ -48,11 +55,10 @@ type RenderMode = 'error' | 'loading' | 'favorites-empty' | 'favorites' | 'brows
  * `query` is the debounced value that actually drives `index.search()`.
  */
 
-function selectedVendorForApi(selectedVendors: ReadonlySet<Vendor>): SearchVendor | undefined {
-  if (selectedVendors.size !== 1) {
-    return undefined;
-  }
-  return selectedVendors.values().next().value as SearchVendor | undefined;
+/** The selected vendors as a stable, sorted `SearchVendor[]` for the API
+ *  `vendors` union param. Empty when no vendor chip is active. */
+function selectedVendorsForApi(selectedVendors: ReadonlySet<Vendor>): SearchVendor[] {
+  return Array.from(selectedVendors).sort() as SearchVendor[];
 }
 
 function apiBrowseKey(query: string, selectedVendors: ReadonlySet<Vendor>): string {
@@ -71,14 +77,26 @@ export function App({ songCount }: AppProps) {
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const [activeTab, setActiveTab] = useState<TabId>('browse');
   const [apiBrowse, setApiBrowse] = useState<ApiBrowseState>({ key: '', records: null });
+  // Favorites hydrated via the worker `/api/songs` endpoint when in API mode.
+  // `null` until the first fetch resolves; replaced wholesale on every fetch.
+  const [apiFavorites, setApiFavorites] = useState<SongRecord[] | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
   const apiBaseUrl = getApiSearchBaseUrl();
-  const localIndexRequiredForCurrentView =
-    activeTab === 'favorites' || apiBaseUrl === null || selectedVendors.size > 1;
+  // The bundled MiniSearch index is now ONLY the offline / local-dev fallback.
+  // When an API base URL is configured, every data path (Browse, Favorites,
+  // multi-vendor) is served by the worker and the full songs.json is never
+  // downloaded.
+  const localIndexRequiredForCurrentView = apiBaseUrl === null;
   const controlsDisabled = loading && localIndexRequiredForCurrentView;
 
   useEffect(() => {
+    // API mode: skip the full-corpus download entirely. The UI is usable
+    // immediately; all data comes from the worker.
+    if (apiBaseUrl !== null) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -95,7 +113,7 @@ export function App({ songCount }: AppProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [apiBaseUrl]);
 
   // Clean up the debounce timer on unmount.
   useEffect(() => {
@@ -105,15 +123,15 @@ export function App({ songCount }: AppProps) {
   }, []);
 
   useEffect(() => {
-    if (apiBaseUrl === null || activeTab !== 'browse' || query === '' || selectedVendors.size > 1) {
+    if (apiBaseUrl === null || activeTab !== 'browse' || query === '') {
       setApiBrowse({ key: '', records: null });
       return;
     }
     let cancelled = false;
     const key = apiBrowseKey(query, selectedVendors);
-    const vendor = selectedVendorForApi(selectedVendors);
+    const vendors = selectedVendorsForApi(selectedVendors);
     const apiOptions = { query, limit: RESULT_LIMIT };
-    if (vendor !== undefined) Object.assign(apiOptions, { vendor });
+    if (vendors.length > 0) Object.assign(apiOptions, { vendors });
     searchApi(apiBaseUrl, apiOptions)
       .then((records) => {
         if (!cancelled) setApiBrowse({ key, records });
@@ -125,6 +143,36 @@ export function App({ songCount }: AppProps) {
       cancelled = true;
     };
   }, [apiBaseUrl, activeTab, query, selectedVendors]);
+
+  // API mode: hydrate the favorites set via `/api/songs?ids=...` and re-sort the
+  // returned records into favorite order (the worker does not guarantee order).
+  // Query-within-favorites is a CLIENT-SIDE filter over this fetched set — the
+  // favorites set is user-bounded, so there is no server query param.
+  useEffect(() => {
+    if (apiBaseUrl === null) return;
+    if (favoriteIds.length === 0) {
+      setApiFavorites([]);
+      return;
+    }
+    let cancelled = false;
+    const order = new Map(favoriteIds.map((id, i) => [id, i] as const));
+    fetchSongsByIds(apiBaseUrl, favoriteIds)
+      .then((records) => {
+        if (cancelled) return;
+        const sorted = [...records].sort(
+          (a, b) =>
+            (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+            (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+        );
+        setApiFavorites(sorted);
+      })
+      .catch(() => {
+        if (!cancelled) setApiFavorites([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, favoriteIds]);
 
   /** Called on every keystroke from SearchBox. Updates the visible input
    *  immediately and schedules a debounced search-query update. */
@@ -160,36 +208,66 @@ export function App({ songCount }: AppProps) {
   };
 
   /** Pick the candidate set per (activeTab, query), then run the existing
-   *  chip + slice pipeline. Browse uses MiniSearch; Favorites does a linear
-   *  substring pass over the user-bounded favorites set. */
+   *  chip + slice pipeline. Browse uses the API (MiniSearch fallback offline);
+   *  Favorites resolves the user-bounded favorite set (API `/api/songs` or the
+   *  local bundle) and narrows queries client-side. */
   const results: SongRecord[] = useMemo(() => {
     let candidates: SongRecord[];
     if (activeTab === 'favorites') {
-      if (bundle === null) return [];
-      // Favorites candidate set: ids resolved against byId, stale dropped.
-      const favRecords: SongRecord[] = [];
-      for (const id of favoriteIds) {
-        const rec = bundle.byId.get(id);
-        if (rec !== undefined) favRecords.push(rec);
-      }
-      if (query === '') {
-        candidates = favRecords;
-      } else {
-        const favIdSet = new Set(favoriteIds);
-        const hits = bundle.index.search(query);
-        candidates = [];
-        for (const hit of hits) {
-          const id = String(hit.id);
-          if (favIdSet.has(id)) {
-            const rec = bundle.byId.get(id);
+      if (apiBaseUrl !== null) {
+        // API mode: favorites are fetched + re-sorted in the effect above.
+        // Query-within-favorites is a CLIENT-SIDE filter over the bounded set,
+        // run through a tiny MiniSearch index so it stays alias-aware and
+        // consistent with Browse search semantics.
+        const favRecords = apiFavorites ?? [];
+        if (query === '') {
+          candidates = favRecords;
+        } else {
+          const favIndex = buildIndex(favRecords);
+          const byId = new Map(favRecords.map((r) => [r.id, r] as const));
+          const order = new Map(favRecords.map((r, i) => [r.id, i] as const));
+          const hits = favIndex.search(query);
+          candidates = [];
+          for (const hit of hits) {
+            const rec = byId.get(String(hit.id));
             if (rec !== undefined) candidates.push(rec);
+          }
+          // Preserve favorite order — MiniSearch returns by relevance score.
+          candidates.sort(
+            (a, b) =>
+              (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+              (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+          );
+        }
+      } else {
+        if (bundle === null) return [];
+        // Favorites candidate set: ids resolved against byId, stale dropped.
+        const favRecords: SongRecord[] = [];
+        for (const id of favoriteIds) {
+          const rec = bundle.byId.get(id);
+          if (rec !== undefined) favRecords.push(rec);
+        }
+        if (query === '') {
+          candidates = favRecords;
+        } else {
+          const favIdSet = new Set(favoriteIds);
+          const hits = bundle.index.search(query);
+          candidates = [];
+          for (const hit of hits) {
+            const id = String(hit.id);
+            if (favIdSet.has(id)) {
+              const rec = bundle.byId.get(id);
+              if (rec !== undefined) candidates.push(rec);
+            }
           }
         }
       }
     } else {
-      // Browse candidate set: API-first when configured, MiniSearch fallback while
-      // the request is pending or if it fails. Favorites remain local because the
-      // favorite id set is user-local browser state.
+      // Browse candidate set. API mode (apiBaseUrl set): exclusively the worker
+      // search result for the current (query, vendors) key — there is no local
+      // bundle to fall back to, so a pending/failed request yields no results
+      // until the API resolves. Offline mode (apiBaseUrl null): MiniSearch over
+      // the downloaded bundle.
       if (query === '') return [];
       const currentApiKey = apiBrowseKey(query, selectedVendors);
       if (apiBaseUrl !== null && apiBrowse.key === currentApiKey && apiBrowse.records !== null) {
@@ -206,7 +284,7 @@ export function App({ songCount }: AppProps) {
       }
     }
     return filterByVendors(candidates, selectedVendors).slice(0, RESULT_LIMIT);
-  }, [bundle, query, activeTab, favoriteIds, selectedVendors, apiBaseUrl, apiBrowse]);
+  }, [bundle, query, activeTab, favoriteIds, selectedVendors, apiBaseUrl, apiBrowse, apiFavorites]);
 
   const toggleVendor = (v: Vendor) => {
     setSelectedVendors((prev) => {

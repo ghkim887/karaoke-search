@@ -43,6 +43,17 @@ import { isPlainObject } from './normalize.js';
  * as missing by the freshness helpers so they get re-fetched. Catalog-mutation
  * rate is low; a hard re-verify every 90 days catches metadata drift without
  * ballooning costs.
+ *
+ * `proEnrichmentMap` population (Item A, 2026-06): the map now carries BOTH
+ * JPN survivors (written by the translit pass + JP-likely rescue, with the
+ * full title-translit payload) AND authoritative non-JPN (KOR/ENG/…) entries
+ * harvested by the per-artist scan (`enrichArtistMap.classifyVotes`) for every
+ * exact-pro match it sees. The non-JPN entries feed the `non-jpn-pro-reject`
+ * filter step (the strongest negative signal), which was otherwise starved of
+ * cached data in steady state. This grows the map from ~JPN-only (~4.5k) toward
+ * the full catalog (~25k+); the same 90-day per-entry TTL + atomic write apply
+ * unchanged. Non-JPN entries are payload-light (sortTitleKo/sortSongKo may be
+ * null since those translits matter only for kept rows).
  */
 
 /**

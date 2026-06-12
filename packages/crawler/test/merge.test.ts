@@ -1058,3 +1058,253 @@ describe('mergeRecords — joysound-official adapter regressions', () => {
     expect(m.karaoke_numbers.joysound).toBe('190001');
   });
 });
+
+describe('mergeRecords — dash/prolonged-sound-mark fold in clustering keys', () => {
+  // TJ writes the katakana long vowel `ー` (U+30FC) as an ASCII hyphen in
+  // some catalog titles. `normalize()` strips every punctuation dash but
+  // U+30FC is category Lm (letter) and survives — so without the fold the
+  // same song splits into two records when no karaoke number is shared.
+  // The merger's `clusterKeyPart` strips the whole dash class on top of
+  // `normalize()` for Tier B/C keys only.
+
+  it('Tier B (cross-source): ASCII-hyphen vs U+30FC titles merge (特者生存 pair)', () => {
+    const tj = record({
+      id: 'tj-54060',
+      source_url: 'https://tj.test/54060',
+      title_primary: '特者生存ワンダラダ-!!', // U+002D
+      artist_primary: '天音かなた',
+      karaoke_numbers: { tj: '54060', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-895499',
+      source_url: 'https://www.joysound.com/web/search/song/895499',
+      title_primary: '特者生存ワンダラダー!!', // U+30FC
+      artist_primary: '天音かなた',
+      karaoke_numbers: { tj: null, ky: null, joysound: '499965' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // TJ is the higher-priority source for id/title; the joysound number
+    // unions onto the merged record.
+    expect(m.id).toBe('tj-54060');
+    expect(m.karaoke_numbers.tj).toBe('54060');
+    expect(m.karaoke_numbers.joysound).toBe('499965');
+    // Vendor numbers don't disagree (each vendor has one contributor) and a
+    // Tier B union emits no tier_c_merge marker — conflicts must stay empty.
+    expect(conflicts).toHaveLength(0);
+  });
+
+  it('Tier B (cross-source): artist-side fold — fullwidth hyphen U+FF0D vs U+30FC (春一番 pair)', () => {
+    // NFKC folds U+FF0D to U+002D, which normalize() strips — leaving
+    // `キャンディズ` vs `キャンディーズ`. The fold strips the surviving
+    // U+30FC so both artist keys collapse to the same value.
+    const tj = record({
+      id: 'tj-6487',
+      source_url: 'https://tj.test/6487',
+      title_primary: '春一番',
+      artist_primary: 'キャンディ－ズ', // U+FF0D fullwidth hyphen
+      karaoke_numbers: { tj: '6487', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-2096',
+      source_url: 'https://www.joysound.com/web/search/song/2096',
+      title_primary: '春一番',
+      artist_primary: 'キャンディーズ', // U+30FC
+      karaoke_numbers: { tj: null, ky: null, joysound: '2096' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers.joysound).toBe('2096');
+    // No vendor disagreement, Tier B union — no spurious conflicts.
+    expect(conflicts).toHaveLength(0);
+  });
+
+  it('Tier B (cross-source): trailing U+30FC vs absence (サチコ pair)', () => {
+    // The fold strips U+30FC from BOTH sides, so `ニューサー` vs `ニューサ`
+    // key identically — a presence/absence difference, not a substitution.
+    const tj = record({
+      id: 'tj-6299',
+      source_url: 'https://tj.test/6299',
+      title_primary: 'サチコ',
+      artist_primary: 'ニック・ニューサー', // trailing U+30FC
+      karaoke_numbers: { tj: '6299', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-2564',
+      source_url: 'https://www.joysound.com/web/search/song/2564',
+      title_primary: 'サチコ',
+      artist_primary: 'ニック・ニューサ', // no trailing mark
+      karaoke_numbers: { tj: null, ky: null, joysound: '2564' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers.joysound).toBe('2564');
+    // No vendor disagreement, Tier B union — no spurious conflicts.
+    expect(conflicts).toHaveLength(0);
+  });
+
+  it('Tier C fold-union: dash-variant titles + divergent full artist strings merge via the folded lead-component key', () => {
+    // The FULL artist strings differ (`天音かなた(Feat.桐生ココ)` vs bare
+    // `天音かなた`), so even the FOLDED Tier B keys diverge and Tier B cannot
+    // group them. No shared vendor number (Tier A can't fire) — both records
+    // are residual singletons entering Tier C. The union can therefore ONLY
+    // happen via tierCKey's `foldDashes(getLeadComponent(...))` path:
+    // `getLeadComponent` strips the feat decoration to the shared lead, and
+    // the fold collapses the title's `ダ-` (U+002D) / `ダー` (U+30FC)
+    // variants. Cross-source (tj + joysound) so the Tier C gate admits.
+    const tj = record({
+      id: 'tj-54060',
+      source_url: 'https://tj.test/54060',
+      title_primary: '特者生存ワンダラダ-!!', // U+002D
+      artist_primary: '天音かなた(Feat.桐生ココ)',
+      karaoke_numbers: { tj: '54060', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-895499',
+      source_url: 'https://www.joysound.com/web/search/song/895499',
+      title_primary: '特者生存ワンダラダー!!', // U+30FC
+      artist_primary: '天音かなた',
+      karaoke_numbers: { tj: null, ky: null, joysound: '499965' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // Vendor numbers union across the fold-keyed Tier C cluster.
+    expect(m.karaoke_numbers).toEqual({ tj: '54060', ky: null, joysound: '499965' });
+    // Exactly one tier_c_merge marker for the fired cluster — and NO
+    // spurious vendor-number conflicts (each vendor has one contributor).
+    expect(conflicts.filter((c) => c.field === 'tier_c_merge')).toHaveLength(1);
+    expect(conflicts.filter((c) => c.field !== 'tier_c_merge')).toHaveLength(0);
+  });
+
+  it('same-source gate: dash-variant twins from ONE source stay distinct (PUFFY スイスイ pair)', () => {
+    // JOYSOUND catalogs BOTH spellings as separate entries — different
+    // selSongNos AND different lyricists (大貫亜美 vs 吉村由美). They are
+    // distinct songs, not transcription variants. A fold-induced Tier B
+    // union therefore requires ≥2 distinct source slugs; this same-source
+    // pair must NOT merge (and its second joysound number must survive).
+    const a = record({
+      id: 'joysound-30614',
+      source_url: 'https://www.joysound.com/web/search/song/35118',
+      title_primary: 'スイスイ',
+      artist_primary: 'PUFFY',
+      karaoke_numbers: { tj: null, ky: null, joysound: '35118' },
+    });
+    const b = record({
+      id: 'joysound-30679',
+      source_url: 'https://www.joysound.com/web/search/song/35183',
+      title_primary: 'スーイスーイ',
+      artist_primary: 'PUFFY',
+      karaoke_numbers: { tj: null, ky: null, joysound: '35183' },
+    });
+
+    const { records } = mergeRecords([a, b]);
+    expect(records).toHaveLength(2);
+    const numbers = records.map((r) => r.karaoke_numbers.joysound).sort();
+    expect(numbers).toEqual(['35118', '35183']);
+  });
+
+  it('mixed-group bridge: a TJ dash variant bridges two same-source JOYSOUND twins — all three union', () => {
+    // Three records share ONE folded Tier B key (`スイスイ|puffy`) across
+    // THREE distinct unfolded keys. The two JOYSOUND records are the
+    // genuinely-distinct twins from the same-source-gate test above; the TJ
+    // record is a dash variant whose UNFOLDED key (`スイスーイ`) matches
+    // NEITHER JOYSOUND partition — so a partition-local fallback could not
+    // place it anywhere. Because the group now spans ≥ 2 source slugs, the
+    // cross-source gate unions ALL THREE: the TJ record bridges the twins.
+    // This is the deliberately-chosen semantics — exactly Tier C's risk
+    // profile (cross-source clustering accepts occasional over-merges in
+    // exchange for vendor-number union coverage), with the JOYSOUND number
+    // disagreement surfacing as a vendor conflict for PR-body review.
+    const a = record({
+      id: 'joysound-30614',
+      source_url: 'https://www.joysound.com/web/search/song/35118',
+      title_primary: 'スイスイ',
+      artist_primary: 'PUFFY',
+      karaoke_numbers: { tj: null, ky: null, joysound: '35118' },
+    });
+    const b = record({
+      id: 'joysound-30679',
+      source_url: 'https://www.joysound.com/web/search/song/35183',
+      title_primary: 'スーイスーイ',
+      artist_primary: 'PUFFY',
+      karaoke_numbers: { tj: null, ky: null, joysound: '35183' },
+    });
+    const tj = record({
+      id: 'tj-33333',
+      source_url: 'https://tj.test/33333',
+      title_primary: 'スイスーイ', // unfolded key matches neither a nor b
+      artist_primary: 'PUFFY',
+      karaoke_numbers: { tj: '33333', ky: null, joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([a, b, tj]);
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    expect(m.karaoke_numbers.tj).toBe('33333');
+    // joysound disagreement: equal source rank — first contribution (input
+    // order) wins.
+    expect(m.karaoke_numbers.joysound).toBe('35118');
+    // Exactly one conflict: the joysound vendor disagreement, keyed by the
+    // FOLDED Tier B cluster key.
+    expect(conflicts).toHaveLength(1);
+    const c = conflicts[0];
+    if (!c) throw new Error('no conflict');
+    expect(c.field).toBe('joysound');
+    expect(c.cluster_key).toBe('スイスイ|puffy');
+    expect(c.winner).toBe('35118');
+    expect(c.values.map((v) => v.value).sort()).toEqual(['35118', '35183']);
+  });
+
+  it('same-source gate fallback: identical un-folded keys still merge as pre-fold Tier B', () => {
+    // Two same-source records with byte-identical normalized keys (no fold
+    // involvement) must keep merging — the gate only restricts unions the
+    // fold itself created.
+    const a = record({
+      id: 'blog-100-0',
+      source_url: 'https://blog.test/100/0',
+      title_primary: '夜に駆ける',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const b = record({
+      id: 'blog-200-3',
+      source_url: 'https://blog.test/200/3',
+      title_primary: '夜に駆ける',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
+    });
+
+    const { records } = mergeRecords([a, b]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers.joysound).toBe('190001');
+  });
+
+  it('negative control: genuinely different titles by the same artist stay distinct', () => {
+    const a = record({
+      id: 'tj-11111',
+      source_url: 'https://tj.test/11111',
+      title_primary: 'カードキャプター',
+      artist_primary: '天音かなた',
+      karaoke_numbers: { tj: '11111', ky: null, joysound: null },
+    });
+    const b = record({
+      id: 'joysound-22222',
+      source_url: 'https://www.joysound.com/web/search/song/22222',
+      title_primary: '全く別の曲',
+      artist_primary: '天音かなた',
+      karaoke_numbers: { tj: null, ky: null, joysound: '22222' },
+    });
+
+    const { records } = mergeRecords([a, b]);
+    expect(records).toHaveLength(2);
+  });
+});

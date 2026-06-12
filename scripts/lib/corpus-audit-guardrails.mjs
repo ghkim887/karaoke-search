@@ -1176,6 +1176,288 @@ export function analyzeJoysoundListing(rows, options = {}) {
   };
 }
 
+const JOYSOUND_DB_FP_BUCKETS = [
+  'existingNumberConflict',
+  'foreignActAdmitted',
+  'hanNoKanaAdmitted',
+  'asciiOnlyAdmitted',
+  'categoryAmbiguous',
+];
+
+const JOYSOUND_DB_FN_BUCKETS = [
+  'droppedHasKana',
+  'droppedKnownJpArtist',
+  'droppedForeignButJpRelease',
+  'droppedHanAmbiguous',
+  'droppedAsciiOnly',
+];
+
+// Admit paths whose primary evidence is a STRONG positive signal (corpus-confirmed
+// Japanese act, or a curated hand-review allow), NOT weak-script heuristics. These
+// rows must NOT land in the Han-only / ASCII-only weak-script FP buckets — their
+// script shape is irrelevant given the strong signal. Token-based admit-vocaloid /
+// admit-anime admits are intentionally NOT excluded: a token + Han-only/ASCII-only
+// title could still be a non-Japanese coincidence worth the P2 look.
+const STRONG_SIGNAL_ADMIT_REASONS = new Set(['admit-jp-artist', 'reviewed-allow']);
+
+function decisionLogTitleArtist(entry) {
+  return [entry?.title, entry?.artist].filter((value) => typeof value === 'string').join(' ');
+}
+
+function decisionLogMatchesRecord(entry, record) {
+  return (
+    normalizeForComparison(entry?.title) === normalizeForComparison(record?.title_primary) &&
+    normalizeForComparison(entry?.artist) === normalizeForComparison(record?.artist_primary)
+  );
+}
+
+function isAuditForeignAct(artist) {
+  return (
+    isProductionDropListArtist(artist) ||
+    matchesAny(artist, KOREAN_ACT_PATTERNS) ||
+    isKnownWesternAct(artist)
+  );
+}
+
+function corpusArtistKeySet(records) {
+  const keys = new Set();
+  for (const record of records ?? []) {
+    const key = normalizeForComparison(record?.artist_primary);
+    if (key.length > 0) keys.add(key);
+  }
+  return keys;
+}
+
+function joysoundDecisionEvidenceRow({ bucket, priority, entry, why, suggested }) {
+  return {
+    bucket,
+    priority,
+    selSongNo: normalizeJoysoundNumber(entry?.selSongNo),
+    title: asString(entry?.title),
+    artist: asString(entry?.artist),
+    decision: asString(entry?.decision),
+    reason: asString(entry?.reason),
+    why_flagged: why,
+    suggested_verdict: suggested,
+    script_signal: scriptSignalFor(decisionLogTitleArtist(entry)),
+    reviewer_verdict: '',
+    reviewer_note: '',
+  };
+}
+
+function joysoundDbBucketData(buckets) {
+  return bucketReport(buckets, (row) => row);
+}
+
+function collectJoysoundDatabaseIssues({ decisionLog, records }) {
+  const baselineNumbers = baselineJoysoundNumberMap(records);
+  const corpusArtists = corpusArtistKeySet(records);
+  const falsePositive = makeBucketStore(JOYSOUND_DB_FP_BUCKETS);
+  const falseNegative = makeBucketStore(JOYSOUND_DB_FN_BUCKETS);
+  let conflicts = 0;
+  let admitted = 0;
+  let dropped = 0;
+  const byReason = {};
+
+  for (const entry of decisionLog) {
+    addCount(byReason, asString(entry?.reason) || '(missing)');
+    const titleArtist = decisionLogTitleArtist(entry);
+    const artist = asString(entry?.artist);
+    const numberKey = normalizeJoysoundNumber(entry?.selSongNo);
+    const baselineMatches = numberKey === '' ? undefined : baselineNumbers.get(numberKey);
+    const baselineConflict =
+      Array.isArray(baselineMatches) &&
+      baselineMatches.length > 0 &&
+      !baselineMatches.some((record) => decisionLogMatchesRecord(entry, record));
+    if (baselineConflict) conflicts++;
+
+    if (entry?.decision === 'admit') {
+      admitted++;
+      const isStrongSignalAdmit = STRONG_SIGNAL_ADMIT_REASONS.has(asString(entry?.reason));
+      if (baselineConflict) {
+        pushIssue(
+          falsePositive,
+          'existingNumberConflict',
+          joysoundDecisionEvidenceRow({
+            bucket: 'existingNumberConflict',
+            priority: 'P0',
+            entry,
+            why: 'admitted JOYSOUND number already in corpus but maps to a different title/artist',
+            suggested: 'DROP_FALSE_POSITIVE',
+          }),
+        );
+      }
+      if (isAuditForeignAct(artist)) {
+        pushIssue(
+          falsePositive,
+          'foreignActAdmitted',
+          joysoundDecisionEvidenceRow({
+            bucket: 'foreignActAdmitted',
+            priority: 'P0',
+            entry,
+            why: 'admitted but artist trips the audit Korean/Chinese/Western foreign-act lists',
+            suggested: 'DROP_FALSE_POSITIVE',
+          }),
+        );
+      }
+      if (!isStrongSignalAdmit && RE_HAN.test(titleArtist) && !hasKana(titleArtist)) {
+        pushIssue(
+          falsePositive,
+          'hanNoKanaAdmitted',
+          joysoundDecisionEvidenceRow({
+            bucket: 'hanNoKanaAdmitted',
+            priority: 'P2',
+            entry,
+            why: 'admitted with Han-but-no-kana title/artist (Mandopop risk)',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (!isStrongSignalAdmit && isAsciiOnlyTitleArtist(titleArtist)) {
+        pushIssue(
+          falsePositive,
+          'asciiOnlyAdmitted',
+          joysoundDecisionEvidenceRow({
+            bucket: 'asciiOnlyAdmitted',
+            priority: 'P2',
+            entry,
+            why: 'admitted Latin-only title/artist with weak Japanese evidence',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (entry?.detailFlipRisk === true) {
+        pushIssue(
+          falsePositive,
+          'categoryAmbiguous',
+          joysoundDecisionEvidenceRow({
+            bucket: 'categoryAmbiguous',
+            priority: 'P3',
+            entry,
+            why: 'admitted but the listing-level verdict may flip with per-song detail',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+    } else if (entry?.decision === 'drop') {
+      dropped++;
+      const isForeignReason =
+        entry?.reason === 'foreign-korean' ||
+        entry?.reason === 'foreign-western' ||
+        entry?.reason === 'foreign-chinese';
+      if (hasKana(titleArtist)) {
+        pushIssue(
+          falseNegative,
+          'droppedHasKana',
+          joysoundDecisionEvidenceRow({
+            bucket: 'droppedHasKana',
+            priority: 'P0',
+            entry,
+            why: 'dropped though title/artist has kana',
+            suggested: 'ADD_FALSE_NEGATIVE',
+          }),
+        );
+      }
+      if (corpusArtists.has(normalizeForComparison(artist))) {
+        pushIssue(
+          falseNegative,
+          'droppedKnownJpArtist',
+          joysoundDecisionEvidenceRow({
+            bucket: 'droppedKnownJpArtist',
+            priority: 'P1',
+            entry,
+            why: 'dropped but artist matches a known Japanese act already present in the corpus',
+            suggested: 'ADD_FALSE_NEGATIVE',
+          }),
+        );
+      }
+      if (isForeignReason && hasKana(titleArtist)) {
+        pushIssue(
+          falseNegative,
+          'droppedForeignButJpRelease',
+          joysoundDecisionEvidenceRow({
+            bucket: 'droppedForeignButJpRelease',
+            priority: 'P1',
+            entry,
+            why: 'dropped as foreign but title/artist has kana (likely Japanese release/collab → ALLOW candidate)',
+            suggested: 'POLICY_EDGE',
+          }),
+        );
+      }
+      if (entry?.reason === 'drop-han-only') {
+        pushIssue(
+          falseNegative,
+          'droppedHanAmbiguous',
+          joysoundDecisionEvidenceRow({
+            bucket: 'droppedHanAmbiguous',
+            priority: 'P3',
+            entry,
+            why: 'dropped Han-only that may be Japanese kanji',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+      if (entry?.reason === 'drop-ascii-only') {
+        pushIssue(
+          falseNegative,
+          'droppedAsciiOnly',
+          joysoundDecisionEvidenceRow({
+            bucket: 'droppedAsciiOnly',
+            priority: 'P3',
+            entry,
+            why: 'dropped Latin-only that may be a Latin-named Japanese act',
+            suggested: 'NEEDS_MORE_EVIDENCE',
+          }),
+        );
+      }
+    }
+  }
+
+  return {
+    falsePositive,
+    falseNegative,
+    summary: {
+      decisionLogRows: decisionLog.length,
+      admitted,
+      dropped,
+      byReason,
+      corpusJoysoundNumbers: baselineNumbers.size,
+      conflicts,
+    },
+  };
+}
+
+export function analyzeJoysoundDatabase({ decisionLog, records }) {
+  if (!Array.isArray(decisionLog)) {
+    throw new Error('analyzeJoysoundDatabase: decisionLog must be an array');
+  }
+  if (!Array.isArray(records)) {
+    throw new Error('analyzeJoysoundDatabase: records must be an array');
+  }
+  const { falsePositive, falseNegative, summary } = collectJoysoundDatabaseIssues({
+    decisionLog,
+    records,
+  });
+  return {
+    generatedAt: new Date().toISOString(),
+    summary,
+    falsePositive: joysoundDbBucketData(falsePositive),
+    falseNegative: joysoundDbBucketData(falseNegative),
+  };
+}
+
+function collectJoysoundDatabaseIssueRows(decisionLog, records) {
+  const { falsePositive, falseNegative } = collectJoysoundDatabaseIssues({ decisionLog, records });
+  return {
+    falsePositiveRows: Object.values(falsePositive)
+      .flat()
+      .map((row) => issueRow('joysound-db-false-positive', row.bucket, row)),
+    falseNegativeRows: Object.values(falseNegative)
+      .flat()
+      .map((row) => issueRow('joysound-db-false-negative', row.bucket, row)),
+  };
+}
+
 function mapById(records) {
   return new Map(records.map((record) => [record.id, record]));
 }
@@ -1386,21 +1668,32 @@ const TJ_REVIEW_QUEUE_FILENAMES = [
   'review-fn-medium.tsv',
 ];
 
-function outputFlagEntries(flags) {
+const JOYSOUND_REVIEW_QUEUE_FILENAMES = [
+  'review-fp-high.tsv',
+  'review-fp-other.tsv',
+  'review-fn-high.tsv',
+  'review-fn-other.tsv',
+];
+
+function outputFlagEntries(flags, reviewQueueFilenames = TJ_REVIEW_QUEUE_FILENAMES) {
   const outputs = ['out', 'issues-out', 'fp-issues-out', 'fn-issues-out']
     .map((name) => [name, flags[name]])
     .filter(([, value]) => typeof value === 'string' && value.length > 0);
   if (typeof flags['review-dir'] === 'string' && flags['review-dir'].length > 0) {
     outputs.push(['review-dir', flags['review-dir']]);
-    for (const filename of TJ_REVIEW_QUEUE_FILENAMES) {
+    for (const filename of reviewQueueFilenames) {
       outputs.push([`review-dir/${filename}`, resolve(flags['review-dir'], filename)]);
     }
   }
   return outputs;
 }
 
-function assertOutputDoesNotOverwriteInput(flags, names) {
-  const outputs = outputFlagEntries(flags);
+function assertOutputDoesNotOverwriteInput(
+  flags,
+  names,
+  reviewQueueFilenames = TJ_REVIEW_QUEUE_FILENAMES,
+) {
+  const outputs = outputFlagEntries(flags, reviewQueueFilenames);
   for (const [outputName, outputValue] of outputs) {
     const outputPath = resolve(outputValue);
     const outputRealPath = realPathIfExists(outputPath);
@@ -1469,16 +1762,31 @@ const TJ_REVIEW_COLUMNS = [
   'reviewer_note',
 ];
 
+const JOYSOUND_REVIEW_COLUMNS = [
+  'bucket',
+  'priority',
+  'selSongNo',
+  'title',
+  'artist',
+  'decision',
+  'reason',
+  'script_signal',
+  'why_flagged',
+  'suggested_verdict',
+  'reviewer_verdict',
+  'reviewer_note',
+];
+
 function tsvCell(value) {
   return asString(value ?? '')
     .replace(/\r?\n/gu, ' ')
     .replace(/\t/gu, ' ');
 }
 
-function writeTsv(path, rows) {
+function writeTsv(path, rows, columns = TJ_REVIEW_COLUMNS) {
   const lines = [
-    TJ_REVIEW_COLUMNS.join('\t'),
-    ...rows.map((row) => TJ_REVIEW_COLUMNS.map((column) => tsvCell(row[column])).join('\t')),
+    columns.join('\t'),
+    ...rows.map((row) => columns.map((column) => tsvCell(row[column])).join('\t')),
   ];
   writeFileSync(path, `${lines.join('\n')}\n`);
 }
@@ -1502,6 +1810,36 @@ function writeTjReviewQueues(reviewDir, falsePositiveRows, falseNegativeRows) {
   writeTsv(
     resolve(reviewDir, 'review-fn-medium.tsv'),
     rawFn.filter((row) => row.priority === 'P2' || row.priority === 'P3'),
+  );
+}
+
+function isHighPriority(row) {
+  return row.priority === 'P0' || row.priority === 'P1';
+}
+
+function writeJoysoundReviewQueues(reviewDir, falsePositiveRows, falseNegativeRows) {
+  mkdirSync(reviewDir, { recursive: true });
+  const rawFp = falsePositiveRows.map(({ mode: _mode, ...row }) => row);
+  const rawFn = falseNegativeRows.map(({ mode: _mode, ...row }) => row);
+  writeTsv(
+    resolve(reviewDir, 'review-fp-high.tsv'),
+    rawFp.filter(isHighPriority),
+    JOYSOUND_REVIEW_COLUMNS,
+  );
+  writeTsv(
+    resolve(reviewDir, 'review-fp-other.tsv'),
+    rawFp.filter((row) => !isHighPriority(row)),
+    JOYSOUND_REVIEW_COLUMNS,
+  );
+  writeTsv(
+    resolve(reviewDir, 'review-fn-high.tsv'),
+    rawFn.filter(isHighPriority),
+    JOYSOUND_REVIEW_COLUMNS,
+  );
+  writeTsv(
+    resolve(reviewDir, 'review-fn-other.tsv'),
+    rawFn.filter((row) => !isHighPriority(row)),
+    JOYSOUND_REVIEW_COLUMNS,
   );
 }
 
@@ -1557,9 +1895,29 @@ export function runCli(argv = process.argv.slice(2)) {
       reviewQueueWrite = () =>
         writeTjReviewQueues(flags['review-dir'], falsePositiveRows, falseNegativeRows);
     }
+  } else if (flags.mode === 'joysound-db') {
+    assertOutputDoesNotOverwriteInput(
+      flags,
+      ['decision-log', 'corpus'],
+      JOYSOUND_REVIEW_QUEUE_FILENAMES,
+    );
+    const decisionLog = readJsonOrJsonlArray(requireFlag(flags, 'decision-log'));
+    const records = readJsonArray(requireFlag(flags, 'corpus'));
+    report = analyzeJoysoundDatabase({ decisionLog, records });
+    const { falsePositiveRows, falseNegativeRows } = collectJoysoundDatabaseIssueRows(
+      decisionLog,
+      records,
+    );
+    issueRows = [...falsePositiveRows, ...falseNegativeRows];
+    if (flags['fp-issues-out']) extraJsonlWrites.push([flags['fp-issues-out'], falsePositiveRows]);
+    if (flags['fn-issues-out']) extraJsonlWrites.push([flags['fn-issues-out'], falseNegativeRows]);
+    if (flags['review-dir']) {
+      reviewQueueWrite = () =>
+        writeJoysoundReviewQueues(flags['review-dir'], falsePositiveRows, falseNegativeRows);
+    }
   } else {
     throw new Error(
-      'usage: audit-corpus-guardrails.mjs <corpus|joysound-listing|merge-delta> --in PATH --out PATH [--issues-out PATH] OR tj-db --corpus PATH --tj-catalog PATH [--cache PATH] --out PATH [--issues-out PATH] [--fp-issues-out PATH] [--fn-issues-out PATH] [--review-dir DIR]',
+      'usage: audit-corpus-guardrails.mjs <corpus|joysound-listing|merge-delta> --in PATH --out PATH [--issues-out PATH] OR tj-db --corpus PATH --tj-catalog PATH [--cache PATH] --out PATH [--issues-out PATH] [--fp-issues-out PATH] [--fn-issues-out PATH] [--review-dir DIR] OR joysound-db --decision-log PATH --corpus PATH --out PATH [--issues-out PATH] [--fp-issues-out PATH] [--fn-issues-out PATH] [--review-dir DIR]',
     );
   }
 

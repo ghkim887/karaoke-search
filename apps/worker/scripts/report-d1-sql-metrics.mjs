@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const WORKER_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -17,6 +18,46 @@ export function summarizeD1SqlText(sqlText) {
       0,
     ),
   };
+}
+
+/**
+ * Streams a D1 SQL file to compute the same metrics as `summarizeD1SqlText`
+ * without buffering the whole (~1 GB at full-catalog scale) file as a single
+ * string. Reads line-by-line via `readline`, restoring the stripped `\n` so the
+ * statement-boundary state machine sees identical bytes to the legacy
+ * `readFileSync` path. `totalBytes` is the exact on-disk file size (UTF-8, no
+ * BOM), matching the legacy `Buffer.byteLength(readFileSync(...))`.
+ */
+export async function summarizeD1SqlFile(sqlPath) {
+  const input = createReadStream(sqlPath, { encoding: 'utf8' });
+  const reader = createInterface({ input, crlfDelay: Number.POSITIVE_INFINITY });
+  const state = { current: '', inString: false };
+  let statementCount = 0;
+  let maxStatementBytes = 0;
+  let firstLine = true;
+
+  const recordStatement = (statement) => {
+    statementCount += 1;
+    maxStatementBytes = Math.max(maxStatementBytes, Buffer.byteLength(statement, 'utf8'));
+  };
+
+  try {
+    for await (const line of reader) {
+      const fragment = firstLine ? line : `\n${line}`;
+      firstLine = false;
+      feedSqlFragment(fragment, state, recordStatement);
+    }
+  } finally {
+    reader.close();
+    input.destroy();
+  }
+
+  const trailingStatement = state.current.trim();
+  if (trailingStatement.length > 0) {
+    recordStatement(trailingStatement);
+  }
+
+  return { totalBytes: statSync(sqlPath).size, statementCount, maxStatementBytes };
 }
 
 export function assertD1SqlMetricsWithinLimits(
@@ -62,41 +103,42 @@ ${usage()}`);
   return parsed;
 }
 
-export function reportD1SqlMetrics(argv = process.argv.slice(2)) {
+export async function reportD1SqlMetrics(argv = process.argv.slice(2)) {
   const args = parseMetricsArgs(argv);
-  const metrics = summarizeD1SqlText(readFileSync(args.sqlPath, 'utf8'));
+  const metrics = await summarizeD1SqlFile(args.sqlPath);
   assertD1SqlMetricsWithinLimits(metrics, {
     maxStatementBytes: args.maxStatementBytes,
   });
   return { ...metrics, sqlPath: args.sqlPath };
 }
 
-export function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2)) {
+  const metrics = await reportD1SqlMetrics(argv);
   const args = parseMetricsArgs(argv);
-  const metrics = summarizeD1SqlText(readFileSync(args.sqlPath, 'utf8'));
-  assertD1SqlMetricsWithinLimits(metrics, {
-    maxStatementBytes: args.maxStatementBytes,
-  });
   if (args.json) {
-    console.log(JSON.stringify({ ...metrics, sqlPath: args.sqlPath }));
+    console.log(JSON.stringify(metrics));
     return;
   }
-  console.log(`D1 SQL path: ${args.sqlPath}`);
+  console.log(`D1 SQL path: ${metrics.sqlPath}`);
   console.log(`Total bytes: ${metrics.totalBytes}`);
   console.log(`Statements: ${metrics.statementCount}`);
   console.log(`Max statement bytes: ${metrics.maxStatementBytes}`);
 }
 
-function splitSqlStatements(sqlText) {
-  const statements = [];
-  let current = '';
-  let inString = false;
-  for (let index = 0; index < sqlText.length; index += 1) {
-    const character = sqlText[index];
+/**
+ * Statement-boundary state machine shared by the string and streaming paths.
+ * Threads incremental text fragments through the same `'`/`''`/`;` rules and
+ * invokes `onStatement` for each completed statement, carrying `{ current,
+ * inString }` across fragments.
+ */
+function feedSqlFragment(fragment, state, onStatement) {
+  let { current, inString } = state;
+  for (let index = 0; index < fragment.length; index += 1) {
+    const character = fragment[index];
     current += character;
     if (character === "'") {
-      if (inString && sqlText[index + 1] === "'") {
-        current += sqlText[index + 1];
+      if (inString && fragment[index + 1] === "'") {
+        current += fragment[index + 1];
         index += 1;
         continue;
       }
@@ -106,13 +148,23 @@ function splitSqlStatements(sqlText) {
     if (!inString && character === ';') {
       const statement = current.trim();
       if (statement.length > 0) {
-        statements.push(statement);
+        onStatement(statement);
       }
       current = '';
     }
   }
+  state.current = current;
+  state.inString = inString;
+  return state;
+}
 
-  const trailingStatement = current.trim();
+function splitSqlStatements(sqlText) {
+  const statements = [];
+  const state = feedSqlFragment(sqlText, { current: '', inString: false }, (statement) => {
+    statements.push(statement);
+  });
+
+  const trailingStatement = state.current.trim();
   if (trailingStatement.length > 0) {
     statements.push(trailingStatement);
   }
@@ -153,10 +205,8 @@ function usage() {
 
 const entrypointPath = process.argv[1];
 if (entrypointPath !== undefined && import.meta.url === pathToFileURL(entrypointPath).href) {
-  try {
-    main();
-  } catch (error) {
+  main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
-  }
+  });
 }
