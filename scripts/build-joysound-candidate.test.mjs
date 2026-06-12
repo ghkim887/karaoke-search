@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
+  CHECKPOINT1_EXCLUDED_SEL_SONG_NOS,
   admitRowToListItem,
   buildJoysoundRecord,
   classifyMutation,
+  excludeCheckpoint1Admits,
   loadNormalizer,
   looseSameSong,
   normalizeForConflictMatch,
@@ -81,6 +83,77 @@ describe('build-joysound-candidate transforms', () => {
     const record = buildJoysoundRecord(entry, CRAWLED_AT);
     expect(record.karaoke_numbers.joysound).toBe('190001');
     expect(record.id).toBe('joysound-900000');
+  });
+
+  // Detail-sweep rows embed the parsed JoysoundDetail; buildJoysoundRecord must
+  // thread it through so the REAL dist normalizer's detail-preferring
+  // title/artist and the A1 artist_aliases enrichment (artistNameForeign) fire.
+  it('threads an embedded detail through the normalizer: detail-preferred title/artist + A1 aliases', () => {
+    const entry = {
+      selSongNo: '123456',
+      selSongNoRaw: '123-456',
+      naviGroupId: '555000',
+      title: 'Mic Drop', // listing rendering — detail must win
+      artist: 'BTS(防弾少年団)', // listing rendering — detail must win
+      tieupInfo: null,
+      decision: 'admit',
+      reason: 'reviewed-allow',
+      detailFetchFailed: false,
+      // Compacted detail as the detail sweep persists it (no lyricIntro,
+      // null/empty fields omitted).
+      detail: {
+        naviGroupId: '555000',
+        selSongNo: '123456',
+        songName: 'MIC Drop', // canonical detail title (differs from listing)
+        artistName: 'BTS', // canonical detail artist (differs from listing)
+        artistNameForeign: '방탄소년단', // native Hangul → A1 alias
+        lyricist: 'Pdogg',
+        composer: 'Pdogg',
+        relDate: '2017/12/06',
+        genreNames: ['K-POP'],
+      },
+    };
+
+    const record = buildJoysoundRecord(entry, CRAWLED_AT);
+    expect(record).toEqual({
+      id: 'joysound-555000',
+      source_url: 'https://www.joysound.com/web/search/song/555000',
+      title_primary: 'MIC Drop', // detail-preferred
+      title_ko: null,
+      artist_primary: 'BTS', // detail-preferred
+      artist_ko: null,
+      artist_aliases: ['방탄소년단'], // A1 enrichment fired
+      karaoke_numbers: { tj: null, ky: null, joysound: '123456' },
+      crawled_at: CRAWLED_AT,
+    });
+  });
+
+  it('builds a byte-identical record to the pre-detail behavior when the row has no detail', () => {
+    const entry = {
+      selSongNo: '640256',
+      selSongNoRaw: '640256',
+      naviGroupId: '1122881',
+      title: 'IRIS OUT',
+      artist: '米津玄師',
+      tieupInfo: null,
+      decision: 'admit',
+      reason: 'admit-jp-artist',
+      detailFetchFailed: true, // failed-fetch / older listing-only row
+    };
+    const record = buildJoysoundRecord(entry, CRAWLED_AT);
+    // Byte-level pin (field VALUES and field ORDER) of the old no-detail shape.
+    expect(JSON.stringify(record)).toBe(
+      JSON.stringify({
+        id: 'joysound-1122881',
+        source_url: 'https://www.joysound.com/web/search/song/1122881',
+        title_primary: 'IRIS OUT',
+        title_ko: null,
+        artist_primary: '米津玄師',
+        artist_ko: null,
+        karaoke_numbers: { tj: null, ky: null, joysound: '640256' },
+        crawled_at: CRAWLED_AT,
+      }),
+    );
   });
 
   // (b) conflict number -> blog record's joysound nulled; benign overlap left intact.
@@ -284,6 +357,100 @@ describe('looseSameSong (conflict-nulling guard)', () => {
 
   it('returns FALSE when titles match but artists are genuinely different', () => {
     expect(looseSameSong('愛', 'BTS', '愛', '米津玄師')).toBe(false);
+  });
+});
+
+describe('CHECKPOINT-1 exclusion (excludeCheckpoint1Admits)', () => {
+  function admitRow(selSongNo, overrides = {}) {
+    return {
+      selSongNo,
+      selSongNoRaw: selSongNo,
+      naviGroupId: `n-${selSongNo}`,
+      title: `title-${selSongNo}`,
+      artist: `artist-${selSongNo}`,
+      tieupInfo: null,
+      decision: 'admit',
+      ...overrides,
+    };
+  }
+
+  // Per-row log coverage of the 3 SUSPECT numbers (what readJsonlAdmits collects).
+  function coverage(decisions = {}) {
+    return CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.map((selSongNo) => ({
+      selSongNo,
+      decision: decisions[selSongNo] ?? 'admit',
+    }));
+  }
+
+  it('pins the 3 owner-removed SUSPECT selSongNos (tasks/checkpoint1-screening.md)', () => {
+    expect(CHECKPOINT1_EXCLUDED_SEL_SONG_NOS).toEqual(['148140', '153397', '735357']);
+  });
+
+  it('excludes the 3 SUSPECT admits (stale-classifier log) and passes every other row through in order', () => {
+    const others = [admitRow('640256'), admitRow('12591'), admitRow('26766')];
+    const suspects = [admitRow('148140'), admitRow('153397'), admitRow('735357')];
+    const admits = [others[0], suspects[0], others[1], suspects[1], suspects[2], others[2]];
+
+    const { kept, excluded, droppedInLog } = excludeCheckpoint1Admits(admits, coverage());
+    expect(kept).toEqual(others);
+    expect(excluded).toEqual(suspects);
+    expect(droppedInLog).toBe(0);
+  });
+
+  // The real 20260610 log: all 3 SUSPECTs were already decided `drop`
+  // (foreign-korean), so the admit set contains none of them — the guard must
+  // pass (coverage proves the right log) with 0 exclusions.
+  it('passes with 0 exclusions when the log already records all 3 as drops (real 20260610 log)', () => {
+    const admits = [admitRow('640256'), admitRow('12591')];
+    const { kept, excluded, droppedInLog } = excludeCheckpoint1Admits(
+      admits,
+      coverage({ 148140: 'drop', 153397: 'drop', 735357: 'drop' }),
+    );
+    expect(kept).toEqual(admits);
+    expect(excluded).toEqual([]);
+    expect(droppedInLog).toBe(3);
+  });
+
+  it('matches hyphenated selSongNoRaw forms (148-140) via the same hyphen-strip normalization', () => {
+    const admits = [
+      admitRow('148140', { selSongNoRaw: '148-140' }),
+      admitRow('153397', { selSongNoRaw: '153-397' }),
+      admitRow('735357', { selSongNoRaw: '735-357' }),
+      admitRow('640256', { selSongNoRaw: '640-256' }),
+    ];
+    const { kept, excluded } = excludeCheckpoint1Admits(admits, coverage());
+    expect(excluded.map((e) => e.selSongNoRaw)).toEqual(['148-140', '153-397', '735-357']);
+    expect(kept).toEqual([admits[3]]);
+  });
+
+  it('falls back to selSongNo when selSongNoRaw is absent', () => {
+    const admits = [
+      admitRow('148140', { selSongNoRaw: undefined }),
+      admitRow('153397', { selSongNoRaw: '' }),
+      admitRow('735357', { selSongNoRaw: undefined }),
+    ];
+    const { kept, excluded } = excludeCheckpoint1Admits(admits, coverage());
+    expect(excluded).toHaveLength(3);
+    expect(kept).toEqual([]);
+  });
+
+  it('fails fast unless the log contains exactly one row per SUSPECT number', () => {
+    const admits = [admitRow('640256')];
+    // Wrong / already-scrubbed log: no SUSPECT rows at all.
+    expect(() => excludeCheckpoint1Admits(admits, [])).toThrow(/checkpoint1-screening\.md/u);
+    expect(() => excludeCheckpoint1Admits(admits, undefined)).toThrow(/checkpoint1-screening\.md/u);
+    // Partial coverage: 1 of 3.
+    expect(() =>
+      excludeCheckpoint1Admits(admits, [{ selSongNo: '148140', decision: 'drop' }]),
+    ).toThrow(/exactly one row per SUSPECT selSongNo/u);
+    // Duplicate coverage: one number twice, one missing.
+    expect(() =>
+      excludeCheckpoint1Admits(admits, [
+        { selSongNo: '148140', decision: 'drop' },
+        { selSongNo: '148140', decision: 'admit' },
+        { selSongNo: '153397', decision: 'drop' },
+      ]),
+    ).toThrow(/checkpoint1-screening\.md/u);
   });
 });
 

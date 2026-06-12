@@ -15,15 +15,25 @@
 //
 // CRITICAL: this writes the candidate to .tmp_review/.../songs-candidate.json,
 // NEVER to apps/web/public/data/songs.json. It does NOT deploy. There is NO
-// 1000-delta safety gate (the JOYSOUND sweep adds ~231k records on purpose).
+// 1000-delta safety gate (the JOYSOUND sweep adds 200k+ records on purpose).
 //
-// Heap: parses ~12 MB corpus + builds ~231k records; run with
+// CHECKPOINT-1: the detail sweep started with a stale 175-entry ALLOW
+// classifier; the owner later removed 3 SUSPECT entries (Korean-language
+// songs) from reviewedJoysoundOverrides.ts (175 -> 172, see
+// tasks/checkpoint1-screening.md). Depending on when the sweep picked up the
+// rebuilt classifier, the decision log may record those 3 selSongNos as
+// admits (stale dist) or drops — either way they must NOT enter the corpus,
+// so this builder EXCLUDES any admit on them (`excludeCheckpoint1Admits`)
+// and fails fast unless the log contains exactly one row per number (guards
+// against running with the wrong or already-scrubbed log).
+//
+// Heap: parses ~12 MB corpus + ~291k decision rows; run with
 //   node --max-old-space-size=8192 scripts/build-joysound-candidate.mjs
 //
 // Exported helpers (`admitRowToListItem`, `buildJoysoundRecord`,
 // `normalizeForConflictMatch`, `resolveExistingNumberConflicts`,
-// `classifyMutation`, `stableStringify`) are unit-tested in
-// scripts/build-joysound-candidate.test.mjs.
+// `excludeCheckpoint1Admits`, `classifyMutation`, `stableStringify`) are
+// unit-tested in scripts/build-joysound-candidate.test.mjs.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -40,15 +50,15 @@ const SONG_PAGE_BASE = 'https://www.joysound.com/web/search/song';
 const songsPath = resolve(repoRoot, 'apps/web/public/data/songs.json');
 const decisionLogPath = resolve(
   repoRoot,
-  '.tmp_review/joysound-sweep-2026-06-09/postfix/decision-log.jsonl',
+  '.tmp_review/joysound-detail-sweep-20260610/decision-log.jsonl',
 );
 const candidateOutPath = resolve(
   repoRoot,
-  '.tmp_review/joysound-sweep-2026-06-09/songs-candidate.json',
+  '.tmp_review/joysound-detail-sweep-20260610/songs-candidate.json',
 );
 const deltaOutPath = resolve(
   repoRoot,
-  '.tmp_review/joysound-sweep-2026-06-09/candidate-delta.json',
+  '.tmp_review/joysound-detail-sweep-20260610/candidate-delta.json',
 );
 
 const normalizerJsPath = resolve(
@@ -110,6 +120,13 @@ export async function loadNormalizer() {
  * `normalizeJoysoundRecord` (so the field shape, id, source_url, and
  * hyphen-strip + schema validation match the crawler exactly).
  *
+ * Detail-sweep rows embed the parsed `JoysoundDetail` (compacted: no
+ * `lyricIntro`, null/empty fields omitted) under `entry.detail` — thread it
+ * through so the normalizer's detail-preferring title/artist and the A1
+ * `artist_aliases` enrichment (native-script `artistNameForeign`) fire. Rows
+ * without `detail` (listing-only sweeps, failed fetches, older logs) behave
+ * exactly as before.
+ *
  * @param {Record<string, unknown>} entry
  * @param {string} crawledAt
  * @returns {import('@karaoke/schema').SongRecord}
@@ -122,6 +139,7 @@ export function buildJoysoundRecord(entry, crawledAt) {
   const sourceUrl = `${SONG_PAGE_BASE}/${encodeURIComponent(listItem.naviGroupId)}`;
   return _normalizeJoysoundRecord({
     listItem,
+    ...(entry.detail ? { detail: entry.detail } : {}),
     sourceUrl,
     crawledAt,
   });
@@ -144,6 +162,75 @@ export function normalizeForConflictMatch(value) {
 function normalizeJoysoundNumber(value) {
   const str = typeof value === 'string' ? value : '';
   return str.replace(/-/gu, '');
+}
+
+/**
+ * Normalized (dashless) JOYSOUND number key of a decision-log row: prefer the
+ * raw (possibly hyphenated) `selSongNoRaw`, fall back to `selSongNo`, then
+ * hyphen-strip — the same selSongNo semantics `admitRowToListItem` feeds the
+ * normalizer. Shared by the CHECKPOINT-1 exclusion and conflict resolution.
+ *
+ * @param {Record<string, unknown>} entry
+ * @returns {string}
+ */
+function admitNumberKey(entry) {
+  return normalizeJoysoundNumber(
+    typeof entry.selSongNoRaw === 'string' && entry.selSongNoRaw.length > 0
+      ? entry.selSongNoRaw
+      : String(entry.selSongNo ?? ''),
+  );
+}
+
+/**
+ * CHECKPOINT-1 SUSPECT selSongNos (dashless). The detail sweep started with a
+ * stale 175-entry ALLOW classifier in memory; the owner removed these 3
+ * Korean-language songs from reviewedJoysoundOverrides.ts afterwards
+ * (175 -> 172, see tasks/checkpoint1-screening.md). Depending on when the
+ * sweep picked up the rebuilt classifier, the decision log may record them as
+ * admits (stale dist) or drops — either way they must NOT (re-)enter the
+ * corpus. The real 20260610 log records all 3 as `drop`/`foreign-korean`, so
+ * the expected build outcome is 0 exclusions / 3 already-dropped-in-log.
+ */
+export const CHECKPOINT1_EXCLUDED_SEL_SONG_NOS = ['148140', '153397', '735357'];
+
+/**
+ * Drop the CHECKPOINT-1 SUSPECT admits from the admit set, BEFORE record
+ * building and before `resolveExistingNumberConflicts` sees them. Rows are
+ * matched on the normalized (selSongNoRaw-preferred, hyphen-stripped) number.
+ *
+ * FAIL-FAST: throws unless `checkpoint1Decisions` (every decision-log row
+ * matching a SUSPECT number, ANY decision — collected by `readJsonlAdmits`)
+ * covers each of the 3 numbers exactly once. Absent or duplicated rows mean
+ * the wrong (or already-scrubbed) decision log — abort, do not silently
+ * no-op (see tasks/checkpoint1-screening.md). The 20260610 log records all 3
+ * as `drop`/`foreign-korean` (excluded admits = 0); a log written entirely by
+ * the stale 175-entry classifier would record them as admits (excluded = 3).
+ * Both are valid — the invariant is that none of the 3 survives as an admit.
+ *
+ * @param {Record<string, unknown>[]} admits  decision-log admit rows
+ * @param {{ selSongNo: string, decision: string }[]} checkpoint1Decisions
+ * @returns {{ kept: Record<string, unknown>[], excluded: Record<string, unknown>[], droppedInLog: number }}
+ */
+export function excludeCheckpoint1Admits(admits, checkpoint1Decisions) {
+  const seen = (checkpoint1Decisions ?? []).map((d) => String(d?.selSongNo ?? '')).sort();
+  const expected = [...CHECKPOINT1_EXCLUDED_SEL_SONG_NOS].sort();
+  const covered =
+    seen.length === expected.length && seen.every((value, i) => value === expected[i]);
+  if (!covered) {
+    throw new Error(
+      `[build-joysound-candidate] CHECKPOINT-1 guard: expected the decision log to contain exactly one row per SUSPECT selSongNo [${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')}] but found [${seen.join(', ')}]. The decision log is likely the wrong (or already-scrubbed) sweep — see tasks/checkpoint1-screening.md.`,
+    );
+  }
+
+  const targets = new Set(CHECKPOINT1_EXCLUDED_SEL_SONG_NOS);
+  const kept = [];
+  const excluded = [];
+  for (const entry of admits) {
+    if (targets.has(admitNumberKey(entry))) excluded.push(entry);
+    else kept.push(entry);
+  }
+  const droppedInLog = checkpoint1Decisions.filter((d) => d.decision !== 'admit').length;
+  return { kept, excluded, droppedInLog };
 }
 
 // Dash / hyphen / prolonged-sound-mark codepoints that render the SAME song
@@ -319,11 +406,7 @@ export function resolveExistingNumberConflicts(currentRecords, admits) {
   // number -> list of admit rows carrying that (normalized) number.
   const admitsByNumber = new Map();
   for (const entry of admits) {
-    const key = normalizeJoysoundNumber(
-      typeof entry.selSongNoRaw === 'string' && entry.selSongNoRaw.length > 0
-        ? entry.selSongNoRaw
-        : String(entry.selSongNo ?? ''),
-    );
+    const key = admitNumberKey(entry);
     if (key === '') continue;
     const list = admitsByNumber.get(key) ?? [];
     list.push(entry);
@@ -481,6 +564,8 @@ function conflictNulledIds(baselineRecords, candidateById) {
 
 function readJsonlAdmits(path) {
   const raw = readFileSync(path, 'utf8');
+  const checkpoint1Targets = new Set(CHECKPOINT1_EXCLUDED_SEL_SONG_NOS);
+  const checkpoint1Decisions = [];
   const admits = [];
   let total = 0;
   for (const line of raw.split(/\r?\n/u)) {
@@ -488,9 +573,15 @@ function readJsonlAdmits(path) {
     if (trimmed.length === 0) continue;
     total += 1;
     const entry = JSON.parse(trimmed);
+    // Track EVERY row (any decision) on a CHECKPOINT-1 SUSPECT number so the
+    // exclusion guard can verify it is looking at the right log.
+    const key = admitNumberKey(entry);
+    if (checkpoint1Targets.has(key)) {
+      checkpoint1Decisions.push({ selSongNo: key, decision: String(entry?.decision ?? '') });
+    }
     if (entry?.decision === 'admit') admits.push(entry);
   }
-  return { admits, total };
+  return { admits, total, checkpoint1Decisions };
 }
 
 async function main() {
@@ -539,9 +630,24 @@ async function main() {
   const baselineSnapshot = JSON.parse(JSON.stringify(currentCorpus));
 
   // --- Step 1: normalize admits -> SongRecords -----------------------------
-  const { admits, total } = readJsonlAdmits(decisionLogPath);
+  const { admits: rawAdmits, total, checkpoint1Decisions } = readJsonlAdmits(decisionLogPath);
   console.log(
-    `[build-joysound-candidate] decision log: ${total} rows, ${admits.length} admit rows`,
+    `[build-joysound-candidate] decision log: ${total} rows, ${rawAdmits.length} admit rows`,
+  );
+
+  // CHECKPOINT-1: drop any admit on the 3 owner-removed SUSPECT numbers before
+  // ANY downstream stage (record building AND conflict resolution). Throws
+  // unless the log contains exactly one row per number — see
+  // tasks/checkpoint1-screening.md.
+  const {
+    kept: admits,
+    excluded: checkpoint1Excluded,
+    droppedInLog: checkpoint1DroppedInLog,
+  } = excludeCheckpoint1Admits(rawAdmits, checkpoint1Decisions);
+  console.log(
+    `[build-joysound-candidate] CHECKPOINT-1 exclusion (selSongNos ${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')}): ` +
+      `${checkpoint1Excluded.length} admit row(s) excluded, ${checkpoint1DroppedInLog} already dropped in-log; ` +
+      `${admits.length} admit rows remain`,
   );
 
   const crawledAt = new Date().toISOString();
@@ -880,8 +986,33 @@ export function classifyMutation(before, after) {
   return { expected: badReasons.length === 0, reasons, badReasons };
 }
 
+function printUsage() {
+  console.log(`build-joysound-candidate.mjs — build the JOYSOUND deploy-candidate corpus (writes
+to .tmp_review/, NEVER to apps/web/public/data/songs.json; does NOT deploy).
+
+Usage:
+  node --max-old-space-size=8192 scripts/build-joysound-candidate.mjs
+
+No flags besides -h/--help; all paths are hardcoded:
+  decision log : .tmp_review/joysound-detail-sweep-20260610/decision-log.jsonl
+  candidate out: .tmp_review/joysound-detail-sweep-20260610/songs-candidate.json
+  delta out    : .tmp_review/joysound-detail-sweep-20260610/candidate-delta.json
+
+CHECKPOINT-1: any admit row for selSongNos ${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')} is
+excluded (SUSPECTs removed from reviewedJoysoundOverrides.ts after the sweep
+started — see tasks/checkpoint1-screening.md). The build fails fast unless the
+log contains exactly one row per number (any decision).
+
+Heap: parses the ~12 MB corpus + ~291k decision rows — run with
+--max-old-space-size=8192 or the build can OOM.`);
+}
+
 // Only run main() when invoked directly (not when imported by the test).
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  if (process.argv.includes('-h') || process.argv.includes('--help')) {
+    printUsage();
+    process.exit(0);
+  }
   main().catch((err) => {
     console.error(err instanceof Error ? err.stack : String(err));
     process.exit(1);
