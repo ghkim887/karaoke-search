@@ -216,9 +216,10 @@ export function splitArtistCollab(artist: string): string[] {
  *
  * Returns the first NON-WHOLE component from `splitArtistCollab(artist)` —
  * i.e. the lead chunk after collab decoration is stripped — normalized via
- * `normalizeForMatch`. When the input is a single artist (the splitter
- * returns `[whole]` only), falls back to `normalize(whole)` so single-artist
- * names round-trip predictably.
+ * `normalizeForMatch` (whitespace-strip + lowercase + NFKC; punctuation is
+ * KEPT — this is NOT `normalize()`). When the input is a single artist (the
+ * splitter returns `[whole]` only), falls back to `normalizeForMatch(whole)`
+ * so single-artist names round-trip predictably.
  *
  * Why this lives in the same module as `splitArtistCollab`: pre-Fix-A.2,
  * `merge.ts` had its own `primaryArtistToken` helper with a SUBSET of
@@ -229,11 +230,11 @@ export function splitArtistCollab(artist: string): string[] {
  * lead-component decision for any input.
  *
  * Examples:
- *   '椎名もた(Feat.鏡音リン)' -> normalize('椎名もた')
- *   '椎名もた｜ぽわぽわP'    -> normalize('椎名もた')
- *   'imase & なとり'         -> normalize('imase')
- *   'Artist1 × Artist2'       -> normalize('Artist1')
- *   'YOASOBI'                 -> normalize('YOASOBI')
+ *   '椎名もた(Feat.鏡音リン)' -> normalizeForMatch('椎名もた')
+ *   '椎名もた｜ぽわぽわP'    -> normalizeForMatch('椎名もた')
+ *   'imase & なとり'         -> normalizeForMatch('imase')
+ *   'Artist1 × Artist2'       -> normalizeForMatch('Artist1')
+ *   'YOASOBI'                 -> normalizeForMatch('YOASOBI')
  *   ''                        -> ''
  */
 export function getLeadComponent(artist: string): string {

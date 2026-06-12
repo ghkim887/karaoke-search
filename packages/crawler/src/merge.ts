@@ -56,13 +56,54 @@ function sourceRank(slug: string): number {
   return SOURCE_RANK[slug] ?? Number.POSITIVE_INFINITY;
 }
 
+/**
+ * Dash / prolonged-sound-mark fold applied ON TOP of `normalize()` for the
+ * merger's Tier B/C clustering keys ONLY (deliberately NOT in the shared
+ * `normalize()` — aliases.ts / clustering.ts / search keying keep their
+ * semantics).
+ *
+ * Motivation: TJ's catalog writes the katakana long vowel `ー` (U+30FC) as an
+ * ASCII hyphen (e.g. `特者生存ワンダラダ-!!` vs JOYSOUND's
+ * `特者生存ワンダラダー!!`), splitting the same song into two records when no
+ * karaoke number is shared. `normalize()` already strips every punctuation
+ * dash (U+002D, U+FF0D, U+2010/2011, U+2013/2014/2015, U+2212 — all outside
+ * `\p{L}\p{N}\p{M}`; U+FF70 `ｰ` NFKC-folds to U+30FC first), but U+30FC
+ * itself is category Lm (Letter, modifier) and SURVIVES. Stripping the whole
+ * dash class here folds `ダ-` / `ダー` / `ダ` to the same key. On the
+ * `normalize()`-composed key parts (Tier B title/artist, Tier C title) the
+ * pre-stripped punctuation-dash members are defense-in-depth against future
+ * `normalize()` changes; on the Tier C ARTIST side — which composes over
+ * `normalizeForMatch`, where punctuation survives — those same members are
+ * LIVE (see `tierCKey`).
+ */
+const CLUSTER_DASH_FOLD_RE = /[-ー‐‑–—―−ｰ]/g;
+
+function foldDashes(s: string): string {
+  return s.replace(CLUSTER_DASH_FOLD_RE, '');
+}
+
+/** `normalize()` + dash fold — the merger's clustering-key normalization. */
+function clusterKeyPart(s: string): string {
+  return foldDashes(normalize(s));
+}
+
 /** Tier B clustering key (used for residuals after Tier A union-find). */
 function tierBKey(r: SongRecord): string {
+  return `${clusterKeyPart(r.title_primary)}|${clusterKeyPart(r.artist_primary)}`;
+}
+
+/**
+ * Pre-fold Tier B key (plain `normalize()`, no dash fold). Used to decide
+ * whether a Tier B group was brought together BY the fold — see the
+ * cross-source gate in `mergeRecords`.
+ */
+function tierBKeyUnfolded(r: SongRecord): string {
   return `${normalize(r.title_primary)}|${normalize(r.artist_primary)}`;
 }
 
 /**
- * Tier C cluster key — `normalize(title_primary) | getLeadComponent(artist_primary)`.
+ * Tier C cluster key —
+ * `clusterKeyPart(title_primary) | foldDashes(getLeadComponent(artist_primary))`.
  * Returns `null` when either field is empty after normalization, in which
  * case the record is unkeyable for Tier C and stays a singleton.
  *
@@ -76,8 +117,19 @@ function tierBKey(r: SongRecord): string {
  * that drift class.
  */
 function tierCKey(r: SongRecord): string | null {
-  const t = normalize(r.title_primary);
-  const a = getLeadComponent(r.artist_primary);
+  const t = clusterKeyPart(r.title_primary);
+  // `getLeadComponent` returns `normalizeForMatch(lead)` (whitespace-strip +
+  // lowercase + NFKC — punctuation KEPT; see clustering.ts), NOT a
+  // `normalize()`d token. The dash fold is applied on top WITHOUT touching
+  // the shared helper (the parser's lead-admit rule consumes it with
+  // un-folded semantics). Because punctuation survives `normalizeForMatch`,
+  // the ASCII/punctuation-dash members of CLUSTER_DASH_FOLD_RE are LIVE on
+  // this artist side (not defense-in-depth as on the `normalize()`d title
+  // side): `normalizeForMatch('X-Japan')` keeps the hyphen and `foldDashes`
+  // strips it, so `X-Japan` vs `XJAPAN` leads now collide. This broadening
+  // is INTENDED — Tier C unions stay cross-source-gated, so same-source
+  // dash-variant leads never merge on this path alone.
+  const a = foldDashes(getLeadComponent(r.artist_primary));
   if (t === '' || a === '') return null;
   return `${t}|${a}`;
 }
@@ -96,7 +148,11 @@ function tierCKey(r: SongRecord): string | null {
  * cross-source output, then downgrade to a per-cluster log line.
  */
 export interface MergeConflict {
-  /** Tier B cluster key — `normalize(title)|normalize(artist)`. */
+  /**
+   * Tier B cluster key — `clusterKeyPart(title)|clusterKeyPart(artist)`
+   * (`normalize()` + dash/long-vowel fold). Conflict `cluster_key` strings
+   * are FOLDED since 2026-06-13 — cosmetic for PR-body aggregation.
+   */
   cluster_key: string;
   field: 'tj' | 'ky' | 'joysound' | 'tier_c_merge';
   values: { source: string; value: string }[];
@@ -575,11 +631,17 @@ function mergeCluster(
  *   `.joysound`) are unioned. Per-vendor — TJ #100 and KY #100 are unrelated.
  *
  *   Tier B (soft match): records still in singleton clusters after Tier A
- *   are grouped by the `normalize(title_primary) + "|" + normalize(artist_primary)`
- *   key and unioned. Records with no peer remain standalone.
+ *   are grouped by the FOLDED key
+ *   `clusterKeyPart(title_primary) + "|" + clusterKeyPart(artist_primary)`
+ *   (`normalize()` + dash/long-vowel fold) and unioned. Groups brought
+ *   together BY the fold (≥ 2 distinct unfolded keys) additionally require
+ *   ≥ 2 distinct source slugs — same-source dash-variant twins stay split
+ *   (see the gate comment in the implementation). Records with no peer
+ *   remain standalone.
  *
  *   Tier C (cross-source primary-token match): residual singletons after
- *   Tier B are grouped by `normalize(title) | getLeadComponent(artist)`
+ *   Tier B are grouped by the folded key
+ *   `clusterKeyPart(title) | foldDashes(getLeadComponent(artist))`
  *   — the latter strips collab/feat. decoration so e.g. `椎名もた(Feat.鏡音リン)`
  *   matches `椎名もた｜ぽわぽわP`. A Tier C cluster fires ONLY when ≥ 2 distinct
  *   source prefixes are represented (cross-source case). Same-source clusters
@@ -628,7 +690,31 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
 
   // Track which roots were formed via Tier B so we can scope conflict
   // detection to those clusters only.
-  const tierBRoots = unionIndexGroups(uf, tierBGroups.values());
+  //
+  // Dash-fold cross-source gate (2026-06-13): Tier B groups are keyed by the
+  // FOLDED key (`clusterKeyPart`). A group whose members all share the same
+  // UN-folded key behaves exactly as pre-fold Tier B (union unconditionally).
+  // When the dash fold is what brought members together (≥ 2 distinct
+  // unfolded keys), the union additionally requires ≥ 2 distinct source
+  // slugs — the same cross-source gate Tier C uses. Rationale: a vendor that
+  // catalogs two dash-variant spellings side-by-side is cataloging two
+  // DISTINCT entries (JOYSOUND lists PUFFY's スイスイ #35118, lyricist
+  // 大貫亜美, AND スーイスーイ #35183, lyricist 吉村由美 — different songs),
+  // whereas a cross-source dash variant is transcription habit (TJ writes
+  // `ー` as ASCII `-`). Same-source groups that fail the gate fall back to
+  // pre-fold behavior: their unfolded-key partitions union independently.
+  const tierBRoots = new Set<number>();
+  for (const idxs of tierBGroups.values()) {
+    if (idxs.length < 2) continue;
+    const partitions = new Map<string, number[]>();
+    for (const i of idxs) {
+      // biome-ignore lint/style/noNonNullAssertion: i in bounds
+      addToIndex(partitions, tierBKeyUnfolded(records[i]!), i);
+    }
+    const unionable: Iterable<number[]> =
+      partitions.size === 1 || hasMultipleSourceSlugs(records, idxs) ? [idxs] : partitions.values();
+    for (const root of unionIndexGroups(uf, unionable)) tierBRoots.add(root);
+  }
 
   // --- Tier C: cross-source residual-singleton clustering ---
   // After Tier B, compute cluster sizes; records still in singletons go
