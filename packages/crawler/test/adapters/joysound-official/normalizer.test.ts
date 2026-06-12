@@ -161,6 +161,63 @@ describe('normalizeJoysoundRecord — invariants (no Korean fields)', () => {
   });
 });
 
+describe('normalizeJoysoundRecord — A1 artistNameForeign → artist_aliases', () => {
+  // Hangul native artist name (built from code points to keep CJK literals minimal).
+  const HANGUL_ARTIST = String.fromCodePoint(0xb3d9, 0xbc29, 0xc2e0, 0xae30); // native Hangul act
+  // A pure-katakana echo of the canonical (NOT a useful alias).
+  const KANA_ECHO = String.fromCodePoint(0x30a2, 0x30a4); // katakana
+
+  it('emits artistNameForeign (Hangul) into artist_aliases when it differs from artist_primary', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem({ artistName: KANA_ECHO }),
+      detail: detail({ artistName: KANA_ECHO, artistNameForeign: HANGUL_ARTIST }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.artist_primary).toBe(KANA_ECHO);
+    expect(rec.artist_aliases).toEqual([HANGUL_ARTIST]);
+  });
+
+  it('omits artist_aliases entirely when there is no artistNameForeign', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem(),
+      detail: detail({ artistNameForeign: undefined }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.artist_aliases).toBeUndefined();
+  });
+
+  it('does NOT emit artistNameForeign when it equals artist_primary (no self-alias)', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem({ artistName: HANGUL_ARTIST }),
+      detail: detail({ artistName: HANGUL_ARTIST, artistNameForeign: HANGUL_ARTIST }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.artist_aliases).toBeUndefined();
+  });
+
+  it('does NOT emit a pure-kana-echo artistNameForeign (JP-title echo is not a cross-script alias)', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem({ artistName: 'YOASOBI' }),
+      detail: detail({ artistName: 'YOASOBI', artistNameForeign: KANA_ECHO }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.artist_aliases).toBeUndefined();
+  });
+
+  it('is inert in listing-only mode (no detail → no artist_aliases)', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem(),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.artist_aliases).toBeUndefined();
+  });
+});
+
 describe('normalizeJoysoundNumber', () => {
   it('strips all hyphens from a hyphenated JOYSOUND number', () => {
     expect(normalizeJoysoundNumber('190-001')).toBe('190001');

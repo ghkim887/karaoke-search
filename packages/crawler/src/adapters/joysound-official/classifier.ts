@@ -72,6 +72,17 @@ const KOREAN_ACT_PATTERNS: readonly RegExp[] = [
   /(?:防弾少年団|東方神起|少女時代|エスパ|アイヴ|エンハイプン|エヌシーティー|ストレイキッズ|セブンティーン|チョンソミ|ニュージーンズ|ルセラフィム|ベイビーモンスター|ゼロベースワン|トゥワイス|ブラックピンク|トゥモローバイトゥギャザー|トレジャー|レッドベルベット|モンスタエックス|ママムー|ヨジャチング|スーパージュニア|ビッグバン|トゥエニィワン|エクソ|エイティーズ|ケプラー|ボーイネクストドア|キスオブライフ|ゴットセブン)/u,
 ];
 
+/**
+ * JOYSOUND's Western-music catalog genre tag (`洋楽`, from
+ * `detail.genreNames`). Used ONLY to veto the `admit-jp-detail` recovery in
+ * step 6: the Layer-3 400-row precision audit (2026-06-12) found all 28 admit
+ * false positives there, and 26/28 carried this tag. The veto must NOT touch
+ * any other gate — genuine JP acts' English covers tagged `洋楽` are admitted
+ * by EARLIER steps (kana / anime / vocaloid / known-JP-artist / reviewed-allow)
+ * and must remain admitted.
+ */
+const YOUGAKU_GENRE = '洋楽';
+
 const WESTERN_ACT_COMPONENTS = new Set<string>([
   'ADELE',
   'ARIANA GRANDE',
@@ -109,6 +120,38 @@ const RE_KATAKANA = /[゠-ヿｦ-ﾟ]/;
 const RE_HAN = /[㐀-鿿]/u;
 /** Any A–Z / a–z Latin letter — distinguishes Latin-only drops. */
 const RE_ASCII_LETTER = /[A-Za-z]/;
+/**
+ * Hangul, for the authoritative foreign-name detail signal: Hangul Syllables
+ * (U+AC00–U+D7A3), Hangul Jamo (U+1100–U+11FF), and Hangul Compatibility Jamo
+ * (U+3130–U+318F). Any Hangul code point in a populated foreign-name field
+ * marks the entry KOREAN.
+ */
+const RE_HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/u;
+/**
+ * Han ideographs for the foreign-name signal: CJK Extension A (U+3400–U+4DBF),
+ * CJK Unified (U+4E00–U+9FFF), and CJK Compatibility Ideographs
+ * (U+F900–U+FAFF). Broader than `RE_HAN` (which intentionally omits the
+ * compatibility block for the listing-only fall-through diagnostic). A
+ * foreign-name field with Han AND no kana marks the entry CHINESE.
+ */
+const RE_HAN_FOREIGN = /[㐀-䶿一-鿿豈-﫿]/u;
+/**
+ * Kana (hiragana U+3040–U+309F + katakana U+30A0–U+30FF) for the foreign-name
+ * signal. A foreign-name field containing kana is a Japanese-title echo, NOT a
+ * foreign signal — it suppresses the Chinese determination.
+ */
+const RE_KANA = /[぀-ヿ]/u;
+/**
+ * Dotted-pinyin romanization shape used by JOYSOUND's `*ForeignSearch` fields
+ * for CHINESE entries (e.g. `wu.lai.`, `zhang.xue.you.`). One or more lowercase
+ * Latin syllables, each terminated by a literal dot, with nothing else. This is
+ * a CORROBORATING chinese tell only: it is consulted in `foreignNameSignal`
+ * AFTER the Hangul→korean and Han-no-kana→chinese rules, so it can never
+ * override a Korean determination, and it cannot fire on an empty/JP row
+ * (genuine-JP rows have empty `*ForeignSearch` fields). Japanese romaji
+ * (`yorunikakeru`) has no interior dots and is rejected.
+ */
+const RE_DOTTED_PINYIN = /^(?:[a-z]+\.)+$/;
 function containsAny(haystack: string, tokens: readonly string[]): boolean {
   for (const t of tokens) {
     if (haystack.includes(t)) return true;
@@ -130,6 +173,50 @@ function hasHanScript(s: string): boolean {
 
 function hasAsciiLetter(s: string): boolean {
   return RE_ASCII_LETTER.test(s);
+}
+
+/**
+ * Authoritative foreign-language signal from the detail API's foreign-name
+ * fields (2026-06-09 — replaces the crude `isForeignKatakanaTranslit` gate).
+ *
+ * JOYSOUND's `fetchContentsDetail` populates `songNameForeign` (top-level) and
+ * `artistInfo.artistNameForeign` ONLY for non-Japanese catalog entries; the
+ * fields are EMPTY for genuine Japanese songs. Across a 15-FP / 124-control
+ * live probe the separation was perfect (0 false positives on genuine-JP
+ * controls). Inspect BOTH foreign-name fields:
+ *  - contains Hangul (`RE_HANGUL`) → `'korean'`.
+ *  - else contains Han (`RE_HAN_FOREIGN`) AND no kana (`RE_KANA`) → `'chinese'`.
+ *    The no-kana clause matters because a foreign-name field can be a kana
+ *    echo of a Japanese title; that is NOT a foreign signal.
+ *  - else (C1, 2026-06-09) if a `*ForeignSearch` romanization field is
+ *    dotted-pinyin (`RE_DOTTED_PINYIN`, e.g. `wu.lai.`) → `'chinese'`. This is a
+ *    CORROBORATING tell that ADDS chinese confidence when the native foreign-
+ *    name fields were ambiguous/empty (some Chinese rows expose only the
+ *    romanization). It runs LAST so it can never override a Hangul→korean
+ *    determination, and — because genuine-JP rows have empty `*ForeignSearch`
+ *    fields and Japanese romaji has no interior dots — it cannot fire on a JP
+ *    row.
+ *  - else (kana-only, Latin-only, or empty) → `null` (NOT a foreign signal).
+ *
+ * Returns `null` when no field is populated — which is the authoritative
+ * "genuine Japanese" verdict the `admit-jp-detail` recovery relies on.
+ */
+function foreignNameSignal(detail: JoysoundDetail): 'korean' | 'chinese' | null {
+  const fields = [detail.songNameForeign ?? '', detail.artistNameForeign ?? ''];
+  for (const f of fields) {
+    if (RE_HANGUL.test(f)) return 'korean';
+  }
+  for (const f of fields) {
+    if (RE_HAN_FOREIGN.test(f) && !RE_KANA.test(f)) return 'chinese';
+  }
+  // C1: dotted-pinyin romanization is a corroborating chinese tell. Checked
+  // AFTER the Hangul/Han rules above (never overrides korean) and only matches
+  // the dotted shape (never fires on empty JP `*ForeignSearch` fields).
+  const searchFields = [detail.songNameForeignSearch ?? '', detail.artistNameForeignSearch ?? ''];
+  for (const f of searchFields) {
+    if (RE_DOTTED_PINYIN.test(f.trim().toLowerCase())) return 'chinese';
+  }
+  return null;
 }
 
 function isKnownKoreanAct(surface: string): boolean {
@@ -220,9 +307,20 @@ interface ClassifyArgs {
  *  - `reviewed-allow` / `reviewed-drop` — exact-number curated override hit.
  *  - `foreign-korean` / `foreign-chinese` / `foreign-western` — hard negative
  *    act gate. `foreign-korean`/`foreign-chinese` fire from the production
- *    Korean / Chinese drop lists (and the classifier's own Korean patterns);
- *    `foreign-western` from the Western-act components.
+ *    Korean / Chinese drop lists (and the classifier's own Korean patterns),
+ *    AND — when a `detail` is present — from the authoritative foreign-name
+ *    detail signal (`foreignNameSignal`); `foreign-western` from the
+ *    Western-act components.
  *  - `admit-vocaloid` / `admit-anime` / `admit-jpop-kana` — positive gates.
+ *  - `admit-jp-detail` — detail-gated recovery: a row that would otherwise hit
+ *    `drop-han-only` / `drop-ascii-only` is ADMITTED when a `detail` is present
+ *    AND its foreign-name fields are empty (`foreignNameSignal === null`)
+ *    AND `detail.genreNames` does NOT carry the `洋楽` Western-music tag.
+ *    The empty foreign-name is authoritative ONLY against Korean/Chinese rows
+ *    (the only ones JOYSOUND renders a foreign name for) — natively-Latin
+ *    Western/OPM/Bollywood rows also have empty foreign-name fields, so the
+ *    `洋楽` genre tag is the catalog-authoritative veto for them. No-op without
+ *    `detail` (listing-only sweep is unaffected). See {@link foreignNameSignal}.
  *  - `admit-jp-artist` — admitted because an INJECTED known-Japanese-artist
  *    predicate matched a row that would otherwise drop for lack of a
  *    kana/anime/vocaloid signal. Sweep-layer-only: production injects nothing.
@@ -239,6 +337,7 @@ export type JoysoundClassifyReason =
   | 'admit-vocaloid'
   | 'admit-anime'
   | 'admit-jpop-kana'
+  | 'admit-jp-detail'
   | 'admit-jp-artist'
   | 'drop-han-only'
   | 'drop-ascii-only'
@@ -307,6 +406,12 @@ export function classifyJoysoundRecord(args: ClassifyArgs): boolean {
  *   1. override DROP   → drop first, before any admit gate.
  *   2. override ALLOW  → admit before the foreign-act gate, reason
  *      `reviewed-allow`.
+ *   2b. authoritative foreign-name detail gate (DROP) — ONLY when `detail` is
+ *      present. Runs AFTER reviewed-allow so the curated ALLOW K-pop Japanese
+ *      releases (whose foreign-name fields ARE populated) stay admitted, and
+ *      BEFORE the positive cascade so a populated Korean/Chinese foreign-name
+ *      beats a kana title. Inert without `detail` (listing-only sweep
+ *      unchanged). See {@link foreignNameSignal}.
  *   3. foreign-act gate (Korean drop list / Korean patterns / Chinese drop list
  *      / Western) → hard negative. Consulting the production drop lists keeps
  *      this gate in lock-step with the audit's `isAuditForeignAct` (Fix F1).
@@ -314,7 +419,14 @@ export function classifyJoysoundRecord(args: ClassifyArgs): boolean {
  *   5. injected known-Japanese-artist admit (Fix F2). Runs AFTER the foreign-act
  *      gate so a foreign act that also has corpus presence (e.g. BoA) stays
  *      dropped; opt-in only, no-op in production.
- *   6. fall-through drop, split by script signal for diagnostic richness.
+ *   6. detail-gated JP recovery (`admit-jp-detail`) + fall-through drop, split
+ *      by script signal for diagnostic richness. A row that would terminally
+ *      `drop-han-only` / `drop-ascii-only` is RECOVERED when `detail` is present
+ *      and `foreignNameSignal === null` (authoritative genuine-JP for
+ *      Korean/Chinese rows) — UNLESS `detail.genreNames` carries the `洋楽`
+ *      Western-music tag, which vetoes the recovery (natively-Latin foreign
+ *      rows also have empty foreign-name fields, so null is not proof of
+ *      genuine-JP there). Inert without `detail`.
  */
 export function classifyJoysoundRecordWithReason({
   listItem,
@@ -334,6 +446,13 @@ export function classifyJoysoundRecordWithReason({
     );
     titleArtistParts.push(detail.songName, detail.artistName ?? '');
     if (detail.artistName !== null) artistFields.push(detail.artistName);
+    // C2 (2026-06-09): feed the NATIVE artist name into the drop-list scan so
+    // a drop-listed act is caught by its native form (e.g. Hangul/Latin native
+    // name) and not only by the listing/katakana `artistName`. The foreign-act
+    // gate's drop-list scan (step 3) iterates `artistFields`, so adding the
+    // native name here is sufficient — no separate scan needed. The native name
+    // also strengthens the Korean-pattern / Western-component checks.
+    if (detail.artistNameForeign !== undefined) artistFields.push(detail.artistNameForeign);
   }
   const surface = surfaceParts.join(' ');
   const titleArtist = titleArtistParts.join(' ');
@@ -350,6 +469,18 @@ export function classifyJoysoundRecordWithReason({
   // 2. Curated ALLOW override admits BEFORE the foreign-act gate.
   if (overrides.isAllow(listItem.selSongNo)) {
     return { admit: true, reason: 'reviewed-allow' };
+  }
+
+  // 2b. Authoritative foreign-name detail gate (DROP). ONLY fires when a
+  //     `detail` is present — the foreign-name fields live exclusively on the
+  //     detail API. Placed AFTER reviewed-allow (so the curated ALLOW K-pop
+  //     Japanese releases, whose foreign-name fields ARE populated, still
+  //     admit) and BEFORE the positive cascade (so a populated Korean/Chinese
+  //     foreign-name beats a kana title). Inert in listing-only mode.
+  if (detail) {
+    const signal = foreignNameSignal(detail);
+    if (signal === 'korean') return { admit: false, reason: 'foreign-korean' };
+    if (signal === 'chinese') return { admit: false, reason: 'foreign-chinese' };
   }
 
   // 3. Hard negative foreign-act gate. The classifier's own Korean patterns +
@@ -381,9 +512,42 @@ export function classifyJoysoundRecordWithReason({
     }
   }
 
-  // 6. Fall-through drop — split by script signal for diagnostic richness.
-  if (hasHanScript(titleArtist)) return { admit: false, reason: 'drop-han-only' };
-  if (hasAsciiLetter(titleArtist)) return { admit: false, reason: 'drop-ascii-only' };
+  // 6. Detail-gated JP recovery + fall-through drop.
+  //    `drop-han-only` (kanji titles) and `drop-ascii-only` (Latin-named JP
+  //    acts) over-drop genuine Japanese rows. When a `detail` is present and
+  //    its foreign-name fields are empty (`foreignNameSignal === null`), ADMIT
+  //    instead of dropping. This is inert in listing-only mode (no `detail` →
+  //    keep the historical drop).
+  //    Note: if `detail` were foreign, step 2b already returned a drop above,
+  //    so reaching here with a `detail` implies the signal is null — the
+  //    explicit re-check documents intent and is defensive.
+  //
+  //    洋楽 veto (Layer-3 400-row precision audit, 2026-06-12): an empty
+  //    foreign-name is authoritative ONLY against Korean/Chinese entries —
+  //    those are the only rows JOYSOUND renders `songNameForeign` /
+  //    `artistNameForeign` for. Natively-Latin Western/OPM/Bollywood entries
+  //    have nothing to render, so their foreign-name fields are ALSO empty and
+  //    `null` must not be read as genuine-JP. All 28 audited admit FPs came
+  //    through this recovery; 26/28 carried JOYSOUND's own `洋楽` genre tag in
+  //    `detail.genreNames` (the authoritative catalog signal for Western
+  //    music), so a `洋楽` row falls through to the historical drop instead.
+  //    The veto is SCOPED to this recovery: genuine JP acts' English covers
+  //    tagged `洋楽` admit via the EARLIER gates (kana / anime / vocaloid /
+  //    known-JP-artist / reviewed-allow) and are unaffected. The ~0–3
+  //    genuinely-JP collab rows this drops (e.g. SLASH feat.稲葉浩志) are an
+  //    accepted precision-first cost, recoverable via the curated ALLOW list.
+  const han = hasHanScript(titleArtist);
+  const ascii = hasAsciiLetter(titleArtist);
+  if (
+    detail &&
+    (han || ascii) &&
+    foreignNameSignal(detail) === null &&
+    !detail.genreNames.includes(YOUGAKU_GENRE)
+  ) {
+    return { admit: true, reason: 'admit-jp-detail' };
+  }
+  if (han) return { admit: false, reason: 'drop-han-only' };
+  if (ascii) return { admit: false, reason: 'drop-ascii-only' };
   return { admit: false, reason: 'drop-no-signal' };
 }
 

@@ -4,7 +4,7 @@ import {
   classifyJoysoundRecordWithReason,
 } from './classifier.js';
 import { normalizeJoysoundNumber } from './normalizer.js';
-import type { JoysoundListItem } from './types.js';
+import type { JoysoundDetail, JoysoundListItem } from './types.js';
 
 /**
  * One decision-log row emitted by the JOYSOUND full-catalog FP/FN sweep. This
@@ -92,6 +92,21 @@ export interface BuildJoysoundDecisionOptions {
    * recall path in the classifier. Undefined in production.
    */
   isKnownJapaneseArtist?: (artist: string) => boolean;
+  /**
+   * Per-song detail fetched from the JOYSOUND `fetchContentsDetail` API. When
+   * supplied it is forwarded verbatim to the classifier, which ENABLES the
+   * detail-gated gates that are inert in listing-only mode:
+   *   - `foreignNameSignal` DROP (a populated Korean/Chinese foreign-name field
+   *     beats a kana title → `foreign-korean` / `foreign-chinese`),
+   *   - `admit-jp-detail` recovery (a `drop-han-only` / `drop-ascii-only` row is
+   *     ADMITTED when the foreign-name fields are empty — an authoritative
+   *     genuine-JP verdict),
+   *   - C1/C2 corroborating tells (dotted-pinyin romanization, native artist
+   *     name into the drop-list scan).
+   * Optional, so the listing-only callers (`joysound-diagnostic-sweep.mjs`) are
+   * unchanged — without it the verdict is exactly the listing-only verdict.
+   */
+  detail?: JoysoundDetail;
 }
 
 /**
@@ -128,6 +143,7 @@ export function buildJoysoundDecision(
   const options = normalizeBuildOptions(optionsOrOverrides);
   const { admit, reason } = classifyJoysoundRecordWithReason({
     listItem,
+    ...(options.detail ? { detail: options.detail } : {}),
     ...(options.overrides ? { overrides: options.overrides } : {}),
     ...(options.isKnownJapaneseArtist
       ? { isKnownJapaneseArtist: options.isKnownJapaneseArtist }

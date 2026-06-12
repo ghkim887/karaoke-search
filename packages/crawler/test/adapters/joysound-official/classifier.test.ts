@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { classifyJoysoundRecord } from '../../../src/adapters/joysound-official/classifier.js';
+import {
+  classifyJoysoundRecord,
+  classifyJoysoundRecordWithReason,
+} from '../../../src/adapters/joysound-official/classifier.js';
 import type {
   JoysoundDetail,
   JoysoundListItem,
@@ -209,17 +212,21 @@ describe('classifyJoysoundRecord — admit via anime signal', () => {
   });
 
   it('does NOT classify transliterated songNameRuby alone as anime', () => {
+    // Ruby like アニメーション must NOT fire the anime gate. These rows carry a
+    // detail with an EMPTY foreign-name, which is the authoritative genuine-JP
+    // signal — so they ADMIT, but via `admit-jp-detail` (the foreign-name
+    // recovery), NOT `admit-anime`. The ruby-is-not-anime contract holds.
     for (const [songName, artistName, songNameRuby] of [
       ['animation', 'AliA', 'アニメーション'],
       ['ANIME', 'LUCKY TAPES', 'アニメ'],
     ] as const) {
       expect(
-        classifyJoysoundRecord({
+        classifyJoysoundRecordWithReason({
           listItem: listItem({ songName, artistName }),
           detail: detail({ songName, songNameRuby, artistName }),
         }),
         `failed for ${songName} / ${artistName}`,
-      ).toBe(false);
+      ).toEqual({ admit: true, reason: 'admit-jp-detail' });
     }
   });
 
@@ -280,13 +287,17 @@ describe('classifyJoysoundRecord — admit via kana signal', () => {
     ).toBe(true);
   });
 
-  it('does not use detail ruby alone as J-pop evidence', () => {
+  it('does not use detail ruby alone as J-pop (kana) evidence', () => {
+    // Ruby レモン must NOT count as a kana admit signal. But 米津玄師 (Kenshi
+    // Yonezu) is a genuine JP act and the detail's foreign-name is EMPTY — the
+    // authoritative genuine-JP signal — so the row ADMITS via `admit-jp-detail`,
+    // NOT via the kana path. (Without a detail it would drop-han-only.)
     expect(
-      classifyJoysoundRecord({
+      classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'Lemon', artistName: '米津玄師' }),
         detail: detail({ songName: 'Lemon', songNameRuby: 'レモン', artistName: '米津玄師' }),
       }),
-    ).toBe(false);
+    ).toEqual({ admit: true, reason: 'admit-jp-detail' });
   });
 
   it('drops pure-Latin foreign rows even when JOYSOUND supplies kana ruby', () => {
@@ -460,22 +471,33 @@ describe('classifyJoysoundRecord — drop', () => {
     }
   });
 
-  it('drops CJK-only rows without kana/ruby or explicit anime/vocaloid evidence', () => {
+  it('drops CJK-only (Mandopop) rows — authoritative Chinese foreign-name from the detail', () => {
+    // A genuine Chinese (Mandopop) row. In production the detail API populates
+    // the foreign-name fields for non-Japanese entries, so the Han foreign-name
+    // is the authoritative `foreign-chinese` signal (Han + no kana). This is a
+    // STRONGER drop than the old script-shape fall-through.
     expect(
-      classifyJoysoundRecord({
+      classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: '起风了', artistName: '买辣椒也用券' }),
         detail: detail({
           songName: '起风了',
           songNameRuby: null,
+          songNameForeign: '起风了',
           artistName: '买辣椒也用券',
+          artistNameForeign: '买辣椒也用券',
         }),
       }),
-    ).toBe(false);
+    ).toEqual({ admit: false, reason: 'foreign-chinese' });
   });
 
-  it('does not promote Latin-title rows from staff-only Japanese-script evidence', () => {
+  it('recovers a Latin-title row with an EMPTY foreign-name via admit-jp-detail', () => {
+    // A detail with EMPTY foreign-name fields is the authoritative genuine-JP
+    // signal. A Latin-titled row that would otherwise drop-ascii-only is
+    // RECOVERED as `admit-jp-detail` — the empty foreign-name supersedes the old
+    // "staff metadata is not admission evidence" heuristic. (JP staff here is
+    // incidental; the recovery is driven solely by the empty foreign-name.)
     expect(
-      classifyJoysoundRecord({
+      classifyJoysoundRecordWithReason({
         listItem: listItem({ songName: 'Generic Latin', artistName: 'LatinArtist' }),
         detail: detail({
           songName: 'Generic Latin',
@@ -485,6 +507,6 @@ describe('classifyJoysoundRecord — drop', () => {
           composer: 'さとう花子',
         }),
       }),
-    ).toBe(false);
+    ).toEqual({ admit: true, reason: 'admit-jp-detail' });
   });
 });

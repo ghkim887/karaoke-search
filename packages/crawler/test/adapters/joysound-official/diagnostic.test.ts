@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { buildJoysoundDecision } from '../../../src/adapters/joysound-official/diagnostic.js';
-import type { JoysoundListItem } from '../../../src/adapters/joysound-official/types.js';
+import type {
+  JoysoundDetail,
+  JoysoundListItem,
+} from '../../../src/adapters/joysound-official/types.js';
 
 function listItem(over: Partial<JoysoundListItem>): JoysoundListItem {
   return {
@@ -11,6 +14,27 @@ function listItem(over: Partial<JoysoundListItem>): JoysoundListItem {
     artistId: null,
     tieupInfo: null,
     tieupId: null,
+    ...over,
+  };
+}
+
+function detail(over: Partial<JoysoundDetail>): JoysoundDetail {
+  return {
+    naviGroupId: '900000',
+    songId: null,
+    selSongNo: '900000',
+    songName: 'Song',
+    songNameRuby: null,
+    artistName: null,
+    artistId: null,
+    lyricist: null,
+    composer: null,
+    relDate: null,
+    newFlg: null,
+    lyricIntro: null,
+    genreNames: [],
+    tieupNames: [],
+    aplServicePublishDates: [],
     ...over,
   };
 }
@@ -136,6 +160,78 @@ describe('buildJoysoundDecision', () => {
       reason: 'reviewed-allow',
       detailFlipRisk: false,
     });
+  });
+
+  it('forwards a Korean foreign-name detail so the verdict flips to drop/foreign-korean', () => {
+    // A kana-titled row that listing-only ADMITS as admit-jpop-kana (see the
+    // next test). Supplying a detail whose artistNameForeign carries Hangul
+    // is the authoritative foreign signal — the classifier's detail-gated
+    // foreignNameSignal DROP gate fires and the verdict flips to foreign-korean.
+    const row = listItem({
+      naviGroupId: '200',
+      selSongNo: '200-100',
+      songName: 'カナタイトル',
+      artistName: 'チョアン',
+    });
+    expect(
+      buildJoysoundDecision(row, {
+        detail: detail({ naviGroupId: '200', selSongNo: '200100', artistNameForeign: '조안' }),
+      }),
+    ).toEqual({
+      selSongNo: '200100',
+      selSongNoRaw: '200-100',
+      naviGroupId: '200',
+      title: 'カナタイトル',
+      artist: 'チョアン',
+      tieupInfo: null,
+      decision: 'drop',
+      reason: 'foreign-korean',
+      // foreign-korean is never flip-risk: the detail already adjudicated it.
+      detailFlipRisk: false,
+    });
+  });
+
+  it('without detail the same kana row is unchanged (listing-only admit-jpop-kana)', () => {
+    // Same row as above, but NO detail forwarded — the detail-gated gates stay
+    // inert and the listing-only kana admit holds, proving detail is optional.
+    expect(
+      buildJoysoundDecision(
+        listItem({
+          naviGroupId: '200',
+          selSongNo: '200-100',
+          songName: 'カナタイトル',
+          artistName: 'チョアン',
+        }),
+      ),
+    ).toEqual({
+      selSongNo: '200100',
+      selSongNoRaw: '200-100',
+      naviGroupId: '200',
+      title: 'カナタイトル',
+      artist: 'チョアン',
+      tieupInfo: null,
+      decision: 'admit',
+      reason: 'admit-jpop-kana',
+      detailFlipRisk: true,
+    });
+  });
+
+  it('forwards an empty foreign-name detail so a Han-only row recovers to admit-jp-detail', () => {
+    // A Han-only row listing-only DROPS as drop-han-only (Mandopop-ambiguous).
+    // A detail with EMPTY foreign-name fields is the authoritative genuine-JP
+    // verdict, so admit-jp-detail recovers it — proving detail enables the
+    // recovery path the listing-only sweep cannot reach.
+    const rec = buildJoysoundDecision(
+      listItem({
+        naviGroupId: '201',
+        selSongNo: '201-200',
+        songName: '夜桜',
+        artistName: '宇多田光',
+      }),
+      { detail: detail({ naviGroupId: '201', selSongNo: '201200' }) },
+    );
+    expect(rec.decision).toBe('admit');
+    expect(rec.reason).toBe('admit-jp-detail');
   });
 
   it('passes tieupInfo through unchanged and admits anime as not flip-risk', () => {

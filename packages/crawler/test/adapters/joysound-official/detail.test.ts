@@ -22,7 +22,10 @@ describe('parseJoysoundDetail — happy path', () => {
       relDate: '2019-12-15',
       newFlg: '1',
       lyricIntro: '沈むように溶けてゆくように',
-      genreList: [{ name: 'JPOP' }, { name: 'POPS' }],
+      genreList: [
+        { genreId: '1', genreName: 'JPOP' },
+        { genreId: '2', genreName: 'POPS' },
+      ],
       tieupList: [],
       aplList: [],
     };
@@ -48,26 +51,142 @@ describe('parseJoysoundDetail — happy path', () => {
     });
   });
 
-  it('flattens tieupList[].name and aplList[].selectionServicePublishDate', () => {
+  it('surfaces top-level songNameForeign and artistInfo.artistNameForeign', () => {
+    const value = {
+      naviGroupId: '190010',
+      selSongNo: '190-010',
+      songName: 'Song',
+      songNameForeign: String.fromCodePoint(0x8d77, 0x98ce), // Han-only foreign title
+      artistInfo: {
+        artistName: 'Artist',
+        artistId: '1',
+        artistNameForeign: String.fromCodePoint(0xd55c, 0xae00), // Hangul foreign artist
+      },
+    };
+
+    const detail = parseJoysoundDetail(value);
+
+    expect(detail.songNameForeign).toBe(String.fromCodePoint(0x8d77, 0x98ce));
+    expect(detail.artistNameForeign).toBe(String.fromCodePoint(0xd55c, 0xae00));
+  });
+
+  it('leaves foreign-name fields undefined when absent or empty', () => {
+    const value = {
+      naviGroupId: '190011',
+      selSongNo: '190-011',
+      songName: 'Song',
+      songNameForeign: '',
+      artistInfo: { artistName: 'Artist', artistNameForeign: '$undefined' },
+    };
+
+    const detail = parseJoysoundDetail(value);
+
+    expect(detail.songNameForeign).toBeUndefined();
+    expect(detail.artistNameForeign).toBeUndefined();
+  });
+
+  it('surfaces top-level songNameForeignSearch and artistInfo.artistNameForeignSearch (C1 romanization)', () => {
+    const value = {
+      naviGroupId: '190012',
+      selSongNo: '190-012',
+      songName: 'Song',
+      songNameForeignSearch: 'wu.lai.', // dotted pinyin
+      artistInfo: { artistName: 'Artist', artistNameForeignSearch: 'zhang.xue.you.' },
+    };
+
+    const detail = parseJoysoundDetail(value);
+
+    expect(detail.songNameForeignSearch).toBe('wu.lai.');
+    expect(detail.artistNameForeignSearch).toBe('zhang.xue.you.');
+  });
+
+  it('leaves *ForeignSearch fields undefined when absent or empty', () => {
+    const value = {
+      naviGroupId: '190013',
+      selSongNo: '190-013',
+      songName: 'Song',
+      songNameForeignSearch: '',
+      artistInfo: { artistName: 'Artist', artistNameForeignSearch: '$undefined' },
+    };
+
+    const detail = parseJoysoundDetail(value);
+
+    expect(detail.songNameForeignSearch).toBeUndefined();
+    expect(detail.artistNameForeignSearch).toBeUndefined();
+  });
+
+  it('honors top-level artistNameForeignSearch as a fallback when artistInfo lacks it', () => {
+    const value = {
+      naviGroupId: '190014',
+      selSongNo: '190-014',
+      songName: 'Song',
+      artistNameForeignSearch: 'top.level.',
+      artistInfo: { artistName: 'Artist' },
+    };
+
+    const detail = parseJoysoundDetail(value);
+
+    expect(detail.artistNameForeignSearch).toBe('top.level.');
+  });
+
+  it('flattens tieupList[].tieupName and aplList[].selectionList[].ServicePublishDate', () => {
+    // Mirrors the real API shape (verified against raw fetchContentsDetail
+    // dumps): genre/tieup entries carry list-prefixed keys, and the publish
+    // date lives on selectionList entries nested inside aplList items.
     const value = {
       naviGroupId: '190002',
       songId: null,
       selSongNo: '190-002',
       songName: 'アイドル',
       artistInfo: { artistName: 'YOASOBI', artistId: '7777' },
-      tieupList: [{ name: 'アニメ「【推しの子】」OP' }, { name: '映画版OP' }],
-      aplList: [
-        { selectionServicePublishDate: '2023-04-12' },
-        { selectionServicePublishDate: '2024-01-05' },
+      tieupList: [
+        { tieupId: 't1', tieupName: 'アニメ「【推しの子】」OP', tieupNameRuby: 'オシノコ' },
+        { tieupId: 't2', tieupName: '映画版OP' },
       ],
-      genreList: [{ name: 'ANISON' }],
+      aplList: [
+        { aplId: '0000100', hitCount: '0', selectionList: [] },
+        {
+          aplId: '0000800',
+          hitCount: '2',
+          selectionList: [
+            { selSongNo: '190002', ServicePublishDate: '20230412000000' },
+            { selSongNo: '190002', ServicePublishDate: '20240105000000' },
+          ],
+        },
+      ],
+      genreList: [{ genreId: 'g1', genreName: 'ANISON' }],
     };
 
     const detail = parseJoysoundDetail(value);
 
     expect(detail.tieupNames).toEqual(['アニメ「【推しの子】」OP', '映画版OP']);
-    expect(detail.aplServicePublishDates).toEqual(['2023-04-12', '2024-01-05']);
+    expect(detail.aplServicePublishDates).toEqual(['20230412000000', '20240105000000']);
     expect(detail.genreNames).toEqual(['ANISON']);
+  });
+
+  it('does NOT pick up the legacy wrong keys ({name} entries, item-level apl dates)', () => {
+    // Regression pin for the 2026-06 parser bug: flattenNames used to read
+    // `item.name` (a key the API never emits) and flattenAplDates used to read
+    // an item-level `selectionServicePublishDate` (also nonexistent). Entries
+    // shaped that way must stay invisible; the real keys must be honored.
+    const value = {
+      naviGroupId: '190003',
+      selSongNo: '190-003',
+      songName: 'X',
+      artistInfo: { artistName: 'Y' },
+      genreList: [{ name: 'ロック' }, { genreId: 'g1', genreName: 'アニメ' }],
+      tieupList: [{ name: '妖怪ウォッチ' }],
+      aplList: [
+        { selectionServicePublishDate: '2023-04-12' },
+        { selectionList: [{ selectionServicePublishDate: '2024-01-05' }] },
+      ],
+    };
+
+    const detail = parseJoysoundDetail(value);
+
+    expect(detail.genreNames).toEqual(['アニメ']); // {name: 'ロック'} skipped
+    expect(detail.tieupNames).toEqual([]); // {name: ...} must not silently work
+    expect(detail.aplServicePublishDates).toEqual([]); // wrong key at both levels
   });
 
   it('coerces finite numeric IDs to strings', () => {
