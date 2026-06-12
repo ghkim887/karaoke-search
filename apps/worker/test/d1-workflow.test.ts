@@ -105,6 +105,45 @@ describe('D1 import workflow', () => {
     );
   });
 
+  it('streams D1 SQL metrics from a file identically to the whole-string summarizer', async () => {
+    const { summarizeD1SqlFile, summarizeD1SqlText } = await importWorkerScript<{
+      summarizeD1SqlFile(sqlPath: string): Promise<{
+        totalBytes: number;
+        statementCount: number;
+        maxStatementBytes: number;
+      }>;
+      summarizeD1SqlText(sqlText: string): {
+        totalBytes: number;
+        statementCount: number;
+        maxStatementBytes: number;
+      };
+    }>('report-d1-sql-metrics.mjs');
+
+    const tempRoot = mkdtempSync(join(tmpdir(), 'karaoke-d1-metrics-'));
+    try {
+      // Multi-line statement + a `;` and newline inside a string literal exercise
+      // the cross-line statement-boundary state the streaming reader must thread.
+      const sqlText = [
+        'DELETE FROM songs;',
+        'INSERT INTO songs (id)',
+        "VALUES ('a');",
+        "INSERT INTO songs (id) VALUES ('b; still\nstring literal');",
+        '',
+      ].join('\n');
+      const sqlPath = join(tempRoot, 'metrics.sql');
+      writeFileSync(sqlPath, sqlText, 'utf8');
+
+      const streamed = await summarizeD1SqlFile(sqlPath);
+      const buffered = summarizeD1SqlText(sqlText);
+
+      expect(streamed).toEqual(buffered);
+      expect(streamed.statementCount).toBe(3);
+      expect(streamed.totalBytes).toBe(Buffer.byteLength(sqlText));
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('defaults SQL export to the production corpus and ignored scratch output without schema', async () => {
     const { parseExportArgs } = await importWorkerScript<{
       parseExportArgs(argv: readonly string[]): {
@@ -250,14 +289,14 @@ describe('D1 import workflow', () => {
           guardMessage = error instanceof Error ? error.message : String(error);
         }
         assertRemoteChunkedImportAllowed({ KARAOKE_D1_REMOTE_PARTIAL_REPLACE_OK: '1' });
-        const plan = splitSqlIntoChunks({
+        const plan = await splitSqlIntoChunks({
           sqlPath: process.env.SQL_PATH,
           chunksDir: process.env.CHUNKS_DIR,
           maxBytes: 80,
         });
         let oversizedMessage = '';
         try {
-          splitSqlIntoChunks({
+          await splitSqlIntoChunks({
             sqlPath: process.env.SQL_PATH,
             chunksDir: process.env.OVERSIZED_CHUNKS_DIR,
             maxBytes: 10,
@@ -271,7 +310,7 @@ describe('D1 import workflow', () => {
         });
         let truncatedMessage = '';
         try {
-          splitSqlIntoChunks({
+          await splitSqlIntoChunks({
             sqlPath: process.env.TRUNCATED_SQL_PATH,
             chunksDir: process.env.TRUNCATED_CHUNKS_DIR,
             maxBytes: 80,
@@ -281,7 +320,7 @@ describe('D1 import workflow', () => {
         }
         let transactionMessage = '';
         try {
-          splitSqlIntoChunks({
+          await splitSqlIntoChunks({
             sqlPath: process.env.TRANSACTION_SQL_PATH,
             chunksDir: process.env.TRANSACTION_CHUNKS_DIR,
             maxBytes: 80,

@@ -1,5 +1,14 @@
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { once } from 'node:events';
+import {
+  createWriteStream,
+  existsSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
+import type { Writable } from 'node:stream';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import {
@@ -302,30 +311,36 @@ export interface ExportD1ImportSqlJsonArgs {
   includeSchema?: boolean;
 }
 
-export function buildD1ImportSql(
+/**
+ * Yields the D1 import SQL one statement (or blank-line separator) at a time so
+ * neither the generator nor its consumers ever buffer the whole corpus as a
+ * single string. The yielded items are exactly the lines that
+ * `buildD1ImportSql` joins with `\n`, so `[...iter].join('\n') + '\n'` is
+ * byte-identical to the legacy whole-string builder. Each INSERT chunk is
+ * batched under `MAX_D1_SQL_STATEMENT_BYTES`, bounding the largest yielded
+ * statement regardless of corpus size.
+ */
+export function* iterD1ImportSqlStatements(
   records: readonly SongRecord[],
   options: BuildD1ImportSqlOptions = {},
-): string {
+): Generator<string> {
   validateSongCorpus(records);
   const searchIndex = buildSearchIndexRows(records);
   const includeSchema = options.includeSchema ?? true;
-  const lines: string[] = [];
 
   if (includeSchema) {
-    lines.push(D1_SCHEMA_SQL.trim(), '');
+    yield D1_SCHEMA_SQL.trim();
+    yield '';
   }
 
-  lines.push(
-    'DELETE FROM search_token_stats;',
-    'DELETE FROM search_tokens;',
-    'DELETE FROM search_texts;',
-    'DELETE FROM artist_aliases;',
-    'DELETE FROM karaoke_numbers;',
-    'DELETE FROM songs;',
-  );
+  yield 'DELETE FROM search_token_stats;';
+  yield 'DELETE FROM search_tokens;';
+  yield 'DELETE FROM search_texts;';
+  yield 'DELETE FROM artist_aliases;';
+  yield 'DELETE FROM karaoke_numbers;';
+  yield 'DELETE FROM songs;';
 
-  pushBatchedInsert(
-    lines,
+  yield* iterBatchedInserts(
     'songs',
     [
       'id',
@@ -358,8 +373,7 @@ export function buildD1ImportSql(
     ],
   );
 
-  pushBatchedInsert(
-    lines,
+  yield* iterBatchedInserts(
     'karaoke_numbers',
     ['song_id', 'provider', 'number', 'number_key'],
     karaokeNumberImportRows(records),
@@ -371,16 +385,14 @@ export function buildD1ImportSql(
     ],
   );
 
-  pushBatchedInsert(
-    lines,
+  yield* iterBatchedInserts(
     'artist_aliases',
     ['song_id', 'position', 'alias'],
     artistAliasImportRows(records),
     ([songId, position, alias]) => [sqlLiteral(songId), sqlInteger(position), sqlLiteral(alias)],
   );
 
-  pushBatchedInsert(
-    lines,
+  yield* iterBatchedInserts(
     'search_texts',
     ['song_id', 'field', 'text_norm', 'text_compact', 'weight', 'provider_mask'],
     searchIndex.texts,
@@ -394,8 +406,7 @@ export function buildD1ImportSql(
     ],
   );
 
-  pushBatchedInsert(
-    lines,
+  yield* iterBatchedInserts(
     'search_tokens',
     ['kind', 'token', 'song_id', 'field', 'weight', 'provider_mask'],
     searchIndex.tokens,
@@ -409,8 +420,7 @@ export function buildD1ImportSql(
     ],
   );
 
-  pushBatchedInsert(
-    lines,
+  yield* iterBatchedInserts(
     'search_token_stats',
     ['kind', 'token', 'df', 'idf_scaled'],
     searchIndex.tokenStats,
@@ -421,21 +431,61 @@ export function buildD1ImportSql(
       sqlInteger(row.idfScaled),
     ],
   );
-
-  return `${lines.join('\n')}\n`;
 }
 
-export function exportD1ImportSqlJson({
+export function buildD1ImportSql(
+  records: readonly SongRecord[],
+  options: BuildD1ImportSqlOptions = {},
+): string {
+  return `${Array.from(iterD1ImportSqlStatements(records, options)).join('\n')}\n`;
+}
+
+/**
+ * Streams the D1 import SQL to a writable, honouring backpressure so the output
+ * is bounded by the per-statement batch size rather than total corpus size.
+ * The bytes written are identical to `buildD1ImportSql(records, options)`.
+ */
+export async function writeD1ImportSql(
+  records: readonly SongRecord[],
+  writable: Writable,
+  options: BuildD1ImportSqlOptions = {},
+): Promise<void> {
+  let first = true;
+  for (const statement of iterD1ImportSqlStatements(records, options)) {
+    const chunk = first ? statement : `\n${statement}`;
+    first = false;
+    if (!writable.write(chunk)) {
+      await once(writable, 'drain');
+    }
+  }
+  if (!writable.write('\n')) {
+    await once(writable, 'drain');
+  }
+}
+
+export async function exportD1ImportSqlJson({
   inputPath,
   outputPath,
   includeSchema,
-}: ExportD1ImportSqlJsonArgs): void {
+}: ExportD1ImportSqlJsonArgs): Promise<void> {
   const parsed = JSON.parse(readFileSync(inputPath, 'utf8')) as unknown;
   if (!Array.isArray(parsed)) {
     throw new Error(`exportD1ImportSqlJson: expected an array in ${inputPath}`);
   }
+  const records = parsed as SongRecord[];
+  // Validate the corpus up front so a malformed record fails before the output
+  // file is created or truncated, matching the all-or-nothing contract of the
+  // previous `writeFileSync(buildD1ImportSql(...))` path.
+  validateSongCorpus(records);
+
   const options = includeSchema === undefined ? {} : { includeSchema };
-  writeFileSync(outputPath, buildD1ImportSql(parsed as SongRecord[], options), 'utf8');
+  const writable = createWriteStream(outputPath, { encoding: 'utf8' });
+  try {
+    await writeD1ImportSql(records, writable, options);
+  } finally {
+    writable.end();
+    await once(writable, 'close');
+  }
 }
 
 export function importSongsJson({ inputPath, dbPath }: ImportSongsJsonArgs): void {
@@ -672,25 +722,16 @@ function sqlInteger(value: number): string {
   return String(value);
 }
 
-function pushBatchedInsert<T>(
-  lines: string[],
+function* iterBatchedInserts<T>(
   tableName: string,
   columns: readonly string[],
   rows: Iterable<T>,
   sqlValues: (row: T) => readonly string[],
-): void {
+): Generator<string> {
   const prefix = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES `;
+  const emptyBatchBytes = Buffer.byteLength(`${prefix};`, 'utf8');
   let batch: string[] = [];
-  let batchBytes = Buffer.byteLength(`${prefix};`, 'utf8');
-
-  const flush = (): void => {
-    if (batch.length === 0) {
-      return;
-    }
-    lines.push(`${prefix}${batch.join(', ')};`);
-    batch = [];
-    batchBytes = Buffer.byteLength(`${prefix};`, 'utf8');
-  };
+  let batchBytes = emptyBatchBytes;
 
   for (const row of rows) {
     const tuple = `(${sqlValues(row).join(', ')})`;
@@ -702,13 +743,17 @@ function pushBatchedInsert<T>(
       );
     }
     if (batch.length > 0 && batchBytes + tupleBytes > MAX_D1_SQL_STATEMENT_BYTES) {
-      flush();
+      yield `${prefix}${batch.join(', ')};`;
+      batch = [];
+      batchBytes = emptyBatchBytes;
     }
     batch.push(tuple);
     batchBytes += tupleBytes;
   }
 
-  flush();
+  if (batch.length > 0) {
+    yield `${prefix}${batch.join(', ')};`;
+  }
 }
 
 function* enumerate<T>(items: readonly T[]): Iterable<[T, number]> {

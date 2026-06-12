@@ -49,7 +49,7 @@ export async function exportD1Sql(argv) {
   const { exportD1ImportSqlJson } = await import(
     pathToFileURL(join(WORKER_ROOT, '..', '..', 'packages', 'data-store', 'dist', 'index.js')).href
   );
-  exportD1ImportSqlJson({
+  await exportD1ImportSqlJson({
     inputPath: args.inputPath,
     outputPath: args.outputPath,
     includeSchema: args.includeSchema,

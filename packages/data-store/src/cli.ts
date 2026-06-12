@@ -2,7 +2,7 @@
 import { pathToFileURL } from 'node:url';
 import { exportD1ImportSqlJson, exportSongsJson, importSongsJson } from './index.js';
 
-export function runDataStoreCli(argv: readonly string[]): void {
+export async function runDataStoreCli(argv: readonly string[]): Promise<void> {
   const [command, ...args] = argv;
 
   if (command === 'import-json') {
@@ -22,7 +22,7 @@ export function runDataStoreCli(argv: readonly string[]): void {
   }
 
   if (command === 'export-d1-sql') {
-    exportD1ImportSqlJson({
+    await exportD1ImportSqlJson({
       inputPath: requireOption(args, '--input'),
       outputPath: requireOption(args, '--output'),
       includeSchema: !hasFlag(args, '--no-schema'),
@@ -52,10 +52,8 @@ function usage(message: string): string {
 
 const entrypointPath = process.argv[1];
 if (entrypointPath !== undefined && import.meta.url === pathToFileURL(entrypointPath).href) {
-  try {
-    runDataStoreCli(process.argv.slice(2));
-  } catch (error) {
+  runDataStoreCli(process.argv.slice(2)).catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
-  }
+  });
 }
