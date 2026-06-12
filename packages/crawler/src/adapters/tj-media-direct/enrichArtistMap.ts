@@ -3,6 +3,7 @@ import type { HttpClient } from '../../http.js';
 import {
   type ArtistNationalityCode,
   type ArtistNationalityEntry,
+  type EnrichmentEntry,
   type SearchSongCache,
   isArtistNationalityFresh,
 } from './cache.js';
@@ -35,6 +36,15 @@ import { type SearchSongItem, searchSongByArtist } from './searchSong.js';
  *       - no exact-match votes at all      -> UNKNOWN
  *  4. Persist to cache. The caller (crawler.ts) is responsible for the
  *     `saveCache` call after the pass.
+ *
+ * Side-effect (Item A): for every EXACT-match scan item carrying an
+ * authoritative non-JPN `nationalcode` (KOR/ENG/…), the item's `pro` is also
+ * persisted into `cache.proEnrichmentMap` (keyed by the same TJ-number string
+ * the parser uses). This feeds the `non-jpn-pro-reject` filter step — the
+ * strongest negative signal — which was previously starved of cached data
+ * because `proEnrichmentMap` was written only for KEPT (JPN) survivors. JPN
+ * pros are NOT written here (the translit pass / JP-likely rescue own those,
+ * with the full title-translit payload); existing entries are never clobbered.
  *
  * The classification is intentionally conservative: a single non-JPN vote
  * downgrades a JPN-leaning artist to AMBIGUOUS. PR-2's filter chain treats
@@ -137,7 +147,7 @@ export async function enrichArtistMap(
       }
 
       if (fetchOk) {
-        const entry = classifyVotes(items, key, now);
+        const entry = classifyVotes(items, key, now, cache);
         cache.artistNationalityMap[key] = entry;
         stats.byCode[entry.code]++;
       }
@@ -173,6 +183,7 @@ function classifyVotes(
   items: ReadonlyArray<SearchSongItem>,
   artistKey: string,
   now: Date,
+  cache: SearchSongCache,
 ): ArtistNationalityEntry {
   const votes: { JPN: number; KOR: number; ENG: number } = { JPN: 0, KOR: 0, ENG: 0 };
   for (const item of items) {
@@ -183,6 +194,38 @@ function classifyVotes(
     }
     // Other codes (null, empty, unfamiliar) ignored. Don't count them as
     // anything — the artist may have non-tagged-up entries on TJ side.
+
+    // Item A — persist an AUTHORITATIVE non-JPN nationalcode into the per-pro
+    // cache so the `non-jpn-pro-reject` filter step (the strongest negative
+    // signal) has data to act on in steady state. Pre-fix, `proEnrichmentMap`
+    // was written only for KEPT (JPN) survivors (enrichTranslit + the
+    // JP-likely rescue), so dropped KOR/ENG pros were re-fetched and re-voted
+    // from scratch every crawl and the veto had ~0 cached data.
+    //
+    // Safety constraints:
+    //   - EXACT pro only: this row exact-matched the artist key above, so
+    //     `item.pro` is genuinely this artist's catalog number (no neighbor /
+    //     fuzzy leak — same discipline as `searchSongByPro`'s exact-`pro`
+    //     match). The map key shape (`item.pro` = `coerceProString(raw.pro)`)
+    //     equals the parser's `tj` key, so `non-jpn-pro-reject` reads it.
+    //   - non-JPN only: JPN proEnrichmentMap writes stay owned by the translit
+    //     pass / rescue (they carry the full sortTitleKo/sortSongKo payload for
+    //     kept rows). We must not shadow a JPN pro with a payload-less stub.
+    //   - never CLOBBER an existing entry: if the translit pass / rescue
+    //     already wrote a richer JPN entry for this pro, leave it — the
+    //     positive signal wins (and is consistent with `non-jpn-pro-reject`
+    //     only firing on an explicit non-JPN code).
+    if (code !== null && code !== 'JPN' && item.pro !== '' && !cache.proEnrichmentMap[item.pro]) {
+      const entry: EnrichmentEntry = {
+        nationalcode: code,
+        sortTitleKo: item.sortTitleKo,
+        sortSongKo: item.sortSongKo,
+        subTitle: item.subTitle,
+        publishdate: item.publishdate,
+        lastSeen: now.toISOString(),
+      };
+      cache.proEnrichmentMap[item.pro] = entry;
+    }
   }
 
   const verdict = verdictFromVotes(votes);

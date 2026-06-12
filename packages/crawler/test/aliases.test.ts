@@ -258,6 +258,110 @@ describe('resolveArtistAliases — collision guard vs canonical identity (audit 
   });
 });
 
+describe('resolveArtistAliases — A1 adapter-emitted artist_aliases (preservation + propagation)', () => {
+  it('(a) preserves a pre-existing artist_aliases on a bare pass-through record', () => {
+    const adapterRec = record({
+      id: 'joysound-1',
+      artist_primary: 'スピッツ',
+      artist_aliases: ['Spitz'],
+    });
+    const { records, warnings } = resolveArtistAliases([adapterRec]);
+    expect(warnings).toHaveLength(0);
+    const out = records.find((r) => r.id === 'joysound-1');
+    expect(out?.artist_primary).toBe('スピッツ');
+    expect(out?.artist_aliases).toEqual(['Spitz']);
+  });
+
+  it('(a) preserves a pre-existing artist_aliases when re-keyed from a bare alias (union, none dropped)', () => {
+    // Pipe-form seed maps alias "Spitz" → canonical "スピッツ".
+    const seed = record({ id: 'blog-1-0', artist_primary: 'スピッツ｜Spitz' });
+    // Bare record arrives AS the alias "Spitz" with NO self-aliases — it is a
+    // pure alias, so Phase 3 re-keys it to the canonical. (A record carrying
+    // its own adapter-emitted aliases self-declares as a canonical and is
+    // governed by the documented "self-canonical wins over re-key" precedent —
+    // see the audit-regression test — so this case uses a pure alias.)
+    const bare = record({ id: 'tj-9', artist_primary: 'Spitz' });
+    const { records, warnings } = resolveArtistAliases([seed, bare]);
+    expect(warnings).toHaveLength(0);
+    const out = records.find((r) => r.id === 'tj-9');
+    expect(out?.artist_primary).toBe('スピッツ');
+    // Original bare form added; canonical's known alias is the same so the
+    // union stays ['Spitz'] (no duplication, none dropped).
+    expect(out?.artist_aliases).toEqual(['Spitz']);
+  });
+
+  it('(a) a JOYSOUND-style record (primary=canonical, alias=native) unions a pipe-form alias for the same canonical', () => {
+    // Adapter-emitted record: primary IS the canonical, alias is the native
+    // name. A pipe-form seed for the same canonical contributes an additional
+    // alias. Both must survive on the adapter record — preservation + union.
+    const adapterRec = record({
+      id: 'joysound-1',
+      artist_primary: 'スピッツ',
+      artist_aliases: ['Spitz'],
+    });
+    const seed = record({ id: 'blog-2-0', artist_primary: 'スピッツ｜SPITZ-JP' });
+    const { records, warnings } = resolveArtistAliases([adapterRec, seed]);
+    expect(warnings).toHaveLength(0);
+    const out = records.find((r) => r.id === 'joysound-1');
+    expect(out?.artist_primary).toBe('スピッツ');
+    expect(out?.artist_aliases).toEqual(['Spitz', 'SPITZ-JP']);
+  });
+
+  it('(b) propagates an adapter-emitted artist_aliases onto a same-canonical bare record', () => {
+    // No pipe-form seed at all — the alias source is the adapter-emitted field.
+    const adapterRec = record({
+      id: 'joysound-1',
+      artist_primary: 'スピッツ',
+      artist_aliases: ['Spitz'],
+    });
+    const bareCanonical = record({
+      id: 'tj-2',
+      artist_primary: 'スピッツ',
+    });
+    const { records, warnings } = resolveArtistAliases([adapterRec, bareCanonical]);
+    expect(warnings).toHaveLength(0);
+    const out = records.find((r) => r.id === 'tj-2');
+    expect(out?.artist_primary).toBe('スピッツ');
+    expect(out?.artist_aliases).toEqual(['Spitz']);
+  });
+
+  it('(b) collision: an adapter alias pointing to two distinct canonicals leaves both untouched + warns', () => {
+    // Two adapter records declare the SAME alias "Common" under DIFFERENT
+    // canonicals. The alias must NOT auto-merge across distinct artists.
+    const a = record({
+      id: 'joysound-a',
+      artist_primary: 'CanonOne',
+      artist_aliases: ['Common'],
+    });
+    const b = record({
+      id: 'joysound-b',
+      artist_primary: 'CanonTwo',
+      artist_aliases: ['Common'],
+    });
+    const bare = record({ id: 'tj-c', artist_primary: 'Common' });
+    const { records, warnings } = resolveArtistAliases([a, b, bare]);
+
+    // Both adapter records keep their declared canonical + alias.
+    const aOut = records.find((r) => r.id === 'joysound-a');
+    const bOut = records.find((r) => r.id === 'joysound-b');
+    expect(aOut?.artist_primary).toBe('CanonOne');
+    expect(aOut?.artist_aliases).toEqual(['Common']);
+    expect(bOut?.artist_primary).toBe('CanonTwo');
+    expect(bOut?.artist_aliases).toEqual(['Common']);
+
+    // Bare "Common" left untouched (no re-key across the collision).
+    const bareOut = records.find((r) => r.id === 'tj-c');
+    expect(bareOut?.artist_primary).toBe('Common');
+    expect(bareOut?.artist_aliases).toBeUndefined();
+
+    // A collision warning enumerates both canonicals.
+    const collision = warnings.find((w) => w.canonicals.length === 2);
+    expect(collision).toBeDefined();
+    expect(collision?.alias).toBe('Common');
+    expect(collision?.canonicals.sort()).toEqual(['CanonOne', 'CanonTwo'].sort());
+  });
+});
+
 describe('resolveArtistAliases — input immutability', () => {
   it('does not mutate the input records', () => {
     const r = record({
