@@ -16,9 +16,11 @@ concurrency:
 
 jobs:
   build:
+    # Builds in fallback (offline MiniSearch) mode: no PUBLIC_KARAOKE_API_BASE_URL
+    # is set, so the site bundles its own index. Interim state until the
+    # self-hosted search API (apps/worker `serve:node`) is reachable — set the
+    # env var here again to flip the site back to API-first.
     runs-on: ubuntu-latest
-    env:
-      PUBLIC_KARAOKE_API_BASE_URL: https://karaoke-search-api.ghkim887.workers.dev
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       - uses: ./.github/actions/setup
@@ -28,14 +30,14 @@ jobs:
           path: apps/web/dist
 
   e2e:
-    # Builds its OWN dist in FALLBACK mode (no PUBLIC_KARAOKE_API_BASE_URL)
-    # instead of reusing the build job's API-first artifact. e2e is a required
-    # deploy gate (`deploy` needs: [build, e2e]), so it must exercise the
-    # offline MiniSearch path — a down or slow live Worker must never block
-    # Pages deploys for an unrelated reason. An in-job scoped build is the
-    # simplest mechanism: the composite setup already installs all deps, and
-    # the build job's Pages artifact (API-first) stays untouched. No
-    # `needs: build` — the two jobs are independent and run in parallel.
+    # Builds its OWN dist in fallback mode (no PUBLIC_KARAOKE_API_BASE_URL)
+    # and runs Playwright against it. e2e is a required deploy gate
+    # (`deploy` needs: [build, e2e]) and exercises the offline MiniSearch
+    # path — the only mode while no search API is configured. An in-job
+    # scoped build is the simplest mechanism: the composite setup already
+    # installs all deps, and the build job's Pages artifact stays untouched
+    # (and keeps working if the build job ever sets an API base URL again).
+    # No `needs: build` — the two jobs are independent and run in parallel.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -4,8 +4,8 @@
  * manifest and verify it before it ever reaches its destination path (PR-1
  * of the post-JOYSOUND data topology — see docs/OPEN-QUESTIONS.md item 1).
  *
- * Shared consumer for local dev, the self-host SQLite build, and the D1
- * import: each of them takes the verified JSON this script produces.
+ * Shared consumer for local dev and the self-host SQLite build: each of
+ * them takes the verified JSON this script produces.
  *
  * Integrity contract: the download streams to a run-unique
  * `<out>.<pid>.<uuid>.tmp` (concurrent fetches can never tear each other);

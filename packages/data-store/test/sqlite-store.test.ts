@@ -1,55 +1,18 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Writable } from 'node:stream';
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runDataStoreCli } from '../src/cli.js';
 import {
   D1_SCHEMA_SQL,
-  buildD1ImportSql,
   createSongDatabase,
-  exportD1ImportSqlJson,
   exportSongs,
   exportSongsJson,
   importSongs,
   importSongsJson,
-  iterD1ImportSqlStatements,
   openSongDatabase,
-  writeD1ImportSql,
 } from '../src/index.js';
-
-const MAX_D1_SQL_STATEMENT_BYTES = 16_000;
-
-function collectWritable(): { writable: Writable; toString(): string } {
-  const buffers: Buffer[] = [];
-  const writable = new Writable({
-    write(chunk: Buffer | string, encoding, callback) {
-      buffers.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
-      callback();
-    },
-  });
-  return {
-    writable,
-    toString: () => Buffer.concat(buffers).toString('utf8'),
-  };
-}
-
-function makeSyntheticRecords(count: number): SongRecord[] {
-  return Array.from({ length: count }, (_, index): SongRecord => {
-    const songNumber = 100000 + index;
-    return {
-      id: `joysound-${songNumber}`,
-      source_url: `https://example.com/joysound/${songNumber}`,
-      title_primary: `Song ${songNumber}`,
-      title_ko: null,
-      artist_primary: `Artist ${songNumber}`,
-      artist_ko: null,
-      karaoke_numbers: { tj: null, ky: null, joysound: String(songNumber) },
-      crawled_at: '2026-01-01T00:00:00.000Z',
-    };
-  });
-}
 
 const openDatabases: Array<{ close(): void }> = [];
 
@@ -362,183 +325,17 @@ describe('SQLite song store', () => {
     expect(tokenStats.idf_scaled).toBeGreaterThan(0);
   });
 
-  it('builds a complete D1 replacement SQL dump that populates derived search indexes', () => {
-    const db = openMemoryDb();
-
-    db.exec(buildD1ImportSql([CJK_SEARCH_RECORD]));
-
-    expect(exportSongs(db)).toEqual([CJK_SEARCH_RECORD]);
-    expect(
-      (
-        db.prepare('SELECT COUNT(*) AS count FROM search_texts').get() as unknown as {
-          count: number;
-        }
-      ).count,
-    ).toBeGreaterThan(0);
-    expect(
-      (
-        db.prepare('SELECT COUNT(*) AS count FROM search_tokens').get() as unknown as {
-          count: number;
-        }
-      ).count,
-    ).toBeGreaterThan(0);
-    expect(
-      (
-        db.prepare('SELECT COUNT(*) AS count FROM search_token_stats').get() as unknown as {
-          count: number;
-        }
-      ).count,
-    ).toBeGreaterThan(0);
-  });
-
-  it('batches generated D1 SQL inserts below Cloudflare statement-size limits', () => {
-    const records = Array.from({ length: 150 }, (_, index): SongRecord => {
-      const songNumber = 613446 + index;
-      return {
-        ...CJK_SEARCH_RECORD,
-        id: `joysound-${songNumber}`,
-        source_url: `https://example.com/joysound/${songNumber}`,
-        karaoke_numbers: { tj: `0${68748 + index}`, ky: null, joysound: String(songNumber) },
-      };
-    });
-
-    const sql = buildD1ImportSql(records);
-    const statements = sql
-      .trim()
-      .split(/;\n/u)
-      .map((statement) => `${statement};`);
-    const maxStatementBytes = Math.max(
-      ...statements.map((statement) => Buffer.byteLength(statement, 'utf8')),
-    );
-
-    expect(maxStatementBytes).toBeLessThanOrEqual(100_000);
-    expect(sql.match(/^INSERT INTO search_tokens/gmu)?.length ?? 0).toBeGreaterThan(1);
-  });
-
-  it('builds a complete D1 replacement SQL dump that preserves escaped text fields', () => {
-    const db = openMemoryDb();
-    const records = cloneRecords(FIXTURE_RECORDS);
-    records[0] = {
-      ...fixtureRecord(0),
-      source_url: "https://example.com/song?name=Rock'n'Roll",
-      title_primary: "Rock 'n' Roll\nSong",
-      title_ko: '별빛_%_노래',
-      artist_primary: 'Back\\Slash; DROP TABLE songs; --',
-      artist_aliases: ["Alias 'One'", 'Line\nTwo'],
-    };
-
-    db.exec(buildD1ImportSql(records));
-
-    expect(exportSongs(db)).toEqual(records);
-  });
-
-  it('writes a schema-prefixed D1 SQL import file from a JSON corpus', async () => {
+  it('round-trips a JSON corpus through the data-store CLI runner', () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
     const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs-d1.sql');
-    writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
+    const dbPath = join(dir, 'songs-cli.sqlite');
+    const outputPath = join(dir, 'roundtrip-cli.json');
+    const json = `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`;
+    writeFileSync(inputPath, json, 'utf8');
 
-    await exportD1ImportSqlJson({ inputPath, outputPath });
+    runDataStoreCli(['import-json', '--input', inputPath, '--db', dbPath]);
+    runDataStoreCli(['export-json', '--db', dbPath, '--output', outputPath]);
 
-    const db = openMemoryDb();
-    db.exec(readFileSync(outputPath, 'utf8'));
-    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
-  });
-
-  it('supports exporting a D1 SQL file through the data-store CLI runner', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
-    const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs-d1-cli.sql');
-    writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
-
-    await runDataStoreCli(['export-d1-sql', '--input', inputPath, '--output', outputPath]);
-
-    const db = openMemoryDb();
-    db.exec(readFileSync(outputPath, 'utf8'));
-    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
-  });
-
-  it('streams D1 import SQL byte-identically to the in-memory builder', async () => {
-    const records = cloneRecords(FIXTURE_RECORDS);
-    const sink = collectWritable();
-
-    await writeD1ImportSql(records, sink.writable);
-
-    expect(sink.toString()).toBe(buildD1ImportSql(records));
-  });
-
-  it('streams a schema-less D1 import SQL byte-identically to the builder', async () => {
-    const records = [CJK_SEARCH_RECORD];
-    const sink = collectWritable();
-
-    await writeD1ImportSql(records, sink.writable, { includeSchema: false });
-
-    expect(sink.toString()).toBe(buildD1ImportSql(records, { includeSchema: false }));
-  });
-
-  it('produces a statement iterator whose join reproduces buildD1ImportSql output', () => {
-    const records = cloneRecords(FIXTURE_RECORDS);
-
-    const statements = Array.from(iterD1ImportSqlStatements(records));
-
-    expect(`${statements.join('\n')}\n`).toBe(buildD1ImportSql(records));
-  });
-
-  it('bounds every yielded INSERT statement under the D1 statement-size cap', () => {
-    const records = makeSyntheticRecords(2_000);
-
-    let yielded = 0;
-    let maxInsertBytes = 0;
-    for (const statement of iterD1ImportSqlStatements(records)) {
-      yielded += 1;
-      if (statement.startsWith('INSERT INTO')) {
-        maxInsertBytes = Math.max(maxInsertBytes, Buffer.byteLength(`${statement};`, 'utf8'));
-      }
-    }
-
-    expect(yielded).toBeGreaterThan(1);
-    expect(maxInsertBytes).toBeGreaterThan(0);
-    expect(maxInsertBytes).toBeLessThanOrEqual(MAX_D1_SQL_STATEMENT_BYTES);
-  });
-
-  it('drives a large synthetic corpus through the iterator without materializing one big string', () => {
-    const recordCount = 20_000;
-    const records = makeSyntheticRecords(recordCount);
-
-    let statementCount = 0;
-    let maxChunkBytes = 0;
-    for (const statement of iterD1ImportSqlStatements(records, { includeSchema: false })) {
-      statementCount += 1;
-      maxChunkBytes = Math.max(maxChunkBytes, Buffer.byteLength(`${statement};`, 'utf8'));
-    }
-
-    // Far more statements than rows-per-batch would imply: the corpus is split,
-    // never emitted as one mega-statement.
-    expect(statementCount).toBeGreaterThan(recordCount / 100);
-    expect(maxChunkBytes).toBeLessThanOrEqual(MAX_D1_SQL_STATEMENT_BYTES);
-  });
-
-  it('streams deterministic, byte-identical output across repeated runs', async () => {
-    const records = makeSyntheticRecords(500);
-    const first = collectWritable();
-    const second = collectWritable();
-
-    await writeD1ImportSql(records, first.writable);
-    await writeD1ImportSql(records, second.writable);
-
-    expect(first.toString()).toBe(second.toString());
-  });
-
-  it('writes a streamed D1 SQL import file that round-trips through SQLite', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-'));
-    const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs-d1-streamed.sql');
-    writeFileSync(inputPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
-
-    await exportD1ImportSqlJson({ inputPath, outputPath });
-
-    const db = openMemoryDb();
-    db.exec(readFileSync(outputPath, 'utf8'));
-    expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
+    expect(readFileSync(outputPath, 'utf8')).toBe(json);
   });
 });

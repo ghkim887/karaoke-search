@@ -62,10 +62,14 @@ jobs:
         # ingest, title_ko Stage 1, lib helpers). Previously these only ran
         # weekly in crawl.yml — and only the splitter-parity suite at that.
         run: python -m unittest discover -s scripts -p "test_*.py"
-      - name: Verify D1 SQL export metrics
-        run: pnpm --filter @karaoke/worker d1:verify-sql
-      - name: Worker deploy dry-run
-        run: pnpm --filter @karaoke/worker deploy:dry-run
+      - name: Build self-host SQLite DB from the committed corpus
+        # Corpus gate: `sqlite:build` imports the committed songs.json through
+        # @karaoke/data-store's importSongsJson, which runs validateSongCorpus
+        # (per-record schema validation + duplicate-id detection) over every
+        # committed record AND proves the self-host search database builds
+        # end-to-end on every PR. Replaced the Cloudflare D1 SQL-export gate
+        # when the CF deploy path was removed (2026-06-13).
+        run: pnpm --filter @karaoke/worker sqlite:build
 
   e2e:
     # Playwright smoke suite on every PR. Without this, a UI-breaking PR merges
@@ -73,7 +77,7 @@ jobs:
     # which then blocks ALL Pages deploys. Runs in parallel with `verify` (no
     # `needs:` — independent jobs, no shared outputs) and builds in FALLBACK
     # mode (no PUBLIC_KARAOKE_API_BASE_URL) so PR CI exercises the offline
-    # MiniSearch path and never depends on a live Worker. Mirrors deploy.yml's
+    # MiniSearch path and never depends on a live search API. Mirrors deploy.yml's
     # e2e job step-for-step. PR-only: on a main push deploy.yml runs the
     # identical fallback e2e as the required deploy gate, so running it here
     # too would duplicate the same suite on the same commit.

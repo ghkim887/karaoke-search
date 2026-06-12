@@ -13,8 +13,8 @@ Items referencing the JOYSOUND feature branch
 (offline bundle + weekly crawl PR diff); the post-JOYSOUND full corpus
 (~221k, ~85 MB) lives OUTSIDE git as a GitHub Release asset, and git tracks
 only a small manifest (`data/full-corpus.manifest.json`:
-sha256/url/sizeBytes/record+vendor counts). D1 imports and the self-host
-SQLite build consume the release asset via the manifest. Rationale: the
+sha256/url/sizeBytes/record+vendor counts). The self-host SQLite build
+consumes the release asset via the manifest. Rationale: the
 full corpus breaks both git limits (85 MB vs the 100 MB hard block) and
 client-side index-build UX (~316 MB heap / ~5.7 s on desktop Node — worse
 on phones), while a Release asset needs zero new secrets and the
@@ -28,9 +28,9 @@ manifest [+ optional SQLite]) and `scripts/fetch-full-corpus.mjs`
 - **PR-2 (workflow):** a `workflow_dispatch` full-corpus pipeline — compose
   → `gh release create` with the corpus asset → manifest-update PR. Weekly
   `crawl.yml` stays unchanged (baseline path preserved).
-- **PR-3 (first publish/import):** publish the first release, manual D1
-  import, `wrangler d1 info` 500 MB measurement (see item 4), then the
-  worker/web deploy.
+- **PR-3 (first publish/import):** publish the first release, build the
+  self-host SQLite database from it, stand up the self-host API, then the
+  web deploy flip (set `PUBLIC_KARAOKE_API_BASE_URL` in `deploy.yml`).
 
 ## 2. JOYSOUND runbook owner checkpoints
 
@@ -57,29 +57,31 @@ a `{id, title_primary, title_ko}` row to
 pipeline run applies it. Unblocked by: owner review time (incremental — any
 subset helps).
 
-## 4. D1 free-tier 500 MB vs the JOYSOUND-scale corpus
+## 4. D1 free-tier 500 MB vs the JOYSOUND-scale corpus (RESOLVED 2026-06-13 — by removal)
 
-The streamed D1 SQL export for the ~221k–236k candidate measured ~946 MB
-during the 2026-06 JOYSOUND candidate dry-run — well past the 500 MB
-Cloudflare D1 free-tier cap. Deploy-time check:
-`wrangler d1 info --remote` after import. The planned escape hatch is the
-**self-hosted search API** (`apps/worker/src/node-server.ts`,
-`pnpm --filter @karaoke/worker serve:node`, landed in `008d453`) over the
-same SQLite schema — the owner plans self-hosting as the expected path.
-Unblocked by: the actual post-import measurement + hosting decision.
+Resolved by removing the Cloudflare deploy path entirely: the owner decided
+self-hosting (`apps/worker/src/node-server.ts`,
+`pnpm --filter @karaoke/worker serve:node` over the SQLite database from
+`sqlite:build`) is the only serving path, so the D1 500 MB free-tier cap no
+longer applies. Background: the streamed D1 SQL export for the ~221k–236k
+candidate measured ~946 MB during the 2026-06 JOYSOUND candidate dry-run —
+well past the cap — which motivated the decision. Workers + D1 + wrangler
+tooling was deleted from the repo on 2026-06-13.
 
 ## 5. Post-JOYSOUND refactor backlog (deferred to avoid feature-branch conflicts)
 
 Parked because the touched files are in flight on the feature branch:
 
-- worker dedup: `splitSqlStatements` is duplicated between
-  `apps/worker/scripts/import-d1-remote-chunked.mjs` and
-  `report-d1-sql-metrics.mjs`, and the `StoredSongRow` row shape is declared
-  in both `apps/worker/src/index.ts` and `@karaoke/data-store` — extract
-  shared code;
-- `apps/worker/scripts/export-d1-sql.mjs` dynamically imports the data-store
-  via a hardcoded relative `dist/` path — switch to the `@karaoke/data-store`
-  bare specifier so package resolution owns the path;
+- worker dedup: the `StoredSongRow` row shape is declared in both
+  `apps/worker/src/index.ts` and `@karaoke/data-store` — extract shared code
+  (the `splitSqlStatements` half of this item was resolved by deletion when
+  the D1 import scripts were removed 2026-06-13);
+- `apps/worker/scripts/build-sqlite-db.mjs` dynamically imports the
+  data-store via a hardcoded relative `dist/` path — switch to the
+  `@karaoke/data-store` bare specifier so package resolution owns the path;
+- rename the worker's `D1DatabaseLike`/`D1PreparedStatementLike` interfaces,
+  `D1_SCHEMA_SQL`, and the `.wrangler/` scratch-dir convention now that
+  Cloudflare is gone (cosmetic; deliberately not done in the removal PR);
 - `apps/web/src/components/App.tsx` hook extraction (the component
   accumulated search/API/favorites state machines);
 - JOYSOUND classifier gate-array restructure — only with a

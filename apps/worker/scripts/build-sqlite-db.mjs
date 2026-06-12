@@ -39,20 +39,38 @@ export async function buildSqliteDb(argv) {
   const args = Array.isArray(argv) ? parseBuildSqliteArgs(argv) : argv;
   await mkdir(dirname(args.outputPath), { recursive: true });
   await rm(args.outputPath, { force: true });
-  const { importSongsJson } = await import(
+  const { importSongsJson, openSongDatabase } = await import(
     pathToFileURL(join(WORKER_ROOT, '..', '..', 'packages', 'data-store', 'dist', 'index.js')).href
   );
   importSongsJson({ inputPath: args.inputPath, dbPath: args.outputPath });
+  const songCount = countSongs(openSongDatabase, args.outputPath);
+  if (songCount === 0) {
+    // CI corpus gate hardening: an empty songs.json imports "successfully"
+    // but would ship a database that serves nothing. Fail loudly instead.
+    await rm(args.outputPath, { force: true });
+    throw new Error(`Refusing to build an empty database: 0 songs in ${args.inputPath}`);
+  }
   return {
     ...args,
+    songCount,
     bytes: (await stat(args.outputPath)).size,
   };
+}
+
+function countSongs(openSongDatabase, dbPath) {
+  const db = openSongDatabase(dbPath);
+  try {
+    return Number(db.prepare('SELECT COUNT(*) AS count FROM songs').get().count);
+  } finally {
+    db.close();
+  }
 }
 
 export async function main(argv = process.argv.slice(2)) {
   const result = await buildSqliteDb(argv);
   console.log(`Wrote SQLite DB: ${result.outputPath}`);
   console.log(`Input corpus: ${result.inputPath}`);
+  console.log(`Songs imported: ${result.songCount}`);
   console.log(`SQLite bytes: ${result.bytes}`);
 }
 
