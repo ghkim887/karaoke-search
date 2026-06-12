@@ -209,6 +209,77 @@ describe('worker search API', () => {
     expect(indexedSql).toMatch(/\(st\.provider_mask & \?\) != 0/);
   });
 
+  it('applies a multi-vendor filter as the union of the selected vendors', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    // song-1/song-2/song-4 are tj-tagged, song-3 is ky-only.
+    const withTjKy = await fetchJson(db, '/api/search?vendor=tj,ky');
+    const withKyJoysound = await fetchJson(db, '/api/search?vendor=ky,joysound');
+
+    expect(withTjKy.items.map((song) => song.id)).toEqual(['song-1', 'song-2', 'song-3', 'song-4']);
+    // song-1 (joysound) + song-3 (ky) + song-4 (joysound); song-2 is tj-only and excluded.
+    expect(withKyJoysound.items.map((song) => song.id)).toEqual(['song-1', 'song-3', 'song-4']);
+  });
+
+  it('keeps single-vendor filtering working for back-compat', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const withJoysound = await fetchJson(db, '/api/search?vendor=joysound');
+
+    expect(withJoysound.items.map((song) => song.id)).toEqual(['song-1', 'song-4']);
+  });
+
+  it('ORs the multi-vendor bitmask in the derived search index path', async () => {
+    const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
+    const db = createD1WithSongs(FIXTURE_RECORDS, {
+      inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
+    });
+
+    const withTjKy = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF&vendor=tj,ky');
+
+    expect(withTjKy.items.map((song) => song.id)).toEqual(['song-4']);
+
+    const indexed = statements.find((entry) => entry.sql.includes('FROM search_tokens st'));
+    expect(indexed).toBeDefined();
+    // Each index filter contributes a SINGLE combined-mask comparison (ORed via
+    // the bitmask), never one clause per selected vendor.
+    expect(indexed?.sql).toMatch(/\(st\.provider_mask & \?\) != 0/);
+    expect(indexed?.sql).not.toMatch(/provider_mask & \? != 0[\s\S]*OR[\s\S]*provider_mask & \?/);
+    // tj (1) | ky (2) === 3 should be bound as the combined mask.
+    expect(indexed?.parameters).toContain(3);
+  });
+
+  it('ORs the multi-vendor set in the karaoke-number candidate path', async () => {
+    const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
+    const db = createD1WithSongs(FIXTURE_RECORDS, {
+      inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
+    });
+
+    // song-4 carries tj 068748; restrict to a vendor set that includes tj.
+    const withTjKy = await fetchJson(db, '/api/search?q=68748&vendor=tj,ky');
+    // ky alone must not surface a tj-only number.
+    const withKyOnly = await fetchJson(db, '/api/search?q=68748&vendor=ky');
+
+    expect(withTjKy.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(withKyOnly.items).toEqual([]);
+
+    const candidateSql = statements.find((entry) => entry.sql.includes('FROM karaoke_numbers kn'));
+    expect(candidateSql).toBeDefined();
+    expect(candidateSql?.sql).toMatch(/kn\.provider IN \(\?(, \?)+\)/);
+  });
+
+  it('rejects an invalid vendor member inside a multi-vendor filter with HTTP 400', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const response = await handleRequest(
+      new Request('https://karaoke.example/api/search?vendor=tj,nope'),
+      { DB: db },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid vendor: nope' });
+  });
+
   it('paginates using limit and cursor without dropping result order', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
 
@@ -310,6 +381,113 @@ describe('worker search API', () => {
     });
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe('worker batch-by-id API', () => {
+  it('hydrates full records (numbers + aliases) for the requested ids', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const result = await fetchJson(db, '/api/songs?ids=song-1,song-4');
+
+    const byId = new Map(result.items.map((song) => [song.id, song]));
+    expect([...byId.keys()].sort()).toEqual(['song-1', 'song-4']);
+    expect(byId.get('song-1')).toEqual(FIXTURE_RECORDS[0]);
+    expect(byId.get('song-4')).toEqual(FIXTURE_RECORDS[3]);
+    // Aliases + karaoke numbers must be populated by the shared hydrator.
+    expect(byId.get('song-1')?.artist_aliases).toEqual(['Yoa Alias']);
+    expect(byId.get('song-4')?.karaoke_numbers).toEqual({
+      tj: '068748',
+      ky: null,
+      joysound: '613446',
+    });
+  });
+
+  it('tolerates missing ids by returning only the records that exist', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const result = await fetchJson(db, '/api/songs?ids=song-2,does-not-exist,song-3');
+
+    expect(result.items.map((song) => song.id).sort()).toEqual(['song-2', 'song-3']);
+  });
+
+  it('returns 400 when the ids parameter is empty or absent', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const missing = await handleRequest(new Request('https://karaoke.example/api/songs'), {
+      DB: db,
+    });
+    const empty = await handleRequest(new Request('https://karaoke.example/api/songs?ids='), {
+      DB: db,
+    });
+    const blank = await handleRequest(
+      new Request('https://karaoke.example/api/songs?ids=%20,%20'),
+      { DB: db },
+    );
+
+    expect(missing.status).toBe(400);
+    expect(empty.status).toBe(400);
+    expect(blank.status).toBe(400);
+  });
+
+  it('returns 400 when more than the per-request id cap is requested', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const oversized = Array.from({ length: 101 }, (_, index) => `song-${index}`).join(',');
+
+    const response = await handleRequest(
+      new Request(`https://karaoke.example/api/songs?ids=${oversized}`),
+      { DB: db },
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('serves exactly the per-request id cap without error', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const ids = ['song-1', ...Array.from({ length: 99 }, (_, index) => `absent-${index}`)].join(
+      ',',
+    );
+
+    const result = await fetchJson(db, `/api/songs?ids=${ids}`);
+
+    expect(result.items.map((song) => song.id)).toEqual(['song-1']);
+  });
+
+  it('binds ids as parameters with no SQL-injection surface', async () => {
+    const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
+    const db = createD1WithSongs(FIXTURE_RECORDS, {
+      inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
+    });
+
+    // No comma inside the payload so it stays a single literal id after parsing.
+    const injection = "song-1' OR '1'='1'; DROP TABLE songs;--";
+    const result = await fetchJson(db, `/api/songs?ids=${encodeURIComponent(injection)},song-2`);
+
+    // The injection string is treated as a literal id (no such song); song-2 is found.
+    expect(result.items.map((song) => song.id)).toEqual(['song-2']);
+
+    const songsLookup = statements.find(
+      (entry) => entry.sql.includes('FROM songs') && /\bid IN \(\?(, \?)*\)/.test(entry.sql),
+    );
+    expect(songsLookup).toBeDefined();
+    // The dangerous string must appear ONLY as a bound parameter, never in the SQL text.
+    expect(songsLookup?.sql).not.toContain('DROP TABLE');
+    expect(songsLookup?.parameters).toContain(injection);
+
+    // The songs table must still be intact afterward.
+    const stillThere = await fetchJson(db, '/api/songs?ids=song-1');
+    expect(stillThere.items.map((song) => song.id)).toEqual(['song-1']);
+  });
+
+  it('rejects non-GET methods on the batch endpoint', async () => {
+    const db = createD1WithSongs(FIXTURE_RECORDS);
+
+    const response = await handleRequest(
+      new Request('https://karaoke.example/api/songs?ids=song-1', { method: 'POST' }),
+      { DB: db },
+    );
+
+    expect(response.status).toBe(405);
   });
 });
 

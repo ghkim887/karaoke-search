@@ -58,7 +58,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     });
   }
 
-  if (url.pathname !== '/api/search') {
+  if (url.pathname !== '/api/search' && url.pathname !== '/api/songs') {
     return json({ error: 'Not found' }, 404);
   }
   if (request.method !== 'GET') {
@@ -66,6 +66,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   }
 
   try {
+    if (url.pathname === '/api/songs') {
+      return await handleSongsByIdRequest(request, env.DB);
+    }
     return await handleSearchRequest(request, env.DB);
   } catch (error) {
     if (error instanceof BadRequestError) {
@@ -78,13 +81,13 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 export async function handleSearchRequest(request: Request, db: D1DatabaseLike): Promise<Response> {
   const url = new URL(request.url);
   const query = url.searchParams.get('q')?.trim() ?? '';
-  const vendor = parseVendor(url.searchParams.get('vendor'));
+  const vendors = parseVendors(url.searchParams.get('vendor'));
   const limit = parseLimit(url.searchParams.get('limit'));
   const offset = parseCursor(url.searchParams.get('cursor'));
 
   const candidateRows = await findCandidateRows(db, {
     query,
-    vendor,
+    vendors,
     limit: limit + 1,
     offset,
   });
@@ -93,6 +96,39 @@ export async function handleSearchRequest(request: Request, db: D1DatabaseLike):
   const items = await hydrateSongs(db, pageRows);
 
   return json({ items, nextCursor: hasMore ? String(offset + limit) : null });
+}
+
+export async function handleSongsByIdRequest(
+  request: Request,
+  db: D1DatabaseLike,
+): Promise<Response> {
+  const url = new URL(request.url);
+  const ids = parseSongIds(url.searchParams.get('ids'));
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const rows = await allRows<StoredSongRow>(
+    db
+      .prepare(
+        `SELECT
+          s.id,
+          s.source_url,
+          s.title_primary,
+          s.title_ko,
+          s.artist_primary,
+          s.artist_ko,
+          s.artist_aliases_present,
+          s.crawled_at,
+          s.media_context_ko,
+          s.title_ko_source,
+          s.title_ko_confidence
+        FROM songs s
+        WHERE s.id IN (${placeholders})`,
+      )
+      .bind(...ids),
+  );
+  const items = await hydrateSongs(db, rows);
+
+  return json({ items });
 }
 
 async function findCandidateRows(
@@ -388,27 +424,28 @@ async function allRows<T>(statement: D1PreparedStatementLike): Promise<T[]> {
 function appendSongFilters(
   where: string[],
   values: D1Value[],
-  params: Pick<SearchQueryParams, 'vendor'>,
+  params: Pick<SearchQueryParams, 'vendors'>,
   songAlias: string,
 ): void {
-  if (params.vendor !== undefined) {
+  if (params.vendors !== undefined) {
+    const placeholders = params.vendors.map(() => '?').join(', ');
     where.push(`EXISTS (
       SELECT 1 FROM karaoke_numbers vn
-      WHERE vn.song_id = ${songAlias}.id AND vn.provider = ? AND vn.number IS NOT NULL
+      WHERE vn.song_id = ${songAlias}.id AND vn.provider IN (${placeholders}) AND vn.number IS NOT NULL
     )`);
-    values.push(params.vendor);
+    values.push(...params.vendors);
   }
 }
 
 function appendIndexFilters(
   where: string[],
   values: D1Value[],
-  params: Pick<SearchQueryParams, 'vendor'>,
+  params: Pick<SearchQueryParams, 'vendors'>,
   indexAlias: string,
 ): void {
-  if (params.vendor !== undefined) {
+  if (params.vendors !== undefined) {
     where.push(`(${indexAlias}.provider_mask & ?) != 0`);
-    values.push(VENDOR_MASKS[params.vendor]);
+    values.push(combinedVendorMask(params.vendors));
   }
 }
 
@@ -424,7 +461,7 @@ function appendKaraokeNumberCandidateSubquery({
 }: {
   subqueries: string[];
   values: D1Value[];
-  params: Pick<SearchQueryParams, 'vendor'>;
+  params: Pick<SearchQueryParams, 'vendors'>;
   provider: Vendor | undefined;
   predicateSql: string;
   predicateValues: readonly D1Value[];
@@ -437,9 +474,10 @@ function appendKaraokeNumberCandidateSubquery({
     where.push('kn.provider = ?');
     branchValues.push(provider);
   }
-  if (params.vendor !== undefined) {
-    where.push('kn.provider = ?');
-    branchValues.push(params.vendor);
+  if (params.vendors !== undefined) {
+    const placeholders = params.vendors.map(() => '?').join(', ');
+    where.push(`kn.provider IN (${placeholders})`);
+    branchValues.push(...params.vendors);
   }
 
   subqueries.push(`
@@ -513,14 +551,59 @@ function hasNonAsciiCharacter(value: string): boolean {
   return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
-function parseVendor(value: string | null): Vendor | undefined {
+function parseVendors(value: string | null): Vendor[] | undefined {
   if (value === null || value === '') {
     return undefined;
   }
-  if (!isOneOf(value, VENDORS)) {
-    throw new BadRequestError(`Invalid vendor: ${value}`);
+  const vendors: Vendor[] = [];
+  const seen = new Set<Vendor>();
+  for (const part of value.split(',')) {
+    const candidate = part.trim();
+    if (candidate === '') {
+      continue;
+    }
+    if (!isOneOf(candidate, VENDORS)) {
+      throw new BadRequestError(`Invalid vendor: ${candidate}`);
+    }
+    if (!seen.has(candidate)) {
+      seen.add(candidate);
+      vendors.push(candidate);
+    }
   }
-  return value;
+  return vendors.length > 0 ? vendors : undefined;
+}
+
+function combinedVendorMask(vendors: readonly Vendor[]): number {
+  let mask = 0;
+  for (const vendor of vendors) {
+    mask |= VENDOR_MASKS[vendor];
+  }
+  return mask;
+}
+
+function parseSongIds(value: string | null): string[] {
+  if (value === null) {
+    throw new BadRequestError('Missing ids');
+  }
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const part of value.split(',')) {
+    const id = part.trim();
+    if (id === '') {
+      continue;
+    }
+    if (!seen.has(id)) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  if (ids.length === 0) {
+    throw new BadRequestError('Invalid ids: at least one id is required');
+  }
+  if (ids.length > MAX_LIMIT) {
+    throw new BadRequestError(`Invalid ids: at most ${MAX_LIMIT} ids per request`);
+  }
+  return ids;
 }
 
 function parseLimit(value: string | null): number {
@@ -580,7 +663,7 @@ interface SearchQueryToken {
 
 interface SearchQueryParams {
   query: string;
-  vendor: Vendor | undefined;
+  vendors: Vendor[] | undefined;
   limit: number;
   offset: number;
 }
