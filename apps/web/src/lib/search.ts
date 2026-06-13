@@ -1,5 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
-import MiniSearch from 'minisearch';
+import { expandSearchQuery } from '@karaoke/search';
+import MiniSearch, { type SearchResult } from 'minisearch';
 import { normalize } from './normalize.js';
 import { fetchWithRetry } from './retry.js';
 
@@ -59,6 +60,39 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
   });
   index.addAll(records);
   return index;
+}
+
+/**
+ * Query a local MiniSearch index with safe romaji↔kana expansion so the offline
+ * fallback can match kana title/artist/alias text from a romaji query (and vice
+ * versa), mirroring the worker `/api/search` behaviour.
+ *
+ * The original query is searched first and its hits keep their MiniSearch rank;
+ * variant ("expansion-only") hits are appended after, so original-query hits are
+ * preferred. Hits are merged and deduplicated by id. When a query does not
+ * expand (kanji, Hangul, etc.) this is exactly `index.search(query)`.
+ *
+ * Expansion is SEARCH RECALL ONLY — it never affects indexing or canonical data.
+ */
+export function searchLocalIndex(index: MiniSearch<SongRecord>, query: string): SearchResult[] {
+  const variants = expandSearchQuery(query);
+  if (variants.length <= 1) {
+    return index.search(query);
+  }
+
+  const seen = new Set<string>();
+  const merged: SearchResult[] = [];
+  for (const variant of variants) {
+    for (const hit of index.search(variant)) {
+      const id = String(hit.id);
+      if (seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      merged.push(hit);
+    }
+  }
+  return merged;
 }
 
 /**

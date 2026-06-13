@@ -1,6 +1,7 @@
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import {
   compactSearchText,
+  expandSearchQuery,
   makeCharacterNgrams,
   makeHangulInitials,
   parseKaraokeNumberQuery,
@@ -33,6 +34,10 @@ const VENDORS = ['tj', 'ky', 'joysound'] as const;
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
 const MAX_QUERY_TOKENS = 24;
+// Weight multiplier applied to tokens from expanded romaji↔kana query variants
+// (the original query keeps full weight). Biases original-query matches above
+// expansion-only matches without degrading existing scoring.
+const EXPANDED_VARIANT_WEIGHT_SCALE = 0.5;
 const MAX_PREFIX_TOKEN_CHARS = 12;
 const MAX_D1_LIKE_PATTERN_BYTES = 50;
 const VENDOR_MASKS: Record<Vendor, number> = { tj: 1, ky: 2, joysound: 4 };
@@ -526,36 +531,17 @@ function buildSearchQueryTokens(query: string): SearchQueryToken[] {
     }
   };
 
-  for (const word of tokenizeSearchWords(query)) {
-    const wordLength = Array.from(word).length;
-    add('term', word, 45);
-    if (wordLength <= MAX_PREFIX_TOKEN_CHARS) {
-      add('prefix', word, 30);
-    } else {
-      add('prefix', Array.from(word).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), 30);
-    }
-  }
-
-  const compactQuery = compactSearchText(query);
-  const compactLength = Array.from(compactQuery).length;
-  if (hasNonAsciiCharacter(compactQuery) && compactLength >= 2) {
-    for (const gram of makeCharacterNgrams(compactQuery, 2)) {
-      add('gram2', gram, 12);
-    }
-  }
-  if (hasNonAsciiCharacter(compactQuery) && compactLength >= 3) {
-    for (const gram of makeCharacterNgrams(compactQuery, 3)) {
-      add('gram3', gram, 18);
-    }
-  }
-
-  const hangulInitials = makeHangulInitials(query);
-  if (hangulInitials.length >= 2) {
-    add('initial', hangulInitials.slice(0, MAX_PREFIX_TOKEN_CHARS), 35);
-  }
-  if (HANGUL_INITIALS_QUERY_PATTERN.test(compactQuery)) {
-    add('initial', Array.from(compactQuery).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), 35);
-  }
+  // Original query first (full weight), then safe romaji↔kana variants at a
+  // reduced weight so expanded-only matches never outrank or degrade the
+  // original query's matches. `expandSearchQuery` only adds variants for
+  // kana/romaji input and never for kanji — so kanji/Hangul queries keep the
+  // same tokens and weights as before, while romaji gets reduced-weight kana
+  // recall tokens.
+  const variants = expandSearchQuery(query);
+  const effectiveVariants = variants.length > 0 ? variants : [query];
+  effectiveVariants.forEach((variant, index) => {
+    addVariantQueryTokens(add, variant, index === 0 ? 1 : EXPANDED_VARIANT_WEIGHT_SCALE);
+  });
 
   return Array.from(byKey.values())
     .sort(
@@ -565,6 +551,51 @@ function buildSearchQueryTokens(query: string): SearchQueryToken[] {
         left.token.localeCompare(right.token),
     )
     .slice(0, MAX_QUERY_TOKENS);
+}
+
+/**
+ * Emit the term/prefix/gram/initial query tokens for a single query variant,
+ * scaling each token's weight by `weightScale` (1 for the original query,
+ * `< 1` for expanded romaji↔kana variants). With `weightScale === 1` the
+ * tokens and weights are identical to the pre-expansion behaviour.
+ */
+function addVariantQueryTokens(
+  add: (kind: SearchTokenKind, token: string, queryWeight: number) => void,
+  query: string,
+  weightScale: number,
+): void {
+  const scaled = (weight: number): number => Math.round(weight * weightScale);
+
+  for (const word of tokenizeSearchWords(query)) {
+    const wordLength = Array.from(word).length;
+    add('term', word, scaled(45));
+    if (wordLength <= MAX_PREFIX_TOKEN_CHARS) {
+      add('prefix', word, scaled(30));
+    } else {
+      add('prefix', Array.from(word).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), scaled(30));
+    }
+  }
+
+  const compactQuery = compactSearchText(query);
+  const compactLength = Array.from(compactQuery).length;
+  if (hasNonAsciiCharacter(compactQuery) && compactLength >= 2) {
+    for (const gram of makeCharacterNgrams(compactQuery, 2)) {
+      add('gram2', gram, scaled(12));
+    }
+  }
+  if (hasNonAsciiCharacter(compactQuery) && compactLength >= 3) {
+    for (const gram of makeCharacterNgrams(compactQuery, 3)) {
+      add('gram3', gram, scaled(18));
+    }
+  }
+
+  const hangulInitials = makeHangulInitials(query);
+  if (hangulInitials.length >= 2) {
+    add('initial', hangulInitials.slice(0, MAX_PREFIX_TOKEN_CHARS), scaled(35));
+  }
+  if (HANGUL_INITIALS_QUERY_PATTERN.test(compactQuery)) {
+    add('initial', Array.from(compactQuery).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), scaled(35));
+  }
 }
 
 function trimLeadingZeroes(value: string): string {

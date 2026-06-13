@@ -11,6 +11,7 @@ import {
   getApiSearchBaseUrl,
   loadIndex,
   searchApi,
+  searchLocalIndex,
   sortSearchResultsByProviderPriority,
 } from '../lib/search.js';
 import { EmptyState } from './EmptyState.js';
@@ -227,7 +228,7 @@ export function App({ songCount }: AppProps) {
           const favIndex = buildIndex(favRecords);
           const byId = new Map(favRecords.map((r) => [r.id, r] as const));
           const order = new Map(favRecords.map((r, i) => [r.id, i] as const));
-          const hits = favIndex.search(query);
+          const hits = searchLocalIndex(favIndex, query);
           candidates = [];
           for (const hit of hits) {
             const rec = byId.get(String(hit.id));
@@ -252,7 +253,7 @@ export function App({ songCount }: AppProps) {
           candidates = favRecords;
         } else {
           const favIdSet = new Set(favoriteIds);
-          const hits = bundle.index.search(query);
+          const hits = searchLocalIndex(bundle.index, query);
           candidates = [];
           for (const hit of hits) {
             const id = String(hit.id);
@@ -275,7 +276,7 @@ export function App({ songCount }: AppProps) {
         candidates = apiBrowse.records;
       } else {
         if (bundle === null) return [];
-        const hits = bundle.index.search(query);
+        const hits = searchLocalIndex(bundle.index, query);
         const records: SongRecord[] = [];
         for (const hit of hits) {
           const rec = bundle.byId.get(String(hit.id));

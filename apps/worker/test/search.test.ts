@@ -152,6 +152,59 @@ const PROVIDER_PRIORITY_RECORDS: SongRecord[] = [
   },
 ];
 
+// Kana-ONLY titles (deliberately not the kanji spellings 夜に駆ける / 紅蓮華):
+// they exercise romaji→kana search recall without relying on any kanji reading.
+const KANA_RECALL_RECORDS: SongRecord[] = [
+  {
+    id: 'kana-yoru-1',
+    source_url: 'https://example.com/kana/yoru',
+    title_primary: 'よるにかける',
+    title_ko: null,
+    artist_primary: 'YOASOBI',
+    artist_ko: null,
+    karaoke_numbers: { tj: '700001', ky: null, joysound: null },
+    crawled_at: '2026-02-01T00:00:00.000Z',
+  },
+  {
+    id: 'kana-gurenge-2',
+    source_url: 'https://example.com/kana/gurenge',
+    title_primary: 'ぐれんげ',
+    title_ko: null,
+    artist_primary: 'LiSA',
+    artist_ko: null,
+    karaoke_numbers: { tj: '700002', ky: null, joysound: null },
+    crawled_at: '2026-02-02T00:00:00.000Z',
+  },
+];
+
+describe('worker search API — romaji↔kana expansion (search recall only)', () => {
+  it('finds a kana-only title from a Latin romaji query', async () => {
+    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+
+    const byYoru = await fetchJson(db, `/api/search?q=${encodeURIComponent('yoru')}`);
+    const byGurenge = await fetchJson(db, `/api/search?q=${encodeURIComponent('gurenge')}`);
+
+    expect(byYoru.items.map((song) => song.id)).toContain('kana-yoru-1');
+    expect(byGurenge.items.map((song) => song.id)).toContain('kana-gurenge-2');
+  });
+
+  it('preserves the original query: a direct kana query still matches', async () => {
+    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+
+    const byKana = await fetchJson(db, `/api/search?q=${encodeURIComponent('よる')}`);
+
+    expect(byKana.items.map((song) => song.id)).toContain('kana-yoru-1');
+  });
+
+  it('leaves numeric karaoke-number queries unexpanded', async () => {
+    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+
+    const byNumber = await fetchJson(db, '/api/search?q=700001');
+
+    expect(byNumber.items.map((song) => song.id)).toEqual(['kana-yoru-1']);
+  });
+});
+
 describe('worker search API', () => {
   it('returns matching songs from title, artist, alias, and karaoke number fields', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
