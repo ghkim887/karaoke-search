@@ -140,6 +140,46 @@ describe('search result provider priority', () => {
       'no-number',
     ]);
   });
+
+  it('ranks by provider coverage descending when vendors are selected, preserving input order within equal coverage', () => {
+    const input = [
+      makeSearchRecord({
+        id: 'joy-1',
+        karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
+      }),
+      makeSearchRecord({
+        id: 'all-3',
+        karaoke_numbers: { tj: '12345', ky: '22222', joysound: '610002' },
+      }),
+      makeSearchRecord({
+        id: 'two-a',
+        karaoke_numbers: { tj: '67890', ky: null, joysound: '610003' },
+      }),
+      makeSearchRecord({
+        id: 'two-b',
+        karaoke_numbers: { tj: null, ky: '33333', joysound: '610004' },
+      }),
+      makeSearchRecord({
+        id: 'ky-1',
+        karaoke_numbers: { tj: null, ky: '44444', joysound: null },
+      }),
+    ];
+
+    const ordered = searchModule.sortSearchResultsByProviderPriority(
+      input,
+      new Set<searchModule.SearchVendor>(['joysound']),
+    );
+
+    // 3-provider record first, then the two 2-provider records (input order kept
+    // within the equal-coverage bucket), then the two 1-provider records.
+    expect(ordered.map((record) => record.id)).toEqual([
+      'all-3',
+      'two-a',
+      'two-b',
+      'joy-1',
+      'ky-1',
+    ]);
+  });
 });
 
 describe('search index — artist_aliases (spec 2026-05-04)', () => {

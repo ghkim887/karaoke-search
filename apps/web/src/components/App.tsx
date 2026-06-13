@@ -287,7 +287,9 @@ export function App({ songCount }: AppProps) {
     }
     const filtered = filterByVendors(candidates, selectedVendors);
     const ordered =
-      activeTab === 'browse' ? sortSearchResultsByProviderPriority(filtered) : filtered;
+      activeTab === 'browse'
+        ? sortSearchResultsByProviderPriority(filtered, selectedVendors)
+        : filtered;
     return ordered.slice(0, RESULT_LIMIT);
   }, [bundle, query, activeTab, favoriteIds, selectedVendors, apiBaseUrl, apiBrowse, apiFavorites]);
 
