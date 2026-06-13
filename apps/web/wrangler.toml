@@ -1,0 +1,6 @@
+name = "karaokedb"
+compatibility_date = "2026-06-13"
+pages_build_output_dir = "dist"
+
+[vars]
+KARAOKE_FUNNEL_ORIGIN = "https://hermes-host.tail04d970.ts.net"

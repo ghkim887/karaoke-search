@@ -124,6 +124,15 @@ describe('featured artist chips against the production corpus', () => {
 });
 
 describe('API search client', () => {
+  it('resolves a same-origin API base URL for Cloudflare Pages deployments', () => {
+    expect(searchModule.resolveApiSearchBaseUrl('/', 'https://karaokedb.pages.dev')).toBe(
+      'https://karaokedb.pages.dev',
+    );
+    expect(searchModule.resolveApiSearchBaseUrl('/karaoke-search/', 'https://example.test')).toBe(
+      'https://example.test/karaoke-search',
+    );
+  });
+
   it('builds a /api/search request with filters and returns SongRecord items', async () => {
     const apiRecord = records[0];
     if (!apiRecord) throw new Error('fixture record missing');

@@ -102,10 +102,22 @@ interface ApiSearchResponse {
 
 export function getApiSearchBaseUrl(): string | null {
   const raw = import.meta.env.PUBLIC_KARAOKE_API_BASE_URL as string | undefined;
+  return resolveApiSearchBaseUrl(raw);
+}
+
+export function resolveApiSearchBaseUrl(
+  raw: string | undefined,
+  origin: string | undefined = globalThis.location?.origin,
+): string | null {
   if (raw === undefined || raw.trim() === '') {
     return null;
   }
-  return raw.trim().replace(/\/+$/u, '');
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+    const baseOrigin = origin ?? 'http://localhost';
+    return new URL(trimmed, `${baseOrigin.replace(/\/+$/u, '')}/`).toString().replace(/\/+$/u, '');
+  }
+  return trimmed.replace(/\/+$/u, '');
 }
 
 export async function searchApi(baseUrl: string, options: ApiSearchOptions): Promise<SongRecord[]> {

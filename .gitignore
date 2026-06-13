@@ -11,6 +11,7 @@ dist/
 # The .wrangler directory name is historical (Cloudflare removed 2026-06-13);
 # kept so existing local scratch state stays ignored.
 apps/worker/.wrangler/
+apps/web/.wrangler/
 
 # Logs
 *.log
@@ -52,6 +53,7 @@ CLAUDE.md
 
 # Playwright MCP screenshots from local verification runs
 apps/web/.playwright-mcp/
+apps/web/test-results/
 phase4-*.png
 .superpowers/
 .tmp_review/
