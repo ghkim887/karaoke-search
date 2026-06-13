@@ -119,6 +119,39 @@ const MINISEARCH_PARITY_RECORDS: SongRecord[] = [
   },
 ];
 
+const PROVIDER_PRIORITY_RECORDS: SongRecord[] = [
+  {
+    id: 'rank-joy-1',
+    source_url: 'https://example.com/rank/joy',
+    title_primary: 'Provider Priority Song',
+    title_ko: null,
+    artist_primary: 'Priority Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
+    crawled_at: '2026-06-13T00:00:00.000Z',
+  },
+  {
+    id: 'rank-ky-1',
+    source_url: 'https://example.com/rank/ky',
+    title_primary: 'Provider Priority Song',
+    title_ko: null,
+    artist_primary: 'Priority Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: '22222', joysound: null },
+    crawled_at: '2026-06-13T00:00:00.000Z',
+  },
+  {
+    id: 'rank-tj-1',
+    source_url: 'https://example.com/rank/tj',
+    title_primary: 'Provider Priority Song',
+    title_ko: null,
+    artist_primary: 'Priority Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: '12345', ky: null, joysound: null },
+    crawled_at: '2026-06-13T00:00:00.000Z',
+  },
+];
+
 describe('worker search API', () => {
   it('returns matching songs from title, artist, alias, and karaoke number fields', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
@@ -169,6 +202,14 @@ describe('worker search API', () => {
     expect(byLatinCasefold.items.map((song) => song.id)).toEqual(['parity-radwimps-1']);
     expect(byPunctuationPrefix.items.map((song) => song.id)).toEqual(['parity-deco-27']);
     expect(byLongPrefix.items.map((song) => song.id)).toEqual(['parity-higedan-1']);
+  });
+
+  it('ranks search matches by provider availability: TJ first, then KY, then JOY', async () => {
+    const db = createD1WithSongs(PROVIDER_PRIORITY_RECORDS);
+
+    const result = await fetchJson(db, '/api/search?q=provider%20priority');
+
+    expect(result.items.map((song) => song.id)).toEqual(['rank-tj-1', 'rank-ky-1', 'rank-joy-1']);
   });
 
   it('serves three-or-more-character Hangul initial prefixes without internal errors', async () => {

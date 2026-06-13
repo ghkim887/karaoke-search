@@ -249,7 +249,7 @@ async function findIndexedCandidateRows(
         s.title_ko_confidence
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
-      ORDER BY r.score DESC, s.sort_order ASC, s.id ASC
+      ORDER BY ${providerPriorityOrderSql('s')} ASC, r.score DESC, s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -337,7 +337,7 @@ async function findKaraokeNumberCandidateRows(
         s.title_ko_confidence
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
-      ORDER BY r.score DESC, s.sort_order ASC, s.id ASC
+      ORDER BY ${providerPriorityOrderSql('s')} ASC, r.score DESC, s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -487,6 +487,30 @@ function appendKaraokeNumberCandidateSubquery({
     GROUP BY kn.song_id
   `);
   values.push(...branchValues);
+}
+
+function providerPriorityOrderSql(songAlias: string): string {
+  return `CASE
+    WHEN EXISTS (
+      SELECT 1 FROM karaoke_numbers priority_tj
+      WHERE priority_tj.song_id = ${songAlias}.id
+        AND priority_tj.provider = 'tj'
+        AND priority_tj.number IS NOT NULL
+    ) THEN 0
+    WHEN EXISTS (
+      SELECT 1 FROM karaoke_numbers priority_ky
+      WHERE priority_ky.song_id = ${songAlias}.id
+        AND priority_ky.provider = 'ky'
+        AND priority_ky.number IS NOT NULL
+    ) THEN 1
+    WHEN EXISTS (
+      SELECT 1 FROM karaoke_numbers priority_joysound
+      WHERE priority_joysound.song_id = ${songAlias}.id
+        AND priority_joysound.provider = 'joysound'
+        AND priority_joysound.number IS NOT NULL
+    ) THEN 2
+    ELSE 3
+  END`;
 }
 
 function buildSearchQueryTokens(query: string): SearchQueryToken[] {

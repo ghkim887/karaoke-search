@@ -12,6 +12,21 @@ const fixtureUrl = new URL(
 );
 const records = JSON.parse(readFileSync(fileURLToPath(fixtureUrl), 'utf8')) as SongRecord[];
 
+function makeSearchRecord(overrides: Partial<SongRecord> & Pick<SongRecord, 'id'>): SongRecord {
+  const { id, ...rest } = overrides;
+  return {
+    id,
+    source_url: 'https://example.test/search-priority',
+    title_primary: 'Search Priority Song',
+    title_ko: null,
+    artist_primary: 'Priority Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: null },
+    crawled_at: '2026-06-13T00:00:00.000Z',
+    ...rest,
+  };
+}
+
 describe('search index (sample fixture)', () => {
   it('matches Japanese-script artist query "結束バンド"', () => {
     const index = buildIndex(records);
@@ -36,6 +51,47 @@ describe('search index (sample fixture)', () => {
     expect(hits.length).toBeGreaterThanOrEqual(1);
     const ids = hits.map((h) => h.id);
     expect(ids.some((id) => id === 'sample-8' || id === 'sample-9')).toBe(true);
+  });
+});
+
+describe('search result provider priority', () => {
+  it('orders search results by TJ first, then KY, then JOY while preserving order inside each bucket', () => {
+    const input = [
+      makeSearchRecord({
+        id: 'joy-only',
+        karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
+      }),
+      makeSearchRecord({
+        id: 'tj-a',
+        karaoke_numbers: { tj: '12345', ky: null, joysound: null },
+      }),
+      makeSearchRecord({
+        id: 'ky-only',
+        karaoke_numbers: { tj: null, ky: '22222', joysound: null },
+      }),
+      makeSearchRecord({
+        id: 'tj-b',
+        karaoke_numbers: { tj: '67890', ky: null, joysound: '999001' },
+      }),
+      makeSearchRecord({ id: 'no-number' }),
+    ];
+
+    const ordered = searchModule.sortSearchResultsByProviderPriority(input);
+
+    expect(ordered.map((record) => record.id)).toEqual([
+      'tj-a',
+      'tj-b',
+      'ky-only',
+      'joy-only',
+      'no-number',
+    ]);
+    expect(input.map((record) => record.id)).toEqual([
+      'joy-only',
+      'tj-a',
+      'ky-only',
+      'tj-b',
+      'no-number',
+    ]);
   });
 });
 

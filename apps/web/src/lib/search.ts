@@ -80,6 +80,24 @@ export async function loadIndex(): Promise<IndexBundle> {
 
 export type SearchVendor = 'tj' | 'ky' | 'joysound';
 
+const SEARCH_RESULT_VENDOR_PRIORITY: SearchVendor[] = ['tj', 'ky', 'joysound'];
+
+function searchResultVendorPriority(record: Pick<SongRecord, 'karaoke_numbers'>): number {
+  const index = SEARCH_RESULT_VENDOR_PRIORITY.findIndex(
+    (vendor) => record.karaoke_numbers[vendor] !== null,
+  );
+  return index === -1 ? SEARCH_RESULT_VENDOR_PRIORITY.length : index;
+}
+
+export function sortSearchResultsByProviderPriority<T extends Pick<SongRecord, 'karaoke_numbers'>>(
+  records: readonly T[],
+): T[] {
+  return records
+    .map((record, index) => ({ index, priority: searchResultVendorPriority(record), record }))
+    .sort((left, right) => left.priority - right.priority || left.index - right.index)
+    .map(({ record }) => record);
+}
+
 export interface ApiSearchOptions {
   query: string;
   /** Single-vendor filter. Mutually exclusive in practice with `vendors`; when
