@@ -1,15 +1,14 @@
 {
   "version": 1,
-  "url": "https://github.com/ghkim887/karaoke-search/releases/download/data/2026-06-13/full-corpus.json",
-  "sha256": "0c35748e6f71c26d7513c00dbddbb70b727b7c6661a27837d4954d251af6b098",
-  "sizeBytes": 101173840,
-  "recordCount": 263222,
+  "url": "https://github.com/ghkim887/karaoke-search/releases/download/data/2026-06-13-tier-e-strong/full-corpus.json",
+  "sha256": "d63db1f23cb10f4c2e3590db6944007f5e6cc298dbc844b465e21e57cf35227c",
+  "sizeBytes": 78844415,
+  "recordCount": 262274,
   "vendorCounts": {
-    "joysound": 260069,
+    "joysound": 260048,
     "ky": 1244,
     "tj": 6100
   },
-  "generatedAt": "2026-06-12T20:43:38.975Z",
-  "baselineCommit": "b03e35cdd7029813ffff097560928ba0c3453d23",
-  "decisionLogSha": "f19648eec040d76dd443dd50b8eb22c96f8208f1fde4382184a44d493061cae4"
+  "generatedAt": "2026-06-13T08:37:40.426Z",
+  "baselineCommit": "787818a34adb74a0b1fea0b412a54b017c293b31"
 }
