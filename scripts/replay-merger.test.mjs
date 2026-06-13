@@ -182,7 +182,7 @@ describe('replay-merger runReplay safety gates', () => {
 
     const result = await run();
 
-    expect(result).toMatchObject({ exitCode: 0, wrote: false, delta: 0 });
+    expect(result).toMatchObject({ exitCode: 0, wrote: false, delta: 0, changedRecordCount: 0 });
     // The fixture bytes are non-canonical (compact, no trailing newline); any
     // write would have re-serialised them. Byte-identity proves the skip.
     expect(readFileSync(songsPath, 'utf-8')).toBe(rawBefore);
@@ -190,6 +190,49 @@ describe('replay-merger runReplay safety gates', () => {
     expect(console.log).toHaveBeenCalledWith(
       '[replay-merger] no Tier C merges fired and no alias rewrites — corpus already current; skipping write',
     );
+  });
+
+  it('writes on delta 0 when cross-record artist_ko propagation changed a record', async () => {
+    // Two records share the full-artist key (YOASOBI) but have different titles
+    // and karaoke numbers, so NOTHING merges (delta 0) and the alias resolver
+    // leaves both untouched (no pipe form, no alias match). The only change is
+    // the merger filling the JOYSOUND row's missing artist_ko from the donor —
+    // a same-id content change that the old `delta === 0 && no alias rewrites`
+    // skip would have wrongly dropped.
+    writeCompactCorpus(songsPath, [
+      record({
+        id: 'blog-1',
+        title_primary: '夜に駆ける',
+        artist_primary: 'YOASOBI',
+        artist_ko: '요아소비',
+        karaoke_numbers: { tj: null, ky: null, joysound: null },
+      }),
+      record({
+        id: 'joysound-700100',
+        title_primary: 'アイドル',
+        artist_primary: 'YOASOBI',
+        artist_ko: null,
+        karaoke_numbers: { tj: null, ky: null, joysound: '700100' },
+      }),
+    ]);
+
+    const result = await run();
+
+    expect(result).toMatchObject({
+      exitCode: 0,
+      wrote: true,
+      delta: 0,
+      aliasSplits: 0,
+      aliasReKeys: 0,
+      changedRecordCount: 1,
+    });
+    const after = JSON.parse(readFileSync(songsPath, 'utf-8'));
+    // No song merge — both rows survive.
+    expect(after).toHaveLength(2);
+    // The JOYSOUND row's missing artist_ko was filled from the donor.
+    expect(after.find((r) => r.id === 'joysound-700100')?.artist_ko).toBe('요아소비');
+    // Donor untouched.
+    expect(after.find((r) => r.id === 'blog-1')?.artist_ko).toBe('요아소비');
   });
 
   it('writes on delta 0 when the alias resolver rewrote artist_primary', async () => {

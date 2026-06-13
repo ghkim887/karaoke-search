@@ -16,8 +16,10 @@
 //   5. Print BEFORE/AFTER counts, delta, alias-resolution stats, Tier C
 //      cluster details, and 5 sample disappeared-records.
 //   6. Safety gate: delta > MAX_DELTA_THRESHOLD -> abort without write,
-//      exit 2. delta = 0 AND no alias rewrites -> no-op, exit 0.
-//      otherwise -> atomic write (.tmp -> rename) and exit 0.
+//      exit 2. delta = 0 AND no alias rewrites AND no same-id content changes
+//      -> no-op, exit 0. otherwise -> atomic write (.tmp -> rename) and exit 0.
+//      (A delta-0 run still writes when the merger changed record content
+//      without changing the count, e.g. cross-record artist_ko propagation.)
 //
 // Output is UTF-8 on Windows: stdout is reset to utf8 explicitly.
 //
@@ -73,6 +75,24 @@ const mergeTsPath = resolve(repoRoot, 'packages/crawler/src/merge.ts');
 const defaultAliasesJsPath = resolve(repoRoot, 'packages/crawler/dist/aliases.js');
 const aliasesTsPath = resolve(repoRoot, 'packages/crawler/src/aliases.ts');
 
+/**
+ * Stable, key-order-independent JSON serialization. Object keys are sorted
+ * recursively so two records that differ ONLY in key order serialize
+ * identically. Used by the delta-0 write gate to detect genuine same-id
+ * content changes (e.g. cross-record artist_ko propagation, alias rewrites)
+ * without mistaking a benign field-order difference for a change.
+ */
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${canonicalJson(value[k])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+}
+
 // --- Step 1 (CLI shim only): build crawler if dist is missing or stale ---
 function needsBuild() {
   for (const [jsPath, tsPath] of [
@@ -112,6 +132,7 @@ function needsBuild() {
  *   delta?: number,
  *   aliasSplits?: number,
  *   aliasReKeys?: number,
+ *   changedRecordCount?: number,
  * }>}
  */
 export async function runReplay(options = {}) {
@@ -186,6 +207,20 @@ export async function runReplay(options = {}) {
   const afterIds = new Set(after.map((r) => r.id));
   const delta = beforeCount - afterCount;
 
+  // Count same-id records whose content changed (e.g. cross-record artist_ko
+  // propagation, alias rewrites). The merger can change records WITHOUT
+  // changing the record count — artist_ko propagation fills a missing field on
+  // standalone rows that never merge — so a delta-0 / no-alias-rewrite run can
+  // still carry real data changes that must be persisted. Compared via a
+  // stable key-order-independent serialization so re-ordered keys are not
+  // false positives. (Records that merged away are absent from `after` and not
+  // counted here; any such case has delta > 0 and writes anyway.)
+  let changedRecordCount = 0;
+  for (const r of after) {
+    const b = beforeById.get(r.id);
+    if (b && canonicalJson(b) !== canonicalJson(r)) changedRecordCount += 1;
+  }
+
   const tierCConflicts = conflicts.filter((c) => c.field === 'tier_c_merge');
 
   // --- Step 5: structured report ------------------------------------------
@@ -195,6 +230,7 @@ export async function runReplay(options = {}) {
   console.log(`After : ${afterCount} records`);
   console.log(`Delta : ${delta}`);
   console.log(`Alias-resolution: ${aliasSplits} pipe-form splits, ${aliasReKeys} bare re-keys`);
+  console.log(`Same-id content changes: ${changedRecordCount}`);
   console.log(`Alias warnings  : ${aliasWarnings.length}`);
   if (aliasWarnings.length > 0) {
     console.log('--- Alias warnings (first 5) ---');
@@ -250,7 +286,7 @@ export async function runReplay(options = {}) {
   }
 
   // --- Step 6: safety gate -------------------------------------------------
-  const stats = { beforeCount, afterCount, delta, aliasSplits, aliasReKeys };
+  const stats = { beforeCount, afterCount, delta, aliasSplits, aliasReKeys, changedRecordCount };
 
   if (delta < minNonFatalDelta) {
     console.error('');
@@ -271,7 +307,7 @@ export async function runReplay(options = {}) {
     return { exitCode: 2, wrote: false, ...stats };
   }
 
-  if (delta === 0 && aliasSplits === 0 && aliasReKeys === 0) {
+  if (delta === 0 && aliasSplits === 0 && aliasReKeys === 0 && changedRecordCount === 0) {
     console.log('');
     console.log(
       '[replay-merger] no Tier C merges fired and no alias rewrites — corpus already current; skipping write',
