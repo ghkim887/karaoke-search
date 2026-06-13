@@ -7,7 +7,6 @@ import {
   type SearchHintInput,
   createSongDatabase,
   exportSongs,
-  generateKanjiReadingHints,
   importSongs,
   importSongsJson,
   openSongDatabase,
@@ -461,85 +460,6 @@ describe('P3 derived kana→romaji hints', () => {
       .get() as unknown as { count: number };
     expect(derived.count).toBe(0);
   });
-});
-
-// A pure-kanji canonical title with no kana to lean on, so a generated reading
-// is the only path from a romaji query to the record.
-const SENBONZAKURA_RECORD: SongRecord = {
-  id: 'joysound-200001',
-  source_url: 'https://example.com/joysound/200001',
-  title_primary: '千本桜',
-  title_ko: null,
-  artist_primary: 'YOASOBI',
-  artist_ko: null,
-  karaoke_numbers: { tj: null, ky: null, joysound: '200001' },
-  crawled_at: '2026-03-01T00:00:00.000Z',
-};
-
-describe('P4 generated kanji reading fallback', () => {
-  it('generates a low-confidence kana reading for a kanji title', async () => {
-    const hints = await generateKanjiReadingHints([SENBONZAKURA_RECORD]);
-
-    expect(hints).toEqual([
-      {
-        songId: 'joysound-200001',
-        field: 'title',
-        text: 'せんぼんさくら',
-        source: 'generated_kanji_reading',
-        confidence: 'low',
-      },
-    ]);
-  }, 60_000);
-
-  it('does not generate readings for non-kanji (Latin) fields', async () => {
-    const latinRecord: SongRecord = {
-      ...SENBONZAKURA_RECORD,
-      id: 'blog-1',
-      title_primary: 'Sparkle',
-      artist_primary: 'RADWIMPS',
-      karaoke_numbers: { tj: '62466', ky: null, joysound: null },
-    };
-
-    expect(await generateKanjiReadingHints([latinRecord])).toEqual([]);
-  }, 60_000);
-
-  it('does not generate a reading for a field that already has an authoritative hint', async () => {
-    const hints = await generateKanjiReadingHints([SENBONZAKURA_RECORD], {
-      existingHints: [
-        {
-          songId: 'joysound-200001',
-          field: 'title',
-          text: 'せんぼんざくら',
-          source: 'joysound_songNameRuby',
-          confidence: 'high',
-        },
-      ],
-    });
-
-    expect(hints).toEqual([]);
-  }, 60_000);
-
-  it('indexes a generated reading and its derived romaji without leaking into the record', async () => {
-    const db = openMemoryDb();
-    createSongDatabase(db);
-    const generated = await generateKanjiReadingHints([SENBONZAKURA_RECORD]);
-
-    importSongs(db, [SENBONZAKURA_RECORD], { searchHints: generated });
-
-    const sources = db
-      .prepare(
-        `SELECT source, confidence FROM search_hints
-        WHERE song_id = 'joysound-200001' ORDER BY source ASC`,
-      )
-      .all() as unknown as Array<{ source: string; confidence: string }>;
-    expect(sources).toEqual([
-      { source: 'derived_kana_romaji', confidence: 'low' },
-      { source: 'generated_kanji_reading', confidence: 'low' },
-    ]);
-
-    // The canonical record must be untouched.
-    expect(exportSongs(db)).toEqual([SENBONZAKURA_RECORD]);
-  }, 60_000);
 });
 
 describe('P2 importSongsJson with hint sidecars', () => {

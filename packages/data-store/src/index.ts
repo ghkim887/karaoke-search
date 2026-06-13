@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import {
@@ -46,10 +45,6 @@ const HINT_TOKEN_FIELD_BY_HINT_FIELD = {
 const DEFAULT_HINT_CONFIDENCE: HintConfidence = 'medium';
 /** Provenance tag for romaji hints derived from a kana hint at build time. */
 const DERIVED_KANA_ROMAJI_SOURCE = 'derived_kana_romaji';
-/** Provenance tag for build-time generated kanji-reading fallback hints (P4). */
-const GENERATED_KANJI_READING_SOURCE = 'generated_kanji_reading';
-/** Any Han ideograph — gates which canonical strings get a generated reading. */
-const HAN_PATTERN = /\p{Script=Han}/u;
 
 type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
 type HintField = (typeof HINT_FIELDS)[number];
@@ -398,12 +393,6 @@ export interface ImportSongsJsonArgs {
    * for song ids absent from `inputPath` are ignored.
    */
   searchHintPaths?: readonly string[];
-  /**
-   * Optional pre-resolved hint inputs to index in addition to the sidecar
-   * files — e.g. build-time generated kanji readings the async build path
-   * produced before this synchronous import.
-   */
-  searchHints?: readonly SearchHintInput[];
 }
 
 export interface ExportSongsJsonArgs {
@@ -420,16 +409,10 @@ export function readSongRecordsJson(inputPath: string): SongRecord[] {
   return parsed as SongRecord[];
 }
 
-export function importSongsJson({
-  inputPath,
-  dbPath,
-  searchHintPaths,
-  searchHints,
-}: ImportSongsJsonArgs): void {
+export function importSongsJson({ inputPath, dbPath, searchHintPaths }: ImportSongsJsonArgs): void {
   const records = readSongRecordsJson(inputPath);
   const fileHints = (searchHintPaths ?? []).flatMap((path) => parseSearchHintFile(path));
-  const mergedHints = [...fileHints, ...(searchHints ?? [])];
-  importSongRecordsToDatabaseFile(records, dbPath, { searchHints: mergedHints });
+  importSongRecordsToDatabaseFile(records, dbPath, { searchHints: fileHints });
 }
 
 /**
@@ -791,138 +774,6 @@ function isHintField(value: unknown): value is HintField {
 
 function isHintConfidence(value: unknown): value is HintConfidence {
   return value === 'high' || value === 'medium' || value === 'low';
-}
-
-export interface GenerateKanjiReadingHintsOptions {
-  /**
-   * Already-authoritative hints (e.g. JOYSOUND ruby). A canonical field that
-   * already has a hint here is SKIPPED — generated readings are a fallback and
-   * must never override or duplicate an authoritative reading.
-   */
-  existingHints?: readonly SearchHintInput[];
-}
-
-/**
- * P4 — generate LOW-confidence kana reading hints for canonical Japanese
- * title/artist strings that contain Han/kanji and lack an authoritative reading
- * hint. Uses kuroshiro + kuromoji, a build-time/server-side dependency that is
- * dynamically imported here so it never reaches the worker/web runtime bundle.
- *
- * This is opt-in (the SQLite builder's `--generate-kanji-readings` flag) and
- * async (loading the morphological dictionary is not free). The generated kana
- * readings flow back through {@link importSongs}, where {@link resolveSearchHints}
- * also derives their romaji (P3). Readings are SEARCH-ONLY and never mutate the
- * canonical {@link SongRecord} or feed crawler/classifier/admit/drop decisions.
- *
- * A reading failure for one field is swallowed so a single bad string can never
- * abort a build.
- */
-export async function generateKanjiReadingHints(
-  records: readonly SongRecord[],
-  options: GenerateKanjiReadingHintsOptions = {},
-): Promise<SearchHintInput[]> {
-  const authoritative = new Set<string>();
-  for (const hint of options.existingHints ?? []) {
-    if (isHintField(hint.field) && typeof hint.songId === 'string') {
-      authoritative.add(`${hint.songId} ${hint.field}`);
-    }
-  }
-
-  const targets: Array<{ songId: string; field: HintField; value: string }> = [];
-  for (const record of records) {
-    const fields: ReadonlyArray<[HintField, string]> = [
-      ['title', record.title_primary],
-      ['artist', record.artist_primary],
-    ];
-    for (const [field, value] of fields) {
-      if (!HAN_PATTERN.test(value)) {
-        continue;
-      }
-      if (authoritative.has(`${record.id} ${field}`)) {
-        continue;
-      }
-      targets.push({ songId: record.id, field, value });
-    }
-  }
-
-  if (targets.length === 0) {
-    return [];
-  }
-
-  const kuroshiro = await getKuroshiroConverter();
-  const hints: SearchHintInput[] = [];
-  for (const target of targets) {
-    let reading: string;
-    try {
-      reading = (await kuroshiro.convert(target.value, { to: 'hiragana', mode: 'normal' })).trim();
-    } catch {
-      continue;
-    }
-    // Drop empties and no-op readings (a string that came back unchanged carries
-    // no extra recall value).
-    if (reading.length === 0 || reading === target.value.trim()) {
-      continue;
-    }
-    hints.push({
-      songId: target.songId,
-      field: target.field,
-      text: reading,
-      source: GENERATED_KANJI_READING_SOURCE,
-      confidence: 'low',
-    });
-  }
-  return hints;
-}
-
-interface KuroshiroConverter {
-  init(analyzer: unknown): Promise<void>;
-  convert(text: string, options: { to: 'hiragana'; mode: 'normal' }): Promise<string>;
-}
-
-let kuroshiroConverter: Promise<KuroshiroConverter> | null = null;
-
-/** Lazily construct and dictionary-init a single shared kuroshiro converter. */
-function getKuroshiroConverter(): Promise<KuroshiroConverter> {
-  if (kuroshiroConverter === null) {
-    kuroshiroConverter = initKuroshiroConverter();
-  }
-  return kuroshiroConverter;
-}
-
-async function initKuroshiroConverter(): Promise<KuroshiroConverter> {
-  const Kuroshiro = resolveDefaultExport(await import('kuroshiro')) as new () => KuroshiroConverter;
-  const KuromojiAnalyzer = resolveDefaultExport(
-    await import('kuroshiro-analyzer-kuromoji'),
-  ) as new (options: { dictPath: string }) => unknown;
-  const dictPath = join(dirname(require.resolve('kuromoji/package.json')), 'dict');
-  const converter = new Kuroshiro();
-  await converter.init(new KuromojiAnalyzer({ dictPath }));
-  return converter;
-}
-
-/**
- * Resolve a CommonJS-or-ESM default export. kuroshiro and its analyzer are CJS
- * packages whose constructor lands one or two `.default` hops deep depending on
- * the interop layer.
- */
-function resolveDefaultExport(mod: unknown): unknown {
-  let current = mod;
-  while (
-    current !== null &&
-    typeof current === 'object' &&
-    'default' in (current as Record<string, unknown>) &&
-    typeof (current as Record<string, unknown>).default !== 'undefined'
-  ) {
-    const next = (current as Record<string, unknown>).default;
-    if (next === current) {
-      break;
-    }
-    if (typeof next === 'function') {
-      return next;
-    }
-    current = next;
-  }
-  return current;
 }
 
 function searchTextInputs(record: SongRecord): SearchTextInput[] {

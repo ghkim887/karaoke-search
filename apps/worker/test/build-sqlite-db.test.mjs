@@ -23,10 +23,9 @@ describe('build-sqlite-db CLI args', () => {
     });
   });
 
-  it('defaults to no hint sidecars and no kanji-reading generation', () => {
+  it('defaults to no hint sidecars', () => {
     expect(parseBuildSqliteArgs([])).toMatchObject({
       searchHintPaths: [],
-      generateKanjiReadings: false,
     });
   });
 
@@ -35,12 +34,6 @@ describe('build-sqlite-db CLI args', () => {
       parseBuildSqliteArgs(['--search-hints', 'a.jsonl', '--search-hints', 'b.jsonl']),
     ).toMatchObject({
       searchHintPaths: ['a.jsonl', 'b.jsonl'],
-    });
-  });
-
-  it('parses the --generate-kanji-readings flag', () => {
-    expect(parseBuildSqliteArgs(['--generate-kanji-readings'])).toMatchObject({
-      generateKanjiReadings: true,
     });
   });
 });
@@ -124,54 +117,4 @@ describe('build-sqlite-db --search-hints', () => {
       db.close();
     }
   });
-});
-
-describe('build-sqlite-db --generate-kanji-readings', () => {
-  const KANJI_RECORD = {
-    id: 'joysound-200001',
-    source_url: 'https://example.com/joysound/200001',
-    title_primary: '千本桜',
-    title_ko: null,
-    artist_primary: 'YOASOBI',
-    artist_ko: null,
-    karaoke_numbers: { tj: null, ky: null, joysound: '200001' },
-    crawled_at: '2026-03-01T00:00:00.000Z',
-  };
-
-  function countGeneratedHints(outputPath) {
-    const db = openSongDatabase(outputPath);
-    try {
-      return Number(
-        db
-          .prepare(
-            `SELECT COUNT(*) AS count FROM search_hints WHERE source = 'generated_kanji_reading'`,
-          )
-          .get().count,
-      );
-    } finally {
-      db.close();
-    }
-  }
-
-  it('generates kanji-reading hints when the flag is set', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-kanji-'));
-    const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs.sqlite');
-    writeFileSync(inputPath, `${JSON.stringify([KANJI_RECORD], null, 2)}\n`, 'utf8');
-
-    await buildSqliteDb({ inputPath, outputPath, generateKanjiReadings: true });
-
-    expect(countGeneratedHints(outputPath)).toBeGreaterThan(0);
-  }, 60_000);
-
-  it('does not generate kanji-reading hints by default', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-kanji-'));
-    const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs.sqlite');
-    writeFileSync(inputPath, `${JSON.stringify([KANJI_RECORD], null, 2)}\n`, 'utf8');
-
-    await buildSqliteDb({ inputPath, outputPath });
-
-    expect(countGeneratedHints(outputPath)).toBe(0);
-  }, 60_000);
 });

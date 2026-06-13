@@ -2,7 +2,6 @@ import {
   type ImportSongsOptions,
   type SongDatabase,
   createSongDatabase,
-  generateKanjiReadingHints,
   importSongs,
   openSongDatabase,
 } from '@karaoke/data-store';
@@ -293,43 +292,6 @@ describe('worker search API — JOYSOUND ruby hints (search recall only)', () =>
 
     const byUnrelated = await fetchJson(db, `/api/search?q=${encodeURIComponent('さくら')}`);
     expect(byUnrelated.items.map((song) => song.id)).not.toContain('joysound-190001');
-  });
-});
-
-// A pure-kanji title (千本桜) with no kana: only a generated reading lets a
-// romaji query reach it. The kuromoji reading is せんぼんさくら → "senbonsakura".
-const GENERATED_READING_RECORDS: SongRecord[] = [
-  {
-    id: 'joysound-200001',
-    source_url: 'https://example.com/joysound/200001',
-    title_primary: '千本桜',
-    title_ko: null,
-    artist_primary: 'YOASOBI',
-    artist_ko: null,
-    karaoke_numbers: { tj: null, ky: null, joysound: '200001' },
-    crawled_at: '2026-03-01T00:00:00.000Z',
-  },
-];
-
-describe('worker search API — generated kanji readings (opt-in, search recall only)', () => {
-  it('finds a kanji-only title by a generated reading query when enabled', async () => {
-    const generated = await generateKanjiReadingHints(GENERATED_READING_RECORDS);
-    const db = createD1WithSongs(GENERATED_READING_RECORDS, {}, { searchHints: generated });
-
-    const byReading = await fetchJson(db, '/api/search?q=senbonsakura');
-
-    expect(byReading.items.map((song) => song.id)).toContain('joysound-200001');
-    // Hints never leak into the canonical record.
-    expect(byReading.items[0]).toEqual(GENERATED_READING_RECORDS[0]);
-  }, 60_000);
-
-  it('does not find the kanji-only title by a generated reading query when disabled', async () => {
-    // No searchHints passed → no generated reading indexed.
-    const db = createD1WithSongs(GENERATED_READING_RECORDS);
-
-    const byReading = await fetchJson(db, '/api/search?q=senbonsakura');
-
-    expect(byReading.items.map((song) => song.id)).not.toContain('joysound-200001');
   });
 });
 
