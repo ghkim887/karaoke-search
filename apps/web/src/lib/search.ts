@@ -1,5 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
-import MiniSearch from 'minisearch';
+import { expandSearchQuery } from '@karaoke/search';
+import MiniSearch, { type SearchResult } from 'minisearch';
 import { normalize } from './normalize.js';
 import { fetchWithRetry } from './retry.js';
 
@@ -62,6 +63,39 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
 }
 
 /**
+ * Query a local MiniSearch index with safe romaji↔kana expansion so the offline
+ * fallback can match kana title/artist/alias text from a romaji query (and vice
+ * versa), mirroring the worker `/api/search` behaviour.
+ *
+ * The original query is searched first and its hits keep their MiniSearch rank;
+ * variant ("expansion-only") hits are appended after, so original-query hits are
+ * preferred. Hits are merged and deduplicated by id. When a query does not
+ * expand (kanji, Hangul, etc.) this is exactly `index.search(query)`.
+ *
+ * Expansion is SEARCH RECALL ONLY — it never affects indexing or canonical data.
+ */
+export function searchLocalIndex(index: MiniSearch<SongRecord>, query: string): SearchResult[] {
+  const variants = expandSearchQuery(query);
+  if (variants.length <= 1) {
+    return index.search(query);
+  }
+
+  const seen = new Set<string>();
+  const merged: SearchResult[] = [];
+  for (const variant of variants) {
+    for (const hit of index.search(variant)) {
+      const id = String(hit.id);
+      if (seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      merged.push(hit);
+    }
+  }
+  return merged;
+}
+
+/**
  * Fetch the prebuilt `songs.json` from the static `/data/` path, build a
  * MiniSearch index, and return both the index and an id→record map so callers
  * need only one network request.
@@ -89,9 +123,35 @@ function searchResultVendorPriority(record: Pick<SongRecord, 'karaoke_numbers'>)
   return index === -1 ? SEARCH_RESULT_VENDOR_PRIORITY.length : index;
 }
 
+/** Number of providers (tj/ky/joysound) that carry a non-null catalog number. */
+function searchResultProviderCount(record: Pick<SongRecord, 'karaoke_numbers'>): number {
+  return SEARCH_RESULT_VENDOR_PRIORITY.reduce(
+    (count, vendor) => count + (record.karaoke_numbers[vendor] !== null ? 1 : 0),
+    0,
+  );
+}
+
+/**
+ * Order search results by provider availability, mirroring the worker SQL.
+ *
+ * - No vendors selected (default browse/search): TJ-containing records first,
+ *   then KY, then JOYSOUND, then records with no number — preserving input order
+ *   within each bucket so upstream relevance ordering is kept.
+ * - One or more vendors selected: the input is already filtered to records that
+ *   carry at least one selected provider; rank those by total provider coverage
+ *   (the non-null count across tj/ky/joysound) descending, preserving input
+ *   order within an equal-coverage bucket so relevance tie-breakers survive.
+ */
 export function sortSearchResultsByProviderPriority<T extends Pick<SongRecord, 'karaoke_numbers'>>(
   records: readonly T[],
+  selectedVendors?: ReadonlySet<SearchVendor>,
 ): T[] {
+  if (selectedVendors !== undefined && selectedVendors.size > 0) {
+    return records
+      .map((record, index) => ({ index, count: searchResultProviderCount(record), record }))
+      .sort((left, right) => right.count - left.count || left.index - right.index)
+      .map(({ record }) => record);
+  }
   return records
     .map((record, index) => ({ index, priority: searchResultVendorPriority(record), record }))
     .sort((left, right) => left.priority - right.priority || left.index - right.index)

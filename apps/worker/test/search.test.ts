@@ -1,4 +1,5 @@
 import {
+  type ImportSongsOptions,
   type SongDatabase,
   createSongDatabase,
   importSongs,
@@ -16,11 +17,12 @@ interface NodeSqliteD1Options extends SqliteD1Options {}
 function createD1WithSongs(
   records: readonly SongRecord[],
   options: NodeSqliteD1Options = {},
+  importOptions: ImportSongsOptions = {},
 ): D1DatabaseLike {
   const sqlite = openSongDatabase(':memory:');
   openDatabases.push(sqlite);
   createSongDatabase(sqlite);
-  importSongs(sqlite, records);
+  importSongs(sqlite, records, importOptions);
   return new SqliteD1Database(sqlite, options);
 }
 
@@ -152,6 +154,210 @@ const PROVIDER_PRIORITY_RECORDS: SongRecord[] = [
   },
 ];
 
+// Records that share one searchable title but differ in provider coverage, so a
+// vendor-selected search can be asserted to rank by total provider coverage
+// (the non-null count across tj/ky/joysound) descending. Inserted in a scrambled
+// order so the assertion proves the ranking, not the insertion/sort order.
+const COVERAGE_RANK_RECORDS: SongRecord[] = [
+  {
+    id: 'cov-joy-only-1',
+    source_url: 'https://example.com/cov/joy-only',
+    title_primary: 'Coverage Rank Song',
+    title_ko: null,
+    artist_primary: 'Coverage Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
+    crawled_at: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'cov-ky-only-1',
+    source_url: 'https://example.com/cov/ky-only',
+    title_primary: 'Coverage Rank Song',
+    title_ko: null,
+    artist_primary: 'Coverage Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: '22222', joysound: null },
+    crawled_at: '2026-03-02T00:00:00.000Z',
+  },
+  {
+    id: 'cov-ky-tj-1',
+    source_url: 'https://example.com/cov/ky-tj',
+    title_primary: 'Coverage Rank Song',
+    title_ko: null,
+    artist_primary: 'Coverage Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: '12345', ky: '33333', joysound: null },
+    crawled_at: '2026-03-03T00:00:00.000Z',
+  },
+  {
+    id: 'cov-joy-tj-1',
+    source_url: 'https://example.com/cov/joy-tj',
+    title_primary: 'Coverage Rank Song',
+    title_ko: null,
+    artist_primary: 'Coverage Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: '67890', ky: null, joysound: '610002' },
+    crawled_at: '2026-03-04T00:00:00.000Z',
+  },
+  {
+    id: 'cov-all-1',
+    source_url: 'https://example.com/cov/all',
+    title_primary: 'Coverage Rank Song',
+    title_ko: null,
+    artist_primary: 'Coverage Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: '54321', ky: '44444', joysound: '610003' },
+    crawled_at: '2026-03-05T00:00:00.000Z',
+  },
+];
+
+function providerCount(song: SongRecord): number {
+  return [song.karaoke_numbers.tj, song.karaoke_numbers.ky, song.karaoke_numbers.joysound].filter(
+    (number) => number !== null,
+  ).length;
+}
+
+// Kana-ONLY titles (deliberately not the kanji spellings 夜に駆ける / 紅蓮華):
+// they exercise romaji→kana search recall without relying on any kanji reading.
+const KANA_RECALL_RECORDS: SongRecord[] = [
+  {
+    id: 'kana-yoru-1',
+    source_url: 'https://example.com/kana/yoru',
+    title_primary: 'よるにかける',
+    title_ko: null,
+    artist_primary: 'YOASOBI',
+    artist_ko: null,
+    karaoke_numbers: { tj: '700001', ky: null, joysound: null },
+    crawled_at: '2026-02-01T00:00:00.000Z',
+  },
+  {
+    id: 'kana-gurenge-2',
+    source_url: 'https://example.com/kana/gurenge',
+    title_primary: 'ぐれんげ',
+    title_ko: null,
+    artist_primary: 'LiSA',
+    artist_ko: null,
+    karaoke_numbers: { tj: '700002', ky: null, joysound: null },
+    crawled_at: '2026-02-02T00:00:00.000Z',
+  },
+];
+
+describe('worker search API — romaji↔kana expansion (search recall only)', () => {
+  it('finds a kana-only title from a Latin romaji query', async () => {
+    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+
+    const byYoru = await fetchJson(db, `/api/search?q=${encodeURIComponent('yoru')}`);
+    const byGurenge = await fetchJson(db, `/api/search?q=${encodeURIComponent('gurenge')}`);
+
+    expect(byYoru.items.map((song) => song.id)).toContain('kana-yoru-1');
+    expect(byGurenge.items.map((song) => song.id)).toContain('kana-gurenge-2');
+  });
+
+  it('preserves the original query: a direct kana query still matches', async () => {
+    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+
+    const byKana = await fetchJson(db, `/api/search?q=${encodeURIComponent('よる')}`);
+
+    expect(byKana.items.map((song) => song.id)).toContain('kana-yoru-1');
+  });
+
+  it('leaves numeric karaoke-number queries unexpanded', async () => {
+    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+
+    const byNumber = await fetchJson(db, '/api/search?q=700001');
+
+    expect(byNumber.items.map((song) => song.id)).toEqual(['kana-yoru-1']);
+  });
+});
+
+// Kanji canonical titles whose kana READING is supplied only as a SEARCH hint
+// (never written to the SongRecord). 夜に駆ける / 千本桜 are the canonical kanji
+// spellings the JOYSOUND songNameRuby would accompany.
+const KANJI_HINT_RECORDS: SongRecord[] = [
+  {
+    id: 'joysound-190001',
+    source_url: 'https://example.com/joysound/190001',
+    title_primary: '夜に駆ける',
+    title_ko: null,
+    artist_primary: 'YOASOBI',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
+    crawled_at: '2026-02-01T00:00:00.000Z',
+  },
+];
+
+describe('worker search API — JOYSOUND ruby hints (search recall only)', () => {
+  it('finds a kanji canonical title from a kana query via a ruby hint', async () => {
+    const db = createD1WithSongs(
+      KANJI_HINT_RECORDS,
+      {},
+      {
+        searchHints: [
+          {
+            songId: 'joysound-190001',
+            field: 'title',
+            text: 'よるにかける',
+            source: 'joysound_songNameRuby',
+            confidence: 'high',
+          },
+        ],
+      },
+    );
+
+    // The canonical title 夜に駆ける shares no characters with よる; the only path
+    // to a match is the ruby hint's kana tokens.
+    const byKana = await fetchJson(db, `/api/search?q=${encodeURIComponent('よる')}`);
+    expect(byKana.items.map((song) => song.id)).toContain('joysound-190001');
+    // The returned record must remain the canonical SongRecord (no hint leakage).
+    expect(byKana.items[0]).toEqual(KANJI_HINT_RECORDS[0]);
+  });
+
+  it('finds a kanji canonical title from a romaji query via the derived romaji hint', async () => {
+    const db = createD1WithSongs(
+      KANJI_HINT_RECORDS,
+      {},
+      {
+        searchHints: [
+          {
+            songId: 'joysound-190001',
+            field: 'title',
+            text: 'よるにかける',
+            source: 'joysound_songNameRuby',
+            confidence: 'high',
+          },
+        ],
+      },
+    );
+
+    const byRomaji = await fetchJson(db, '/api/search?q=yorunikakeru');
+    const byRomajiPrefix = await fetchJson(db, '/api/search?q=yoru');
+
+    expect(byRomaji.items.map((song) => song.id)).toContain('joysound-190001');
+    expect(byRomajiPrefix.items.map((song) => song.id)).toContain('joysound-190001');
+  });
+
+  it('does not surface the song for an unrelated kana query', async () => {
+    const db = createD1WithSongs(
+      KANJI_HINT_RECORDS,
+      {},
+      {
+        searchHints: [
+          {
+            songId: 'joysound-190001',
+            field: 'title',
+            text: 'よるにかける',
+            source: 'joysound_songNameRuby',
+            confidence: 'high',
+          },
+        ],
+      },
+    );
+
+    const byUnrelated = await fetchJson(db, `/api/search?q=${encodeURIComponent('さくら')}`);
+    expect(byUnrelated.items.map((song) => song.id)).not.toContain('joysound-190001');
+  });
+});
+
 describe('worker search API', () => {
   it('returns matching songs from title, artist, alias, and karaoke number fields', async () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
@@ -212,6 +418,47 @@ describe('worker search API', () => {
     expect(result.items.map((song) => song.id)).toEqual(['rank-tj-1', 'rank-ky-1', 'rank-joy-1']);
   });
 
+  it('ranks a vendor-selected search by provider coverage descending (vendor=joysound)', async () => {
+    const db = createD1WithSongs(COVERAGE_RANK_RECORDS);
+
+    const result = await fetchJson(db, '/api/search?q=coverage&vendor=joysound');
+
+    // All filtered rows carry joysound; rank by total coverage: 3-provider record,
+    // then the 2-provider joysound record, then the joysound-only record.
+    expect(result.items.map((song) => song.id)).toEqual([
+      'cov-all-1',
+      'cov-joy-tj-1',
+      'cov-joy-only-1',
+    ]);
+  });
+
+  it('ranks a vendor-selected search by provider coverage descending (vendor=ky)', async () => {
+    const db = createD1WithSongs(COVERAGE_RANK_RECORDS);
+
+    const result = await fetchJson(db, '/api/search?q=coverage&vendor=ky');
+
+    expect(result.items.map((song) => song.id)).toEqual([
+      'cov-all-1',
+      'cov-ky-tj-1',
+      'cov-ky-only-1',
+    ]);
+  });
+
+  it('ranks a multi-vendor search by provider coverage descending (vendor=tj,joysound)', async () => {
+    const db = createD1WithSongs(COVERAGE_RANK_RECORDS);
+
+    const result = await fetchJson(db, '/api/search?q=coverage&vendor=tj,joysound');
+
+    const ids = result.items.map((song) => song.id);
+    // ky-only record is filtered out (no tj/joysound number).
+    expect(ids).not.toContain('cov-ky-only-1');
+    expect(ids[0]).toBe('cov-all-1');
+    const counts = result.items.map(providerCount);
+    expect(counts).toEqual([3, 2, 2, 1]);
+    // Provider coverage is non-increasing across the filtered result set.
+    expect([...counts].sort((left, right) => right - left)).toEqual(counts);
+  });
+
   it('serves three-or-more-character Hangul initial prefixes without internal errors', async () => {
     const db = createD1WithSongs(MINISEARCH_PARITY_RECORDS);
 
@@ -228,7 +475,9 @@ describe('worker search API', () => {
     const withTj = await fetchJson(db, '/api/search?vendor=tj');
     const withKy = await fetchJson(db, '/api/search?vendor=ky');
 
-    expect(withTj.items.map((song) => song.id)).toEqual(['song-1', 'song-2', 'song-4']);
+    // Vendor selected → rank by total provider coverage descending: song-1 and
+    // song-4 (tj+joysound) outrank song-2 (tj only); ties keep sort_order.
+    expect(withTj.items.map((song) => song.id)).toEqual(['song-1', 'song-4', 'song-2']);
     expect(withKy.items.map((song) => song.id)).toEqual(['song-3']);
   });
 
@@ -257,9 +506,11 @@ describe('worker search API', () => {
     const withTjKy = await fetchJson(db, '/api/search?vendor=tj,ky');
     const withKyJoysound = await fetchJson(db, '/api/search?vendor=ky,joysound');
 
-    expect(withTjKy.items.map((song) => song.id)).toEqual(['song-1', 'song-2', 'song-3', 'song-4']);
+    // Union membership is preserved, then ranked by total provider coverage
+    // descending: 2-provider rows (song-1, song-4) lead the 1-provider rows.
+    expect(withTjKy.items.map((song) => song.id)).toEqual(['song-1', 'song-4', 'song-2', 'song-3']);
     // song-1 (joysound) + song-3 (ky) + song-4 (joysound); song-2 is tj-only and excluded.
-    expect(withKyJoysound.items.map((song) => song.id)).toEqual(['song-1', 'song-3', 'song-4']);
+    expect(withKyJoysound.items.map((song) => song.id)).toEqual(['song-1', 'song-4', 'song-3']);
   });
 
   it('keeps single-vendor filtering working for back-compat', async () => {
@@ -327,9 +578,11 @@ describe('worker search API', () => {
     const first = await fetchJson(db, '/api/search?limit=2');
     const second = await fetchJson(db, `/api/search?limit=2&cursor=${first.nextCursor}`);
 
+    // No vendor selected → TJ-containing rows first (song-1, song-2, song-4),
+    // then the ky-only song-3; pagination slices that stable order.
     expect(first.items.map((song) => song.id)).toEqual(['song-1', 'song-2']);
     expect(first.nextCursor).toBe('2');
-    expect(second.items.map((song) => song.id)).toEqual(['song-3', 'song-4']);
+    expect(second.items.map((song) => song.id)).toEqual(['song-4', 'song-3']);
     expect(second.nextCursor).toBeNull();
   });
 

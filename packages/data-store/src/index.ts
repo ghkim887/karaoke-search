@@ -4,6 +4,7 @@ import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import {
   compactSearchText,
+  deriveKanaRomaji,
   makeCharacterNgrams,
   makeHangulInitials,
   normalizeKaraokeNumber,
@@ -28,7 +29,28 @@ const SEARCH_TEXT_FIELDS = [
 ] as const;
 const MAX_PREFIX_LENGTH = 12;
 
+/**
+ * SEARCH-ONLY hint weight for tokens derived from `search_hints` rows. Kept
+ * strictly below every canonical field weight (artist_alias is the lowest at 2)
+ * so a hint match can improve recall but never outranks a canonical match, and
+ * hints never receive the `search_texts` exact-compact boost at all. Search
+ * hints must never feed crawler/classifier/admit/drop decisions.
+ */
+const HINT_TOKEN_WEIGHT = 1;
+const HINT_FIELDS = ['title', 'artist'] as const;
+const HINT_TOKEN_FIELD_BY_HINT_FIELD = {
+  title: 'title_hint',
+  artist: 'artist_hint',
+} as const;
+const DEFAULT_HINT_CONFIDENCE: HintConfidence = 'medium';
+/** Provenance tag for romaji hints derived from a kana hint at build time. */
+const DERIVED_KANA_ROMAJI_SOURCE = 'derived_kana_romaji';
+
 type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
+type HintField = (typeof HINT_FIELDS)[number];
+type HintTokenField = (typeof HINT_TOKEN_FIELD_BY_HINT_FIELD)[HintField];
+type SearchTokenField = SearchField | HintTokenField;
+type HintConfidence = NonNullable<TitleKoConfidence>;
 type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';
 
 function sqlite(): SqliteModule {
@@ -39,8 +61,9 @@ const D1_TABLE_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY K
 CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, number_key TEXT, PRIMARY KEY (song_id, provider));
 CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position));
 CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact));
-CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
-CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token));`;
+CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias', 'title_hint', 'artist_hint')), weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
+CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token));
+CREATE TABLE IF NOT EXISTS search_hints (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title', 'artist')), source TEXT NOT NULL, text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low')), PRIMARY KEY (song_id, field, source, text_compact));`;
 
 const D1_INDEX_SCHEMA_SQL = `CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
@@ -79,12 +102,60 @@ export function createSongDatabase(db: SongDatabase): void {
     'number_key',
     'ALTER TABLE karaoke_numbers ADD COLUMN number_key TEXT',
   );
+  ensureSearchTokensHintFields(db);
   db.exec(D1_INDEX_SCHEMA_SQL);
 }
 
-export function importSongs(db: SongDatabase, records: readonly SongRecord[]): void {
+/**
+ * Upgrade a legacy database whose `search_tokens.field` CHECK predates the
+ * search-hint fields. SQLite cannot widen a CHECK in place, but `search_tokens`
+ * is fully derived and rebuilt on every {@link importSongs}, so dropping and
+ * recreating it from the current schema loses nothing. The re-exec of
+ * {@link D1_TABLE_SCHEMA_SQL} recreates only the dropped table (the rest use
+ * `IF NOT EXISTS`) and also backfills `search_hints` on older databases.
+ */
+function ensureSearchTokensHintFields(db: SongDatabase): void {
+  const row = db
+    .prepare(`SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'search_tokens'`)
+    .get() as { sql?: string } | undefined;
+  if (row?.sql !== undefined && !row.sql.includes("'title_hint'")) {
+    db.exec('DROP TABLE IF EXISTS search_tokens');
+    db.exec(D1_TABLE_SCHEMA_SQL);
+  }
+}
+
+/**
+ * A single SEARCH-ONLY hint: an alternate string (e.g. a JOYSOUND `songNameRuby`
+ * reading or a derived romanization) that should improve recall for a song
+ * WITHOUT being part of the canonical {@link SongRecord}. Hints feed only the
+ * `search_hints` / `search_tokens` tables and never crawler/admit/drop logic.
+ */
+export interface SearchHintInput {
+  /** Canonical song id the hint applies to. Unknown ids are ignored. */
+  songId: string;
+  /** Whether the hint is an alternate title or artist string. */
+  field: 'title' | 'artist';
+  /** The alternate text (kana reading, romanization, etc.). */
+  text: string;
+  /** Provenance tag, e.g. `joysound_songNameRuby`, `derived_kana_romaji`. */
+  source: string;
+  /** Defaults to `medium` when omitted. */
+  confidence?: 'high' | 'medium' | 'low';
+}
+
+export interface ImportSongsOptions {
+  /** SEARCH-ONLY recall hints to index alongside the canonical corpus. */
+  searchHints?: readonly SearchHintInput[];
+}
+
+export function importSongs(
+  db: SongDatabase,
+  records: readonly SongRecord[],
+  options: ImportSongsOptions = {},
+): void {
   validateSongCorpus(records);
-  const searchIndex = buildSearchIndexRows(records);
+  const resolvedHints = resolveSearchHints(options.searchHints ?? [], records);
+  const searchIndex = buildSearchIndexRows(records, resolvedHints);
   db.exec(
     'CREATE TEMP TABLE IF NOT EXISTS temp_import_song_ids (id TEXT PRIMARY KEY) WITHOUT ROWID',
   );
@@ -149,10 +220,24 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
   const insertSearchTokenStat = db.prepare(
     'INSERT INTO search_token_stats (kind, token, df, idf_scaled) VALUES (?, ?, ?, ?)',
   );
+  const insertSearchHint = db.prepare(
+    `INSERT INTO search_hints (
+      song_id,
+      field,
+      source,
+      text_norm,
+      text_compact,
+      weight,
+      provider_mask,
+      confidence
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
 
   db.exec('BEGIN');
   try {
-    db.exec('DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts');
+    db.exec(
+      'DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts; DELETE FROM search_hints',
+    );
     db.exec('DELETE FROM temp_import_song_ids');
     records.forEach((record, index) => {
       insertImportId.run(record.id);
@@ -220,6 +305,18 @@ export function importSongs(db: SongDatabase, records: readonly SongRecord[]): v
     }
     for (const row of searchIndex.tokenStats) {
       insertSearchTokenStat.run(row.kind, row.token, row.df, row.idfScaled);
+    }
+    for (const hint of searchIndex.hints) {
+      insertSearchHint.run(
+        hint.songId,
+        hint.field,
+        hint.source,
+        hint.textNorm,
+        hint.textCompact,
+        hint.weight,
+        hint.providerMask,
+        hint.confidence,
+      );
     }
 
     db.exec('DELETE FROM songs WHERE id NOT IN (SELECT id FROM temp_import_song_ids)');
@@ -290,6 +387,12 @@ export function exportSongs(db: SongDatabase): SongRecord[] {
 export interface ImportSongsJsonArgs {
   inputPath: string;
   dbPath: string;
+  /**
+   * Optional SEARCH-ONLY hint sidecar files (generic JSON/JSONL or JOYSOUND
+   * detail decision-log rows). Parsed with {@link parseSearchHintFile}; hints
+   * for song ids absent from `inputPath` are ignored.
+   */
+  searchHintPaths?: readonly string[];
 }
 
 export interface ExportSongsJsonArgs {
@@ -297,19 +400,38 @@ export interface ExportSongsJsonArgs {
   outputPath: string;
 }
 
-export function importSongsJson({ inputPath, dbPath }: ImportSongsJsonArgs): void {
+/** Read and shape-check a `songs.json` corpus array. */
+export function readSongRecordsJson(inputPath: string): SongRecord[] {
   const parsed = JSON.parse(readFileSync(inputPath, 'utf8')) as unknown;
   if (!Array.isArray(parsed)) {
-    throw new Error(`importSongsJson: expected an array in ${inputPath}`);
+    throw new Error(`readSongRecordsJson: expected an array in ${inputPath}`);
   }
+  return parsed as SongRecord[];
+}
 
+export function importSongsJson({ inputPath, dbPath, searchHintPaths }: ImportSongsJsonArgs): void {
+  const records = readSongRecordsJson(inputPath);
+  const fileHints = (searchHintPaths ?? []).flatMap((path) => parseSearchHintFile(path));
+  importSongRecordsToDatabaseFile(records, dbPath, { searchHints: fileHints });
+}
+
+/**
+ * Build a fresh SQLite database in a temp file and atomically replace `dbPath`
+ * with it, so a failed import never corrupts an existing database. Shared by
+ * the sync {@link importSongsJson} and any async build wrapper.
+ */
+function importSongRecordsToDatabaseFile(
+  records: readonly SongRecord[],
+  dbPath: string,
+  options: ImportSongsOptions,
+): void {
   const tempDbPath = `${dbPath}.${process.pid}.${Date.now()}.tmp`;
   rmSync(tempDbPath, { force: true });
   let readyToReplace = false;
   const db = openSongDatabase(tempDbPath);
   try {
     createSongDatabase(db);
-    importSongs(db, parsed as SongRecord[]);
+    importSongs(db, records, options);
     readyToReplace = true;
   } finally {
     db.close();
@@ -321,6 +443,159 @@ export function importSongsJson({ inputPath, dbPath }: ImportSongsJsonArgs): voi
   replaceFile(tempDbPath, dbPath);
 }
 
+/**
+ * Parse a SEARCH-ONLY hint sidecar file into normalized {@link SearchHintInput}
+ * rows. Accepts either a JSON array, a single JSON object, or JSONL (one JSON
+ * value per line). Each row may be:
+ *
+ *   - a generic flat hint — `{ song_id|songId, field, text, source, confidence? }`,
+ *   - a grouped hint — `{ song_id|songId, hints: [{ field, text, source, ... }] }`,
+ *   - a JOYSOUND detail/decision-log row carrying `detail.songNameRuby` (mapped
+ *     to a `title` hint for `joysound-${detail.naviGroupId || naviGroupId}`).
+ *
+ * Rows that are malformed (missing song id, unknown `field`, empty `text` or
+ * `source`, non-`admit` decision logs) are skipped — a sidecar is advisory and
+ * must never fail a build. Song-id existence is checked later, at import.
+ */
+export function parseSearchHintFile(path: string): SearchHintInput[] {
+  const raw = readFileSync(path, 'utf8').trim();
+  if (raw.length === 0) {
+    return [];
+  }
+  const hints: SearchHintInput[] = [];
+  for (const row of parseHintRows(raw)) {
+    collectHintsFromRow(row, hints);
+  }
+  return hints;
+}
+
+function parseHintRows(raw: string): unknown[] {
+  // Whole-file JSON first (a JSON array, or a single pretty-printed object).
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    // Fall back to JSONL: one JSON value per non-empty line. Malformed lines are
+    // skipped rather than aborting the whole file.
+    const rows: unknown[] = [];
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) {
+        continue;
+      }
+      try {
+        rows.push(JSON.parse(trimmed) as unknown);
+      } catch {
+        // Skip unparseable line.
+      }
+    }
+    return rows;
+  }
+}
+
+function collectHintsFromRow(row: unknown, out: SearchHintInput[]): void {
+  if (!isPlainObject(row)) {
+    return;
+  }
+
+  // Grouped form: { songId, hints: [...] }.
+  if (Array.isArray(row.hints)) {
+    const songId = readHintSongId(row);
+    if (songId === null) {
+      return;
+    }
+    for (const hint of row.hints) {
+      pushFlatHint(out, songId, hint);
+    }
+    return;
+  }
+
+  // JOYSOUND detail / decision-log form.
+  if (isPlainObject(row.detail) || ('naviGroupId' in row && 'selSongNo' in row)) {
+    collectJoysoundDetailHint(row, out);
+    return;
+  }
+
+  // Generic flat form.
+  const songId = readHintSongId(row);
+  if (songId === null) {
+    return;
+  }
+  pushFlatHint(out, songId, row);
+}
+
+function pushFlatHint(out: SearchHintInput[], songId: string, raw: unknown): void {
+  if (!isPlainObject(raw)) {
+    return;
+  }
+  const field = normalizeHintFieldName(raw.field);
+  if (field === null) {
+    return;
+  }
+  const text = typeof raw.text === 'string' ? raw.text.trim() : '';
+  if (text.length === 0) {
+    return;
+  }
+  const source = typeof raw.source === 'string' ? raw.source.trim() : '';
+  if (source.length === 0) {
+    return;
+  }
+  const hint: SearchHintInput = { songId, field, text, source };
+  if (raw.confidence === 'high' || raw.confidence === 'medium' || raw.confidence === 'low') {
+    hint.confidence = raw.confidence;
+  }
+  out.push(hint);
+}
+
+/**
+ * Map a JOYSOUND detail/decision-log row to a title ruby hint. Only `admit`
+ * rows (or rows with no explicit `decision`) with a non-empty `songNameRuby`
+ * are emitted; the canonical song id is `joysound-${detail.naviGroupId ||
+ * naviGroupId}`, matching the JOYSOUND normalizer.
+ */
+function collectJoysoundDetailHint(row: Record<string, unknown>, out: SearchHintInput[]): void {
+  if ('decision' in row && row.decision !== 'admit') {
+    return;
+  }
+  const detail = isPlainObject(row.detail) ? row.detail : {};
+  const naviGroupId =
+    readTrimmedString(detail.naviGroupId) ?? readTrimmedString(row.naviGroupId) ?? '';
+  if (naviGroupId.length === 0) {
+    return;
+  }
+  const ruby = readTrimmedString(detail.songNameRuby) ?? '';
+  if (ruby.length === 0) {
+    return;
+  }
+  out.push({
+    songId: `joysound-${naviGroupId}`,
+    field: 'title',
+    text: ruby,
+    source: 'joysound_songNameRuby',
+    confidence: 'high',
+  });
+}
+
+function readHintSongId(row: Record<string, unknown>): string | null {
+  return readTrimmedString(row.song_id) ?? readTrimmedString(row.songId);
+}
+
+function readTrimmedString(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeHintFieldName(value: unknown): HintField | null {
+  return value === 'title' || value === 'artist' ? value : null;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export function exportSongsJson({ dbPath, outputPath }: ExportSongsJsonArgs): void {
   const db = openSongDatabase(dbPath);
   try {
@@ -330,7 +605,10 @@ export function exportSongsJson({ dbPath, outputPath }: ExportSongsJsonArgs): vo
   }
 }
 
-function buildSearchIndexRows(records: readonly SongRecord[]): SearchIndexRows {
+function buildSearchIndexRows(
+  records: readonly SongRecord[],
+  resolvedHints: readonly ResolvedSearchHint[],
+): SearchIndexRows {
   const texts: SearchTextRow[] = [];
   const tokens: SearchTokenRow[] = [];
   const seenTexts = new Set<string>();
@@ -370,7 +648,132 @@ function buildSearchIndexRows(records: readonly SongRecord[]): SearchIndexRows {
     }
   }
 
-  return { texts, tokens, tokenStats: buildSearchTokenStats(tokens, records.length) };
+  // SEARCH-ONLY hints feed the token index (recall) but NOT `search_texts`, so
+  // they never get the exact-compact boost. Appended after canonical tokens so
+  // the canonical index rows are byte-identical when there are no hints.
+  for (const hint of resolvedHints) {
+    addSearchTokens(tokens, seenTokens, {
+      songId: hint.songId,
+      field: HINT_TOKEN_FIELD_BY_HINT_FIELD[hint.field],
+      value: hint.textNorm,
+      textCompact: hint.textCompact,
+      weight: hint.weight,
+      providerMask: hint.providerMask,
+    });
+  }
+
+  return {
+    texts,
+    tokens,
+    tokenStats: buildSearchTokenStats(tokens, records.length),
+    hints: resolvedHints,
+  };
+}
+
+/**
+ * Normalize raw {@link SearchHintInput} rows into the rows materialized into
+ * `search_hints` (and, via {@link buildSearchIndexRows}, the token index).
+ *
+ * Hints for unknown song ids, unknown fields, or values that compact to nothing
+ * are dropped silently — a hint sidecar is advisory recall data, never a hard
+ * input, so a malformed row must never fail an import. Rows are deduplicated by
+ * `(songId, field, source, text_compact)` (the `search_hints` primary key).
+ */
+function resolveSearchHints(
+  inputs: readonly SearchHintInput[],
+  records: readonly SongRecord[],
+): ResolvedSearchHint[] {
+  const providerMaskById = new Map<string, number>();
+  for (const record of records) {
+    providerMaskById.set(record.id, karaokeProviderMask(record.karaoke_numbers));
+  }
+
+  const resolved: ResolvedSearchHint[] = [];
+  const seen = new Set<string>();
+  // Every text_compact already indexed per song+field (across all sources), so
+  // a derived romaji never duplicates an existing reading.
+  const compactsByGroup = new Map<string, Set<string>>();
+  const groupCompacts = (songId: string, field: HintField): Set<string> => {
+    const groupKey = `${songId} ${field}`;
+    let set = compactsByGroup.get(groupKey);
+    if (set === undefined) {
+      set = new Set<string>();
+      compactsByGroup.set(groupKey, set);
+    }
+    return set;
+  };
+  const add = (
+    songId: string,
+    field: HintField,
+    source: string,
+    text: string,
+    confidence: HintConfidence,
+  ): void => {
+    const providerMask = providerMaskById.get(songId);
+    if (providerMask === undefined) {
+      return;
+    }
+    const textCompact = compactSearchText(text);
+    if (textCompact.length === 0) {
+      return;
+    }
+    const key = `${songId}\u0000${field}\u0000${source}\u0000${textCompact}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    groupCompacts(songId, field).add(textCompact);
+    resolved.push({
+      songId,
+      field,
+      source,
+      textNorm: normalizeSearchText(text).trim(),
+      textCompact,
+      weight: HINT_TOKEN_WEIGHT,
+      providerMask,
+      confidence,
+    });
+  };
+
+  for (const input of inputs) {
+    if (!isHintField(input.field)) {
+      continue;
+    }
+    if (typeof input.text !== 'string' || typeof input.source !== 'string') {
+      continue;
+    }
+    const confidence = isHintConfidence(input.confidence)
+      ? input.confidence
+      : DEFAULT_HINT_CONFIDENCE;
+    add(input.songId, input.field, input.source, input.text, confidence);
+  }
+
+  // P3: derive a romaji recall variant from each directly-supplied kana hint
+  // (snapshot first so we never derive from a derived row), inheriting the
+  // parent confidence and skipping normalized-equivalent readings.
+  for (const hint of [...resolved]) {
+    if (hint.source === DERIVED_KANA_ROMAJI_SOURCE) {
+      continue;
+    }
+    const romaji = deriveKanaRomaji(hint.textNorm);
+    if (romaji === null) {
+      continue;
+    }
+    if (groupCompacts(hint.songId, hint.field).has(compactSearchText(romaji))) {
+      continue;
+    }
+    add(hint.songId, hint.field, DERIVED_KANA_ROMAJI_SOURCE, romaji, hint.confidence);
+  }
+
+  return resolved;
+}
+
+function isHintField(value: unknown): value is HintField {
+  return typeof value === 'string' && (HINT_FIELDS as readonly string[]).includes(value);
+}
+
+function isHintConfidence(value: unknown): value is HintConfidence {
+  return value === 'high' || value === 'medium' || value === 'low';
 }
 
 function searchTextInputs(record: SongRecord): SearchTextInput[] {
@@ -580,6 +983,7 @@ interface SearchIndexRows {
   texts: SearchTextRow[];
   tokens: SearchTokenRow[];
   tokenStats: SearchTokenStatRow[];
+  hints: readonly ResolvedSearchHint[];
 }
 
 interface SearchTextInput {
@@ -588,9 +992,12 @@ interface SearchTextInput {
   weight: number;
 }
 
-interface SearchTokenInput extends SearchTextInput {
+interface SearchTokenInput {
   songId: string;
+  field: SearchTokenField;
+  value: string;
   textCompact: string;
+  weight: number;
   providerMask: number;
 }
 
@@ -607,9 +1014,21 @@ interface SearchTokenRow {
   kind: SearchTokenKind;
   token: string;
   songId: string;
-  field: SearchField;
+  field: SearchTokenField;
   weight: number;
   providerMask: number;
+}
+
+/** A normalized, corpus-validated hint ready to be written to `search_hints`. */
+interface ResolvedSearchHint {
+  songId: string;
+  field: HintField;
+  source: string;
+  textNorm: string;
+  textCompact: string;
+  weight: number;
+  providerMask: number;
+  confidence: HintConfidence;
 }
 
 interface SearchTokenStatRow {

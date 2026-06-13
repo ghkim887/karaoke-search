@@ -1,3 +1,5 @@
+import { toHiragana, toKatakana, toRomaji } from 'wanakana';
+
 export type KaraokeProvider = 'tj' | 'ky' | 'joysound';
 
 export interface KaraokeNumberQuery {
@@ -101,6 +103,117 @@ export function makeHangulInitials(value: string): string {
 
 export function normalizeKaraokeNumber(value: string): string {
   return Array.from(normalizeSearchText(value).matchAll(/\d/gu), (match) => match[0]).join('');
+}
+
+/**
+ * Upper bound on the number of variants `expandSearchQuery` returns (original
+ * included). Caps query fan-out so a single search never explodes into many
+ * token sets. Romaji queries reach this bound (original + hiragana + katakana).
+ */
+const EXPANSION_VARIANT_LIMIT = 3;
+
+const HIRAGANA_PATTERN = /[぀-ゟ]/u;
+// Full-width katakana block (incl. the ー long-vowel mark) plus the phonetic
+// extensions; half/full-width forms are folded to this block by NFKC first.
+const KATAKANA_PATTERN = /[゠-ヿㇰ-ㇿ]/u;
+// Any Han ideograph, including supplementary-plane extensions (e.g. 𠮟,
+// U+20B9F) that the BMP-only ranges missed. Any kanji disqualifies a query
+// from transliteration — we never generate kanji readings.
+const KANJI_PATTERN = /\p{Script=Han}/u;
+const LATIN_LETTER_PATTERN = /[A-Za-z]/u;
+
+/**
+ * Expand a free-text search query into safe transliteration variants for
+ * recall, **without** generating kanji readings. Behaviour:
+ *
+ *   - A Latin/romaji query (e.g. `"yoru"`) yields hiragana + katakana variants
+ *     (`"よる"`, `"ヨル"`) so it can match kana title/artist/alias text.
+ *   - A kana query (e.g. `"よる"`) yields a romaji variant (`"yoru"`).
+ *   - A query containing any kanji is returned unchanged — we do not romanize
+ *     kanji, and a mixed kanji+kana query is left alone too.
+ *   - Hangul / other scripts are returned unchanged.
+ *
+ * The original query is always the first (preferred) variant. Variants whose
+ * `normalizeSearchText` form collides are deduplicated, and the result is
+ * bounded by {@link EXPANSION_VARIANT_LIMIT}. A blank query yields `[]`.
+ *
+ * Transliteration is for SEARCH RECALL ONLY: the generated readings must never
+ * feed crawler/classifier/admit/drop decisions or mutate canonical fields.
+ */
+export function expandSearchQuery(query: string): string[] {
+  const original = query.trim();
+  if (original.length === 0) {
+    return [];
+  }
+
+  const variants: string[] = [];
+  const seen = new Set<string>();
+  const push = (value: string): void => {
+    const candidate = value.trim();
+    if (candidate.length === 0) {
+      return;
+    }
+    const key = normalizeSearchText(candidate);
+    if (key.length === 0 || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    variants.push(candidate);
+  };
+
+  push(original);
+
+  // Detect on the NFKC form so width variants (half-width kana, full-width
+  // Latin) classify the same way they index.
+  const detect = original.normalize('NFKC');
+  if (KANJI_PATTERN.test(detect)) {
+    return variants;
+  }
+
+  const hasHiragana = HIRAGANA_PATTERN.test(detect);
+  const hasKatakana = KATAKANA_PATTERN.test(detect);
+  const hasLatin = LATIN_LETTER_PATTERN.test(detect);
+
+  if ((hasHiragana || hasKatakana) && !hasLatin) {
+    // Kana query → romaji recall variant (safe pure transliteration).
+    push(toRomaji(original));
+  } else if (hasLatin && !hasHiragana && !hasKatakana) {
+    // Latin/romaji query → kana recall variants.
+    push(toHiragana(original));
+    push(toKatakana(original));
+  }
+
+  return variants.slice(0, EXPANSION_VARIANT_LIMIT);
+}
+
+/**
+ * Derive a romaji search-recall variant from a kana (hiragana/katakana) string,
+ * for indexing SEARCH-ONLY hint readings at build time. Returns `null` when the
+ * input is not purely kana — anything containing kanji (we never generate kanji
+ * readings here, mirroring {@link expandSearchQuery}) or Latin letters, or any
+ * other script, yields `null` so callers only index safe pure transliterations.
+ *
+ * The derived romaji is for SEARCH RECALL ONLY: it must never feed
+ * crawler/classifier/admit/drop decisions or mutate canonical fields.
+ */
+export function deriveKanaRomaji(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  const detect = trimmed.normalize('NFKC');
+  if (KANJI_PATTERN.test(detect)) {
+    return null;
+  }
+  const hasHiragana = HIRAGANA_PATTERN.test(detect);
+  const hasKatakana = KATAKANA_PATTERN.test(detect);
+  const hasLatin = LATIN_LETTER_PATTERN.test(detect);
+  if ((hasHiragana || hasKatakana) && !hasLatin) {
+    const romaji = toRomaji(trimmed).trim();
+    return romaji.length > 0 ? romaji : null;
+  }
+  return null;
 }
 
 export function parseKaraokeNumberQuery(value: string): KaraokeNumberQuery | null {

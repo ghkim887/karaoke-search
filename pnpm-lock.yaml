@@ -23,6 +23,9 @@ importers:
       '@karaoke/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@karaoke/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       astro:
         specifier: ^5.1.1
         version: 5.18.1(@types/node@24.12.4)(jiti@2.7.0)(rollup@4.60.2)(typescript@5.9.3)(yaml@2.9.0)
@@ -141,6 +144,10 @@ importers:
         version: 2.1.9(@types/node@24.12.4)(jsdom@25.0.1)
 
   packages/search:
+    dependencies:
+      wanakana:
+        specifier: ^5.3.1
+        version: 5.3.1
     devDependencies:
       typescript:
         specifier: ^5.6.3
@@ -3116,6 +3123,10 @@ packages:
   walk-up-path@4.0.0:
     resolution: {integrity: sha512-3hu+tD8YzSLGuFYtPRb48vdhKMi0KQV5sn+uWr8+7dMEq/2G/dtLrdDinkLjqq5TIbIBjYJ4Ax/n3YiaW7QM8A==}
     engines: {node: 20 || >=22}
+
+  wanakana@5.3.1:
+    resolution: {integrity: sha512-OSDqupzTlzl2LGyqTdhcXcl6ezMiFhcUwLBP8YKaBIbMYW1wAwDvupw2T9G9oVaKT9RmaSpyTXjxddFPUcFFIw==}
+    engines: {node: '>=12'}
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
@@ -6350,6 +6361,8 @@ snapshots:
       xml-name-validator: 5.0.0
 
   walk-up-path@4.0.0: {}
+
+  wanakana@5.3.1: {}
 
   web-namespaces@2.0.1: {}
 

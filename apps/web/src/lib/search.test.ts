@@ -54,6 +54,53 @@ describe('search index (sample fixture)', () => {
   });
 });
 
+describe('searchLocalIndex — romaji↔kana expansion (offline fallback recall)', () => {
+  it('finds a kana-only title from a Latin romaji query', () => {
+    const index = buildIndex([
+      makeSearchRecord({ id: 'kana-yoru', title_primary: 'よるにかける' }),
+      makeSearchRecord({ id: 'kana-gurenge', title_primary: 'ぐれんげ' }),
+    ]);
+
+    const byYoru = searchModule.searchLocalIndex(index, 'yoru').map((hit) => String(hit.id));
+    const byGurenge = searchModule.searchLocalIndex(index, 'gurenge').map((hit) => String(hit.id));
+
+    expect(byYoru).toContain('kana-yoru');
+    expect(byGurenge).toContain('kana-gurenge');
+  });
+
+  it('merges duplicate hits by id', () => {
+    const index = buildIndex([
+      makeSearchRecord({ id: 'kana-yoru', title_primary: 'よるにかける' }),
+    ]);
+
+    const ids = searchModule.searchLocalIndex(index, 'yoru').map((hit) => String(hit.id));
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('biases an exact original-query hit above an expansion-only hit', () => {
+    // "yoru" matches "Yoru" directly (original) and "よるにかける" via expansion.
+    const index = buildIndex([
+      makeSearchRecord({ id: 'kana-only', title_primary: 'よるにかける' }),
+      makeSearchRecord({ id: 'latin-yoru', title_primary: 'Yoru' }),
+    ]);
+
+    const ids = searchModule.searchLocalIndex(index, 'yoru').map((hit) => String(hit.id));
+
+    expect(ids).toContain('latin-yoru');
+    expect(ids).toContain('kana-only');
+    expect(ids.indexOf('latin-yoru')).toBeLessThan(ids.indexOf('kana-only'));
+  });
+
+  it('still matches an exact query when no expansion applies (kanji)', () => {
+    const index = buildIndex([makeSearchRecord({ id: 'kanji-1', title_primary: '天使' })]);
+
+    const ids = searchModule.searchLocalIndex(index, '天使').map((hit) => String(hit.id));
+
+    expect(ids).toContain('kanji-1');
+  });
+});
+
 describe('search result provider priority', () => {
   it('orders search results by TJ first, then KY, then JOY while preserving order inside each bucket', () => {
     const input = [
@@ -91,6 +138,46 @@ describe('search result provider priority', () => {
       'ky-only',
       'tj-b',
       'no-number',
+    ]);
+  });
+
+  it('ranks by provider coverage descending when vendors are selected, preserving input order within equal coverage', () => {
+    const input = [
+      makeSearchRecord({
+        id: 'joy-1',
+        karaoke_numbers: { tj: null, ky: null, joysound: '610001' },
+      }),
+      makeSearchRecord({
+        id: 'all-3',
+        karaoke_numbers: { tj: '12345', ky: '22222', joysound: '610002' },
+      }),
+      makeSearchRecord({
+        id: 'two-a',
+        karaoke_numbers: { tj: '67890', ky: null, joysound: '610003' },
+      }),
+      makeSearchRecord({
+        id: 'two-b',
+        karaoke_numbers: { tj: null, ky: '33333', joysound: '610004' },
+      }),
+      makeSearchRecord({
+        id: 'ky-1',
+        karaoke_numbers: { tj: null, ky: '44444', joysound: null },
+      }),
+    ];
+
+    const ordered = searchModule.sortSearchResultsByProviderPriority(
+      input,
+      new Set<searchModule.SearchVendor>(['joysound']),
+    );
+
+    // 3-provider record first, then the two 2-provider records (input order kept
+    // within the equal-coverage bucket), then the two 1-provider records.
+    expect(ordered.map((record) => record.id)).toEqual([
+      'all-3',
+      'two-a',
+      'two-b',
+      'joy-1',
+      'ky-1',
     ]);
   });
 });

@@ -21,5 +21,8 @@
   "devDependencies": {
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "wanakana": "^5.3.1"
   }
 }

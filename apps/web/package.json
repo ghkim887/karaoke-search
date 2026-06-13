@@ -15,6 +15,7 @@
   "dependencies": {
     "@astrojs/preact": "^4.0.1",
     "@karaoke/schema": "workspace:*",
+    "@karaoke/search": "workspace:*",
     "astro": "^5.1.1",
     "minisearch": "^7.1.1",
     "preact": "^10.25.2"

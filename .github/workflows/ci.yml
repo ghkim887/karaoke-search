@@ -101,7 +101,7 @@ jobs:
           disown
           deadline=$((SECONDS + 30))
           while (( SECONDS < deadline )); do
-            if curl -fsS http://127.0.0.1:4321/karaoke-search/ > /dev/null; then
+            if curl -fsS http://127.0.0.1:4321/ > /dev/null; then
               echo "preview ready after $((SECONDS))s"
               exit 0
             fi
@@ -112,5 +112,5 @@ jobs:
           exit 1
       - name: Run E2E tests
         env:
-          E2E_BASE_URL: http://127.0.0.1:4321/karaoke-search/
+          E2E_BASE_URL: http://127.0.0.1:4321/
         run: pnpm --filter @karaoke/web test:e2e
