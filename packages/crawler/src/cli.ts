@@ -24,12 +24,13 @@ Options:
                    (the directory containing pnpm-workspace.yaml). Defaults
                    to apps/web/public/data/songs.json.
   --conflicts-out <path>
-                   Optional path for the Tier-B merge-conflict summary JSON
-                   ({ total, sample }). When set, the file is written even
-                   if total=0 (so the workflow can branch on its presence).
-                   Note: Tier C cross-source merges are excluded from the
-                   headline 'total' count, but they ARE included in the
-                   per-entry 'sample' list for forensic inspection.
+                   Optional path for the soft-merge/vendor-conflict summary
+                   JSON ({ total, sample }). When set, the file is written
+                   even if total=0 (so the workflow can branch on its
+                   presence). Note: Tier C/Tier D successful soft-merge
+                   markers are excluded from the headline 'total' count, but
+                   they ARE included in the per-entry 'sample' list for
+                   forensic inspection.
   --help           Print this message and exit 0.
 `;
 
