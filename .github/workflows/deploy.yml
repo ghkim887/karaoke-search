@@ -16,11 +16,12 @@ concurrency:
 
 jobs:
   build:
-    # Builds in fallback (offline MiniSearch) mode: no PUBLIC_KARAOKE_API_BASE_URL
-    # is set, so the site bundles its own index. Interim state until the
-    # self-hosted search API (apps/worker `serve:node`) is reachable — set the
-    # env var here again to flip the site back to API-first.
+    # Builds the deployed Pages artifact in API-first mode. The self-hosted
+    # Node + SQLite API is exposed through Tailscale Funnel; the bundled
+    # MiniSearch index remains only for local/offline fallback builds.
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_KARAOKE_API_BASE_URL: https://hermes-host.tail04d970.ts.net
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       - uses: ./.github/actions/setup

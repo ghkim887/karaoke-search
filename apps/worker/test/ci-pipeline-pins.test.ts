@@ -57,13 +57,15 @@ describe('CI pipeline pins', () => {
     expect(ciWorkflow).not.toContain('d1:verify-sql');
     expect(ciWorkflow).not.toContain('deploy:dry-run');
     // No Cloudflare Workers API URL anywhere in the deploy pipeline: the
-    // Pages build runs in fallback (offline MiniSearch) mode until the
-    // self-host API is reachable. `PUBLIC_KARAOKE_API_BASE_URL:` (with a
-    // colon — comments mention the bare name) must never be SET.
+    // Pages artifact is API-first against the self-hosted Tailscale Funnel URL,
+    // while PR/Pages E2E stays in fallback mode so deploys do not depend on
+    // the live API during the test job.
     expect(deployWorkflow).not.toContain('workers.dev');
-    expect(deployWorkflow).not.toContain('PUBLIC_KARAOKE_API_BASE_URL:');
+    expect(deployWorkflow).toContain(
+      'PUBLIC_KARAOKE_API_BASE_URL: https://hermes-host.tail04d970.ts.net',
+    );
     expect(ciWorkflow).not.toContain('PUBLIC_KARAOKE_API_BASE_URL:');
-    // Fallback e2e gates: both workflows build the web app in fallback mode
+    // Fallback e2e gates: e2e workflows build the web app in fallback mode
     // and ci.yml actually runs the Playwright suite on PRs.
     expect(deployWorkflow).toContain('pnpm --filter @karaoke/web... build');
     expect(ciWorkflow).toContain('pnpm --filter @karaoke/web... build');
