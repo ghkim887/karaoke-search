@@ -20,7 +20,10 @@
   },
   "dependencies": {
     "@karaoke/schema": "workspace:*",
-    "@karaoke/search": "workspace:*"
+    "@karaoke/search": "workspace:*",
+    "kuromoji": "^0.1.2",
+    "kuroshiro": "^1.2.0",
+    "kuroshiro-analyzer-kuromoji": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.12.4",

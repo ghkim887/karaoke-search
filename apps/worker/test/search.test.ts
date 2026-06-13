@@ -1,6 +1,8 @@
 import {
+  type ImportSongsOptions,
   type SongDatabase,
   createSongDatabase,
+  generateKanjiReadingHints,
   importSongs,
   openSongDatabase,
 } from '@karaoke/data-store';
@@ -16,11 +18,12 @@ interface NodeSqliteD1Options extends SqliteD1Options {}
 function createD1WithSongs(
   records: readonly SongRecord[],
   options: NodeSqliteD1Options = {},
+  importOptions: ImportSongsOptions = {},
 ): D1DatabaseLike {
   const sqlite = openSongDatabase(':memory:');
   openDatabases.push(sqlite);
   createSongDatabase(sqlite);
-  importSongs(sqlite, records);
+  importSongs(sqlite, records, importOptions);
   return new SqliteD1Database(sqlite, options);
 }
 
@@ -202,6 +205,131 @@ describe('worker search API — romaji↔kana expansion (search recall only)', (
     const byNumber = await fetchJson(db, '/api/search?q=700001');
 
     expect(byNumber.items.map((song) => song.id)).toEqual(['kana-yoru-1']);
+  });
+});
+
+// Kanji canonical titles whose kana READING is supplied only as a SEARCH hint
+// (never written to the SongRecord). 夜に駆ける / 千本桜 are the canonical kanji
+// spellings the JOYSOUND songNameRuby would accompany.
+const KANJI_HINT_RECORDS: SongRecord[] = [
+  {
+    id: 'joysound-190001',
+    source_url: 'https://example.com/joysound/190001',
+    title_primary: '夜に駆ける',
+    title_ko: null,
+    artist_primary: 'YOASOBI',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '190001' },
+    crawled_at: '2026-02-01T00:00:00.000Z',
+  },
+];
+
+describe('worker search API — JOYSOUND ruby hints (search recall only)', () => {
+  it('finds a kanji canonical title from a kana query via a ruby hint', async () => {
+    const db = createD1WithSongs(
+      KANJI_HINT_RECORDS,
+      {},
+      {
+        searchHints: [
+          {
+            songId: 'joysound-190001',
+            field: 'title',
+            text: 'よるにかける',
+            source: 'joysound_songNameRuby',
+            confidence: 'high',
+          },
+        ],
+      },
+    );
+
+    // The canonical title 夜に駆ける shares no characters with よる; the only path
+    // to a match is the ruby hint's kana tokens.
+    const byKana = await fetchJson(db, `/api/search?q=${encodeURIComponent('よる')}`);
+    expect(byKana.items.map((song) => song.id)).toContain('joysound-190001');
+    // The returned record must remain the canonical SongRecord (no hint leakage).
+    expect(byKana.items[0]).toEqual(KANJI_HINT_RECORDS[0]);
+  });
+
+  it('finds a kanji canonical title from a romaji query via the derived romaji hint', async () => {
+    const db = createD1WithSongs(
+      KANJI_HINT_RECORDS,
+      {},
+      {
+        searchHints: [
+          {
+            songId: 'joysound-190001',
+            field: 'title',
+            text: 'よるにかける',
+            source: 'joysound_songNameRuby',
+            confidence: 'high',
+          },
+        ],
+      },
+    );
+
+    const byRomaji = await fetchJson(db, '/api/search?q=yorunikakeru');
+    const byRomajiPrefix = await fetchJson(db, '/api/search?q=yoru');
+
+    expect(byRomaji.items.map((song) => song.id)).toContain('joysound-190001');
+    expect(byRomajiPrefix.items.map((song) => song.id)).toContain('joysound-190001');
+  });
+
+  it('does not surface the song for an unrelated kana query', async () => {
+    const db = createD1WithSongs(
+      KANJI_HINT_RECORDS,
+      {},
+      {
+        searchHints: [
+          {
+            songId: 'joysound-190001',
+            field: 'title',
+            text: 'よるにかける',
+            source: 'joysound_songNameRuby',
+            confidence: 'high',
+          },
+        ],
+      },
+    );
+
+    const byUnrelated = await fetchJson(db, `/api/search?q=${encodeURIComponent('さくら')}`);
+    expect(byUnrelated.items.map((song) => song.id)).not.toContain('joysound-190001');
+  });
+});
+
+// A pure-kanji title (千本桜) with no kana: only a generated reading lets a
+// romaji query reach it. The kuromoji reading is せんぼんさくら → "senbonsakura".
+const GENERATED_READING_RECORDS: SongRecord[] = [
+  {
+    id: 'joysound-200001',
+    source_url: 'https://example.com/joysound/200001',
+    title_primary: '千本桜',
+    title_ko: null,
+    artist_primary: 'YOASOBI',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '200001' },
+    crawled_at: '2026-03-01T00:00:00.000Z',
+  },
+];
+
+describe('worker search API — generated kanji readings (opt-in, search recall only)', () => {
+  it('finds a kanji-only title by a generated reading query when enabled', async () => {
+    const generated = await generateKanjiReadingHints(GENERATED_READING_RECORDS);
+    const db = createD1WithSongs(GENERATED_READING_RECORDS, {}, { searchHints: generated });
+
+    const byReading = await fetchJson(db, '/api/search?q=senbonsakura');
+
+    expect(byReading.items.map((song) => song.id)).toContain('joysound-200001');
+    // Hints never leak into the canonical record.
+    expect(byReading.items[0]).toEqual(GENERATED_READING_RECORDS[0]);
+  }, 60_000);
+
+  it('does not find the kanji-only title by a generated reading query when disabled', async () => {
+    // No searchHints passed → no generated reading indexed.
+    const db = createD1WithSongs(GENERATED_READING_RECORDS);
+
+    const byReading = await fetchJson(db, '/api/search?q=senbonsakura');
+
+    expect(byReading.items.map((song) => song.id)).not.toContain('joysound-200001');
   });
 });
 

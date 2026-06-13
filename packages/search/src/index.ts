@@ -186,6 +186,36 @@ export function expandSearchQuery(query: string): string[] {
   return variants.slice(0, EXPANSION_VARIANT_LIMIT);
 }
 
+/**
+ * Derive a romaji search-recall variant from a kana (hiragana/katakana) string,
+ * for indexing SEARCH-ONLY hint readings at build time. Returns `null` when the
+ * input is not purely kana — anything containing kanji (we never generate kanji
+ * readings here, mirroring {@link expandSearchQuery}) or Latin letters, or any
+ * other script, yields `null` so callers only index safe pure transliterations.
+ *
+ * The derived romaji is for SEARCH RECALL ONLY: it must never feed
+ * crawler/classifier/admit/drop decisions or mutate canonical fields.
+ */
+export function deriveKanaRomaji(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  const detect = trimmed.normalize('NFKC');
+  if (KANJI_PATTERN.test(detect)) {
+    return null;
+  }
+  const hasHiragana = HIRAGANA_PATTERN.test(detect);
+  const hasKatakana = KATAKANA_PATTERN.test(detect);
+  const hasLatin = LATIN_LETTER_PATTERN.test(detect);
+  if ((hasHiragana || hasKatakana) && !hasLatin) {
+    const romaji = toRomaji(trimmed).trim();
+    return romaji.length > 0 ? romaji : null;
+  }
+  return null;
+}
+
 export function parseKaraokeNumberQuery(value: string): KaraokeNumberQuery | null {
   const normalized = normalizeSearchText(value).trim();
   if (normalized.length === 0) {

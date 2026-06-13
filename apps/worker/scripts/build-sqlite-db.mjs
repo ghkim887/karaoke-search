@@ -11,6 +11,8 @@ export function parseBuildSqliteArgs(argv) {
   const parsed = {
     inputPath: DEFAULT_INPUT_PATH,
     outputPath: DEFAULT_OUTPUT_PATH,
+    searchHintPaths: [],
+    generateKanjiReadings: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -27,6 +29,15 @@ export function parseBuildSqliteArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--search-hints') {
+      parsed.searchHintPaths.push(requireValue(argv, index, arg));
+      index += 1;
+      continue;
+    }
+    if (arg === '--generate-kanji-readings') {
+      parsed.generateKanjiReadings = true;
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       throw new Error(usage());
     }
@@ -37,12 +48,36 @@ export function parseBuildSqliteArgs(argv) {
 
 export async function buildSqliteDb(argv) {
   const args = Array.isArray(argv) ? parseBuildSqliteArgs(argv) : argv;
+  const searchHintPaths = args.searchHintPaths ?? [];
+  const generateKanjiReadings = args.generateKanjiReadings ?? false;
   await mkdir(dirname(args.outputPath), { recursive: true });
   await rm(args.outputPath, { force: true });
-  const { importSongsJson, openSongDatabase } = await import(
+  const {
+    importSongsJson,
+    openSongDatabase,
+    readSongRecordsJson,
+    parseSearchHintFile,
+    generateKanjiReadingHints,
+  } = await import(
     pathToFileURL(join(WORKER_ROOT, '..', '..', 'packages', 'data-store', 'dist', 'index.js')).href
   );
-  importSongsJson({ inputPath: args.inputPath, dbPath: args.outputPath });
+
+  // SEARCH-ONLY kanji-reading fallback (P4) is opt-in and async (it loads a
+  // morphological analyzer), so it runs before the synchronous corpus import
+  // and is threaded in as pre-resolved hints. Normal builds skip it entirely.
+  let generatedHints = [];
+  if (generateKanjiReadings) {
+    const records = readSongRecordsJson(args.inputPath);
+    const existingHints = searchHintPaths.flatMap((path) => parseSearchHintFile(path));
+    generatedHints = await generateKanjiReadingHints(records, { existingHints });
+  }
+
+  importSongsJson({
+    inputPath: args.inputPath,
+    dbPath: args.outputPath,
+    searchHintPaths,
+    searchHints: generatedHints,
+  });
   const songCount = countSongs(openSongDatabase, args.outputPath);
   if (songCount === 0) {
     // CI corpus gate hardening: an empty songs.json imports "successfully"
@@ -86,6 +121,15 @@ function usage() {
   return [
     'Usage:',
     '  node scripts/build-sqlite-db.mjs [--input songs.json] [--output songs.sqlite]',
+    '                                   [--search-hints hints.jsonl ...]',
+    '                                   [--generate-kanji-readings]',
+    '',
+    'Options:',
+    '  --search-hints <path>       SEARCH-ONLY hint sidecar (generic JSON/JSONL or',
+    '                              JOYSOUND detail decision-log rows). Repeatable.',
+    '  --generate-kanji-readings   Generate low-confidence kanji reading hints for',
+    '                              canonical JP titles/artists that lack a ruby hint',
+    '                              (build-time only; never affects the corpus).',
     '',
     'Defaults:',
     `  --input ${DEFAULT_INPUT_PATH}`,
