@@ -185,27 +185,165 @@ function tierDKey(r: SongRecord): string | null {
 }
 
 /**
+ * Tier E is intentionally NOT a broad artist-containment rule. `SongRecord`
+ * does not preserve JOYSOUND tieups or lyricist/composer evidence, so the safe
+ * deployable surface is the exact set of 65 TJ↔JOYSOUND pairs raw-reviewed on
+ * 2026-06-13 as `MERGE_CANDIDATE_STRONG`.
+ *
+ * Excluded by design:
+ * - 4 `MERGE_CANDIDATE_REVIEWED` rows that require raw tieup/credit evidence
+ *   absent from SongRecord (`Radio Happy`, `ファンサ`, etc.).
+ * - 6 `ハッピー☆マテリアル` rows where one TJ number maps to multiple
+ *   JOYSOUND monthly/opening variants.
+ * - 1 short-token false positive (`FLOW X GRANRODEO` vs `XG`).
+ */
+const REVIEWED_TIER_E_STRONG_PAIRS = [
+  ['25031', '492355'], // 六幻 / 林勇 ↔ 佐野万次郎(CV:林勇)
+  ['25134', '492356'], // Rusted Fist / 新祐樹 ↔ 花垣武道(CV:新祐樹)
+  ['25257', '36852'], // For フルーツバスケット / 岡崎律子 外 ↔ 岡崎律子
+  ['25283', '53411'], // Let Me Be With You / Round table ↔ ROUND TABLE featuring Nino
+  ['25372', '26946'], // 御旗のもとに / 巴里華撃団 ↔ 日高のり子ほか (巴里華撃団)
+  ['25468', '27700'], // もっと!モット!ときめき / 金月真美 ↔ 金月真美(藤崎詩織)
+  ['25542', '36509'], // storm / JAM Project ↔ JAM Project featuring 水木一郎&影山ヒロノブ
+  ['25663', '37378'], // Fire wars / JAM Project ↔ JAM Project featuring 影山ヒロノブ
+  ['25715', '4586'], // 恋しさとせつなさと心強さと / 篠原涼子 ↔ 篠原涼子 with t.komuro
+  ['25780', '53543'], // WHITE LINE / 青酢 ↔ 青酢(皆川純子/置鮎龍太郎/近藤孝行/甲斐田ゆき)
+  ['25798', '60803'], // Agape / メロキュア ↔ メロキュア(岡崎律子/日向めぐみ)
+  ['25918', '65161'], // スクランブル / 堀江由衣 ↔ 堀江由衣 with UNSCANDAL
+  ['25963', '32521'], // あぁいいな! / ダブルユー ↔ W(ダブルユー)
+  ['26007', '62537'], // チチをもげ! / パルコ・フォルゴレ(高橋広樹) ↔ 高橋広樹
+  ['26112', '78294'], // 黄色いバカンス / 桃月学園1年C組(Feat.片桐姫子) ↔ 桃月学園1年C組 feat.片桐姫子(折笠富美子)
+  ['26190', '61149'], // 静かな夜に / 田中理恵 ↔ 田中理恵(ラクス・クライン)
+  ['26293', '198114'], // しあわせの魔法 / 丹下桜 ↔ 木之本桜(丹下桜)
+  ['26324', '68716'], // くじびきアンバランス / UNDER17 ↔ UNDER17(桃井はるこ)
+  ['26334', '71482'], // 魔神見参!! / JAM Project ↔ JAM Project featuring 遠藤正明
+  ['26405', '7807'], // 翔べ! ガンダム / 池田 鴻 ↔ 池田鴻/フィーリングフリー/ミュージッククリエイション
+  ['26505', '102326'], // 星の在り処 / う～み ↔ ファルコム/う～み
+  ['26540', '162503'], // 倦怠ライフ・リターンズ! / 杉田智和 ↔ キョン(杉田智和)
+  ['26556', '121767'], // 少女Q / 桃月学園1年C組 ↔ 桃月学園1年C組 feat.上原都(堀江由衣)
+  ['26601', '163329'], // 明日は明日の 君が生まれる / AKB48 ↔ Chocolove from AKB48
+  ['26633', '57892'], // 愛しいかけら / メロキュア ↔ メロキュア(岡崎律子/日向めぐみ)
+  ['26655', '31939'], // Now or Never / CHEMISTRY ↔ CHEMISTRY meets m-flo
+  ['26701', '163798'], // アンインストール / 石川智晶 ↔ 石川智晶(石川知亜紀)
+  ['26731', '166809'], // 人として軸がぶれている / 大槻ケンヂと絶望少女達 ↔ 大槻ケンヂと絶望少女達(...)
+  ['26745', '60710'], // Like an angel / 石川智晶 ↔ 石川智晶(石川知亜紀)
+  ['26770', '13283'], // SEVENTH MOON / Fire bomber ↔ Fire Bomber featuring BASARA NEKKI
+  ['26929', '135661'], // 本日、満開ワタシ色 / 桂ヒナギクwith白皇学院生徒会三人娘 ↔ 桂ヒナギク with ...
+  ['26961', '162935'], // STORMBRINGER / JAM Project ↔ JAM Project(...)
+  ['27655', '94213'], // ミライボウル / ももいろクローバーZ ↔ ももいろクローバー
+  ['27800', '728174'], // Cutie Panther / BiBi ↔ BiBi ～... from μ's～
+  ['27827', '726997'], // Starlog / ChouCho ↔ ChouCho(ちょうちょ)
+  ['27895', '682372'], // QUESTION / 3年E組うた担 ↔ 3年E組うた担 (...)
+  ['27897', '681824'], // もうそうえくすぷれす / 花澤香菜 ↔ 千石撫子(花澤香菜)
+  ['27931', '682354'], // SIX SHAME FACES ~今夜も最高!!!!!!~ / トト子(...) ↔ トト子 feat....
+  ['27948', '687699'], // Stay Alive / 高橋李依 ↔ エミリア (CV : 高橋李依)
+  ['27952', '687133'], // SAKURAスキップ / Fourfolium ↔ fourfolium ...
+  ['27962', '156842'], // 好きな人がいること / JY(知英) ↔ JY
+  ['27991', '688892'], // Wishing / 水瀬いのり ↔ レム (CV:水瀬いのり)
+  ['28652', '671090'], // 太陽のFlare Sherbet / 久保田未夢 ↔ そふぃ(cv.久保田未夢)
+  ['28740', '696488'], // STEP by STEP UP / Fourfolium ↔ fourfolium ...
+  ['28786', '423155'], // にめんせい☆ ウラオモテライフ! / 田中あいみ ↔ 土間うまる(CV:田中あいみ)
+  ['28802', '689913'], // 旅立ちのうた / 3年E組うた担 ↔ 3年E組
+  ['28991', '685194'], // EZ DO DANCE -K.O.P. REMIX- / 増田俊樹,武内駿輔 ↔ 仁科カヅキ vs ...
+  ['52786', '443607'], // メイド・イン・トキメキ♪ / Ra*bits ↔ Ra*bits(...)
+  ['52787', '692333'], // Neo Sanctuary / fine ↔ fine(...)
+  ['68021', '425517'], // ルナティックDEStiNy / 蒼井翔太 ↔ 如月ルヰ (CV.蒼井翔太)
+  ['68042', '439823'], // チカっとチカ千花っ / 小原好美 ↔ 藤原千花(CV.小原好美)
+  ['68097', '441786'], // マッチョアネーム? / 石川界人 ↔ 街雄鳴造(CV:石川界人)
+  ['68142', '444804'], // 魔法の川の子守唄 / 吉田羊 ↔ 吉田羊(イドゥナ王妃)
+  ['68143', '444810'], // わたしにできること / 神田沙也加 ↔ 神田沙也加(アナ)
+  ['68153', '444919'], // 1・2・3 / After the Rain ↔ After the Rain [そらる×まふまふ]
+  ['68250', '448615'], // WHITE GRAVITY / WHITE GRAVITY ↔ WHITE GRAVITY[...]
+  ['68265', '448749'], // Ready to / 諸星すみれ ↔ 影森みちる (CV:諸星すみれ)
+  ['68310', '314362'], // 約束の絆 / 妖夢討伐隊 ↔ 妖夢討伐隊 ...
+  ['68322', '486984'], // 灰色のサーガ / ChouCho ↔ ChouCho(ちょうちょ)
+  ['68340', '486983'], // 快眠！安眠！スヤリスト生活 / 水瀬いのり ↔ スヤリス姫(CV.水瀬いのり)
+  ['68382', '443457'], // サニードロップ / 山下七海 ↔ 大槻唯(CV:山下七海)
+  ['68443', '693032'], // イシュカン・コミュニケーション / ちょろゴンず ↔ ちょろゴンず(...)
+  ['68576', '493580'], // I Believe / 狩野翔 ↔ 松野千冬(CV:狩野翔)
+  ['68734', '493581'], // Rest In Rampage / 水中雅章 ↔ 場地圭介(CV:水中雅章)
+  ['68825', '618291'], // サインはＢ -アイ Solo Ver.- / Ｂ小町アイ ↔ B小町 アイ (CV:高橋李依)
+] as const satisfies ReadonlyArray<readonly [string, string]>;
+
+const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
+for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
+  const existing = REVIEWED_TIER_E_JOYS_BY_TJ.get(tj);
+  if (existing) existing.add(joysound);
+  else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
+}
+
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 65;
+const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
+  '26121|65623',
+  '26121|77873',
+  '26121|78108',
+  '26121|78109',
+  '26121|78110',
+  '26121|78111',
+  '26750|168779',
+  '28852|631988',
+  '68183|683200',
+  '68258|445312',
+  '68290|731408',
+]);
+
+function assertReviewedTierEPairInvariant(): void {
+  if (REVIEWED_TIER_E_STRONG_PAIRS.length !== EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT) {
+    throw new Error(
+      `Tier E reviewed-strong allowlist must contain exactly ${EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT} pairs`,
+    );
+  }
+
+  const pairs = new Set<string>();
+  const tjs = new Set<string>();
+  const joys = new Set<string>();
+  for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
+    const pairKey = `${tj}|${joysound}`;
+    if (pairs.has(pairKey)) throw new Error(`Tier E duplicate reviewed pair: ${pairKey}`);
+    if (tjs.has(tj)) throw new Error(`Tier E duplicate TJ number in reviewed pairs: ${tj}`);
+    if (joys.has(joysound))
+      throw new Error(`Tier E duplicate JOYSOUND number in reviewed pairs: ${joysound}`);
+    if (REVIEWED_TIER_E_FORBIDDEN_PAIRS.has(pairKey)) {
+      throw new Error(`Tier E forbidden non-strong pair present in allowlist: ${pairKey}`);
+    }
+    pairs.add(pairKey);
+    tjs.add(tj);
+    joys.add(joysound);
+  }
+}
+
+assertReviewedTierEPairInvariant();
+
+/**
  * Structured warning emitted when records cluster via Tier B (fuzzy
  * title+artist) AND disagree on a vendor field neither side used as the
  * clustering key. The merger does NOT abort — highest-priority source wins
  * per the ownership table — but the warning is surfaced for the crawl PR
  * body summary.
  *
- * The `'tier_c_merge'` and `'tier_d_context_title_merge'` field values
- * document successful soft merges (one marker emitted per cluster, not per
- * record-pair) so the merge surfaces in the crawl PR body for review. Sunset
- * cadence per `2026-05-01-kpop-leak-and-merge-fix-design.md` §3.C: 4 weeks
- * of clean cross-source output, then downgrade to a per-cluster log line.
+ * The `'tier_c_merge'`, `'tier_d_context_title_merge'`, and
+ * `'tier_e_artist_credit_merge'` field values document successful soft merges
+ * (one marker emitted per cluster, not per record-pair) so the merge surfaces
+ * in the crawl PR body for review. Sunset cadence per
+ * `2026-05-01-kpop-leak-and-merge-fix-design.md` §3.C: 4 weeks of clean
+ * cross-source output, then downgrade to a per-cluster log line.
  */
 export interface MergeConflict {
   /**
    * Soft-merge cluster key. Tier B/C keys use `clusterKeyPart(title)|...`; Tier
-   * D keys use `clusterKeyPart(refinedStripContext(title))|clusterKeyPart(artist)`.
+   * D keys use `clusterKeyPart(refinedStripContext(title))|clusterKeyPart(artist)`;
+   * Tier E keys use `tj:<number>|joysound:<number>` from the reviewed pair.
    * Conflict `cluster_key` strings are FOLDED since 2026-06-13 — cosmetic for
    * PR-body aggregation.
    */
   cluster_key: string;
-  field: 'tj' | 'ky' | 'joysound' | 'tier_c_merge' | 'tier_d_context_title_merge';
+  field:
+    | 'tj'
+    | 'ky'
+    | 'joysound'
+    | 'tier_c_merge'
+    | 'tier_d_context_title_merge'
+    | 'tier_e_artist_credit_merge';
   values: { source: string; value: string }[];
   /** The value that wins per source priority, or the merged record id for marker rows. */
   winner: string;
@@ -223,14 +361,17 @@ export interface MergeResult {
  *
  * Fix B.1 (2026-05-01): Tier C merges are NOT disagreements — they're
  * successful soft-merges flagged for visibility. Tier D context-title merges
- * follow the same marker semantics. The full conflicts list (and any `sample`
- * slice) keeps marker entries for forensic inspection; only the headline
- * `total` is filtered. Centralised here so `pipeline.ts` and `cli.ts` share one
- * definition.
+ * and Tier E reviewed-pair merges follow the same marker semantics. The full
+ * conflicts list (and any `sample` slice) keeps marker entries for forensic
+ * inspection; only the headline `total` is filtered. Centralised here so
+ * `pipeline.ts` and `cli.ts` share one definition.
  */
 export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
   return conflicts.filter(
-    (c) => c.field !== 'tier_c_merge' && c.field !== 'tier_d_context_title_merge',
+    (c) =>
+      c.field !== 'tier_c_merge' &&
+      c.field !== 'tier_d_context_title_merge' &&
+      c.field !== 'tier_e_artist_credit_merge',
   );
 }
 
@@ -377,6 +518,57 @@ function hasContextStrippedTitle(records: SongRecord[], idxs: number[]): boolean
 
 function shouldUnionTierDGroup(records: SongRecord[], idxs: number[]): boolean {
   return hasMultipleSourceSlugs(records, idxs) && hasContextStrippedTitle(records, idxs);
+}
+
+function singletonVendorIndex(
+  records: SongRecord[],
+  uf: UnionFind,
+  sizeByRoot: Map<number, number>,
+  vendor: Vendor,
+): Map<string, number> {
+  const index = new Map<string, number>();
+  for (let i = 0; i < records.length; i++) {
+    const root = uf.find(i);
+    if (sizeByRoot.get(root) !== 1) continue;
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const value = records[i]!.karaoke_numbers[vendor];
+    if (value !== null) index.set(value, i);
+  }
+  return index;
+}
+
+function tierEClusterKey(tj: string, joysound: string): string {
+  return `tj:${tj}|joysound:${joysound}`;
+}
+
+function collectTierEReviewedStrongGroups(
+  records: SongRecord[],
+  uf: UnionFind,
+  sizeByRoot: Map<number, number>,
+): Map<string, number[]> {
+  const groups = new Map<string, number[]>();
+  const tjIndex = singletonVendorIndex(records, uf, sizeByRoot, 'tj');
+  const joysoundIndex = singletonVendorIndex(records, uf, sizeByRoot, 'joysound');
+
+  for (const [tj, joysoundValues] of REVIEWED_TIER_E_JOYS_BY_TJ) {
+    const tjIdx = tjIndex.get(tj);
+    if (tjIdx === undefined) continue;
+    for (const joysound of joysoundValues) {
+      const joyIdx = joysoundIndex.get(joysound);
+      if (joyIdx === undefined || joyIdx === tjIdx) continue;
+      // Tier E was reviewed specifically as raw TJ official ↔ raw JOYSOUND
+      // official evidence. A blog/manual singleton carrying one of the same
+      // numbers should not widen this 65-pair data change implicitly.
+      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+      if (sourceSlug(records[tjIdx]!) !== 'tj' || sourceSlug(records[joyIdx]!) !== 'joysound')
+        continue;
+      const idxs = [tjIdx, joyIdx];
+      if (!hasMultipleSourceSlugs(records, idxs)) continue;
+      groups.set(tierEClusterKey(tj, joysound), idxs);
+    }
+  }
+
+  return groups;
 }
 
 interface VendorNumberConflict {
@@ -670,6 +862,20 @@ function recordTierDConflict(
   });
 }
 
+function recordTierEConflict(
+  conflicts: MergeConflict[],
+  cluster: SongRecord[],
+  winner: string,
+  clusterKey: string,
+): void {
+  conflicts.push({
+    cluster_key: clusterKey,
+    field: 'tier_e_artist_credit_merge',
+    values: cluster.map((r) => ({ source: sourceSlug(r), value: r.id })),
+    winner,
+  });
+}
+
 function compareNullableTj(a: string | null, b: string | null): number {
   // Null TJ records sort last regardless of the other side's codepoint.
   if (a === null && b !== null) return 1;
@@ -703,6 +909,8 @@ function mergeCluster(
   wasTierB: boolean,
   wasTierC: boolean,
   wasTierD: boolean,
+  wasTierE: boolean,
+  tierEClusterKeyValue: string | null,
   conflicts: MergeConflict[],
 ): SongRecord {
   if (cluster.length === 0) throw new Error('empty cluster');
@@ -710,11 +918,13 @@ function mergeCluster(
   // Tier C/D clusters reuse Tier B's vendor-conflict reporting surface under a
   // folded soft-key shape so existing PR-body aggregation continues to work.
   const softClusterKey =
-    wasTierD && cluster[0]
-      ? tierDKey(cluster[0])
-      : wasTierB || wasTierC
-        ? tierBKey(cluster[0] as SongRecord)
-        : null;
+    wasTierE && tierEClusterKeyValue !== null
+      ? tierEClusterKeyValue
+      : wasTierD && cluster[0]
+        ? tierDKey(cluster[0])
+        : wasTierB || wasTierC
+          ? tierBKey(cluster[0] as SongRecord)
+          : null;
 
   const mergedArtistPrimary =
     pickByOwnership(cluster, TITLE_ARTIST_CHAIN, (r) => r.artist_primary) ??
@@ -752,6 +962,7 @@ function mergeCluster(
 
   if (wasTierC) recordTierCConflict(conflicts, cluster, merged.id, softClusterKey);
   if (wasTierD) recordTierDConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
+  if (wasTierE) recordTierEConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
 
   return merged;
 }
@@ -759,7 +970,7 @@ function mergeCluster(
 // --- Public API ----------------------------------------------------------
 
 /**
- * Four-tier dedup + per-field-ownership merge.
+ * Five-tier dedup + per-field-ownership merge.
  *
  *   Tier A (hard match): per-vendor union-find. Records sharing a non-null
  *   value on the same vendor field (`karaoke_numbers.tj` / `.ky` /
@@ -797,6 +1008,13 @@ function mergeCluster(
  *   Successful groups emit `tier_d_context_title_merge`; blocked groups stay
  *   split and emit ordinary vendor-number conflicts for review.
  *
+ *   Tier E (reviewed strong artist-credit pairs): residual singletons after
+ *   Tier D are joined only when their TJ/JOYSOUND numbers match the exact
+ *   65-pair raw-reviewed allowlist. This intentionally avoids a broad
+ *   artist-containment rule because raw tieup/credit fields are not retained
+ *   in `SongRecord`; reviewed-but-not-strong and multi-variant cases stay
+ *   split. Successful groups emit `tier_e_artist_credit_merge`.
+ *
  *   Per-cluster ownership: each output field is taken from the
  *   highest-priority contributing source per the spec's per-field table.
  *   See `mergeCluster` for the chains.
@@ -807,7 +1025,7 @@ function mergeCluster(
  *   2) `normalize(title_primary)` ascending — locale-stable string compare.
  *   3) `id` ascending.
  *
- * Conflict warnings (Tier B vendor-number disagreements + Tier C/D cluster
+ * Conflict warnings (Tier B vendor-number disagreements + Tier C/D/E cluster
  * fires + Tier D blocked vendor-number disagreements) are returned in
  * `result.conflicts`. Console output is forbidden — callers aggregate them.
  */
@@ -910,6 +1128,22 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     for (const root of unionIndexGroups(uf, [idxs])) tierDRoots.add(root);
   }
 
+  // --- Tier E: reviewed strong TJ↔JOYSOUND artist-credit pairs ---
+  // SongRecord does not retain raw JOYSOUND tieup or lyricist/composer fields,
+  // so this tier intentionally does not generalize from artist containment.
+  // It only unions the 65 raw-reviewed strong pairs listed above, after Tier D,
+  // while both sides are still singleton clusters.
+  const sizeAfterD = countRoots(uf, n);
+  const tierEGroups = collectTierEReviewedStrongGroups(records, uf, sizeAfterD);
+  const tierERoots = new Set<number>();
+  const tierEClusterKeyByRoot = new Map<number, string>();
+  for (const [clusterKey, idxs] of tierEGroups) {
+    for (const root of unionIndexGroups(uf, [idxs])) {
+      tierERoots.add(root);
+      tierEClusterKeyByRoot.set(root, clusterKey);
+    }
+  }
+
   // --- Materialize clusters ---
   const clusters = collectClusters(uf, n);
 
@@ -920,7 +1154,18 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     const wasTierB = tierBRoots.has(root);
     const wasTierC = tierCRoots.has(root);
     const wasTierD = tierDRoots.has(root);
-    merged.push(mergeCluster(cluster, wasTierB, wasTierC, wasTierD, conflicts));
+    const wasTierE = tierERoots.has(root);
+    merged.push(
+      mergeCluster(
+        cluster,
+        wasTierB,
+        wasTierC,
+        wasTierD,
+        wasTierE,
+        tierEClusterKeyByRoot.get(root) ?? null,
+        conflicts,
+      ),
+    );
   }
 
   // Deterministic sort. See docblock above for the rule.
