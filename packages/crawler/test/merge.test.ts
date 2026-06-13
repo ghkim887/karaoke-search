@@ -1535,3 +1535,126 @@ describe('mergeRecords — Tier D context-suffix title merge', () => {
     expect(headlineConflicts(conflicts)).toHaveLength(1);
   });
 });
+
+describe('mergeRecords — Tier E reviewed strong artist-credit merge', () => {
+  it('merges only reviewed-strong TJ↔JOYSOUND artist-credit expansions', () => {
+    const tj = record({
+      id: 'tj-25031',
+      source_url: 'https://tj.test/25031',
+      title_primary: '六幻(東京リベンジャーズ OST)',
+      artist_primary: '林勇',
+      karaoke_numbers: { tj: '25031', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-879376',
+      source_url: 'https://www.joysound.com/web/search/song/879376',
+      title_primary: '六幻',
+      artist_primary: '佐野万次郎(CV:林勇)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '492355' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('tj-25031');
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25031', ky: null, joysound: '492355' });
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(1);
+    expect(headlineConflicts(conflicts)).toHaveLength(0);
+  });
+
+  it('merges reviewed-strong featuring/credit expansions from the 65-pair allowlist', () => {
+    const tj = record({
+      id: 'tj-25542',
+      source_url: 'https://tj.test/25542',
+      title_primary: 'storm(真ゲッターロボ対ネオゲッターロボ OP)',
+      artist_primary: 'JAM Project',
+      karaoke_numbers: { tj: '25542', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-32005',
+      source_url: 'https://www.joysound.com/web/search/song/32005',
+      title_primary: 'STORM',
+      artist_primary: 'JAM Project featuring 水木一郎&影山ヒロノブ',
+      karaoke_numbers: { tj: null, ky: null, joysound: '36509' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25542', ky: null, joysound: '36509' });
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(1);
+  });
+
+  it('does not merge reviewed-but-not-strong pairs that need raw tieup/credit corroboration', () => {
+    const tj = record({
+      id: 'tj-68183',
+      source_url: 'https://tj.test/68183',
+      title_primary: 'Radio Happy(アイドルマスターシンデレラガールズスターライトステージ OST)',
+      artist_primary: '山下七海',
+      karaoke_numbers: { tj: '68183', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-562326',
+      source_url: 'https://www.joysound.com/web/search/song/562326',
+      title_primary: 'Radio Happy',
+      artist_primary: '大槻唯(CV:山下七海)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '683200' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(0);
+  });
+
+  it('does not merge short-token false positives such as FLOW X GRANRODEO vs XG', () => {
+    const tj = record({
+      id: 'tj-28852',
+      source_url: 'https://tj.test/28852',
+      title_primary: 'Howling(七つの大罪-戒めの復活 OP)',
+      artist_primary: 'FLOW X GRANRODEO',
+      karaoke_numbers: { tj: '28852', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-1073238',
+      source_url: 'https://www.joysound.com/web/search/song/1073238',
+      title_primary: 'HOWLING',
+      artist_primary: 'XG',
+      karaoke_numbers: { tj: null, ky: null, joysound: '631988' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(0);
+  });
+
+  it('does not choose among multi-JOYSOUND variants for one TJ number', () => {
+    const tj = record({
+      id: 'tj-26121',
+      source_url: 'https://tj.test/26121',
+      title_primary: 'ハッピー☆マテリアル(魔法先生 ネギま! OP)',
+      artist_primary: '麻帆良学園中等部2-A',
+      karaoke_numbers: { tj: '26121', ky: null, joysound: null },
+    });
+    const april = record({
+      id: 'joysound-51658',
+      source_url: 'https://www.joysound.com/web/search/song/51658',
+      title_primary: 'ハッピー☆マテリアル(4月度オープニングテーマ)',
+      artist_primary: '麻帆良学園中等部2-A(椎名桜子/龍宮真名/超鈴音/長瀬楓/那波千鶴)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '77873' },
+    });
+    const june = record({
+      id: 'joysound-51659',
+      source_url: 'https://www.joysound.com/web/search/song/51659',
+      title_primary: 'ハッピー☆マテリアル(6月度オープニングテーマ)',
+      artist_primary: '麻帆良学園中等部2-A(宮崎のどか/村上夏美/雪広あやか/四葉五月/Zazie Rainyday)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '78108' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, april, june]);
+
+    expect(records).toHaveLength(3);
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(0);
+  });
+});
