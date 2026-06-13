@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -37,15 +37,12 @@ describe('CI pipeline pins', () => {
     expect(gitignore).toContain('apps/worker/.wrangler/');
   });
 
-  it('gates the committed corpus through sqlite:build and hard-gates Pages E2E before deploy', () => {
-    const deployWorkflow = readFileSync(
-      join(REPO_ROOT, '.github', 'workflows', 'deploy.yml'),
-      'utf8',
-    );
+  it('gates the committed corpus through sqlite:build and keeps GitHub Pages disabled', () => {
+    const deployWorkflowPath = join(REPO_ROOT, '.github', 'workflows', 'deploy.yml');
     const ciWorkflow = readFileSync(join(REPO_ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+    const readme = readFileSync(join(REPO_ROOT, 'README.md'), 'utf8');
 
-    expect(deployWorkflow).not.toContain('continue-on-error: true');
-    expect(deployWorkflow).toMatch(/deploy:\r?\n(?:.|\r?\n)*?needs:\s*\[build,\s*e2e\]/);
+    expect(existsSync(deployWorkflowPath)).toBe(false);
     expect(ciWorkflow).toContain('pull_request:');
     expect(ciWorkflow).toContain('pnpm lint');
     expect(ciWorkflow).toContain('pnpm typecheck');
@@ -56,18 +53,11 @@ describe('CI pipeline pins', () => {
     expect(ciWorkflow).toContain('pnpm --filter @karaoke/worker sqlite:build');
     expect(ciWorkflow).not.toContain('d1:verify-sql');
     expect(ciWorkflow).not.toContain('deploy:dry-run');
-    // No Cloudflare Workers API URL anywhere in the deploy pipeline: the
-    // Pages artifact is API-first against the self-hosted Tailscale Funnel URL,
-    // while PR/Pages E2E stays in fallback mode so deploys do not depend on
-    // the live API during the test job.
-    expect(deployWorkflow).not.toContain('workers.dev');
-    expect(deployWorkflow).toContain(
-      'PUBLIC_KARAOKE_API_BASE_URL: https://hermes-host.tail04d970.ts.net',
-    );
     expect(ciWorkflow).not.toContain('PUBLIC_KARAOKE_API_BASE_URL:');
+    expect(readme).toContain('https://karaokedb.pages.dev/');
+    expect(readme).toContain('GitHub Pages is intentionally disabled');
     // Fallback e2e gates: e2e workflows build the web app in fallback mode
     // and ci.yml actually runs the Playwright suite on PRs.
-    expect(deployWorkflow).toContain('pnpm --filter @karaoke/web... build');
     expect(ciWorkflow).toContain('pnpm --filter @karaoke/web... build');
     expect(ciWorkflow).toContain('test:e2e');
   });

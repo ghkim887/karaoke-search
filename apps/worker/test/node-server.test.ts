@@ -83,7 +83,7 @@ describe('Node self-host API server', () => {
     const sqlite = seedSqlite();
     const server = createKaraokeSearchNodeServer({
       db: new SqliteD1Database(sqlite),
-      corsOrigin: 'https://ghkim887.github.io',
+      corsOrigin: 'https://karaokedb.pages.dev',
     });
     const listener = await listenOnEphemeralPort(server);
     servers.push(listener);
@@ -91,14 +91,16 @@ describe('Node self-host API server', () => {
     const preflight = await fetch(`${listener.origin}/api/search?q=610001`, {
       method: 'OPTIONS',
       headers: {
-        origin: 'https://ghkim887.github.io',
+        origin: 'https://karaokedb.pages.dev',
         'access-control-request-method': 'GET',
         'access-control-request-private-network': 'true',
       },
     });
 
     expect(preflight.status).toBe(204);
-    expect(preflight.headers.get('access-control-allow-origin')).toBe('https://ghkim887.github.io');
+    expect(preflight.headers.get('access-control-allow-origin')).toBe(
+      'https://karaokedb.pages.dev',
+    );
     expect(preflight.headers.get('access-control-allow-private-network')).toBe('true');
   });
 
@@ -106,7 +108,7 @@ describe('Node self-host API server', () => {
     const sqlite = seedSqlite();
     const server = createKaraokeSearchNodeServer({
       db: new SqliteD1Database(sqlite),
-      corsOrigin: 'https://ghkim887.github.io',
+      corsOrigin: 'https://karaokedb.pages.dev',
       rateLimit: { windowMs: 60_000, maxRequests: 1 },
     });
     const listener = await listenOnEphemeralPort(server);
@@ -115,7 +117,7 @@ describe('Node self-host API server', () => {
     const first = await fetch(`${listener.origin}/api/search?q=%E7%B5%90%E6%9D%9F`);
     const second = await fetch(`${listener.origin}/api/search?q=%E7%B5%90%E6%9D%9F`);
 
-    expect(first.headers.get('access-control-allow-origin')).toBe('https://ghkim887.github.io');
+    expect(first.headers.get('access-control-allow-origin')).toBe('https://karaokedb.pages.dev');
     expect(first.status).toBe(200);
     expect(second.status).toBe(429);
     await expect(second.json()).resolves.toEqual({ error: 'Rate limit exceeded' });

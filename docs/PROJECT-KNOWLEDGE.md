@@ -206,7 +206,8 @@ above).
 
 - Playwright e2e must use `await page.goto('')` (relative empty string).
   `goto('/')` resolves against the configured base URL's origin and sends the
-  test to the bare domain root (404 on GitHub Pages project sites).
+  test to the bare domain root. Keep the relative-empty form so the same spec
+  works for root deployments and any future non-root preview base.
 - `apps/web/src/styles/global.css` was hoisted verbatim from
   `index.astro`'s `<style is:global>` — **rule order is load-bearing; do not
   reorder or split** (pinned in the file's first line).

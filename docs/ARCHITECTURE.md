@@ -5,8 +5,8 @@ invariants, gotchas, and policy decisions see
 [PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md); for live undecided items see
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).
 
-- Live site: <https://ghkim887.github.io/karaoke-search/> (GitHub Pages, Astro
-  `base: '/karaoke-search/'`).
+- Live site: <https://karaokedb.pages.dev/> (Cloudflare Pages, Astro
+  `base: '/'`). GitHub Pages is intentionally disabled.
 - License: AGPL-3.0-or-later.
 - Toolchain: pnpm workspaces (always invoke as `corepack pnpm` — plain `pnpm`
   is not guaranteed on PATH, especially on Windows hosts), TypeScript,
@@ -141,9 +141,9 @@ download.
    the favorites tab is always served locally.
 
 The Cloudflare Workers + D1 variant of this API was removed 2026-06-13;
-self-hosting is the only serving path. Until the self-host API is deployed
-and reachable, `deploy.yml` sets no API base URL and the live site runs
-entirely on path 1.
+self-hosting is the only serving path. Cloudflare Pages serves the static app
+and exposes same-origin `/api/*` via Pages Functions that proxy to the
+configured self-hosted API origin.
 
 ## CI workflows (`.github/workflows/`)
 
@@ -177,13 +177,11 @@ lockfile install).
   a PR labeled `crawl-output` (requires the repo setting "Allow Actions to
   create and approve pull requests"). Data lands on `main` by PR review,
   never by direct push.
-- **`deploy.yml`** (main push + dispatch): parallel `build` job (fallback
-  mode — no `PUBLIC_KARAOKE_API_BASE_URL`; produces the Pages artifact) and
-  `e2e` job (builds its own fallback-mode dist and runs Playwright against
-  `astro preview`, so the gate exercises the offline MiniSearch path and
-  never depends on a live search API) → `deploy` job with
-  `needs: [build, e2e]`. **e2e is a required gate** — a red e2e blocks the
-  Pages deploy.
+- **Cloudflare Pages deploy**: GitHub Pages deployment was removed after the
+  public URL moved to `https://karaokedb.pages.dev/`. Production deploys are
+  direct Wrangler uploads of `apps/web/dist` using `apps/web/wrangler.toml`;
+  CI still runs fallback-mode Playwright in `ci.yml` so UI breakage is caught
+  before merge.
 
 ## JOYSOUND status (one-liner)
 

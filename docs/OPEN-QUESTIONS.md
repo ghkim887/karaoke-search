@@ -30,7 +30,9 @@ manifest [+ optional SQLite]) and `scripts/fetch-full-corpus.mjs`
   `crawl.yml` stays unchanged (baseline path preserved).
 - **PR-3 (first publish/import):** publish the first release, build the
   self-host SQLite database from it, stand up the self-host API, then the
-  web deploy flip (set `PUBLIC_KARAOKE_API_BASE_URL` in `deploy.yml`).
+  web deploy flip (Cloudflare Pages root build with same-origin
+  `PUBLIC_KARAOKE_API_BASE_URL=/` and Pages Functions proxying to the
+  self-host API origin).
 
 ## 2. JOYSOUND runbook owner checkpoints
 

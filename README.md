@@ -2,13 +2,13 @@
 
 Karaoke Search is a bilingual static web app for finding Japanese, Vocaloid, and anime karaoke songs on Korean karaoke systems.
 
-**Live site:** https://ghkim887.github.io/karaoke-search/
+**Live site:** https://karaokedb.pages.dev/
 
 The app is optimized for quick phone use at karaoke: search a song, filter by karaoke brand, tap a number, and paste it into the machine.
 
 ## How to use the site
 
-1. Open the [live site](https://ghkim887.github.io/karaoke-search/).
+1. Open the [live site](https://karaokedb.pages.dev/).
 2. Search by Japanese title, Korean title, artist name, or romanized text.
 3. Narrow results with vendor chips (`TJ`, `KY`, `JOYSOUND`).
 4. Tap a karaoke number badge to copy it to your clipboard.
@@ -89,7 +89,7 @@ This is a pnpm + TypeScript monorepo. See [docs/ARCHITECTURE.md](docs/ARCHITECTU
 | `packages/data-store` | SQLite search-index store: schema, corpus import/export, and derived search-index builder. |
 | `scripts/` | Data post-processing pipeline, validation, PDF ingest, translation-cache replay, and regression tests. |
 | `.github/workflows/crawl.yml` | Weekly/dispatch data refresh workflow that opens crawl-output PRs. |
-| `.github/workflows/deploy.yml` | GitHub Pages build/deploy workflow for `main` (Playwright e2e is a required gate). |
+| `apps/web/wrangler.toml` | Cloudflare Pages configuration for the public `karaokedb` project. |
 
 Frontend stack: Astro, Preact, MiniSearch, self-hosted Geist/Inter/Pretendard fonts.
 
@@ -162,15 +162,21 @@ If you intentionally update `apps/web/public/data/songs.json` locally, replay th
 
 ## Deployment
 
-Pushing to `main` triggers `.github/workflows/deploy.yml`:
+The public deployment is Cloudflare Pages project `karaokedb` at <https://karaokedb.pages.dev/>. GitHub Pages is intentionally disabled; pushing to `main` no longer publishes `ghkim887.github.io/karaoke-search/`.
 
-1. install dependencies with pnpm
-2. build all packages
-3. build the Astro static site in fallback mode (bundled MiniSearch index; no `PUBLIC_KARAOKE_API_BASE_URL` is set)
-4. upload `apps/web/dist` to GitHub Pages
-5. run Playwright E2E against a fallback-mode build in a parallel verification job (a red E2E blocks the deploy)
+Cloudflare deployment builds the Astro app at the domain root and uses Pages Functions for same-origin API proxying:
 
-The web app remains client-side/static, but Browse searches become API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the API accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index. The deploy currently sets no API base URL, so the live site runs fully offline until the self-hosted API below is reachable.
+```bash
+PUBLIC_SITE_URL=https://karaokedb.pages.dev \
+PUBLIC_BASE_PATH=/ \
+PUBLIC_KARAOKE_API_BASE_URL=/ \
+corepack pnpm --filter @karaoke/web build
+
+corepack pnpm dlx wrangler@latest pages deploy apps/web/dist \
+  --project-name karaokedb --branch main
+```
+
+The web app remains client-side/static, but Browse searches become API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the API accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index. The Cloudflare Pages build uses same-origin `/api/*`; `apps/web/functions/` proxies those requests to the current self-hosted API origin configured in `apps/web/wrangler.toml`.
 
 For a local API-first web smoke, run the self-hosted API and then build or serve the web app with the same public env var:
 
