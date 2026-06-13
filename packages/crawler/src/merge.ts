@@ -904,6 +904,94 @@ function sortMergedRecords(records: SongRecord[]): void {
   records.sort(compareMergedRecords);
 }
 
+/**
+ * Conservative Korean display-key normalization used ONLY by cross-record
+ * `artist_ko` propagation (NOT the shared `normalize()`): NFKC + locale-
+ * independent lowercase + strip ALL whitespace. It deliberately KEEPS
+ * punctuation and script, so it treats spacing differences as equivalent
+ * (`마키하라 노리유키` ≡ `마키하라노리유키`) while treating spelling differences
+ * (`마키하라 노리유키` ≠ `하타 모토히로`) as a genuine conflict. `normalize()`
+ * is wrong here — its `\p{L}\p{N}\p{M}` strip would fold distinct punctuation
+ * apart and is meant for identity keying, not Korean display agreement.
+ */
+function koDisplayKey(s: string): string {
+  return s.normalize('NFKC').toLocaleLowerCase('und').replace(/\s+/gu, '');
+}
+
+/**
+ * Cross-record `artist_ko` propagation (spec 2026-06-14). Runs AFTER clusters
+ * are materialized: standalone JOYSOUND rows by the same artist are NOT in the
+ * same song cluster (no shared karaoke number, different title), so the
+ * per-cluster `KO_CHAIN` fill in `mergeCluster` cannot reach them.
+ *
+ * This is NOT a song merge — it never unions karaoke numbers or collapses
+ * rows. It only fills a MISSING `artist_ko` when:
+ *   - records share the conservative full-artist identity key
+ *     `normalize(artist_primary)` (empty-after-normalize keys are unkeyable
+ *     and never propagate), AND
+ *   - every donor (record with a non-null `artist_ko`) for that key agrees
+ *     after `koDisplayKey` (whitespace-insensitive). If donors disagree the
+ *     ENTIRE key group is skipped — no partial fill, no source-based choice.
+ *
+ * When safe, the display value is chosen by the KO ownership source priority
+ * (`SOURCE_RANK`: blog > tj > tjpdf > joysound), with an `id`-ascending
+ * tie-break for determinism, then outer whitespace is trimmed. Existing
+ * non-null `artist_ko` values are NEVER overwritten — even by a higher-priority
+ * donor. Records are not mutated: filled rows are returned as fresh objects and
+ * untouched rows pass through by reference.
+ */
+function propagateArtistKo(records: SongRecord[]): SongRecord[] {
+  // Group record indexes by the conservative full-artist identity key.
+  const groups = new Map<string, number[]>();
+  for (let i = 0; i < records.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const key = normalize(records[i]!.artist_primary);
+    if (key === '') continue; // unkeyable — never propagate across empties
+    addToIndex(groups, key, i);
+  }
+
+  // Per group, decide the single safe display value to fill (if any).
+  const fillByIndex = new Map<number, string>();
+  for (const idxs of groups.values()) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const donors = idxs.map((i) => records[i]!).filter((r) => r.artist_ko !== null);
+    if (donors.length === 0) continue;
+
+    // Conflict guard: all donor values must agree (whitespace-insensitive).
+    const displayKeys = new Set(donors.map((r) => koDisplayKey(r.artist_ko as string)));
+    if (displayKeys.size > 1) continue;
+
+    // Pick the display value by KO ownership priority, id-ascending tie-break.
+    let winner = donors[0];
+    if (!winner) continue;
+    let winnerRank = sourceRank(sourceSlug(winner));
+    for (let k = 1; k < donors.length; k++) {
+      // biome-ignore lint/style/noNonNullAssertion: bounded by length
+      const d = donors[k]!;
+      const rank = sourceRank(sourceSlug(d));
+      if (rank < winnerRank || (rank === winnerRank && d.id < winner.id)) {
+        winner = d;
+        winnerRank = rank;
+      }
+    }
+    const value = (winner.artist_ko as string).trim();
+    // Schema requires artist_ko minLength 1; never fill with an empty surface.
+    if (value === '') continue;
+
+    for (const i of idxs) {
+      // biome-ignore lint/style/noNonNullAssertion: i in bounds
+      if (records[i]!.artist_ko === null) fillByIndex.set(i, value);
+    }
+  }
+
+  if (fillByIndex.size === 0) return records;
+
+  return records.map((r, i) => {
+    const fill = fillByIndex.get(i);
+    return fill === undefined ? r : { ...r, artist_ko: fill };
+  });
+}
+
 function mergeCluster(
   cluster: SongRecord[],
   wasTierB: boolean,
@@ -1168,6 +1256,13 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     );
   }
 
+  // Cross-record artist_ko propagation (spec 2026-06-14). Runs after clusters
+  // are materialized (standalone JOYSOUND rows by the same artist are NOT in
+  // the same song cluster) and before the deterministic sort. Fills a missing
+  // artist_ko across records sharing the full-artist identity key when donors
+  // agree; never unions rows or overwrites existing values.
+  const propagated = propagateArtistKo(merged);
+
   // Deterministic sort. See docblock above for the rule.
   //
   // Fix A.1 (2026-05-01): null-TJ tiebreak is now explicit — null records
@@ -1180,7 +1275,7 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   // U+D800–DBFF, which is below U+FFFF. A future TJ vendor change to non-
   // ASCII codes (or a hostile fixture) would silently flip the sort. Explicit
   // null-handling removes the tripwire.
-  sortMergedRecords(merged);
+  sortMergedRecords(propagated);
 
-  return { records: merged, conflicts };
+  return { records: propagated, conflicts };
 }

@@ -1658,3 +1658,174 @@ describe('mergeRecords — Tier E reviewed strong artist-credit merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------
+// Cross-record artist_ko propagation
+//
+// After clusters are materialized, `artist_ko` is propagated across SEPARATE
+// records that share the same conservative full-artist identity key
+// (`normalize(artist_primary)`). This is NOT a song merge: rows keep their
+// own titles and karaoke numbers and never collapse — only a missing
+// `artist_ko` is filled when all donors for the artist key agree (after a
+// whitespace-insensitive Korean display normalization).
+// ---------------------------------------------------------------------
+describe('mergeRecords — cross-record artist_ko propagation', () => {
+  it('propagates artist_ko from a blog donor to a separate JOYSOUND record sharing the full artist key (no song merge)', () => {
+    const blog = record({
+      id: 'blog-300-0',
+      source_url: 'https://blog.test/300',
+      title_primary: '夜に駆ける',
+      title_ko: '밤에 달리다',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-700100',
+      source_url: 'https://www.joysound.com/web/search/song/700100',
+      // Different title + a distinct karaoke number — no Tier A/B/C/D/E merge.
+      title_primary: 'アイドル',
+      artist_primary: 'YOASOBI',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '700100' },
+    });
+
+    const { records } = mergeRecords([blog, js]);
+
+    // Two distinct songs survive — propagation must NOT union/collapse rows.
+    expect(records).toHaveLength(2);
+    const joy = records.find((r) => r.id === 'joysound-700100');
+    if (!joy) throw new Error('joysound record missing');
+    // The missing Korean artist name is filled from the donor.
+    expect(joy.artist_ko).toBe('요아소비');
+    // Its own song identity is untouched.
+    expect(joy.title_primary).toBe('アイドル');
+    expect(joy.karaoke_numbers).toEqual({ tj: null, ky: null, joysound: '700100' });
+    // Donor is unchanged.
+    expect(records.find((r) => r.id === 'blog-300-0')?.artist_ko).toBe('요아소비');
+  });
+
+  it('never overwrites an existing non-null artist_ko, even from a higher-priority donor', () => {
+    const blog = record({
+      id: 'blog-301-0',
+      source_url: 'https://blog.test/301',
+      title_primary: 'BlogTitle',
+      artist_primary: 'YOASOBI',
+      artist_ko: '요아소비', // blog (rank 1) — unspaced form
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-700200',
+      source_url: 'https://www.joysound.com/web/search/song/700200',
+      title_primary: 'JoyTitle',
+      artist_primary: 'YOASOBI',
+      // Existing non-null value (a spacing variant of the donor) — must survive.
+      artist_ko: '요아 소비',
+      karaoke_numbers: { tj: null, ky: null, joysound: '700200' },
+    });
+
+    const { records } = mergeRecords([blog, js]);
+
+    expect(records).toHaveLength(2);
+    // JOYSOUND keeps its OWN value — a higher-priority donor never overwrites it.
+    expect(records.find((r) => r.id === 'joysound-700200')?.artist_ko).toBe('요아 소비');
+    // Donor value is left exactly as-is.
+    expect(records.find((r) => r.id === 'blog-301-0')?.artist_ko).toBe('요아소비');
+  });
+
+  it('skips the whole artist-key group when donor Korean names conflict after whitespace-insensitive normalization', () => {
+    // Real case: the 槇原敬之 artist key carries a genuinely different Korean
+    // name on a cover credit (하타 모토히로). Conflicting donors must block any
+    // fill for the entire key — no partial fill, no source-priority pick.
+    const makihara = record({
+      id: 'blog-302-0',
+      source_url: 'https://blog.test/302',
+      title_primary: 'もう恋なんてしない',
+      artist_primary: '槇原敬之',
+      artist_ko: '마키하라 노리유키',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const hata = record({
+      id: 'blog-303-0',
+      source_url: 'https://blog.test/303',
+      title_primary: '別の曲',
+      artist_primary: '槇原敬之',
+      artist_ko: '하타 모토히로',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-700300',
+      source_url: 'https://www.joysound.com/web/search/song/700300',
+      title_primary: 'JOYSOUNDの曲',
+      artist_primary: '槇原敬之',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '700300' },
+    });
+
+    const { records } = mergeRecords([makihara, hata, js]);
+
+    expect(records).toHaveLength(3);
+    // Conflicting donors → no fill at all.
+    expect(records.find((r) => r.id === 'joysound-700300')?.artist_ko).toBeNull();
+    // Both donors keep their distinct values.
+    expect(records.find((r) => r.id === 'blog-302-0')?.artist_ko).toBe('마키하라 노리유키');
+    expect(records.find((r) => r.id === 'blog-303-0')?.artist_ko).toBe('하타 모토히로');
+  });
+
+  it('treats spacing-only Korean variants as equivalent and fills with the highest-priority ownership display', () => {
+    const blog = record({
+      id: 'blog-304-0',
+      source_url: 'https://blog.test/304',
+      title_primary: 'BlogSong',
+      artist_primary: '槇原敬之',
+      artist_ko: '마키하라 노리유키', // blog (rank 1) — spaced display form
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const tj = record({
+      id: 'tj-70400',
+      source_url: 'https://tj.test/70400',
+      title_primary: 'TjSong',
+      artist_primary: '槇原敬之',
+      artist_ko: '마키하라노리유키', // tj (rank 2) — unspaced, same display key
+      karaoke_numbers: { tj: '70400', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-700400',
+      source_url: 'https://www.joysound.com/web/search/song/700400',
+      title_primary: 'JoySong',
+      artist_primary: '槇原敬之',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '700400' },
+    });
+
+    const { records } = mergeRecords([blog, tj, js]);
+
+    expect(records).toHaveLength(3);
+    // No conflict (spacing-insensitive). Blog (rank 1) provides the display form.
+    expect(records.find((r) => r.id === 'joysound-700400')?.artist_ko).toBe('마키하라 노리유키');
+  });
+
+  it('matches on the normalized full artist surface — spaced 尾崎 豊 donor fills a 尾崎豊 JOYSOUND row', () => {
+    const blog = record({
+      id: 'blog-305-0',
+      source_url: 'https://blog.test/305',
+      title_primary: 'I LOVE YOU',
+      artist_primary: '尾崎 豊', // spaced surface
+      artist_ko: '오자키 유타카',
+      karaoke_numbers: { tj: null, ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-700500',
+      source_url: 'https://www.joysound.com/web/search/song/700500',
+      title_primary: '卒業',
+      artist_primary: '尾崎豊', // unspaced surface — same normalize() key
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '700500' },
+    });
+
+    const { records } = mergeRecords([blog, js]);
+
+    expect(records).toHaveLength(2);
+    expect(records.find((r) => r.id === 'joysound-700500')?.artist_ko).toBe('오자키 유타카');
+  });
+});
