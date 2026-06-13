@@ -79,6 +79,29 @@ describe('Node self-host API server', () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(429);
   });
+  it('allows Chrome Private Network Access preflights for the pinned Pages origin', async () => {
+    const sqlite = seedSqlite();
+    const server = createKaraokeSearchNodeServer({
+      db: new SqliteD1Database(sqlite),
+      corsOrigin: 'https://ghkim887.github.io',
+    });
+    const listener = await listenOnEphemeralPort(server);
+    servers.push(listener);
+
+    const preflight = await fetch(`${listener.origin}/api/search?q=610001`, {
+      method: 'OPTIONS',
+      headers: {
+        origin: 'https://ghkim887.github.io',
+        'access-control-request-method': 'GET',
+        'access-control-request-private-network': 'true',
+      },
+    });
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('access-control-allow-origin')).toBe('https://ghkim887.github.io');
+    expect(preflight.headers.get('access-control-allow-private-network')).toBe('true');
+  });
+
   it('can restrict CORS origin and rate-limit repeated clients', async () => {
     const sqlite = seedSqlite();
     const server = createKaraokeSearchNodeServer({

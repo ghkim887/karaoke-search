@@ -113,6 +113,12 @@ function withCors(response: Response, corsOrigin: string | undefined): Response 
   }
   const headers = new Headers(response.headers);
   headers.set('access-control-allow-origin', corsOrigin);
+  // Chrome's Private Network Access preflight triggers when a user on the
+  // tailnet resolves the Funnel hostname to the node's 100.x MagicDNS address
+  // while the page origin is public GitHub Pages. The origin is still pinned
+  // above, so granting PNA keeps tailnet-connected browsers working without
+  // widening CORS to arbitrary sites.
+  headers.set('access-control-allow-private-network', 'true');
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
