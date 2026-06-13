@@ -42,7 +42,7 @@ const KO_CHAIN = ['blog', 'tj', 'tjpdf', 'joysound'] as const;
  *   1. Per-field ownership and source-priority tiebreaks in `pickByOwnership`,
  *      `pickByPriority`, and `mergeKaraokeNumbers` (lookup against
  *      `SOURCE_RANK`).
- *   2. Tier C cross-source gating: a Tier C cluster fires only when ≥ 2
+ *   2. Tier C/D cross-source gating: soft clusters fire only when ≥ 2
  *      distinct slugs are represented, blocking same-source twins (e.g. two
  *      TJ releases of `방탄소년단(Feat.Nicki Minaj)` vs `방탄소년단`) from
  *      wrongly merging.
@@ -58,7 +58,7 @@ function sourceRank(slug: string): number {
 
 /**
  * Dash / prolonged-sound-mark fold applied ON TOP of `normalize()` for the
- * merger's Tier B/C clustering keys ONLY (deliberately NOT in the shared
+ * merger's Tier B/C/D clustering keys ONLY (deliberately NOT in the shared
  * `normalize()` — aliases.ts / clustering.ts / search keying keep their
  * semantics).
  *
@@ -134,6 +134,56 @@ function tierCKey(r: SongRecord): string | null {
   return `${t}|${a}`;
 }
 
+const CONTEXT_SUFFIX_RE = /\s*[\(（]([^()（）]{1,180})[\)）]\s*$/u;
+const CONTEXT_ROLE_RE =
+  /(?:^|[^a-z])(?:op|ed|ost|opening|ending|theme)(?:$|[^a-z])|ＯＰ|ＥＤ|ＯＳＴ|主題歌|挿入歌|オープニング|エンディング|テーマ/iu;
+const CONTEXT_VERSION_RE =
+  /(?:tv\s*size|tvサイズ|テレビ.*サイズ|サイズ|\bsize\b|anime\s*ver\.?|アニメ\s*ver\.?|movie\s*ver\.?|short\s*ver\.?|remix|リミックス|cover|カバー|version|\bver\.?\b|バージョン|m@ster|acoustic|live|instrumental)/iu;
+const CONTEXT_ROLE_TOKEN_RE =
+  /(?<![a-z])(?:op|ed|ost|opening|ending|theme)(?:\s*[\d０-９]+)?(?=$|[^a-z])|(?:ＯＰ|ＥＤ|ＯＳＴ|主題歌|挿入歌|オープニング|エンディング|テーマ)(?:\s*[\d０-９]+)?/giu;
+const CONTEXT_SEASON_ONLY_RE =
+  /(?:第\s*)?[\d０-９一二三四五六七八九十]+\s*期|season\s*[\d０-９]+|シーズン\s*[\d０-９一二三四五六七八九十]+|[\d０-９]+(?:st|nd|rd|th)?/giu;
+const CONTEXT_NON_TEXT_RE = /[\s\-–—_:：/\\・!！.。'"“”‘’、,，]/gu;
+
+function hasNonRoleContextText(inner: string): boolean {
+  return (
+    inner
+      .replace(CONTEXT_ROLE_TOKEN_RE, '')
+      .replace(CONTEXT_SEASON_ONLY_RE, '')
+      .replace(CONTEXT_NON_TEXT_RE, '')
+      .trim() !== ''
+  );
+}
+
+function stripContextSuffix(title: string): { title: string; changed: boolean } {
+  let current = title;
+  let changed = false;
+  while (true) {
+    const match = current.match(CONTEXT_SUFFIX_RE);
+    if (!match) break;
+    const inner = match[1]?.trim() ?? '';
+    // Version/size markers win over role/context markers inside the same
+    // parenthetical: `テレビオープニングサイズ` contains `オープニング`, but
+    // denotes a distinct karaoke cut and must stay keyed separately.
+    if (CONTEXT_VERSION_RE.test(inner)) break;
+    if (!CONTEXT_ROLE_RE.test(inner)) break;
+    // Bare `(OP)` / `(ED)` / `(Ending)` labels are version-like risk. Strip
+    // only when a work/franchise name is present alongside the role token.
+    if (!hasNonRoleContextText(inner)) break;
+    current = current.slice(0, match.index).trimEnd();
+    changed = true;
+  }
+  return { title: current, changed };
+}
+
+function tierDKey(r: SongRecord): string | null {
+  const stripped = stripContextSuffix(r.title_primary).title;
+  const t = clusterKeyPart(stripped);
+  const a = clusterKeyPart(r.artist_primary);
+  if (t === '' || a === '') return null;
+  return `${t}|${a}`;
+}
+
 /**
  * Structured warning emitted when records cluster via Tier B (fuzzy
  * title+artist) AND disagree on a vendor field neither side used as the
@@ -141,22 +191,23 @@ function tierCKey(r: SongRecord): string | null {
  * per the ownership table — but the warning is surfaced for the crawl PR
  * body summary.
  *
- * The `'tier_c_merge'` field value documents a cross-source Tier C merge
- * (one conflict emitted per cluster, not per record-pair) so the merge
- * surfaces in the crawl PR body for review. Sunset cadence per
- * `2026-05-01-kpop-leak-and-merge-fix-design.md` §3.C: 4 weeks of clean
- * cross-source output, then downgrade to a per-cluster log line.
+ * The `'tier_c_merge'` and `'tier_d_context_title_merge'` field values
+ * document successful soft merges (one marker emitted per cluster, not per
+ * record-pair) so the merge surfaces in the crawl PR body for review. Sunset
+ * cadence per `2026-05-01-kpop-leak-and-merge-fix-design.md` §3.C: 4 weeks
+ * of clean cross-source output, then downgrade to a per-cluster log line.
  */
 export interface MergeConflict {
   /**
-   * Tier B cluster key — `clusterKeyPart(title)|clusterKeyPart(artist)`
-   * (`normalize()` + dash/long-vowel fold). Conflict `cluster_key` strings
-   * are FOLDED since 2026-06-13 — cosmetic for PR-body aggregation.
+   * Soft-merge cluster key. Tier B/C keys use `clusterKeyPart(title)|...`; Tier
+   * D keys use `clusterKeyPart(refinedStripContext(title))|clusterKeyPart(artist)`.
+   * Conflict `cluster_key` strings are FOLDED since 2026-06-13 — cosmetic for
+   * PR-body aggregation.
    */
   cluster_key: string;
-  field: 'tj' | 'ky' | 'joysound' | 'tier_c_merge';
+  field: 'tj' | 'ky' | 'joysound' | 'tier_c_merge' | 'tier_d_context_title_merge';
   values: { source: string; value: string }[];
-  /** The value that wins per source priority. */
+  /** The value that wins per source priority, or the merged record id for marker rows. */
   winner: string;
 }
 
@@ -166,18 +217,21 @@ export interface MergeResult {
 }
 
 /**
- * Filter out `tier_c_merge` entries so the headline "merge conflicts" count
+ * Filter out soft-merge marker entries so the headline "merge conflicts" count
  * reported to the crawl PR body / CLI stdout reflects only true vendor-number
  * disagreements.
  *
  * Fix B.1 (2026-05-01): Tier C merges are NOT disagreements — they're
- * successful soft-merges flagged for visibility. The full conflicts list
- * (and any `sample` slice) keeps Tier C entries for forensic inspection per
- * spec §3.C; only the headline `total` is filtered. Centralised here so
- * `pipeline.ts` and `cli.ts` share one definition.
+ * successful soft-merges flagged for visibility. Tier D context-title merges
+ * follow the same marker semantics. The full conflicts list (and any `sample`
+ * slice) keeps marker entries for forensic inspection; only the headline
+ * `total` is filtered. Centralised here so `pipeline.ts` and `cli.ts` share one
+ * definition.
  */
 export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
-  return conflicts.filter((c) => c.field !== 'tier_c_merge');
+  return conflicts.filter(
+    (c) => c.field !== 'tier_c_merge' && c.field !== 'tier_d_context_title_merge',
+  );
 }
 
 // --- Union-Find ----------------------------------------------------------
@@ -311,6 +365,66 @@ function hasMultipleSourceSlugs(records: SongRecord[], idxs: number[]): boolean 
 
 function shouldUnionTierCGroup(records: SongRecord[], idxs: number[]): boolean {
   return hasMultipleSourceSlugs(records, idxs);
+}
+
+function hasContextStrippedTitle(records: SongRecord[], idxs: number[]): boolean {
+  for (const i of idxs) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    if (stripContextSuffix(records[i]!.title_primary).changed) return true;
+  }
+  return false;
+}
+
+function shouldUnionTierDGroup(records: SongRecord[], idxs: number[]): boolean {
+  return hasMultipleSourceSlugs(records, idxs) && hasContextStrippedTitle(records, idxs);
+}
+
+interface VendorNumberConflict {
+  vendor: Vendor;
+  contributions: { slug: string; value: string }[];
+  winner: string;
+}
+
+function collectVendorNumberConflicts(cluster: SongRecord[]): VendorNumberConflict[] {
+  const out: VendorNumberConflict[] = [];
+  for (const vendor of VENDORS) {
+    const contributions: { slug: string; value: string }[] = [];
+    for (const r of cluster) {
+      const value = r.karaoke_numbers[vendor];
+      if (value !== null) contributions.push({ slug: sourceSlug(r), value });
+    }
+    if (new Set(contributions.map((c) => c.value)).size <= 1) continue;
+
+    let winner = contributions[0];
+    if (!winner) continue;
+    let winnerRank = sourceRank(winner.slug);
+    for (let i = 1; i < contributions.length; i++) {
+      // biome-ignore lint/style/noNonNullAssertion: bounded by length
+      const c = contributions[i]!;
+      const rank = sourceRank(c.slug);
+      if (rank < winnerRank) {
+        winner = c;
+        winnerRank = rank;
+      }
+    }
+    out.push({ vendor, contributions, winner: winner.value });
+  }
+  return out;
+}
+
+function recordTierDBlockedConflicts(
+  conflicts: MergeConflict[],
+  clusterKey: string,
+  cluster: SongRecord[],
+): void {
+  for (const conflict of collectVendorNumberConflicts(cluster)) {
+    conflicts.push({
+      cluster_key: clusterKey,
+      field: conflict.vendor,
+      values: conflict.contributions.map((c) => ({ source: c.slug, value: c.value })),
+      winner: conflict.winner,
+    });
+  }
 }
 
 function collectClusters(uf: UnionFind, size: number): Map<number, number[]> {
@@ -542,6 +656,20 @@ function recordTierCConflict(
   });
 }
 
+function recordTierDConflict(
+  conflicts: MergeConflict[],
+  cluster: SongRecord[],
+  winner: string,
+  clusterKey: string,
+): void {
+  conflicts.push({
+    cluster_key: clusterKey,
+    field: 'tier_d_context_title_merge',
+    values: cluster.map((r) => ({ source: sourceSlug(r), value: r.id })),
+    winner,
+  });
+}
+
 function compareNullableTj(a: string | null, b: string | null): number {
   // Null TJ records sort last regardless of the other side's codepoint.
   if (a === null && b !== null) return 1;
@@ -574,13 +702,19 @@ function mergeCluster(
   cluster: SongRecord[],
   wasTierB: boolean,
   wasTierC: boolean,
+  wasTierD: boolean,
   conflicts: MergeConflict[],
 ): SongRecord {
   if (cluster.length === 0) throw new Error('empty cluster');
 
-  // Tier C clusters reuse Tier B's vendor-conflict reporting under the same
-  // `tierBKey` shape so existing PR-body aggregation continues to work.
-  const tierBClusterKey = wasTierB || wasTierC ? tierBKey(cluster[0] as SongRecord) : null;
+  // Tier C/D clusters reuse Tier B's vendor-conflict reporting surface under a
+  // folded soft-key shape so existing PR-body aggregation continues to work.
+  const softClusterKey =
+    wasTierD && cluster[0]
+      ? tierDKey(cluster[0])
+      : wasTierB || wasTierC
+        ? tierBKey(cluster[0] as SongRecord)
+        : null;
 
   const mergedArtistPrimary =
     pickByOwnership(cluster, TITLE_ARTIST_CHAIN, (r) => r.artist_primary) ??
@@ -611,12 +745,13 @@ function mergeCluster(
     // resolver already excludes this case, but a Tier C cluster could pick a
     // non-resolver-emitted canonical via `pickByOwnership`).
     ...(mergedAliases !== undefined ? { artist_aliases: mergedAliases } : {}),
-    karaoke_numbers: mergeKaraokeNumbers(cluster, tierBClusterKey, conflicts),
+    karaoke_numbers: mergeKaraokeNumbers(cluster, softClusterKey, conflicts),
     crawled_at: latestCrawledAt(cluster),
     ...optionalKoFields(koDonor),
   };
 
-  if (wasTierC) recordTierCConflict(conflicts, cluster, merged.id, tierBClusterKey);
+  if (wasTierC) recordTierCConflict(conflicts, cluster, merged.id, softClusterKey);
+  if (wasTierD) recordTierDConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
 
   return merged;
 }
@@ -624,7 +759,7 @@ function mergeCluster(
 // --- Public API ----------------------------------------------------------
 
 /**
- * Three-tier dedup + per-field-ownership merge.
+ * Four-tier dedup + per-field-ownership merge.
  *
  *   Tier A (hard match): per-vendor union-find. Records sharing a non-null
  *   value on the same vendor field (`karaoke_numbers.tj` / `.ky` /
@@ -651,6 +786,17 @@ function mergeCluster(
  *   `MergeConflict { field: 'tier_c_merge' }` for crawl-PR-body visibility
  *   (sunset cadence per design doc §3.C).
  *
+ *   Tier D (guarded context-suffix title match): residual singletons after
+ *   Tier C are grouped by
+ *   `clusterKeyPart(refinedStripContext(title)) | clusterKeyPart(full artist)`.
+ *   This catches TJ-style trailing work-role parentheticals such as
+ *   `(化物語 OP)` / `('プロセカ' OST)` when JOYSOUND has the bare title. It
+ *   fires only cross-source, only when at least one title actually stripped,
+ *   preserves version/size/remix/etc. suffixes, and blocks auto-union when the
+ *   candidate group has multiple non-null values for the same vendor field.
+ *   Successful groups emit `tier_d_context_title_merge`; blocked groups stay
+ *   split and emit ordinary vendor-number conflicts for review.
+ *
  *   Per-cluster ownership: each output field is taken from the
  *   highest-priority contributing source per the spec's per-field table.
  *   See `mergeCluster` for the chains.
@@ -661,9 +807,9 @@ function mergeCluster(
  *   2) `normalize(title_primary)` ascending — locale-stable string compare.
  *   3) `id` ascending.
  *
- * Conflict warnings (Tier B vendor-number disagreements + Tier C cluster
- * fires) are returned in `result.conflicts`. Console output is forbidden —
- * callers aggregate them.
+ * Conflict warnings (Tier B vendor-number disagreements + Tier C/D cluster
+ * fires + Tier D blocked vendor-number disagreements) are returned in
+ * `result.conflicts`. Console output is forbidden — callers aggregate them.
  */
 export function mergeRecords(records: SongRecord[]): MergeResult {
   const conflicts: MergeConflict[] = [];
@@ -742,6 +888,28 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     for (const root of unionIndexGroups(uf, [idxs])) tierCRoots.add(root);
   }
 
+  // --- Tier D: guarded context-suffix title clustering ---
+  // After Tier C, residual singletons can still represent the same song when
+  // TJ carries a trailing anime/game/OST parenthetical and JOYSOUND stores the
+  // bare title. Tier D keys on refinedStripContext(title) + FULL artist (not
+  // lead artist), fires only cross-source, and refuses any group with multiple
+  // non-null values for the same vendor field. Refused groups stay split but
+  // emit vendor-number conflicts so the review queue sees them.
+  const sizeAfterC = countRoots(uf, n);
+  const tierDGroups = groupSingletonsByKey(records, uf, sizeAfterC, tierDKey);
+  const tierDRoots = new Set<number>();
+  for (const [clusterKey, idxs] of tierDGroups) {
+    if (idxs.length < 2) continue;
+    if (!shouldUnionTierDGroup(records, idxs)) continue;
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const cluster = idxs.map((i) => records[i]!);
+    if (collectVendorNumberConflicts(cluster).length > 0) {
+      recordTierDBlockedConflicts(conflicts, clusterKey, cluster);
+      continue;
+    }
+    for (const root of unionIndexGroups(uf, [idxs])) tierDRoots.add(root);
+  }
+
   // --- Materialize clusters ---
   const clusters = collectClusters(uf, n);
 
@@ -751,7 +919,8 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     const cluster = idxs.map((i) => records[i]!);
     const wasTierB = tierBRoots.has(root);
     const wasTierC = tierCRoots.has(root);
-    merged.push(mergeCluster(cluster, wasTierB, wasTierC, conflicts));
+    const wasTierD = tierDRoots.has(root);
+    merged.push(mergeCluster(cluster, wasTierB, wasTierC, wasTierD, conflicts));
   }
 
   // Deterministic sort. See docblock above for the rule.

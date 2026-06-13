@@ -1,6 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
-import { mergeRecords } from '../src/merge.js';
+import { headlineConflicts, mergeRecords } from '../src/merge.js';
 
 function record(over: Partial<SongRecord>): SongRecord {
   return {
@@ -1306,5 +1306,232 @@ describe('mergeRecords — dash/prolonged-sound-mark fold in clustering keys', (
 
     const { records } = mergeRecords([a, b]);
     expect(records).toHaveLength(2);
+  });
+});
+
+describe('mergeRecords — Tier D context-suffix title merge', () => {
+  it('merges TJ anime/game OST context suffix with bare JOYSOUND title (カナデトモスソラ)', () => {
+    const tj = record({
+      id: 'tj-68745',
+      source_url: 'https://tj.test/68745',
+      title_primary: "カナデトモスソラ('プロジェクトセカイ カラフルステージ！ feat. 初音ミク' OST)",
+      title_ko: "카나데 토모스 소라('프로젝트 세카이 컬러풀 스테이지! feat.하츠네 미쿠' OST)",
+      artist_primary: '25時,ナイトコードで。',
+      karaoke_numbers: { tj: '68745', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-890058',
+      source_url: 'https://www.joysound.com/web/search/song/890058',
+      title_primary: 'カナデトモスソラ',
+      artist_primary: '25時、ナイトコードで。',
+      karaoke_numbers: { tj: null, ky: null, joysound: '612018' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(1);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    expect(m.id).toBe('tj-68745');
+    expect(m.title_primary).toBe(
+      "カナデトモスソラ('プロジェクトセカイ カラフルステージ！ feat. 初音ミク' OST)",
+    );
+    expect(m.artist_primary).toBe('25時,ナイトコードで。');
+    expect(m.karaoke_numbers).toEqual({ tj: '68745', ky: null, joysound: '612018' });
+
+    const tierD = conflicts.filter((c) => c.field === 'tier_d_context_title_merge');
+    expect(tierD).toHaveLength(1);
+    expect(tierD[0]?.values.map((v) => v.value).sort()).toEqual(['joysound-890058', 'tj-68745']);
+    expect(headlineConflicts(conflicts)).toHaveLength(0);
+  });
+
+  it('merges TJ OP context suffix with bare JOYSOUND title (恋愛サーキュレーション)', () => {
+    const tj = record({
+      id: 'tj-27027',
+      source_url: 'https://tj.test/27027',
+      title_primary: '恋愛サーキュレーション(化物語 OP)',
+      artist_primary: '千石撫子(花澤香菜)',
+      karaoke_numbers: { tj: '27027', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-149774',
+      source_url: 'https://www.joysound.com/web/search/song/149774',
+      title_primary: '恋愛サーキュレーション',
+      artist_primary: '千石撫子(花澤香菜)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '128291' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('tj-27027');
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '27027', ky: null, joysound: '128291' });
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(1);
+  });
+
+  it('preserves explicit version markers such as TV size even when another record strips an OP suffix', () => {
+    const tj = record({
+      id: 'tj-25005',
+      source_url: 'https://tj.test/25005',
+      title_primary: 'The Rumbling(進撃の巨人 OP)',
+      artist_primary: 'SiM',
+      karaoke_numbers: { tj: '25005', ky: null, joysound: null },
+    });
+    const tvSize = record({
+      id: 'joysound-910272',
+      source_url: 'https://www.joysound.com/web/search/song/910272',
+      title_primary: 'The Rumbling (TV size)',
+      artist_primary: 'SiM',
+      karaoke_numbers: { tj: null, ky: null, joysound: '495625' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, tvSize]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+  });
+
+  it('preserves size markers even when they contain a role token such as オープニング', () => {
+    const full = record({
+      id: 'tjpdf-28785',
+      source_url: 'https://tjpdf.test/28785',
+      title_primary: 'EXCITE',
+      artist_primary: '三浦大知',
+      karaoke_numbers: { tj: '28785', ky: null, joysound: '691428' },
+    });
+    const openingSize = record({
+      id: 'joysound-596642',
+      source_url: 'https://www.joysound.com/web/search/song/596642',
+      title_primary: 'EXCITE (テレビオープニングサイズ)',
+      artist_primary: '三浦大知',
+      karaoke_numbers: { tj: null, ky: null, joysound: '690705' },
+    });
+
+    const { records, conflicts } = mergeRecords([full, openingSize]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+  });
+
+  it('does not strip bare role-only suffixes such as (Ending)', () => {
+    const full = record({
+      id: 'tj-50100',
+      source_url: 'https://tj.test/50100',
+      title_primary: 'Hello, I am KOE',
+      artist_primary: 'KOE',
+      karaoke_numbers: { tj: '50100', ky: null, joysound: null },
+    });
+    const ending = record({
+      id: 'joysound-50101',
+      source_url: 'https://www.joysound.com/web/search/song/50101',
+      title_primary: 'Hello, I am KOE(Ending)',
+      artist_primary: 'KOE',
+      karaoke_numbers: { tj: null, ky: null, joysound: '50101' },
+    });
+
+    const { records, conflicts } = mergeRecords([full, ending]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+  });
+
+  it('does not strip role-only ordinal suffixes such as (OP2) or (第2期OP)', () => {
+    const full = record({
+      id: 'tj-50200',
+      source_url: 'https://tj.test/50200',
+      title_primary: 'Ordinal Song',
+      artist_primary: 'Ordinal Artist',
+      karaoke_numbers: { tj: '50200', ky: null, joysound: null },
+    });
+    const op2 = record({
+      id: 'joysound-50201',
+      source_url: 'https://www.joysound.com/web/search/song/50201',
+      title_primary: 'Ordinal Song(OP2)',
+      artist_primary: 'Ordinal Artist',
+      karaoke_numbers: { tj: null, ky: null, joysound: '50201' },
+    });
+    const secondSeasonOp = record({
+      id: 'joysound-50202',
+      source_url: 'https://www.joysound.com/web/search/song/50202',
+      title_primary: 'Ordinal Song(第2期OP)',
+      artist_primary: 'Ordinal Artist',
+      karaoke_numbers: { tj: null, ky: null, joysound: '50202' },
+    });
+
+    const { records, conflicts } = mergeRecords([full, op2, secondSeasonOp]);
+
+    expect(records).toHaveLength(3);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+  });
+
+  it('does not merge same-source context-suffix twins through Tier D', () => {
+    const a = record({
+      id: 'joysound-50301',
+      source_url: 'https://www.joysound.com/web/search/song/50301',
+      title_primary: 'Same Source Song(Example Anime OP)',
+      artist_primary: 'Same Source Artist',
+      karaoke_numbers: { tj: null, ky: null, joysound: '50301' },
+    });
+    const b = record({
+      id: 'joysound-50302',
+      source_url: 'https://www.joysound.com/web/search/song/50302',
+      title_primary: 'Same Source Song',
+      artist_primary: 'Same Source Artist',
+      karaoke_numbers: { tj: null, ky: null, joysound: '50302' },
+    });
+
+    const { records, conflicts } = mergeRecords([a, b]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+  });
+
+  it('uses full artist for Tier D, not the Tier C lead-artist token', () => {
+    const tj = record({
+      id: 'tj-50400',
+      source_url: 'https://tj.test/50400',
+      title_primary: 'Full Artist Song(Example Anime OP)',
+      artist_primary: 'Main Artist(Feat.Guest)',
+      karaoke_numbers: { tj: '50400', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-50401',
+      source_url: 'https://www.joysound.com/web/search/song/50401',
+      title_primary: 'Full Artist Song',
+      artist_primary: 'Main Artist',
+      karaoke_numbers: { tj: null, ky: null, joysound: '50401' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+  });
+
+  it('blocks Tier D auto-merge and emits a review conflict when same-provider numbers disagree', () => {
+    const blog = record({
+      id: 'blog-523-9',
+      source_url: 'https://blog.test/523',
+      title_primary: 'ALWAYS',
+      artist_primary: '中島美嘉',
+      karaoke_numbers: { tj: '27011', ky: '43189', joysound: '91999' },
+    });
+    const tj = record({
+      id: 'tj-27098',
+      source_url: 'https://tj.test/27098',
+      title_primary: 'Always(サヨナライツカ OST)',
+      artist_primary: '中島美嘉',
+      karaoke_numbers: { tj: '27098', ky: null, joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([blog, tj]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_d_context_title_merge')).toHaveLength(0);
+    const tjConflict = conflicts.find((c) => c.field === 'tj');
+    expect(tjConflict).toBeDefined();
+    expect(tjConflict?.cluster_key).toBe('always|中島美嘉');
+    expect(tjConflict?.values.map((v) => v.value).sort()).toEqual(['27011', '27098']);
+    expect(headlineConflicts(conflicts)).toHaveLength(1);
   });
 });

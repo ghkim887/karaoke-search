@@ -72,9 +72,9 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
   if (conflictsOutPath) {
     // Asymmetry (Fix 3, 2026-05-01): only the headline `total` is filtered
     // via `headlineConflicts()`. The `sample` (and the full conflicts list)
-    // remains UNFILTERED so Tier C cluster details stay visible for forensic
+    // remains UNFILTERED so soft-merge marker rows stay visible for forensic
     // inspection per spec §3.C — a reader of the JSON file can still see
-    // which Tier C clusters fired.
+    // which Tier C/Tier D clusters fired.
     const summary = {
       total: headlineConflicts(conflicts).length,
       sample: conflicts.slice(0, 10),
