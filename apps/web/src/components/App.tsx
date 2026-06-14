@@ -12,7 +12,6 @@ import {
   loadIndex,
   searchApi,
   searchLocalIndex,
-  sortSearchResultsByProviderPriority,
 } from '../lib/search.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
@@ -286,11 +285,7 @@ export function App({ songCount }: AppProps) {
       }
     }
     const filtered = filterByVendors(candidates, selectedVendors);
-    const ordered =
-      activeTab === 'browse'
-        ? sortSearchResultsByProviderPriority(filtered, selectedVendors)
-        : filtered;
-    return ordered.slice(0, RESULT_LIMIT);
+    return filtered.slice(0, RESULT_LIMIT);
   }, [bundle, query, activeTab, favoriteIds, selectedVendors, apiBaseUrl, apiBrowse, apiFavorites]);
 
   const toggleVendor = (v: Vendor) => {

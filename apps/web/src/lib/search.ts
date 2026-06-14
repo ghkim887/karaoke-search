@@ -114,50 +114,6 @@ export async function loadIndex(): Promise<IndexBundle> {
 
 export type SearchVendor = 'tj' | 'ky' | 'joysound';
 
-const SEARCH_RESULT_VENDOR_PRIORITY: SearchVendor[] = ['tj', 'ky', 'joysound'];
-
-function searchResultVendorPriority(record: Pick<SongRecord, 'karaoke_numbers'>): number {
-  const index = SEARCH_RESULT_VENDOR_PRIORITY.findIndex(
-    (vendor) => record.karaoke_numbers[vendor] !== null,
-  );
-  return index === -1 ? SEARCH_RESULT_VENDOR_PRIORITY.length : index;
-}
-
-/** Number of providers (tj/ky/joysound) that carry a non-null catalog number. */
-function searchResultProviderCount(record: Pick<SongRecord, 'karaoke_numbers'>): number {
-  return SEARCH_RESULT_VENDOR_PRIORITY.reduce(
-    (count, vendor) => count + (record.karaoke_numbers[vendor] !== null ? 1 : 0),
-    0,
-  );
-}
-
-/**
- * Order search results by provider availability, mirroring the worker SQL.
- *
- * - No vendors selected (default browse/search): TJ-containing records first,
- *   then KY, then JOYSOUND, then records with no number — preserving input order
- *   within each bucket so upstream relevance ordering is kept.
- * - One or more vendors selected: the input is already filtered to records that
- *   carry at least one selected provider; rank those by total provider coverage
- *   (the non-null count across tj/ky/joysound) descending, preserving input
- *   order within an equal-coverage bucket so relevance tie-breakers survive.
- */
-export function sortSearchResultsByProviderPriority<T extends Pick<SongRecord, 'karaoke_numbers'>>(
-  records: readonly T[],
-  selectedVendors?: ReadonlySet<SearchVendor>,
-): T[] {
-  if (selectedVendors !== undefined && selectedVendors.size > 0) {
-    return records
-      .map((record, index) => ({ index, count: searchResultProviderCount(record), record }))
-      .sort((left, right) => right.count - left.count || left.index - right.index)
-      .map(({ record }) => record);
-  }
-  return records
-    .map((record, index) => ({ index, priority: searchResultVendorPriority(record), record }))
-    .sort((left, right) => left.priority - right.priority || left.index - right.index)
-    .map(({ record }) => record);
-}
-
 export interface ApiSearchOptions {
   query: string;
   /** Single-vendor filter. Mutually exclusive in practice with `vendors`; when
