@@ -173,7 +173,7 @@ async function findFilteredRows(
         s.title_ko_confidence
       FROM songs s
       ${whereSql}
-      ORDER BY ${providerRankOrderSql('s', params.vendors)} ASC, s.sort_order ASC, s.id ASC
+      ORDER BY s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -262,7 +262,7 @@ async function findIndexedCandidateRows(
         s.title_ko_confidence
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
-      ORDER BY r.match_tier DESC, ${providerRankOrderSql('s', params.vendors)} ASC, r.score DESC, s.sort_order ASC, s.id ASC
+      ORDER BY r.match_tier DESC, r.score DESC, s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -350,7 +350,7 @@ async function findKaraokeNumberCandidateRows(
         s.title_ko_confidence
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
-      ORDER BY ${providerRankOrderSql('s', params.vendors)} ASC, r.score DESC, s.sort_order ASC, s.id ASC
+      ORDER BY r.score DESC, s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -500,59 +500,6 @@ function appendKaraokeNumberCandidateSubquery({
     GROUP BY kn.song_id
   `);
   values.push(...branchValues);
-}
-
-/**
- * ORDER BY ranking key for provider availability, evaluated lowest-first (the
- * call sites append `ASC`).
- *
- * - No vendor selected: the default TJ → KY → JOY → none priority (unchanged).
- * - One or more vendors selected: the candidate set is already filtered to rows
- *   carrying a selected provider, so rank by total provider coverage (the count
- *   of non-null tj/ky/joysound numbers) DESCENDING. Negating the count keeps the
- *   shared ascending ordering while putting the widest coverage first.
- */
-function providerRankOrderSql(songAlias: string, vendors: readonly Vendor[] | undefined): string {
-  if (vendors === undefined || vendors.length === 0) {
-    return providerPriorityOrderSql(songAlias);
-  }
-  return `-${providerCoverageCountSql(songAlias)}`;
-}
-
-function providerCoverageCountSql(songAlias: string): string {
-  const branch = (alias: string, provider: Vendor): string => `CASE WHEN EXISTS (
-      SELECT 1 FROM karaoke_numbers ${alias}
-      WHERE ${alias}.song_id = ${songAlias}.id
-        AND ${alias}.provider = '${provider}'
-        AND ${alias}.number IS NOT NULL
-    ) THEN 1 ELSE 0 END`;
-  return `(${branch('coverage_tj', 'tj')}
-    + ${branch('coverage_ky', 'ky')}
-    + ${branch('coverage_joysound', 'joysound')})`;
-}
-
-function providerPriorityOrderSql(songAlias: string): string {
-  return `CASE
-    WHEN EXISTS (
-      SELECT 1 FROM karaoke_numbers priority_tj
-      WHERE priority_tj.song_id = ${songAlias}.id
-        AND priority_tj.provider = 'tj'
-        AND priority_tj.number IS NOT NULL
-    ) THEN 0
-    WHEN EXISTS (
-      SELECT 1 FROM karaoke_numbers priority_ky
-      WHERE priority_ky.song_id = ${songAlias}.id
-        AND priority_ky.provider = 'ky'
-        AND priority_ky.number IS NOT NULL
-    ) THEN 1
-    WHEN EXISTS (
-      SELECT 1 FROM karaoke_numbers priority_joysound
-      WHERE priority_joysound.song_id = ${songAlias}.id
-        AND priority_joysound.provider = 'joysound'
-        AND priority_joysound.number IS NOT NULL
-    ) THEN 2
-    ELSE 3
-  END`;
 }
 
 function buildSearchQueryTokens(query: string): SearchQueryToken[] {
