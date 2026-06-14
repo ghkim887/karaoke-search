@@ -154,6 +154,29 @@ const PROVIDER_PRIORITY_RECORDS: SongRecord[] = [
   },
 ];
 
+const EXACT_MATCH_TIER_RECORDS: SongRecord[] = [
+  {
+    id: 'exact-weak-tj-1',
+    source_url: 'https://example.com/exact/weak-tj',
+    title_primary: 'かなたのどこか',
+    title_ko: null,
+    artist_primary: 'Other Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: '11111', ky: null, joysound: null },
+    crawled_at: '2026-06-14T00:00:00.000Z',
+  },
+  {
+    id: 'exact-joy-artist-1',
+    source_url: 'https://example.com/exact/joy-artist',
+    title_primary: 'Knock it out!',
+    title_ko: null,
+    artist_primary: '天音かなた',
+    artist_ko: null,
+    karaoke_numbers: { tj: null, ky: null, joysound: '817062' },
+    crawled_at: '2026-06-14T00:00:00.000Z',
+  },
+];
+
 // Records that share one searchable title but differ in provider coverage, so a
 // vendor-selected search can be asserted to rank by total provider coverage
 // (the non-null count across tj/ky/joysound) descending. Inserted in a scrambled
@@ -376,6 +399,7 @@ describe('worker search API', () => {
     const db = createD1WithSongs(FIXTURE_RECORDS);
 
     const byJapaneseGram = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF');
+    const bySingleKanji = await fetchJson(db, '/api/search?q=%E5%A4%A9');
     const byHangulInitial = await fetchJson(db, '/api/search?q=%E3%85%85%E3%84%B9');
     const byCompactAlias = await fetchJson(db, '/api/search?q=mrsgreenapple');
     const byProviderNumber = await fetchJson(db, '/api/search?q=TJ068748');
@@ -386,6 +410,7 @@ describe('worker search API', () => {
     );
 
     expect(byJapaneseGram.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(bySingleKanji.items.map((song) => song.id)).toEqual(['song-4']);
     expect(byHangulInitial.items.map((song) => song.id)).toEqual(['song-4']);
     expect(byCompactAlias.items.map((song) => song.id)).toEqual(['song-4']);
     expect(byProviderNumber.items.map((song) => song.id)).toEqual(['song-4']);
@@ -416,6 +441,14 @@ describe('worker search API', () => {
     const result = await fetchJson(db, '/api/search?q=provider%20priority');
 
     expect(result.items.map((song) => song.id)).toEqual(['rank-tj-1', 'rank-ky-1', 'rank-joy-1']);
+  });
+
+  it('ranks exact text matches above weak token matches before applying provider priority', async () => {
+    const db = createD1WithSongs(EXACT_MATCH_TIER_RECORDS);
+
+    const result = await fetchJson(db, `/api/search?q=${encodeURIComponent('天音かなた')}`);
+
+    expect(result.items.map((song) => song.id)).toEqual(['exact-joy-artist-1', 'exact-weak-tj-1']);
   });
 
   it('ranks a vendor-selected search by provider coverage descending (vendor=joysound)', async () => {

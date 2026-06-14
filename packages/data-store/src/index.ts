@@ -51,7 +51,7 @@ type HintField = (typeof HINT_FIELDS)[number];
 type HintTokenField = (typeof HINT_TOKEN_FIELD_BY_HINT_FIELD)[HintField];
 type SearchTokenField = SearchField | HintTokenField;
 type HintConfidence = NonNullable<TitleKoConfidence>;
-type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';
+type SearchTokenKind = 'term' | 'prefix' | 'gram1' | 'gram2' | 'gram3' | 'initial';
 
 function sqlite(): SqliteModule {
   return require('node:sqlite') as SqliteModule;
@@ -61,8 +61,8 @@ const D1_TABLE_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY K
 CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, number_key TEXT, PRIMARY KEY (song_id, provider));
 CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position));
 CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact));
-CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias', 'title_hint', 'artist_hint')), weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
-CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token));
+CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram1', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias', 'title_hint', 'artist_hint')), weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field));
+CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram1', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token));
 CREATE TABLE IF NOT EXISTS search_hints (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title', 'artist')), source TEXT NOT NULL, text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low')), PRIMARY KEY (song_id, field, source, text_compact));`;
 
 const D1_INDEX_SCHEMA_SQL = `CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
@@ -118,7 +118,10 @@ function ensureSearchTokensHintFields(db: SongDatabase): void {
   const row = db
     .prepare(`SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'search_tokens'`)
     .get() as { sql?: string } | undefined;
-  if (row?.sql !== undefined && !row.sql.includes("'title_hint'")) {
+  if (
+    row?.sql !== undefined &&
+    (!row.sql.includes("'title_hint'") || !row.sql.includes("'gram1'"))
+  ) {
     db.exec('DROP TABLE IF EXISTS search_tokens');
     db.exec(D1_TABLE_SCHEMA_SQL);
   }
@@ -820,6 +823,9 @@ function addSearchTokens(rows: SearchTokenRow[], seen: Set<string>, input: Searc
   }
   addPrefixTokens(rows, seen, input, input.textCompact, 'prefix');
 
+  for (const gram of makeNonAsciiCharacterUnigrams(input.textCompact)) {
+    addSearchToken(rows, seen, input, 'gram1', gram);
+  }
   for (const gram of makeCharacterNgrams(input.textCompact, 2)) {
     addSearchToken(rows, seen, input, 'gram2', gram);
   }
@@ -868,6 +874,23 @@ function addSearchToken(
     weight: input.weight,
     providerMask: input.providerMask,
   });
+}
+
+function makeNonAsciiCharacterUnigrams(value: string): string[] {
+  const grams: string[] = [];
+  const seen = new Set<string>();
+  for (const character of Array.from(value)) {
+    if (!hasNonAsciiCharacter(character) || seen.has(character)) {
+      continue;
+    }
+    seen.add(character);
+    grams.push(character);
+  }
+  return grams;
+}
+
+function hasNonAsciiCharacter(value: string): boolean {
+  return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
 function buildSearchTokenStats(
