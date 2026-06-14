@@ -30,6 +30,7 @@ const DEBOUNCE_MS = 150;
 interface ApiBrowseState {
   key: string;
   records: SongRecord[] | null;
+  status: 'idle' | 'pending' | 'success' | 'error';
 }
 
 interface AppProps {
@@ -44,7 +45,14 @@ interface AppProps {
  * is fixed by spec (see the docstring on `renderBody` below). Keep this union
  * exhaustive — adding a new mode means adding a new case to the switch.
  */
-type RenderMode = 'error' | 'loading' | 'favorites-empty' | 'favorites' | 'browse-empty' | 'browse';
+type RenderMode =
+  | 'error'
+  | 'loading'
+  | 'favorites-empty'
+  | 'favorites'
+  | 'browse-empty'
+  | 'browse-searching'
+  | 'browse';
 
 /**
  * Single root island. Fetches `/data/songs.json` once on mount, builds the
@@ -77,7 +85,11 @@ export function App({ songCount }: AppProps) {
   const [query, setQuery] = useState('');
   const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
   const [activeTab, setActiveTab] = useState<TabId>('browse');
-  const [apiBrowse, setApiBrowse] = useState<ApiBrowseState>({ key: '', records: null });
+  const [apiBrowse, setApiBrowse] = useState<ApiBrowseState>({
+    key: '',
+    records: null,
+    status: 'idle',
+  });
   // Favorites hydrated via the worker `/api/songs` endpoint when in API mode.
   // `null` until the first fetch resolves; replaced wholesale on every fetch.
   const [apiFavorites, setApiFavorites] = useState<SongRecord[] | null>(null);
@@ -125,7 +137,7 @@ export function App({ songCount }: AppProps) {
 
   useEffect(() => {
     if (apiBaseUrl === null || activeTab !== 'browse' || query === '') {
-      setApiBrowse({ key: '', records: null });
+      setApiBrowse({ key: '', records: null, status: 'idle' });
       return;
     }
     let cancelled = false;
@@ -133,12 +145,13 @@ export function App({ songCount }: AppProps) {
     const vendors = selectedVendorsForApi(selectedVendors);
     const apiOptions = { query, limit: RESULT_LIMIT };
     if (vendors.length > 0) Object.assign(apiOptions, { vendors });
+    setApiBrowse({ key, records: null, status: 'pending' });
     searchApi(apiBaseUrl, apiOptions)
       .then((records) => {
-        if (!cancelled) setApiBrowse({ key, records });
+        if (!cancelled) setApiBrowse({ key, records, status: 'success' });
       })
       .catch(() => {
-        if (!cancelled) setApiBrowse({ key, records: null });
+        if (!cancelled) setApiBrowse({ key, records: [], status: 'error' });
       });
     return () => {
       cancelled = true;
@@ -300,6 +313,16 @@ export function App({ songCount }: AppProps) {
   // Memoized count exposed via aria-live so screen readers announce only when
   // the result count changes — not on every keystroke before debounce settles.
   const resultCount = results.length;
+  const currentBrowseApiKey =
+    activeTab === 'browse' && query !== '' ? apiBrowseKey(query, selectedVendors) : '';
+  const browseApiSearchPending =
+    apiBaseUrl !== null &&
+    activeTab === 'browse' &&
+    query !== '' &&
+    (apiBrowse.key !== currentBrowseApiKey || apiBrowse.status === 'pending');
+  const resultStatusLabel = browseApiSearchPending
+    ? '검색 중 / Searching'
+    : `${resultCount}건 / ${resultCount} results`;
 
   // Build-time record count, formatted with thousands separators (en-US to
   // match the prior hard-coded "26,401" format).
@@ -308,6 +331,21 @@ export function App({ songCount }: AppProps) {
   const loadingNode = (
     <p class="loading">
       {songCountDisplay}곡 검색 인덱스 빌드 중 / Building {songCountDisplay}-song index
+      <span class="loading-dot" aria-hidden="true">
+        .
+      </span>
+      <span class="loading-dot" aria-hidden="true">
+        .
+      </span>
+      <span class="loading-dot" aria-hidden="true">
+        .
+      </span>
+    </p>
+  );
+
+  const searchLoadingNode = (
+    <p class="search-loading">
+      검색 중 / Searching
       <span class="loading-dot" aria-hidden="true">
         .
       </span>
@@ -335,7 +373,9 @@ export function App({ songCount }: AppProps) {
    *   4. activeTab === 'favorites'    → 'favorites'  (NoResults if 0 filtered)
    *   5. activeTab === 'browse' && query === ''
    *                                   → 'browse-empty'
-   *   6. activeTab === 'browse'       → 'browse'     (NoResults if 0 filtered)
+   *   6. activeTab === 'browse' && API search pending
+   *                                   → 'browse-searching'
+   *   7. activeTab === 'browse'       → 'browse'     (NoResults if 0 filtered)
    */
   const mode: RenderMode =
     error !== null
@@ -348,7 +388,9 @@ export function App({ songCount }: AppProps) {
             ? 'favorites'
             : query === ''
               ? 'browse-empty'
-              : 'browse';
+              : browseApiSearchPending
+                ? 'browse-searching'
+                : 'browse';
 
   const renderBody = (): JSX.Element => {
     switch (mode) {
@@ -371,6 +413,8 @@ export function App({ songCount }: AppProps) {
         return <FavoritesEmpty />;
       case 'browse-empty':
         return <EmptyState onPickArtist={handlePickArtist} />;
+      case 'browse-searching':
+        return searchLoadingNode;
       case 'favorites':
       case 'browse':
         // Identical render output post-`results` computation; the candidate-
@@ -393,7 +437,7 @@ export function App({ songCount }: AppProps) {
       <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
-        {resultCount}건 / {resultCount} results
+        {resultStatusLabel}
       </span>
       {renderBody()}
     </main>

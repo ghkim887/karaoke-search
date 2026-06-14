@@ -236,6 +236,36 @@ describe('App tab behavior', () => {
       expect.objectContaining({ query: 'kick', limit: 50 }),
     );
   });
+
+  it('shows a searching state, not NoResults, while an API Browse query is pending', async () => {
+    vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
+    const apiRecord = fixtureRecords[1];
+    if (apiRecord === undefined) throw new Error('fixture record missing');
+    let resolveApi: (records: SongRecord[]) => void = () => {};
+    const pending = new Promise<SongRecord[]>((resolve) => {
+      resolveApi = resolve;
+    });
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockReturnValue(pending);
+    await mount();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    await waitFor(() => (apiSpy.mock.calls.length > 0 ? true : null));
+    const searching = await waitFor(() => host.querySelector<HTMLElement>('.search-loading'));
+    expect(searching.textContent).toContain('검색 중');
+    expect(host.querySelector('.no-results')).toBeNull();
+    expect(host.querySelector('[data-testid="result-count"]')?.textContent).toContain('검색 중');
+
+    resolveApi([apiRecord]);
+    await waitFor(() => {
+      const card = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return card?.textContent?.includes('KICK BACK') ? card : null;
+    });
+    expect(host.querySelector('.search-loading')).toBeNull();
+  });
   it('keeps Browse search usable through the API before the local MiniSearch index finishes loading', async () => {
     vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
     vi.spyOn(searchModule, 'loadIndex').mockReturnValue(new Promise(() => {}) as never);
