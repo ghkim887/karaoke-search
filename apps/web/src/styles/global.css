@@ -306,7 +306,7 @@ main.results .error {
 }
 
 /* Off-table small uppercase label — DESIGN.md §3 has no caption scale.
-         Documented deviation: 12px Inter 500 uppercase with 0.6px tracking. */
+         Documented deviation: 12px body font 500 uppercase with 0.6px tracking. */
 .empty-section-title {
   margin: 16px 0 12px;
   font-family: var(--rui-font-body);
@@ -565,7 +565,7 @@ main.results .error {
   background: var(--rui-surface);
   font-family: var(--rui-font-body);
   /* Off-table small uppercase label — DESIGN.md §3 has no caption scale.
-           Documented deviation: 12px Inter 500 uppercase with 0.6px tracking. */
+           Documented deviation: 12px body font 500 uppercase with 0.6px tracking. */
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.6px;
