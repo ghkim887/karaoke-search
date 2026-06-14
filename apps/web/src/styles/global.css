@@ -191,6 +191,7 @@ main.results {
 }
 
 main.results .loading,
+main.results .search-loading,
 main.results .error {
   color: var(--rui-fg-muted);
   /* DESIGN.md §3 Body — 16px */
