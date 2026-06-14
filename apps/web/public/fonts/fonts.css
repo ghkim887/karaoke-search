@@ -1,58 +1,10 @@
-/* Self-hosted webfonts. Geist (display) + Inter (body) + Pretendard (Korean) — OFL/MIT.
-   Linked via <head> so Vite never parses the url() paths; files served from dist/fonts/. */
+/* Self-hosted webfont: Pretendard JP Variable (OFL-1.1).
+   One family covers Latin, Korean, and Japanese so all UI text uses the same face.
+   Keep the URL relative to this CSS file; the app may be served at / or under a base path. */
 @font-face {
-  font-family: "Geist";
-  src: url("/karaoke-search/fonts/geist-500.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/karaoke-search/fonts/inter-400.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/karaoke-search/fonts/inter-500.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/karaoke-search/fonts/inter-600.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Pretendard";
-  src: url("/karaoke-search/fonts/pretendard-400.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Pretendard";
-  src: url("/karaoke-search/fonts/pretendard-500.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Pretendard";
-  src: url("/karaoke-search/fonts/pretendard-600.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Pretendard";
-  src: url("/karaoke-search/fonts/pretendard-700.woff2") format("woff2");
-  font-weight: 700;
+  font-family: "Pretendard JP";
+  src: url("./pretendard-jp-variable.woff2") format("woff2");
+  font-weight: 45 920;
   font-style: normal;
   font-display: swap;
 }

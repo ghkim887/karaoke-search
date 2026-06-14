@@ -27,9 +27,9 @@
   --rui-radius-small: 12px; /* §4 Cards & Containers */
   --rui-focus-ring: 0 0 0 0.125rem var(--rui-fg); /* §6 Focus */
 
-  /* Typography stacks */
-  --rui-font-display: "Geist", "Pretendard", system-ui, sans-serif;
-  --rui-font-body: "Inter", "Pretendard", system-ui, "Noto Sans KR", "Noto Sans JP", sans-serif;
+  /* Typography stacks — one self-hosted family covers Latin, Korean, and Japanese. */
+  --rui-font-display: "Pretendard JP", system-ui, "Noto Sans JP", "Noto Sans KR", sans-serif;
+  --rui-font-body: "Pretendard JP", system-ui, "Noto Sans JP", "Noto Sans KR", sans-serif;
 
   /* DESIGN.md §3 Typography hierarchy — adopted verbatim. */
   --rui-text-card-title: 32px; /* §3 Card Title — used for page H1 in Restrained Revolut */
