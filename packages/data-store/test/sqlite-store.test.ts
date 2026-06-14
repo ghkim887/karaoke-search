@@ -311,6 +311,7 @@ describe('SQLite song store', () => {
       expect.arrayContaining([
         { kind: 'gram2', token: '天使', field: 'title_primary' },
         { kind: 'gram3', token: '天使の', field: 'title_primary' },
+        { kind: 'gram1', token: '天', field: 'title_primary' },
         { kind: 'initial', token: 'ㅅㄹㅎㄴㅂ', field: 'title_ko' },
         { kind: 'prefix', token: 'mr', field: 'artist_alias' },
       ]),

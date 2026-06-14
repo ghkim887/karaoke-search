@@ -51,7 +51,7 @@ export function compactSearchText(value: string): string {
   return tokenizeSearchWords(value).join('');
 }
 
-export function makeCharacterNgrams(value: string, n: 2 | 3): string[] {
+export function makeCharacterNgrams(value: string, n: 1 | 2 | 3): string[] {
   const characters = Array.from(compactSearchText(value));
   if (characters.length < n) {
     return [];

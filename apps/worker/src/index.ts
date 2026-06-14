@@ -38,6 +38,8 @@ const MAX_QUERY_TOKENS = 24;
 // (the original query keeps full weight). Biases original-query matches above
 // expansion-only matches without degrading existing scoring.
 const EXPANDED_VARIANT_WEIGHT_SCALE = 0.5;
+const MATCH_TIER_TOKEN = 1;
+const MATCH_TIER_EXACT_TEXT = 2;
 const MAX_PREFIX_TOKEN_CHARS = 12;
 const MAX_D1_LIKE_PATTERN_BYTES = 50;
 const VENDOR_MASKS: Record<Vendor, number> = { tj: 1, ky: 2, joysound: 4 };
@@ -200,7 +202,10 @@ async function findIndexedCandidateRows(
     }
     appendIndexFilters(where, values, params, 'st');
     subqueries.push(`
-      SELECT st.song_id, SUM(st.weight * qt.query_weight * COALESCE(stats.idf_scaled, 1000)) AS score
+      SELECT
+        st.song_id,
+        SUM(st.weight * qt.query_weight * COALESCE(stats.idf_scaled, 1000)) AS score,
+        ${MATCH_TIER_TOKEN} AS match_tier
       FROM search_tokens st
       JOIN query_tokens qt ON qt.kind = st.kind AND qt.token = st.token
       LEFT JOIN search_token_stats stats ON stats.kind = st.kind AND stats.token = st.token
@@ -210,12 +215,15 @@ async function findIndexedCandidateRows(
   }
 
   const compactQuery = compactSearchText(params.query);
-  if (Array.from(compactQuery).length >= 2) {
+  if (Array.from(compactQuery).length >= 1) {
     const where = ['sx.text_compact = ?'];
     values.push(compactQuery);
     appendIndexFilters(where, values, params, 'sx');
     subqueries.push(`
-      SELECT sx.song_id, MAX(sx.weight * 2000000) AS score
+      SELECT
+        sx.song_id,
+        MAX(sx.weight * 2000000) AS score,
+        ${MATCH_TIER_EXACT_TEXT} AS match_tier
       FROM search_texts sx
       WHERE ${where.join(' AND ')}
       GROUP BY sx.song_id
@@ -236,7 +244,7 @@ async function findIndexedCandidateRows(
       `WITH ${queryTokensCte} candidates AS (
         ${subqueries.join('\nUNION ALL\n')}
       ), ranked AS (
-        SELECT song_id, SUM(score) AS score
+        SELECT song_id, SUM(score) AS score, MAX(match_tier) AS match_tier
         FROM candidates
         GROUP BY song_id
       )
@@ -254,7 +262,7 @@ async function findIndexedCandidateRows(
         s.title_ko_confidence
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
-      ORDER BY ${providerRankOrderSql('s', params.vendors)} ASC, r.score DESC, s.sort_order ASC, s.id ASC
+      ORDER BY r.match_tier DESC, ${providerRankOrderSql('s', params.vendors)} ASC, r.score DESC, s.sort_order ASC, s.id ASC
       LIMIT ? OFFSET ?`,
     )
     .bind(...values, params.limit, params.offset);
@@ -550,7 +558,7 @@ function providerPriorityOrderSql(songAlias: string): string {
 function buildSearchQueryTokens(query: string): SearchQueryToken[] {
   const byKey = new Map<string, SearchQueryToken>();
   const add = (kind: SearchTokenKind, token: string, queryWeight: number): void => {
-    if (Array.from(token).length < 2) {
+    if (kind !== 'gram1' && Array.from(token).length < 2) {
       return;
     }
     const key = `${kind}\u0000${token}`;
@@ -607,6 +615,9 @@ function addVariantQueryTokens(
 
   const compactQuery = compactSearchText(query);
   const compactLength = Array.from(compactQuery).length;
+  if (hasNonAsciiCharacter(compactQuery) && compactLength === 1) {
+    add('gram1', compactQuery, scaled(14));
+  }
   if (hasNonAsciiCharacter(compactQuery) && compactLength >= 2) {
     for (const gram of makeCharacterNgrams(compactQuery, 2)) {
       add('gram2', gram, scaled(12));
@@ -737,7 +748,7 @@ function json(body: unknown, status = 200): Response {
 
 class BadRequestError extends Error {}
 
-type SearchTokenKind = 'term' | 'prefix' | 'gram2' | 'gram3' | 'initial';
+type SearchTokenKind = 'term' | 'prefix' | 'gram1' | 'gram2' | 'gram3' | 'initial';
 
 interface SearchQueryToken {
   kind: SearchTokenKind;
