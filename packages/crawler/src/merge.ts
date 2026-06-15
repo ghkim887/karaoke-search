@@ -321,9 +321,10 @@ assertReviewedTierEPairInvariant();
  * per the ownership table — but the warning is surfaced for the crawl PR
  * body summary.
  *
- * The `'tier_c_merge'`, `'tier_d_context_title_merge'`, and
- * `'tier_e_artist_credit_merge'` field values document successful soft merges
- * (one marker emitted per cluster, not per record-pair) so the merge surfaces
+ * The `'tier_c_merge'`, `'tier_d_context_title_merge'`,
+ * `'tier_e_artist_credit_merge'`, and `'tier_f_postcrawl_split_merge'` field
+ * values document successful soft merges (one marker emitted per cluster, not
+ * per record-pair) so the merge surfaces
  * in the crawl PR body for review. Sunset cadence per
  * `2026-05-01-kpop-leak-and-merge-fix-design.md` §3.C: 4 weeks of clean
  * cross-source output, then downgrade to a per-cluster log line.
@@ -332,7 +333,9 @@ export interface MergeConflict {
   /**
    * Soft-merge cluster key. Tier B/C keys use `clusterKeyPart(title)|...`; Tier
    * D keys use `clusterKeyPart(refinedStripContext(title))|clusterKeyPart(artist)`;
-   * Tier E keys use `tj:<number>|joysound:<number>` from the reviewed pair.
+   * Tier E keys use `tj:<number>|joysound:<number>` from the reviewed pair;
+   * Tier F keys use `<vendor>:<number>|joysound:<number>` from the post-crawl
+   * reviewed split-pair allowlist.
    * Conflict `cluster_key` strings are FOLDED since 2026-06-13 — cosmetic for
    * PR-body aggregation.
    */
@@ -343,7 +346,8 @@ export interface MergeConflict {
     | 'joysound'
     | 'tier_c_merge'
     | 'tier_d_context_title_merge'
-    | 'tier_e_artist_credit_merge';
+    | 'tier_e_artist_credit_merge'
+    | 'tier_f_postcrawl_split_merge';
   values: { source: string; value: string }[];
   /** The value that wins per source priority, or the merged record id for marker rows. */
   winner: string;
@@ -371,7 +375,8 @@ export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
     (c) =>
       c.field !== 'tier_c_merge' &&
       c.field !== 'tier_d_context_title_merge' &&
-      c.field !== 'tier_e_artist_credit_merge',
+      c.field !== 'tier_e_artist_credit_merge' &&
+      c.field !== 'tier_f_postcrawl_split_merge',
   );
 }
 
@@ -380,6 +385,263 @@ export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
 const VENDORS = ['tj', 'ky', 'joysound'] as const satisfies readonly (keyof KaraokeNumbers)[];
 
 type Vendor = (typeof VENDORS)[number];
+
+type NonJoysoundVendor = Exclude<Vendor, 'joysound'>;
+
+/**
+ * Tier F is a post-crawl residual split-pair allowlist derived from the
+ * 2026-06-15 full JOYSOUND detail/ruby audit. Unlike Tier E, these pairs are
+ * not all raw official `tj` ↔ `joysound` singletons: some are blog/tjpdf rows
+ * that carry only a TJ/KY number and pair to a JOYSOUND-bearing row. Therefore
+ * the deployable surface is still exact pair-level evidence, not a broad
+ * artist-alias or title-only rule.
+ *
+ * Inclusion rules used to generate this first slice:
+ * - broad audit bucket `proposed_strong` only;
+ * - one best candidate, no same-provider conflict, unique target/JOY numbers;
+ * - recomputed evidence is artist exact, target artist contained in candidate
+ *   credit, or artist_ko exact with no collab/paren punctuation on either
+ *   primary artist;
+ * - explicitly excluded: feature-artist Korean-name leakage, short numeric
+ *   artist tokens (`19` ↔ `19(ジューク)`), and the existing Tier E
+ *   reviewed-but-not-strong pairs whose raw tieup/credit evidence is not
+ *   retained in `SongRecord`.
+ */
+const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
+  ['tj', '52784', '634289'], // うつくしい世界('出光興産' CM) / Aimer ↔ うつくしい世界 / Aimer
+  ['tj', '28636', '166838'], // コスって!オーマイハニー / 平野綾 ↔ コスって!オーマイハニー / こなたとパティ(平野綾とささきのぞみ)
+  ['ky', '44158', '689337'], // No title / Reol ↔ No title / れをる
+  ['tj', '25041', '21879'], // LOVE 2000 / 安室奈美惠 ↔ LOVE 2000 / 安室奈美恵
+  ['tj', '25048', '26759'], // 君のためにできること / Gackt ↔ 君のためにできること / GACKT(Gackt)
+  ['tj', '25087', '20220'], // Mizerable / Gackt ↔ Mizerable / GACKT(Gackt)
+  ['tj', '25107', '24986'], // U+K / Gackt ↔ U+K / GACKT(Gackt)
+  ['tj', '25169', '22448'], // I WILL / 安室奈美惠 ↔ I WILL / 安室奈美恵
+  ['tj', '25170', '11837'], // Another World / Gackt ↔ ANOTHER WORLD / GACKT(Gackt)
+  ['tj', '25203', '26563'], // Think of me / 安室奈美惠 ↔ think of me / 安室奈美恵
+  ['tj', '25208', '22704'], // 忘れないから / Gackt ↔ 忘れないから / GACKT(Gackt)
+  ['tj', '25211', '26331'], // Secret Garden / Gackt ↔ Secret Garden / GACKT(Gackt)
+  ['tj', '25214', '24085'], // Mirror / Gackt ↔ Mirror / GACKT(Gackt)
+  ['tj', '25321', '14283'], // SWEET 19 BLUES / 安室奈美惠 ↔ SWEET 19 BLUES / 安室奈美恵
+  ['tj', '25358', '9148'], // 太陽のSEASON / 安室奈美惠 ↔ 太陽のSEASON / 安室奈美恵
+  ['tj', '25427', '9678'], // Chase the Chance / 安室奈美惠 ↔ Chase the Chance / 安室奈美恵
+  ['tj', '25486', '24125'], // OASIS / Gackt ↔ OASIS / GACKT(Gackt)
+  ['tj', '25515', '28526'], // shine more / 安室奈美惠 ↔ shine more / 安室奈美恵
+  ['tj', '25520', '28590'], // 君が追いかけた夢 / Gackt ↔ 君が追いかけた夢 / GACKT(Gackt)
+  ['tj', '25572', '28873'], // 月の詩 / Gackt ↔ 月の詩 / GACKT(Gackt)
+  ['tj', '25637', '31857'], // SO CRAZY / 安室奈美惠 ↔ SO CRAZY / 安室奈美恵
+  ['tj', '25656', '31959'], // Last Song / Gackt ↔ Last Song / GACKT(Gackt)
+  ['tj', '25703', '22108'], // sha la la / Skoop On Somebody ↔ sha la la / Skoop On Somebody(SKOOP)
+  ['tj', '25763', '36540'], // MARIA / Gackt ↔ Maria / GACKT(Gackt)
+  ['tj', '25772', '30774'], // ALARM / 安室奈美惠 ↔ ALARM / 安室奈美恵
+  ['tj', '25823', '58967'], // 暁の車(機動戦士ガンダムSEED) / Fiction Junction YUUKA ↔ 暁の車 / FictionJunction YUUKA
+  ['tj', '25828', '32720'], // ALL FOR YOU / 安室奈美惠 ↔ ALL FOR YOU / 安室奈美恵
+  ['tj', '25872', '71446'], // トイレットペッパーマン / SMAP ↔ トイレットペッパーマン / 中居正広(SMAP)
+  ['tj', '25875', '10140'], // ロボキッス / ダブルユー ↔ ロボキッス / W(ダブルユー)
+  ['tj', '25885', '10155'], // 君に逢いたくて / Gackt ↔ 君に逢いたくて / GACKT(Gackt)
+  ['tj', '25983', '10756'], // Want me, want me / 安室奈美惠 ↔ WANT ME，WANT ME / 安室奈美恵
+  ['tj', '25994', '17857'], // 愛の意味を教えて! / ダブルユー ↔ 愛の意味を教えて! / W(ダブルユー)
+  ['tj', '26002', '9369'], // STOP THE MUSIC / 安室奈美惠 ↔ Stop the music / 安室奈美恵
+  ['tj', '26113', '28630'], // Meteor―ミーティア―(機動戦士ガンダムSEED) / T.M.Revolution ↔ Meteor -ミーティア- / T.M.Revolution
+  ['tj', '26117', '33867'], // Asrun Dream / Gackt ↔ Asrun Dream / GACKT(Gackt)
+  ['tj', '26124', '18958'], // White Light / 安室奈美惠 ↔ White Light / 安室奈美恵
+  ['tj', '26265', '59538'], // ヒトリジメ / GUMI ↔ ヒトリジメ / グミ
+  ['tj', '26284', '52119'], // INDIGO BLUE LOVE / モーニング娘。 ↔ INDIGO BLUE LOVE / 新垣/田中/亀井(モーニング娘。)
+  ['tj', '26351', '36777'], // 鋼の魂(スーパーロボットスピリッツ CM) / 水木一郎,影山ヒロノブ ↔ 鋼の魂 / 水木一郎/影山ヒロノブ
+  ['tj', '26353', '23614'], // 君に贈る歌 / 小池徹平 ↔ 君に贈る歌 / 小池徹平(WaT)
+  ['tj', '26419', '51537'], // Emotion(機動戦士ガンダムSEED Character Song) / 田中理恵 ↔ EMOTION / 田中理恵(ミーア・キャンベル)
+  ['tj', '26439', '24536'], // FUNKY TOWN / 安室奈美惠 ↔ FUNKY TOWN / 安室奈美恵
+  ['tj', '26593', '701067'], // Stay Gold / Hi-STANDARD ↔ STAY GOLD《本人映像》 / Hi-STANDARD
+  ['tj', '26630', '164853'], // 君がくれたあの日 / 茅原美里 ↔ 君がくれたあの日 / 茅原実里
+  ['tj', '26689', '168322'], // みくみくにしてあげる / 初音ミク ↔ みくみくにしてあげる♪ / ika_mo feat.初音ミク
+  ['tj', '26755', '27477'], // WHAT A FEELING / 安室奈美惠 ↔ WHAT A FEELING / 安室奈美恵
+  ['tj', '26852', '27845'], // Sexy Girl / 安室奈美惠 ↔ Sexy Girl / 安室奈美恵
+  ['tj', '26897', '90344'], // WILD / 安室奈美惠 ↔ WILD / 安室奈美恵
+  ['tj', '26903', '138428'], // 炉心融解 / 鏡音リン ↔ 炉心融解 / iroha(sasaki) feat.鏡音リン
+  ['tj', '27004', '138537'], // 火葬曲 / 初音ミク ↔ 火葬曲 / No.D/上野悠仁 feat.初音ミク
+  ['tj', '27029', '137780'], // Magnet / 初音ミク, 巡音ルカ ↔ magnet / minato(流星P) feat.初音ミク、巡音ルカ
+  ['tj', '27035', '313880'], // 天樂 / 鏡音リン ↔ 天樂 / ゆうゆ feat.鏡音リン
+  ['tj', '27225', '28994'], // Fighters / 三代目 J Soul Brothers ↔ FIGHTERS / 三代目 J SOUL BROTHERS from EXILE TRIBE
+  ['tj', '27246', '29443'], // リフレイン / 三代目 J Soul Brothers ↔ リフレイン / 三代目 J SOUL BROTHERS from EXILE TRIBE
+  ['tj', '27289', '106500'], // ハッピーシンセサイザ / 巡音ルカ,GUMI ↔ ハッピーシンセサイザ / EasyPop feat.巡音ルカ、GUMI
+  ['tj', '27353', '31344'], // 花火 / 三代目 J Soul Brothers ↔ 花火 / 三代目 J SOUL BROTHERS from EXILE TRIBE
+  ['tj', '27441', '32984'], // SPARK / 三代目 J Soul Brothers ↔ SPARK / 三代目 J SOUL BROTHERS from EXILE TRIBE
+  ['tj', '27512', '119208'], // くまモンもん / 森高千里 ↔ くまモンもん / くまモン[うた:森高千里]
+  ['tj', '27736', '736117'], // 居酒屋「津軽」 / 大石まどか ↔ 居酒屋「津軽」 / 大石まどか(大石 円)
+  ['tj', '27930', '119568'], // R.Y.U.S.E.I. / 三代目 J Soul Brothers ↔ R.Y.U.S.E.I. / 三代目 J SOUL BROTHERS from EXILE TRIBE
+  ['tj', '28829', '698687'], // 四季折々に揺蕩いて / After the Rain ↔ 四季折々に揺蕩いて / After the Rain [そらる×まふまふ]
+  ['tj', '28902', '174857'], // 卑怯戦隊うろたんだー / KAITO ↔ 卑怯戦隊うろたんだー / シンP feat.KAITO、MEIKO、初音ミク
+  ['tj', '52418', '805808'], // 失礼しますが、RIP▽ / Mori Calliope ↔ 失礼しますが、RIP《本人映像》 / Mori Calliope
+  ['tj', '52817', '629460'], // Keep on Moving ( 'アクエリアス'CM) / NEXZ ↔ Keep on Moving / NEXZ
+  ['tj', '52869', '434866'], // Hello, Morning / KizunaAI ↔ Hello，Morning / KizunaAI(キズナアイ)
+  ['tj', '52883', '635245'], // かもね / KizunaAI ↔ かもね / KizunaAI(キズナアイ)
+  ['tj', '52970', '692552'], // 明日も('NTTドコモ' CM) / SHISHAMO ↔ 明日も / SHISHAMO
+  ['tj', '6136', '2811'], // 悲しみのゆくえ / チョーヨンピル ↔ 悲しみのゆくえ / 趙容弼(チョー・ヨンピル)
+  ['tj', '6194', '2840'], // 想いで迷子 / チョーヨンピル ↔ 想いで迷子 / 趙容弼(チョー・ヨンピル)
+  ['tj', '6234', '2078'], // 涙の朝 / 八代亞紀 ↔ 涙の朝 / 八代亜紀
+  ['tj', '6319', '2768'], // 私について / 工藤靜香 ↔ 私について / 工藤静香
+  ['tj', '6320', '111441'], // 大田ブルース / 李 成愛 ↔ 大田ブルース / 李成愛(イ・ソンエ)
+  ['tj', '6324', '2331'], // 離別(イビョル) / 李 成愛 ↔ 離別(イビョル) / 李成愛(イ・ソンエ)
+  ['tj', '6334', '1898'], // 愛の共犯者 / チョーヨンピル ↔ 愛の共犯者 / 趙容弼(チョー・ヨンピル)
+  ['tj', '6449', '27150'], // 蘇州夜曲 / 渡辺はま子 ↔ 蘇州夜曲 / 渡辺はま子/霧島昇
+  ['tj', '6611', '2879'], // 出で湯橋 / 大川英策 ↔ 出で湯橋 / 大川栄策
+  ['tj', '6633', '27068'], // さよならはダンスの後に / 倍賞千惠子 ↔ さよならはダンスの後に / 倍賞千恵子
+  ['tj', '6653', '1391'], // 熱いさよなら / 五輪眞弓 ↔ 熱いさよなら / 五輪真弓
+  ['tj', '6751', '27008'], // 下町の太陽 / 倍賞千惠子 ↔ 下町の太陽 / 倍賞千恵子
+  ['tj', '6752', '1890'], // 紅い落葉 / チョーヨンピル ↔ 紅い落葉 / 趙容弼(チョー・ヨンピル)
+  ['tj', '6778', '17094'], // 球 根 / Yellow Monkey ↔ 球根 / THE YELLOW MONKEY
+  ['tj', '68628', '431052'], // 快感*エブリディ / B-PROJECT ↔ 快感*エブリディ / B-PROJECT[キタコレ・THRIVE・MooNs・KiLLER KiNG]
+  ['tj', '68705', '610059'], // うらたねこ♀ / うらたぬき ↔ うらたねこ♀ / うらたぬき(浦島坂田船)
+  ['tj', '68764', '492851'], // ワタシノミカタ / 夏川椎菜(Feat.HoneyWorks) ↔ ワタシノミカタ / mona(CV:夏川椎菜) feat. HoneyWorks
+  ['tj', '6878', '19877'], // RESPECT the POWER OF LOVE / 安室奈美惠 ↔ RESPECT the POWER OF LOVE / 安室奈美恵
+  ['tj', '6922', '17408'], // Nostalgia / 相川七瀨 ↔ Nostalgia / 相川七瀬
+  ['tj', '6942', '24985'], // NEVER END / 安室奈美惠 ↔ NEVER END / 安室奈美恵
+  ['tj', '6963', '18086'], // in the sky / 工藤靜香 ↔ in the sky / 工藤静香
+  ['tj', '27542', '196477'], // 優しさの理由 / ChouCho ↔ 優しさの理由 / ChouCho(ちょうちょ)
+  ['tj', '27874', '178358'], // 守るべきもの / 國分優香里 ↔ 守るべきもの / 沢田綱吉(國分優香里)
+  ['tj', '27890', '166465'], // スキ?キライ!?スキ!!! / 釘宮理恵 ↔ スキ? キライ!? スキ!!! / ルイズ(釘宮理恵)
+  ['tj', '28004', '71040'], // 1st Priority / メロキュア ↔ 1st Priority / メロキュア(岡崎律子/日向めぐみ)
+  ['tj', '28048', '94825'], // Episode.0 / Gackt ↔ Episode.0 / GACKT(Gackt)
+  ['tj', '28067', '136421'], // Heart Goes Boom!! / 日笠陽子 ↔ Heart Goes Boom!! / 秋山澪(日笠陽子)
+  ['tj', '28070', '168186'], // Help Me, ERINNNNNN!! / ビートまりお ↔ Help me，ERINNNNNN!! / ビートまりお(COOL&CREATE)
+  ['tj', '28088', '109803'], // Love Marginal / Printemps ↔ Love marginal / Printemps ～高坂穂乃果(新田恵海)、南ことり(内田彩)、小泉花陽(久保ユリカ) from μ's～
+  ['tj', '28115', '20003'], // Redemption / Gackt ↔ REDEMPTION / GACKT(Gackt)
+  ['tj', '28119', '138614'], // Ring My Bell / blue drops ↔ Ring My Bell / blue drops(吉田仁美&イカロス(早見沙織))
+  ['tj', '28123', '125615'], // Select? / 茅原実里 ↔ SELECT? / 長門有希(茅原実里)
+  ['tj', '28148', '139260'], // Treasure / 碧陽学園生徒会 ↔ Treasure / 碧陽学園生徒会(本多真梨子/斉藤佑圭/富樫美鈴/堀中優希)
+  ['tj', '28151', '137949'], // Under Mebius / 茅原実里 ↔ under“Mebius” / 長門有希(茅原実里)
+  ['tj', '28176', '722675'], // アイドル活動 / STAR☆ANIS ↔ アイドル活動! / わか・ふうり・すなお from STAR☆ANIS
+  ['tj', '28179', '138579'], // エージェント夜を往く / 平田宏美 ↔ エージェント夜を往く / 菊地真(平田宏美)
+  ['tj', '28184', '110810'], // オリオンで Shout Out / 谷山紀章 ↔ オリオンでSHOUT OUT / 四ノ宮那月(谷山紀章)
+  ['tj', '28194', '731219'], // キミが光であるために / 小野賢章 ↔ キミが光であるために / 黒子テツヤ(CV.小野賢章)
+  ['tj', '28201', '169339'], // クフフのフ~僕と契約~ / 飯田利信 ↔ クフフのフ ～僕と契約～ / 六道 骸(飯田利信)
+  ['tj', '28250', '171544'], // ひとりぼっちの運命 / 近藤隆 ↔ ひとりぼっちの運命 / 雲雀恭弥(近藤隆)
+  ['tj', '28253', '173631'], // ファミリー~約束の場所~ / 國分優香里 Withボンゴレファミリー ↔ ファミリー ～約束の場所～ / 沢田綱吉(國分優香里) with ボンゴレファミリー(ニーコ・市瀬秀和・井上優・木内秀信・近藤隆・飯田利信・竹内順子・津田健次郎・稲村優奈・吉田仁美・チャン・リーメイ)
+  ['tj', '28268', '162483'], // まっがーれ↓スペクタクル / 小野大輔 ↔ まっがーれ↓スペクタクル / 古泉一樹(小野大輔)
+  ['tj', '28281', '738026'], // ラブノベルス / BiBi ↔ ラブノベルス / BiBi ～絢瀬絵里(南條愛乃)、西木野真姫(Pile)、矢澤にこ(徳井青空) from μ's～
+  ['tj', '28308', '669102'], // 冬がくれた予感 / BiBi ↔ 冬がくれた予感 / BiBi ～絢瀬絵里(南條愛乃)、西木野真姫(Pile)、矢澤にこ(徳井青空) from μ's～
+  ['tj', '28315', '313909'], // 恋のヒメヒメぺったんこ / 田村ゆかり ↔ 恋のヒメヒメぺったんこ / 姫野湖鳥 (cv.田村ゆかり)
+  ['tj', '28316', '723689'], // 恋は渾沌の隷也 / 後ろから這いより隊G ↔ 恋は渾沌の隷也 / 後ろから這いより隊G(ニャル子×クー子×珠緒)
+  ['tj', '28320', '136364'], // 林檎もぎれビーム! / 大槻ケンヂと絶望少女達 ↔ 林檎もぎれビーム! / 大槻ケンヂと絶望少女達(風浦可符香、木津千里、木村カエレ、関内・マリア・太郎、日塔奈美)
+  ['tj', '28347', '91884'], // 雪月花~The End Of Silence~ / Gackt ↔ 雪月花 -The end of silence- / GACKT(Gackt)
+  ['tj', '28357', '60776'], // 水の証 / 田中理恵 ↔ 水の証 / 田中理恵(ラクス・クライン)
+  ['tj', '28376', '198159'], // 月に叢雲華に風 / 幽閉サテライト ↔ 月に叢雲華に風 / 幽閉サテライト/senya
+  ['tj', '28398', '162045'], // 天壌を翔る者たち / Love Planet Five ↔ 天壌を翔る者たち / Love Planet Five(I've special unit)
+  ['tj', '28400', '670792'], // 青春サツバツ論 / 3年E組うた担 ↔ 青春サツバツ論 / 3年E組うた担 (渚&茅野&業&磯貝&前原)
+  ['tj', '28406', '111543'], // 七色のコンパス / 宮野真守 ↔ 七色のコンパス / 一ノ瀬トキヤ(宮野真守)
+  ['tj', '28407', '167106'], // 寝・逃・げでリセット! / 福原香織 ↔ 寝・逃・げでリセット! / 柊つかさ(福原香織)
+  ['tj', '28409', '197839'], // 太陽曰く燃えよカオス / 後ろから這いより隊G ↔ 太陽曰く燃えよカオス / 後ろから這いより隊G(ニャル子×クー子×珠緒)
+  ['tj', '28415', '736438'], // 回レ!雪月花 / 歌組雪月花 ↔ 回レ!雪月花 / 歌組雪月花 夜々 (CV 原田ひとみ) いろり (CV 茅野愛衣) 小紫 (CV 小倉唯)
+  ['tj', '28421', '677993'], // かくしん的めたまるふぉ~ぜっ / 田中あいみ ↔ かくしん的☆めたまるふぉ～ぜっ! / 土間うまる(CV:田中あいみ)
+  ['tj', '28460', '22254'], // ミニハムずの愛の唄 / ミニモニ。 ↔ ミニハムずの愛の唄 / ミニハムず(ミニモニ。)
+  ['tj', '28518', '171072'], // 炎神戦隊ゴーオンジャー / 高橋秀幸 ↔ 炎神戦隊ゴーオンジャー / 高橋秀幸(Project.R)
+  ['tj', '28577', '127980'], // 帰り道 / 加藤英美里 ↔ 帰り道 / 八九寺真宵(加藤英美里)
+  ['tj', '28634', '76837'], // Fields of hope / 田中理恵 ↔ Fields of hope / 田中理恵(ラクス・クライン)
+  ['tj', '28643', '173546'], // 無限回廊 / 田村ゆかり ↔ 無限回廊 / 古手梨花(田村ゆかり)
+  ['tj', '28685', '693440'], // アンチクロックワイズ / After the Rain ↔ アンチクロックワイズ / After the Rain [そらる×まふまふ]
+  ['tj', '28722', '693441'], // 解読不能 / After the Rain ↔ 解読不能 / After the Rain [そらる×まふまふ]
+  ['tj', '28723', '692651'], // Los! Los! Los! / 悠木碧 ↔ Los! Los! Los! / ターニャ・デグレチャフ(CV:悠木碧)
+  ['tj', '28796', '176015'], // 隣に... / たかはし智秋 ↔ 隣に・・・ / 三浦あずさ(たかはし智秋)
+  ['tj', '28969', '136105'], // 蒼い鳥 / 今井麻美 ↔ 蒼い鳥 / 如月千早(今井麻美)
+  ['tj', '68053', '430430'], // レッドナイト・ヴァンパイア / 武内駿輔,八代拓,内田雄馬 ↔ レッドナイト・ヴァンパイア / 大和アレクサンダー、十王院カケル、涼野ユウ(cv.武内駿輔、八代拓、内田雄馬)
+  ['tj', '68064', '685969'], // nth color / 宍戸留美 ↔ nth color / 天羽ジュネ cv. 宍戸留美
+  ['tj', '68082', '430428'], // Starved For You / 蒼井翔太,武内駿輔 ↔ Starved For You / 如月ルヰ、大和アレクサンダー(cv.蒼井翔太、武内駿輔)
+  ['tj', '68262', '680296'], // 秘密のトワレ / 藍原ことみ ↔ 秘密のトワレ / 一ノ瀬志希(CV 藍原ことみ)
+] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 138;
+const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
+  ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
+  ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
+  ['tj', '6927', '19868'], // short numeric artist 19 requires manual review
+  ['tj', '6935', '21182'], // short numeric artist 19 requires manual review
+  ['tj', '26750', '168779'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
+  ['tj', '68183', '683200'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
+  ['tj', '68258', '445312'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
+  ['tj', '68290', '731408'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
+] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+
+const REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS = new Map<
+  string,
+  Partial<Record<NonJoysoundVendor, string>>
+>([
+  // `No title` / Reol: the KY-only target attaches to a row that already has
+  // the reviewed TJ↔JOY merge (`tj-28704` + JOY 689337). This is an explicit
+  // triple, not a general permission to import arbitrary JOY-side TJ/KY cells.
+  [reviewedTierFPairKey('ky', '44158', '689337'), { tj: '28704' }],
+]);
+
+function reviewedTierFPairKey(vendor: NonJoysoundVendor, number: string, joysound: string): string {
+  return `${vendor}|${number}|${joysound}`;
+}
+
+function isReviewedTierFJoySideShape(
+  vendor: NonJoysoundVendor,
+  number: string,
+  joysound: string,
+  joy: SongRecord,
+): boolean {
+  if (joy.karaoke_numbers.joysound !== joysound || joy.karaoke_numbers[vendor] !== null) {
+    return false;
+  }
+  if (nonNullVendorNumberCount(joy) === 1) return true;
+
+  const allowedExtra = REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS.get(
+    reviewedTierFPairKey(vendor, number, joysound),
+  );
+  if (allowedExtra === undefined) return false;
+
+  for (const extraVendor of ['tj', 'ky'] as const satisfies readonly NonJoysoundVendor[]) {
+    if (extraVendor === vendor) continue;
+    const actual = joy.karaoke_numbers[extraVendor];
+    const expected = allowedExtra[extraVendor] ?? null;
+    if (actual !== expected) return false;
+  }
+  return true;
+}
+
+const REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER = new Map<string, Set<string>>();
+for (const [vendor, number, joysound] of REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS) {
+  const key = `${vendor}:${number}`;
+  const existing = REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER.get(key);
+  if (existing) existing.add(joysound);
+  else REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER.set(key, new Set([joysound]));
+}
+
+function assertReviewedTierFPairInvariant(): void {
+  if (
+    REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS.length !==
+    EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT
+  ) {
+    throw new Error(
+      `Tier F post-crawl allowlist must contain exactly ${EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT} pairs`,
+    );
+  }
+
+  const pairs = new Set<string>();
+  const vendorNumbers = new Set<string>();
+  const joys = new Set<string>();
+  const forbidden = new Set(
+    REVIEWED_TIER_F_FORBIDDEN_PAIRS.map(([vendor, number, joysound]) =>
+      reviewedTierFPairKey(vendor, number, joysound),
+    ),
+  );
+  for (const [vendor, number, joysound] of REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS) {
+    const pairKey = reviewedTierFPairKey(vendor, number, joysound);
+    const vendorNumberKey = `${vendor}:${number}`;
+    if (pairs.has(pairKey)) throw new Error(`Tier F duplicate reviewed pair: ${pairKey}`);
+    if (vendorNumbers.has(vendorNumberKey))
+      throw new Error(`Tier F duplicate target provider number: ${vendorNumberKey}`);
+    if (joys.has(joysound)) throw new Error(`Tier F duplicate JOYSOUND number: ${joysound}`);
+    if (forbidden.has(pairKey)) {
+      throw new Error(`Tier F forbidden non-strong pair present in allowlist: ${pairKey}`);
+    }
+    pairs.add(pairKey);
+    vendorNumbers.add(vendorNumberKey);
+    joys.add(joysound);
+  }
+}
+
+assertReviewedTierFPairInvariant();
 
 type VendorIndexes = Record<Vendor, Map<string, number[]>>;
 
@@ -541,6 +803,18 @@ function tierEClusterKey(tj: string, joysound: string): string {
   return `tj:${tj}|joysound:${joysound}`;
 }
 
+function tierFClusterKey(vendor: NonJoysoundVendor, number: string, joysound: string): string {
+  return `${vendor}:${number}|joysound:${joysound}`;
+}
+
+function nonNullVendorNumberCount(record: SongRecord): number {
+  let count = 0;
+  for (const vendor of VENDORS) {
+    if (record.karaoke_numbers[vendor] !== null) count += 1;
+  }
+  return count;
+}
+
 function collectTierEReviewedStrongGroups(
   records: SongRecord[],
   uf: UnionFind,
@@ -565,6 +839,49 @@ function collectTierEReviewedStrongGroups(
       const idxs = [tjIdx, joyIdx];
       if (!hasMultipleSourceSlugs(records, idxs)) continue;
       groups.set(tierEClusterKey(tj, joysound), idxs);
+    }
+  }
+
+  return groups;
+}
+
+function collectTierFPostcrawlReviewedGroups(
+  records: SongRecord[],
+  uf: UnionFind,
+  sizeByRoot: Map<number, number>,
+): Map<string, number[]> {
+  const groups = new Map<string, number[]>();
+  const targetIndexes: Record<NonJoysoundVendor, Map<string, number>> = {
+    tj: singletonVendorIndex(records, uf, sizeByRoot, 'tj'),
+    ky: singletonVendorIndex(records, uf, sizeByRoot, 'ky'),
+  };
+  const joysoundIndex = singletonVendorIndex(records, uf, sizeByRoot, 'joysound');
+
+  for (const [vendorNumberKey, joysoundValues] of REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER) {
+    const [vendor, number] = vendorNumberKey.split(':') as [NonJoysoundVendor, string];
+    const targetIdx = targetIndexes[vendor].get(number);
+    if (targetIdx === undefined) continue;
+    for (const joysound of joysoundValues) {
+      const joyIdx = joysoundIndex.get(joysound);
+      if (joyIdx === undefined || joyIdx === targetIdx) continue;
+      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+      const target = records[targetIdx]!;
+      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+      const joy = records[joyIdx]!;
+
+      // Preserve the audit scope: target side must still be a single TJ/KY-only
+      // row, and the JOYSOUND side must not already carry that same provider.
+      if (nonNullVendorNumberCount(target) !== 1) continue;
+      if (target.karaoke_numbers[vendor] !== number || target.karaoke_numbers.joysound !== null)
+        continue;
+      // The reviewed surface is a split pair, not an implicit triple merge:
+      // the JOYSOUND-side row must stay JOY-only unless this exact pair also
+      // lists an explicit, already-reviewed extra provider number.
+      if (!isReviewedTierFJoySideShape(vendor, number, joysound, joy)) continue;
+
+      const cluster = [target, joy];
+      if (collectVendorNumberConflicts(cluster).length > 0) continue;
+      groups.set(tierFClusterKey(vendor, number, joysound), [targetIdx, joyIdx]);
     }
   }
 
@@ -876,6 +1193,20 @@ function recordTierEConflict(
   });
 }
 
+function recordTierFConflict(
+  conflicts: MergeConflict[],
+  cluster: SongRecord[],
+  winner: string,
+  clusterKey: string,
+): void {
+  conflicts.push({
+    cluster_key: clusterKey,
+    field: 'tier_f_postcrawl_split_merge',
+    values: cluster.map((r) => ({ source: sourceSlug(r), value: r.id })),
+    winner,
+  });
+}
+
 function compareNullableTj(a: string | null, b: string | null): number {
   // Null TJ records sort last regardless of the other side's codepoint.
   if (a === null && b !== null) return 1;
@@ -999,6 +1330,8 @@ function mergeCluster(
   wasTierD: boolean,
   wasTierE: boolean,
   tierEClusterKeyValue: string | null,
+  wasTierF: boolean,
+  tierFClusterKeyValue: string | null,
   conflicts: MergeConflict[],
 ): SongRecord {
   if (cluster.length === 0) throw new Error('empty cluster');
@@ -1006,13 +1339,15 @@ function mergeCluster(
   // Tier C/D clusters reuse Tier B's vendor-conflict reporting surface under a
   // folded soft-key shape so existing PR-body aggregation continues to work.
   const softClusterKey =
-    wasTierE && tierEClusterKeyValue !== null
-      ? tierEClusterKeyValue
-      : wasTierD && cluster[0]
-        ? tierDKey(cluster[0])
-        : wasTierB || wasTierC
-          ? tierBKey(cluster[0] as SongRecord)
-          : null;
+    wasTierF && tierFClusterKeyValue !== null
+      ? tierFClusterKeyValue
+      : wasTierE && tierEClusterKeyValue !== null
+        ? tierEClusterKeyValue
+        : wasTierD && cluster[0]
+          ? tierDKey(cluster[0])
+          : wasTierB || wasTierC
+            ? tierBKey(cluster[0] as SongRecord)
+            : null;
 
   const mergedArtistPrimary =
     pickByOwnership(cluster, TITLE_ARTIST_CHAIN, (r) => r.artist_primary) ??
@@ -1051,6 +1386,7 @@ function mergeCluster(
   if (wasTierC) recordTierCConflict(conflicts, cluster, merged.id, softClusterKey);
   if (wasTierD) recordTierDConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
   if (wasTierE) recordTierEConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
+  if (wasTierF) recordTierFConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
 
   return merged;
 }
@@ -1058,7 +1394,7 @@ function mergeCluster(
 // --- Public API ----------------------------------------------------------
 
 /**
- * Five-tier dedup + per-field-ownership merge.
+ * Six-tier dedup + per-field-ownership merge.
  *
  *   Tier A (hard match): per-vendor union-find. Records sharing a non-null
  *   value on the same vendor field (`karaoke_numbers.tj` / `.ky` /
@@ -1103,6 +1439,13 @@ function mergeCluster(
  *   in `SongRecord`; reviewed-but-not-strong and multi-variant cases stay
  *   split. Successful groups emit `tier_e_artist_credit_merge`.
  *
+ *   Tier F (post-crawl reviewed residual split pairs): residual singletons after
+ *   Tier E are joined only when their TJ/KY and JOYSOUND numbers match the
+ *   exact 2026-06-15 broad-audit `proposed_strong` allowlist after additional
+ *   recomputed safety filters. This captures same-song single-provider splits
+ *   without broadening title-only, fuzzy, reverse-containment, or multi-candidate
+ *   queues. Successful groups emit `tier_f_postcrawl_split_merge`.
+ *
  *   Per-cluster ownership: each output field is taken from the
  *   highest-priority contributing source per the spec's per-field table.
  *   See `mergeCluster` for the chains.
@@ -1113,7 +1456,7 @@ function mergeCluster(
  *   2) `normalize(title_primary)` ascending — locale-stable string compare.
  *   3) `id` ascending.
  *
- * Conflict warnings (Tier B vendor-number disagreements + Tier C/D/E cluster
+ * Conflict warnings (Tier B vendor-number disagreements + Tier C/D/E/F cluster
  * fires + Tier D blocked vendor-number disagreements) are returned in
  * `result.conflicts`. Console output is forbidden — callers aggregate them.
  */
@@ -1232,6 +1575,22 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     }
   }
 
+  // --- Tier F: post-crawl reviewed TJ/KY↔JOYSOUND split-pair allowlist ---
+  // This tier is intentionally exact-pair only. It does not generalize from
+  // the broad/fuzzy audit queues; rows must still be residual singleton
+  // single-provider targets after Tier E, and the JOYSOUND side must have no
+  // same-provider conflict.
+  const sizeAfterE = countRoots(uf, n);
+  const tierFGroups = collectTierFPostcrawlReviewedGroups(records, uf, sizeAfterE);
+  const tierFRoots = new Set<number>();
+  const tierFClusterKeyByRoot = new Map<number, string>();
+  for (const [clusterKey, idxs] of tierFGroups) {
+    for (const root of unionIndexGroups(uf, [idxs])) {
+      tierFRoots.add(root);
+      tierFClusterKeyByRoot.set(root, clusterKey);
+    }
+  }
+
   // --- Materialize clusters ---
   const clusters = collectClusters(uf, n);
 
@@ -1243,6 +1602,7 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     const wasTierC = tierCRoots.has(root);
     const wasTierD = tierDRoots.has(root);
     const wasTierE = tierERoots.has(root);
+    const wasTierF = tierFRoots.has(root);
     merged.push(
       mergeCluster(
         cluster,
@@ -1251,6 +1611,8 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
         wasTierD,
         wasTierE,
         tierEClusterKeyByRoot.get(root) ?? null,
+        wasTierF,
+        tierFClusterKeyByRoot.get(root) ?? null,
         conflicts,
       ),
     );
