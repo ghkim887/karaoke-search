@@ -1660,6 +1660,202 @@ describe('mergeRecords — Tier E reviewed strong artist-credit merge', () => {
 });
 
 // ---------------------------------------------------------------------
+// Tier F — post-crawl reviewed residual split-pair allowlist
+// ---------------------------------------------------------------------
+describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
+  it('merges a same-source TJ-only/JOYSOUND-only split from the reviewed post-crawl allowlist', () => {
+    const tjOnly = record({
+      id: 'blog-112-21',
+      source_url: 'https://j-pop-playlist.tistory.com/112',
+      title_primary: "うつくしい世界('出光興産' CM)",
+      title_ko: '아름다운 세계',
+      artist_primary: 'Aimer',
+      artist_ko: '에메',
+      karaoke_numbers: { tj: '52784', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'blog-112-43',
+      source_url: 'https://j-pop-playlist.tistory.com/112',
+      title_primary: 'うつくしい世界',
+      title_ko: '아름다운 세계',
+      artist_primary: 'Aimer',
+      artist_ko: '에메',
+      karaoke_numbers: { tj: null, ky: null, joysound: '634289' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '52784', ky: null, joysound: '634289' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+    expect(headlineConflicts(conflicts)).toHaveLength(0);
+  });
+
+  it('supports the reviewed KY↔JOYSOUND split pair without treating KY and TJ as interchangeable', () => {
+    const kyOnly = record({
+      id: 'blog-628-55',
+      source_url: 'https://j-pop-playlist.tistory.com/628',
+      title_primary: 'No title',
+      artist_primary: 'Reol',
+      artist_ko: '레오루',
+      karaoke_numbers: { tj: null, ky: '44158', joysound: null },
+    });
+    const joyOnly = record({
+      id: 'tj-28704',
+      source_url: 'https://tj.test/28704',
+      title_primary: 'No title',
+      artist_primary: 'れをる',
+      artist_ko: '레오루',
+      karaoke_numbers: { tj: '28704', ky: null, joysound: '689337' },
+    });
+
+    const { records, conflicts } = mergeRecords([kyOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '28704', ky: '44158', joysound: '689337' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+  });
+
+  it('does not treat a TJ number as the reviewed KY number for a Tier F pair', () => {
+    const tjOnly = record({
+      id: 'blog-628-55',
+      source_url: 'https://j-pop-playlist.tistory.com/628',
+      title_primary: 'No title',
+      artist_primary: 'Reol',
+      artist_ko: '레오루',
+      karaoke_numbers: { tj: '44158', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'tj-28704',
+      source_url: 'https://tj.test/28704',
+      title_primary: 'No title',
+      artist_primary: 'れをる',
+      artist_ko: '레오루',
+      karaoke_numbers: { tj: null, ky: null, joysound: '689337' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+  });
+
+  it('keeps existing Tier-E reviewed-but-not-strong pairs out of the post-crawl allowlist', () => {
+    const tj = record({
+      id: 'tj-68183',
+      source_url: 'https://tj.test/68183',
+      title_primary: 'Radio Happy(アイドルマスターシンデレラガールズスターライトステージ OST)',
+      artist_primary: '山下七海',
+      karaoke_numbers: { tj: '68183', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-562326',
+      source_url: 'https://www.joysound.com/web/search/song/562326',
+      title_primary: 'Radio Happy',
+      artist_primary: '大槻唯(CV:山下七海)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '683200' },
+    });
+
+    const { records, conflicts } = mergeRecords([tj, js]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(0);
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+  });
+
+  it('does not merge artist_ko leakage from a featured artist as a strong pair', () => {
+    const tjOnly = record({
+      id: 'blog-338-10',
+      source_url: 'https://j-pop-playlist.tistory.com/338',
+      title_primary: "アイノカタチ(ドラマ'義母と娘のブルース' OST)",
+      artist_primary: 'MISIA(Feat.HIDE(GReeeeN))',
+      artist_ko: '그린',
+      karaoke_numbers: { tj: '28895', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-775260',
+      source_url: 'https://www.joysound.com/web/search/song/775260',
+      title_primary: 'アイノカタチ',
+      artist_primary: 'GReeeeN',
+      artist_ko: '그린',
+      karaoke_numbers: { tj: null, ky: null, joysound: '441874' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+  });
+
+  it('does not merge short numeric artist aliases such as 19 without manual review', () => {
+    const tjOnly = record({
+      id: 'tj-25022',
+      source_url: 'https://tj.test/25022',
+      title_primary: 'たいせつなひと',
+      artist_primary: '19',
+      artist_ko: '쥬우쿠',
+      karaoke_numbers: { tj: '25022', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-11794',
+      source_url: 'https://www.joysound.com/web/search/song/11794',
+      title_primary: 'たいせつなひと',
+      artist_primary: '19(ジューク)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '11802' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+  });
+
+  it('does not apply a reviewed pair when the JOYSOUND side now has a same-provider conflict', () => {
+    const tjOnly = record({
+      id: 'blog-112-21',
+      source_url: 'https://j-pop-playlist.tistory.com/112',
+      title_primary: "うつくしい世界('出光興産' CM)",
+      artist_primary: 'Aimer',
+      karaoke_numbers: { tj: '52784', ky: null, joysound: null },
+    });
+    const conflictingJoy = record({
+      id: 'blog-112-43',
+      source_url: 'https://j-pop-playlist.tistory.com/112',
+      title_primary: 'うつくしい世界',
+      artist_primary: 'Aimer',
+      karaoke_numbers: { tj: '99999', ky: null, joysound: '634289' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, conflictingJoy]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+  });
+
+  it('does not import an unreviewed third provider number from the JOYSOUND-side row', () => {
+    const tjOnly = record({
+      id: 'blog-112-21',
+      source_url: 'https://j-pop-playlist.tistory.com/112',
+      title_primary: "うつくしい世界('出光興産' CM)",
+      artist_primary: 'Aimer',
+      karaoke_numbers: { tj: '52784', ky: null, joysound: null },
+    });
+    const joyWithKy = record({
+      id: 'blog-112-43',
+      source_url: 'https://j-pop-playlist.tistory.com/112',
+      title_primary: 'うつくしい世界',
+      artist_primary: 'Aimer',
+      karaoke_numbers: { tj: null, ky: '99999', joysound: '634289' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyWithKy]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------
 // Cross-record artist_ko propagation
 //
 // After clusters are materialized, `artist_ko` is propagated across SEPARATE

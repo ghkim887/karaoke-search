@@ -158,7 +158,6 @@ export function importSongs(
 ): void {
   validateSongCorpus(records);
   const resolvedHints = resolveSearchHints(options.searchHints ?? [], records);
-  const searchIndex = buildSearchIndexRows(records, resolvedHints);
   db.exec(
     'CREATE TEMP TABLE IF NOT EXISTS temp_import_song_ids (id TEXT PRIMARY KEY) WITHOUT ROWID',
   );
@@ -201,7 +200,7 @@ export function importSongs(
     'INSERT INTO artist_aliases (song_id, position, alias) VALUES (?, ?, ?)',
   );
   const insertSearchText = db.prepare(
-    `INSERT INTO search_texts (
+    `INSERT OR IGNORE INTO search_texts (
       song_id,
       field,
       text_norm,
@@ -211,7 +210,7 @@ export function importSongs(
     ) VALUES (?, ?, ?, ?, ?, ?)`,
   );
   const insertSearchToken = db.prepare(
-    `INSERT INTO search_tokens (
+    `INSERT OR IGNORE INTO search_tokens (
       kind,
       token,
       song_id,
@@ -224,7 +223,7 @@ export function importSongs(
     'INSERT INTO search_token_stats (kind, token, df, idf_scaled) VALUES (?, ?, ?, ?)',
   );
   const insertSearchHint = db.prepare(
-    `INSERT INTO search_hints (
+    `INSERT OR IGNORE INTO search_hints (
       song_id,
       field,
       source,
@@ -242,6 +241,21 @@ export function importSongs(
       'DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts; DELETE FROM search_hints',
     );
     db.exec('DELETE FROM temp_import_song_ids');
+    const insertTokenRowsForInput = (input: SearchTokenInput): void => {
+      const rows: SearchTokenRow[] = [];
+      addSearchTokens(rows, new Set<string>(), input);
+      for (const row of rows) {
+        insertSearchToken.run(
+          row.kind,
+          row.token,
+          row.songId,
+          row.field,
+          row.weight,
+          row.providerMask,
+        );
+      }
+    };
+
     records.forEach((record, index) => {
       insertImportId.run(record.id);
       upsertSong.run(
@@ -284,32 +298,33 @@ export function importSongs(
       record.artist_aliases?.forEach((alias, aliasIndex) => {
         insertAlias.run(record.id, aliasIndex, alias);
       });
+
+      const providerMask = karaokeProviderMask(record.karaoke_numbers);
+      for (const input of searchTextInputs(record)) {
+        const textCompact = compactSearchText(input.value);
+        if (textCompact.length === 0) {
+          continue;
+        }
+        insertSearchText.run(
+          record.id,
+          input.field,
+          normalizeSearchText(input.value).trim(),
+          textCompact,
+          input.weight,
+          providerMask,
+        );
+        insertTokenRowsForInput({
+          songId: record.id,
+          field: input.field,
+          value: input.value,
+          textCompact,
+          weight: input.weight,
+          providerMask,
+        });
+      }
     });
 
-    for (const row of searchIndex.texts) {
-      insertSearchText.run(
-        row.songId,
-        row.field,
-        row.textNorm,
-        row.textCompact,
-        row.weight,
-        row.providerMask,
-      );
-    }
-    for (const row of searchIndex.tokens) {
-      insertSearchToken.run(
-        row.kind,
-        row.token,
-        row.songId,
-        row.field,
-        row.weight,
-        row.providerMask,
-      );
-    }
-    for (const row of searchIndex.tokenStats) {
-      insertSearchTokenStat.run(row.kind, row.token, row.df, row.idfScaled);
-    }
-    for (const hint of searchIndex.hints) {
+    for (const hint of resolvedHints) {
       insertSearchHint.run(
         hint.songId,
         hint.field,
@@ -319,6 +334,31 @@ export function importSongs(
         hint.weight,
         hint.providerMask,
         hint.confidence,
+      );
+      insertTokenRowsForInput({
+        songId: hint.songId,
+        field: HINT_TOKEN_FIELD_BY_HINT_FIELD[hint.field],
+        value: hint.textNorm,
+        textCompact: hint.textCompact,
+        weight: hint.weight,
+        providerMask: hint.providerMask,
+      });
+    }
+
+    const tokenStatRows = db
+      .prepare(
+        `SELECT kind, token, COUNT(DISTINCT song_id) AS df
+         FROM search_tokens
+         GROUP BY kind, token`,
+      )
+      .all() as unknown as SearchTokenStatSourceRow[];
+    for (const row of tokenStatRows) {
+      const df = Number(row.df);
+      insertSearchTokenStat.run(
+        row.kind,
+        row.token,
+        df,
+        Math.max(1, Math.round(Math.log1p(Math.max(records.length, 1) / df) * 1000)),
       );
     }
 
@@ -608,74 +648,9 @@ export function exportSongsJson({ dbPath, outputPath }: ExportSongsJsonArgs): vo
   }
 }
 
-function buildSearchIndexRows(
-  records: readonly SongRecord[],
-  resolvedHints: readonly ResolvedSearchHint[],
-): SearchIndexRows {
-  const texts: SearchTextRow[] = [];
-  const tokens: SearchTokenRow[] = [];
-  const seenTexts = new Set<string>();
-  const seenTokens = new Set<string>();
-
-  for (const record of records) {
-    const providerMask = karaokeProviderMask(record.karaoke_numbers);
-
-    for (const input of searchTextInputs(record)) {
-      const textCompact = compactSearchText(input.value);
-      if (textCompact.length === 0) {
-        continue;
-      }
-
-      const textNorm = normalizeSearchText(input.value).trim();
-      const textKey = `${record.id}\u0000${input.field}\u0000${textCompact}`;
-      if (!seenTexts.has(textKey)) {
-        seenTexts.add(textKey);
-        texts.push({
-          songId: record.id,
-          field: input.field,
-          textNorm,
-          textCompact,
-          weight: input.weight,
-          providerMask,
-        });
-      }
-
-      addSearchTokens(tokens, seenTokens, {
-        songId: record.id,
-        field: input.field,
-        value: input.value,
-        textCompact,
-        weight: input.weight,
-        providerMask,
-      });
-    }
-  }
-
-  // SEARCH-ONLY hints feed the token index (recall) but NOT `search_texts`, so
-  // they never get the exact-compact boost. Appended after canonical tokens so
-  // the canonical index rows are byte-identical when there are no hints.
-  for (const hint of resolvedHints) {
-    addSearchTokens(tokens, seenTokens, {
-      songId: hint.songId,
-      field: HINT_TOKEN_FIELD_BY_HINT_FIELD[hint.field],
-      value: hint.textNorm,
-      textCompact: hint.textCompact,
-      weight: hint.weight,
-      providerMask: hint.providerMask,
-    });
-  }
-
-  return {
-    texts,
-    tokens,
-    tokenStats: buildSearchTokenStats(tokens, records.length),
-    hints: resolvedHints,
-  };
-}
-
 /**
  * Normalize raw {@link SearchHintInput} rows into the rows materialized into
- * `search_hints` (and, via {@link buildSearchIndexRows}, the token index).
+ * `search_hints` (and, during import, the token index).
  *
  * Hints for unknown song ids, unknown fields, or values that compact to nothing
  * are dropped silently — a hint sidecar is advisory recall data, never a hard
@@ -893,35 +868,6 @@ function hasNonAsciiCharacter(value: string): boolean {
   return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
-function buildSearchTokenStats(
-  tokens: readonly SearchTokenRow[],
-  totalRecords: number,
-): SearchTokenStatRow[] {
-  const songsByToken = new Map<string, Set<string>>();
-  for (const token of tokens) {
-    const key = `${token.kind}\u0000${token.token}`;
-    let songIds = songsByToken.get(key);
-    if (songIds === undefined) {
-      songIds = new Set<string>();
-      songsByToken.set(key, songIds);
-    }
-    songIds.add(token.songId);
-  }
-
-  return Array.from(songsByToken, ([key, songIds]) => {
-    const separator = key.indexOf('\u0000');
-    const kind = key.slice(0, separator) as SearchTokenKind;
-    const token = key.slice(separator + 1);
-    const df = songIds.size;
-    return {
-      kind,
-      token,
-      df,
-      idfScaled: Math.max(1, Math.round(Math.log1p(Math.max(totalRecords, 1) / df) * 1000)),
-    };
-  });
-}
-
 function karaokeProviderMask(numbers: KaraokeNumbers): number {
   let mask = 0;
   for (const provider of KARAOKE_PROVIDERS) {
@@ -1002,13 +948,6 @@ function replaceFile(sourcePath: string, targetPath: string): void {
   }
 }
 
-interface SearchIndexRows {
-  texts: SearchTextRow[];
-  tokens: SearchTokenRow[];
-  tokenStats: SearchTokenStatRow[];
-  hints: readonly ResolvedSearchHint[];
-}
-
 interface SearchTextInput {
   field: SearchField;
   value: string;
@@ -1019,15 +958,6 @@ interface SearchTokenInput {
   songId: string;
   field: SearchTokenField;
   value: string;
-  textCompact: string;
-  weight: number;
-  providerMask: number;
-}
-
-interface SearchTextRow {
-  songId: string;
-  field: SearchField;
-  textNorm: string;
   textCompact: string;
   weight: number;
   providerMask: number;
@@ -1054,11 +984,10 @@ interface ResolvedSearchHint {
   confidence: HintConfidence;
 }
 
-interface SearchTokenStatRow {
+interface SearchTokenStatSourceRow {
   kind: SearchTokenKind;
   token: string;
   df: number;
-  idfScaled: number;
 }
 
 interface StoredSongRow {
