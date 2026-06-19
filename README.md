@@ -172,8 +172,11 @@ PUBLIC_BASE_PATH=/ \
 PUBLIC_KARAOKE_API_BASE_URL=/ \
 corepack pnpm --filter @karaoke/web build
 
-corepack pnpm dlx wrangler@latest pages deploy apps/web/dist \
-  --project-name karaokedb --branch main
+(
+  cd apps/web
+  corepack pnpm dlx wrangler@latest pages deploy dist \
+    --project-name karaokedb --branch main
+)
 ```
 
 The web app remains client-side/static, but Browse searches become API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the API accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index. The Cloudflare Pages build uses same-origin `/api/*`; `apps/web/functions/` proxies those requests to the current self-hosted API origin configured in `apps/web/wrangler.toml`.
