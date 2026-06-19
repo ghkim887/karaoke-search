@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import {
@@ -443,6 +444,87 @@ export interface ExportSongsJsonArgs {
   outputPath: string;
 }
 
+export type DeltaPatchTokenStatMode = 'affected' | 'all';
+
+export interface ApplySongDeltaPatchArgs {
+  db: SongDatabase;
+  baseRecords: readonly SongRecord[];
+  candidateRecords: readonly SongRecord[];
+  searchHints?: readonly SearchHintInput[];
+  /** Validate that the SQLite DB currently exports exactly to `baseRecords`. Defaults to true. */
+  checkDbMatchesBase?: boolean;
+  /** Refuse broad changes unless the caller explicitly raises this limit. Defaults to 1000. */
+  maxTouchedSongs?: number;
+  /** Refuse broad changes by corpus ratio. Defaults to 0.02 (2%). */
+  maxTouchedRatio?: number;
+  /**
+   * `affected` updates df/idf for tokens touched by changed songs only. `all`
+   * fully refreshes `search_token_stats` without rebuilding per-song tokens.
+   */
+  tokenStatMode?: DeltaPatchTokenStatMode;
+  /** Produce a manifest without mutating the DB. */
+  dryRun?: boolean;
+}
+
+export interface PatchSongsJsonDeltaArgs
+  extends Omit<ApplySongDeltaPatchArgs, 'db' | 'baseRecords' | 'candidateRecords' | 'searchHints'> {
+  basePath: string;
+  candidatePath: string;
+  dbPath: string;
+  searchHintPaths?: readonly string[];
+  manifestPath?: string;
+}
+
+export interface ProviderNumberDuplicate {
+  provider: keyof KaraokeNumbers;
+  number: string;
+  firstSongId: string;
+  secondSongId: string;
+}
+
+export interface SongDeltaPatchManifest {
+  generatedAt: string;
+  dryRun: boolean;
+  baseCount: number;
+  candidateCount: number;
+  addedCount: number;
+  removedCount: number;
+  changedCount: number;
+  touchedSongCount: number;
+  touchedSongRatio: number;
+  sortOrderChangedCount: number;
+  providerCounts: {
+    base: Record<keyof KaraokeNumbers, number>;
+    candidate: Record<keyof KaraokeNumbers, number>;
+  };
+  guardrails: {
+    maxTouchedSongs: number;
+    maxTouchedRatio: number;
+    checkDbMatchesBase: boolean;
+    duplicateProviderNumberCheck: 'passed';
+    touchedLimitCheck: 'passed';
+  };
+  ids: {
+    added: string[];
+    removed: string[];
+    changed: string[];
+  };
+  duplicateProviderNumbers: ProviderNumberDuplicate[];
+  tokenStats: {
+    mode: DeltaPatchTokenStatMode;
+    affectedTokenCount: number;
+    recalculatedTokenStatCount: number;
+  };
+  sqlite: {
+    mutated: boolean;
+    baseDbMatch: 'checked' | 'skipped';
+  };
+  rollback: {
+    backupCreated: false;
+    note: string;
+  };
+}
+
 /** Read and shape-check a `songs.json` corpus array. */
 export function readSongRecordsJson(inputPath: string): SongRecord[] {
   const parsed = JSON.parse(readFileSync(inputPath, 'utf8')) as unknown;
@@ -646,6 +728,660 @@ export function exportSongsJson({ dbPath, outputPath }: ExportSongsJsonArgs): vo
   } finally {
     db.close();
   }
+}
+
+export function patchSongsJsonDelta(args: PatchSongsJsonDeltaArgs): SongDeltaPatchManifest {
+  const baseRecords = readSongRecordsJson(args.basePath);
+  const candidateRecords = readSongRecordsJson(args.candidatePath);
+  const fileHints = (args.searchHintPaths ?? []).flatMap((path) => parseSearchHintFile(path));
+  const db = openSongDatabase(args.dbPath);
+  try {
+    const patchArgs: ApplySongDeltaPatchArgs = {
+      db,
+      baseRecords,
+      candidateRecords,
+      searchHints: fileHints,
+    };
+    if (args.checkDbMatchesBase !== undefined) {
+      patchArgs.checkDbMatchesBase = args.checkDbMatchesBase;
+    }
+    if (args.dryRun !== undefined) {
+      patchArgs.dryRun = args.dryRun;
+    }
+    if (args.maxTouchedRatio !== undefined) {
+      patchArgs.maxTouchedRatio = args.maxTouchedRatio;
+    }
+    if (args.maxTouchedSongs !== undefined) {
+      patchArgs.maxTouchedSongs = args.maxTouchedSongs;
+    }
+    if (args.tokenStatMode !== undefined) {
+      patchArgs.tokenStatMode = args.tokenStatMode;
+    }
+    const manifest = applySongDeltaPatch(patchArgs);
+    if (args.manifestPath !== undefined) {
+      writeJsonFile(args.manifestPath, manifest);
+    }
+    return manifest;
+  } finally {
+    db.close();
+  }
+}
+
+export function applySongDeltaPatch(args: ApplySongDeltaPatchArgs): SongDeltaPatchManifest {
+  validateSongCorpus(args.baseRecords);
+  validateSongCorpus(args.candidateRecords);
+
+  const checkDbMatchesBase = args.checkDbMatchesBase !== false;
+  const maxTouchedSongs = args.maxTouchedSongs ?? 1000;
+  const maxTouchedRatio = args.maxTouchedRatio ?? 0.02;
+  const tokenStatMode = args.tokenStatMode ?? 'affected';
+  if (tokenStatMode !== 'affected' && tokenStatMode !== 'all') {
+    throw new Error(`Unknown token stat mode: ${tokenStatMode}`);
+  }
+
+  const delta = computeSongDelta(args.baseRecords, args.candidateRecords);
+  const duplicateProviderNumbers = findDuplicateProviderNumbers(args.candidateRecords);
+  if (duplicateProviderNumbers.length > 0) {
+    const first = duplicateProviderNumbers[0] as ProviderNumberDuplicate;
+    throw new Error(
+      `Refusing delta patch with duplicate provider number: ${first.provider}:${first.number} ` +
+        `appears on ${first.firstSongId} and ${first.secondSongId}`,
+    );
+  }
+  if (delta.touchedIds.length > maxTouchedSongs) {
+    throw new Error(
+      `Refusing broad delta patch: ${delta.touchedIds.length} touched songs exceeds maxTouchedSongs=${maxTouchedSongs}`,
+    );
+  }
+  if (delta.touchedRatio > maxTouchedRatio) {
+    throw new Error(
+      `Refusing broad delta patch: touched ratio ${formatRatio(delta.touchedRatio)} exceeds maxTouchedRatio=${maxTouchedRatio}`,
+    );
+  }
+
+  if (checkDbMatchesBase) {
+    assertDatabaseExportsBase(args.db, args.baseRecords);
+  }
+
+  const manifest = createPatchManifest({
+    baseRecords: args.baseRecords,
+    candidateRecords: args.candidateRecords,
+    delta,
+    duplicateProviderNumbers,
+    dryRun: args.dryRun === true,
+    maxTouchedRatio,
+    maxTouchedSongs,
+    checkDbMatchesBase,
+    tokenStatMode,
+  });
+  if (args.dryRun === true) {
+    return manifest;
+  }
+
+  const patchResult = mutateSongDelta(args.db, {
+    candidateRecords: args.candidateRecords,
+    delta,
+    searchHints: args.searchHints ?? [],
+    tokenStatMode,
+  });
+  manifest.sqlite.mutated = true;
+  manifest.tokenStats.affectedTokenCount = patchResult.affectedTokenCount;
+  manifest.tokenStats.recalculatedTokenStatCount = patchResult.recalculatedTokenStatCount;
+  return manifest;
+}
+
+function writeJsonFile(path: string, value: unknown): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+interface SongDeltaComputation {
+  addedIds: string[];
+  removedIds: string[];
+  changedIds: string[];
+  touchedIds: string[];
+  touchedRatio: number;
+  sortOrderChangedCount: number;
+}
+
+function computeSongDelta(
+  baseRecords: readonly SongRecord[],
+  candidateRecords: readonly SongRecord[],
+): SongDeltaComputation {
+  const baseById = new Map(baseRecords.map((record) => [record.id, record]));
+  const candidateById = new Map(candidateRecords.map((record) => [record.id, record]));
+  const baseOrderById = new Map(baseRecords.map((record, index) => [record.id, index]));
+  const addedIds: string[] = [];
+  const removedIds: string[] = [];
+  const changedIds: string[] = [];
+
+  for (const record of candidateRecords) {
+    const baseRecord = baseById.get(record.id);
+    if (baseRecord === undefined) {
+      addedIds.push(record.id);
+    } else if (JSON.stringify(baseRecord) !== JSON.stringify(record)) {
+      changedIds.push(record.id);
+    }
+  }
+  for (const record of baseRecords) {
+    if (!candidateById.has(record.id)) {
+      removedIds.push(record.id);
+    }
+  }
+
+  let sortOrderChangedCount = 0;
+  candidateRecords.forEach((record, index) => {
+    if (baseOrderById.get(record.id) !== index) {
+      sortOrderChangedCount += 1;
+    }
+  });
+
+  const touchedIds = [...addedIds, ...removedIds, ...changedIds].sort();
+  const denominator = Math.max(baseRecords.length, 1);
+  return {
+    addedIds,
+    removedIds,
+    changedIds,
+    touchedIds,
+    touchedRatio: touchedIds.length / denominator,
+    sortOrderChangedCount,
+  };
+}
+
+function findDuplicateProviderNumbers(records: readonly SongRecord[]): ProviderNumberDuplicate[] {
+  const duplicates: ProviderNumberDuplicate[] = [];
+  for (const provider of KARAOKE_PROVIDERS) {
+    const seen = new Map<string, string>();
+    for (const record of records) {
+      const number = record.karaoke_numbers[provider];
+      if (number === null) {
+        continue;
+      }
+      const previous = seen.get(number);
+      if (previous !== undefined && previous !== record.id) {
+        duplicates.push({
+          provider,
+          number,
+          firstSongId: previous,
+          secondSongId: record.id,
+        });
+        continue;
+      }
+      seen.set(number, record.id);
+    }
+  }
+  return duplicates;
+}
+
+function assertDatabaseExportsBase(db: SongDatabase, baseRecords: readonly SongRecord[]): void {
+  const exported = exportSongs(db);
+  if (JSON.stringify(exported) === JSON.stringify(baseRecords)) {
+    return;
+  }
+  const mismatch = firstCorpusMismatch(exported, baseRecords);
+  throw new Error(`Refusing delta patch because SQLite DB does not match base corpus: ${mismatch}`);
+}
+
+function firstCorpusMismatch(
+  actual: readonly SongRecord[],
+  expected: readonly SongRecord[],
+): string {
+  if (actual.length !== expected.length) {
+    return `db has ${actual.length} records but base has ${expected.length}`;
+  }
+  for (let index = 0; index < expected.length; index += 1) {
+    const actualRecord = actual[index];
+    const expectedRecord = expected[index];
+    if (actualRecord === undefined || expectedRecord === undefined) {
+      return `missing record at index ${index}`;
+    }
+    if (actualRecord.id !== expectedRecord.id) {
+      return `index ${index} id differs: db=${actualRecord.id} base=${expectedRecord.id}`;
+    }
+    if (JSON.stringify(actualRecord) !== JSON.stringify(expectedRecord)) {
+      return `record ${expectedRecord.id} differs`;
+    }
+  }
+  return 'unknown mismatch';
+}
+
+function createPatchManifest({
+  baseRecords,
+  candidateRecords,
+  delta,
+  duplicateProviderNumbers,
+  dryRun,
+  maxTouchedRatio,
+  maxTouchedSongs,
+  checkDbMatchesBase,
+  tokenStatMode,
+}: {
+  baseRecords: readonly SongRecord[];
+  candidateRecords: readonly SongRecord[];
+  delta: SongDeltaComputation;
+  duplicateProviderNumbers: ProviderNumberDuplicate[];
+  dryRun: boolean;
+  maxTouchedRatio: number;
+  maxTouchedSongs: number;
+  checkDbMatchesBase: boolean;
+  tokenStatMode: DeltaPatchTokenStatMode;
+}): SongDeltaPatchManifest {
+  return {
+    generatedAt: new Date().toISOString(),
+    dryRun,
+    baseCount: baseRecords.length,
+    candidateCount: candidateRecords.length,
+    addedCount: delta.addedIds.length,
+    removedCount: delta.removedIds.length,
+    changedCount: delta.changedIds.length,
+    touchedSongCount: delta.touchedIds.length,
+    touchedSongRatio: delta.touchedRatio,
+    sortOrderChangedCount: delta.sortOrderChangedCount,
+    providerCounts: {
+      base: providerCounts(baseRecords),
+      candidate: providerCounts(candidateRecords),
+    },
+    guardrails: {
+      maxTouchedSongs,
+      maxTouchedRatio,
+      checkDbMatchesBase,
+      duplicateProviderNumberCheck: 'passed',
+      touchedLimitCheck: 'passed',
+    },
+    ids: {
+      added: delta.addedIds,
+      removed: delta.removedIds,
+      changed: delta.changedIds,
+    },
+    duplicateProviderNumbers,
+    tokenStats: {
+      mode: tokenStatMode,
+      affectedTokenCount: 0,
+      recalculatedTokenStatCount: 0,
+    },
+    sqlite: {
+      mutated: false,
+      baseDbMatch: checkDbMatchesBase ? 'checked' : 'skipped',
+    },
+    rollback: {
+      backupCreated: false,
+      note: 'No SQLite backup is created by the delta patcher. Patch a staging DB or keep a prior release/symlink target for rollback before mutating a live DB.',
+    },
+  };
+}
+
+function providerCounts(records: readonly SongRecord[]): Record<keyof KaraokeNumbers, number> {
+  return {
+    tj: records.filter((record) => record.karaoke_numbers.tj !== null).length,
+    ky: records.filter((record) => record.karaoke_numbers.ky !== null).length,
+    joysound: records.filter((record) => record.karaoke_numbers.joysound !== null).length,
+  };
+}
+
+interface DeltaMutationOptions {
+  candidateRecords: readonly SongRecord[];
+  delta: SongDeltaComputation;
+  searchHints: readonly SearchHintInput[];
+  tokenStatMode: DeltaPatchTokenStatMode;
+}
+
+interface DeltaMutationResult {
+  affectedTokenCount: number;
+  recalculatedTokenStatCount: number;
+}
+
+function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): DeltaMutationResult {
+  createSongDatabase(db);
+  const candidateById = new Map(options.candidateRecords.map((record) => [record.id, record]));
+  const sortOrderById = new Map(
+    options.candidateRecords.map((record, index) => [record.id, index]),
+  );
+  const hintsBySongId = groupResolvedHints(
+    resolveSearchHints(options.searchHints, options.candidateRecords),
+  );
+  const statements = prepareSongWriteStatements(db);
+  const affectedTokenKeys = new Set<string>();
+
+  db.exec('PRAGMA foreign_keys = ON;');
+  db.exec('BEGIN');
+  try {
+    for (const songId of options.delta.touchedIds) {
+      collectTokenKeysForSong(db, songId, affectedTokenKeys);
+      statements.deleteSearchHints.run(songId);
+      statements.deleteSearchTokens.run(songId);
+      statements.deleteSearchTexts.run(songId);
+      statements.deleteNumbers.run(songId);
+      statements.deleteAliases.run(songId);
+      if (!candidateById.has(songId)) {
+        statements.deleteSong.run(songId);
+      }
+    }
+
+    for (const songId of options.delta.touchedIds) {
+      const record = candidateById.get(songId);
+      if (record === undefined) {
+        continue;
+      }
+      const sortOrder = sortOrderById.get(songId);
+      if (sortOrder === undefined) {
+        throw new Error(`Missing candidate sort order for ${songId}`);
+      }
+      writeSongRecordRows(statements, record, sortOrder, hintsBySongId.get(songId) ?? []);
+      collectTokenKeysForSong(db, songId, affectedTokenKeys);
+    }
+
+    // Preserve exact candidate export order even when the delta removed rows and
+    // shifted many untouched records. This is cheap relative to token rebuilds.
+    options.candidateRecords.forEach((record, index) => {
+      statements.updateSortOrder.run(index, record.id, index);
+    });
+
+    const recalculatedTokenStatCount =
+      options.tokenStatMode === 'all'
+        ? recalculateAllTokenStats(db, options.candidateRecords.length)
+        : recalculateAffectedTokenStats(db, affectedTokenKeys, options.candidateRecords.length);
+    db.exec('COMMIT');
+    return {
+      affectedTokenCount: affectedTokenKeys.size,
+      recalculatedTokenStatCount,
+    };
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+}
+
+type PreparedStatement = ReturnType<SongDatabase['prepare']>;
+
+interface SongWriteStatements {
+  upsertSong: PreparedStatement;
+  updateSortOrder: PreparedStatement;
+  deleteSong: PreparedStatement;
+  deleteNumbers: PreparedStatement;
+  deleteAliases: PreparedStatement;
+  deleteSearchTexts: PreparedStatement;
+  deleteSearchTokens: PreparedStatement;
+  deleteSearchHints: PreparedStatement;
+  insertNumber: PreparedStatement;
+  insertAlias: PreparedStatement;
+  insertSearchText: PreparedStatement;
+  insertSearchToken: PreparedStatement;
+  insertSearchHint: PreparedStatement;
+}
+
+function prepareSongWriteStatements(db: SongDatabase): SongWriteStatements {
+  return {
+    upsertSong: db.prepare(`
+      INSERT INTO songs (
+        id,
+        sort_order,
+        source_url,
+        title_primary,
+        title_ko,
+        artist_primary,
+        artist_ko,
+        artist_aliases_present,
+        crawled_at,
+        media_context_ko,
+        title_ko_source,
+        title_ko_confidence
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        sort_order = excluded.sort_order,
+        source_url = excluded.source_url,
+        title_primary = excluded.title_primary,
+        title_ko = excluded.title_ko,
+        artist_primary = excluded.artist_primary,
+        artist_ko = excluded.artist_ko,
+        artist_aliases_present = excluded.artist_aliases_present,
+        crawled_at = excluded.crawled_at,
+        media_context_ko = excluded.media_context_ko,
+        title_ko_source = excluded.title_ko_source,
+        title_ko_confidence = excluded.title_ko_confidence
+    `),
+    updateSortOrder: db.prepare('UPDATE songs SET sort_order = ? WHERE id = ? AND sort_order <> ?'),
+    deleteSong: db.prepare('DELETE FROM songs WHERE id = ?'),
+    deleteNumbers: db.prepare('DELETE FROM karaoke_numbers WHERE song_id = ?'),
+    deleteAliases: db.prepare('DELETE FROM artist_aliases WHERE song_id = ?'),
+    deleteSearchTexts: db.prepare('DELETE FROM search_texts WHERE song_id = ?'),
+    deleteSearchTokens: db.prepare('DELETE FROM search_tokens WHERE song_id = ?'),
+    deleteSearchHints: db.prepare('DELETE FROM search_hints WHERE song_id = ?'),
+    insertNumber: db.prepare(
+      'INSERT INTO karaoke_numbers (song_id, provider, number, number_key) VALUES (?, ?, ?, ?)',
+    ),
+    insertAlias: db.prepare(
+      'INSERT INTO artist_aliases (song_id, position, alias) VALUES (?, ?, ?)',
+    ),
+    insertSearchText: db.prepare(
+      `INSERT OR IGNORE INTO search_texts (
+        song_id,
+        field,
+        text_norm,
+        text_compact,
+        weight,
+        provider_mask
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    ),
+    insertSearchToken: db.prepare(
+      `INSERT OR IGNORE INTO search_tokens (
+        kind,
+        token,
+        song_id,
+        field,
+        weight,
+        provider_mask
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    ),
+    insertSearchHint: db.prepare(
+      `INSERT OR IGNORE INTO search_hints (
+        song_id,
+        field,
+        source,
+        text_norm,
+        text_compact,
+        weight,
+        provider_mask,
+        confidence
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ),
+  };
+}
+
+function groupResolvedHints(
+  hints: readonly ResolvedSearchHint[],
+): Map<string, ResolvedSearchHint[]> {
+  const grouped = new Map<string, ResolvedSearchHint[]>();
+  for (const hint of hints) {
+    const group = grouped.get(hint.songId);
+    if (group === undefined) {
+      grouped.set(hint.songId, [hint]);
+      continue;
+    }
+    group.push(hint);
+  }
+  return grouped;
+}
+
+function writeSongRecordRows(
+  statements: SongWriteStatements,
+  record: SongRecord,
+  sortOrder: number,
+  hints: readonly ResolvedSearchHint[],
+): void {
+  statements.upsertSong.run(
+    record.id,
+    sortOrder,
+    record.source_url,
+    record.title_primary,
+    record.title_ko,
+    record.artist_primary,
+    record.artist_ko,
+    record.artist_aliases === undefined ? 0 : 1,
+    record.crawled_at,
+    record.media_context_ko ?? null,
+    record.title_ko_source ?? null,
+    record.title_ko_confidence ?? null,
+  );
+  statements.insertNumber.run(
+    record.id,
+    'tj',
+    record.karaoke_numbers.tj,
+    karaokeNumberKey(record.karaoke_numbers.tj),
+  );
+  statements.insertNumber.run(
+    record.id,
+    'ky',
+    record.karaoke_numbers.ky,
+    karaokeNumberKey(record.karaoke_numbers.ky),
+  );
+  statements.insertNumber.run(
+    record.id,
+    'joysound',
+    record.karaoke_numbers.joysound,
+    karaokeNumberKey(record.karaoke_numbers.joysound),
+  );
+  record.artist_aliases?.forEach((alias, aliasIndex) => {
+    statements.insertAlias.run(record.id, aliasIndex, alias);
+  });
+
+  const providerMask = karaokeProviderMask(record.karaoke_numbers);
+  for (const input of searchTextInputs(record)) {
+    const textCompact = compactSearchText(input.value);
+    if (textCompact.length === 0) {
+      continue;
+    }
+    statements.insertSearchText.run(
+      record.id,
+      input.field,
+      normalizeSearchText(input.value).trim(),
+      textCompact,
+      input.weight,
+      providerMask,
+    );
+    writeSearchTokens(statements, {
+      songId: record.id,
+      field: input.field,
+      value: input.value,
+      textCompact,
+      weight: input.weight,
+      providerMask,
+    });
+  }
+
+  for (const hint of hints) {
+    statements.insertSearchHint.run(
+      hint.songId,
+      hint.field,
+      hint.source,
+      hint.textNorm,
+      hint.textCompact,
+      hint.weight,
+      hint.providerMask,
+      hint.confidence,
+    );
+    writeSearchTokens(statements, {
+      songId: hint.songId,
+      field: HINT_TOKEN_FIELD_BY_HINT_FIELD[hint.field],
+      value: hint.textNorm,
+      textCompact: hint.textCompact,
+      weight: hint.weight,
+      providerMask: hint.providerMask,
+    });
+  }
+}
+
+function writeSearchTokens(statements: SongWriteStatements, input: SearchTokenInput): void {
+  const rows: SearchTokenRow[] = [];
+  addSearchTokens(rows, new Set<string>(), input);
+  for (const row of rows) {
+    statements.insertSearchToken.run(
+      row.kind,
+      row.token,
+      row.songId,
+      row.field,
+      row.weight,
+      row.providerMask,
+    );
+  }
+}
+
+function collectTokenKeysForSong(db: SongDatabase, songId: string, out: Set<string>): void {
+  const rows = db
+    .prepare('SELECT DISTINCT kind, token FROM search_tokens WHERE song_id = ?')
+    .all(songId) as unknown as Array<{ kind: SearchTokenKind; token: string }>;
+  for (const row of rows) {
+    out.add(tokenStatKey(row.kind, row.token));
+  }
+}
+
+function recalculateAffectedTokenStats(
+  db: SongDatabase,
+  tokenKeys: ReadonlySet<string>,
+  songCount: number,
+): number {
+  const countDf = db.prepare(
+    'SELECT COUNT(DISTINCT song_id) AS df FROM search_tokens WHERE kind = ? AND token = ?',
+  );
+  const upsert = db.prepare(
+    `INSERT INTO search_token_stats (kind, token, df, idf_scaled) VALUES (?, ?, ?, ?)
+     ON CONFLICT(kind, token) DO UPDATE SET df = excluded.df, idf_scaled = excluded.idf_scaled`,
+  );
+  const remove = db.prepare('DELETE FROM search_token_stats WHERE kind = ? AND token = ?');
+  let recalculated = 0;
+  for (const key of tokenKeys) {
+    const { kind, token } = parseTokenStatKey(key);
+    const row = countDf.get(kind, token) as { df: number };
+    const df = Number(row.df);
+    if (df === 0) {
+      remove.run(kind, token);
+    } else {
+      upsert.run(kind, token, df, tokenIdfScaled(songCount, df));
+    }
+    recalculated += 1;
+  }
+  return recalculated;
+}
+
+function recalculateAllTokenStats(db: SongDatabase, songCount: number): number {
+  const rows = db
+    .prepare(
+      `SELECT kind, token, COUNT(DISTINCT song_id) AS df
+       FROM search_tokens
+       GROUP BY kind, token`,
+    )
+    .all() as unknown as SearchTokenStatSourceRow[];
+  const insert = db.prepare(
+    'INSERT INTO search_token_stats (kind, token, df, idf_scaled) VALUES (?, ?, ?, ?)',
+  );
+  db.exec('DELETE FROM search_token_stats');
+  for (const row of rows) {
+    const df = Number(row.df);
+    insert.run(row.kind, row.token, df, tokenIdfScaled(songCount, df));
+  }
+  return rows.length;
+}
+
+function tokenIdfScaled(songCount: number, df: number): number {
+  return Math.max(1, Math.round(Math.log1p(Math.max(songCount, 1) / df) * 1000));
+}
+
+function tokenStatKey(kind: SearchTokenKind, token: string): string {
+  return `${kind}\u0000${token}`;
+}
+
+function parseTokenStatKey(key: string): { kind: SearchTokenKind; token: string } {
+  const separatorIndex = key.indexOf('\u0000');
+  if (separatorIndex < 0) {
+    throw new Error(`Invalid token stat key: ${key}`);
+  }
+  return {
+    kind: key.slice(0, separatorIndex) as SearchTokenKind,
+    token: key.slice(separatorIndex + 1),
+  };
+}
+
+function formatRatio(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(6) : String(value);
 }
 
 /**

@@ -339,4 +339,213 @@ describe('SQLite song store', () => {
 
     expect(readFileSync(outputPath, 'utf8')).toBe(json);
   });
+
+  it('patches a small JSON delta without rebuilding unaffected search rows', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-delta-'));
+    const basePath = join(dir, 'base.json');
+    const candidatePath = join(dir, 'candidate.json');
+    const dbPath = join(dir, 'songs.sqlite');
+    const outputPath = join(dir, 'roundtrip.json');
+    const manifestPath = join(dir, 'patch-manifest.json');
+    const baseRecords: SongRecord[] = [
+      {
+        id: 'joysound-100',
+        source_url: 'https://example.com/joysound/100',
+        title_primary: 'Merge Target',
+        title_ko: null,
+        artist_primary: 'Patch Artist',
+        artist_ko: null,
+        karaoke_numbers: { tj: null, ky: '50000', joysound: '100' },
+        crawled_at: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'tj-90000',
+        source_url: 'https://example.com/tj/90000',
+        title_primary: 'Merge Target(TV OP)',
+        title_ko: null,
+        artist_primary: 'Patch Artist',
+        artist_ko: null,
+        karaoke_numbers: { tj: '90000', ky: null, joysound: null },
+        crawled_at: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'joysound-200',
+        source_url: 'https://example.com/joysound/200',
+        title_primary: 'Stable Song',
+        title_ko: null,
+        artist_primary: 'Stable Artist',
+        artist_ko: null,
+        karaoke_numbers: { tj: null, ky: null, joysound: '200' },
+        crawled_at: '2026-01-03T00:00:00.000Z',
+      },
+    ];
+    const candidateRecords: SongRecord[] = [
+      {
+        ...baseRecords[0],
+        karaoke_numbers: { tj: '90000', ky: '50000', joysound: '100' },
+      },
+      baseRecords[2],
+      {
+        id: 'tj-90001',
+        source_url: 'https://example.com/tj/90001',
+        title_primary: 'Fresh Delta Song',
+        title_ko: null,
+        artist_primary: 'Fresh Artist',
+        artist_ko: null,
+        karaoke_numbers: { tj: '90001', ky: null, joysound: null },
+        crawled_at: '2026-01-04T00:00:00.000Z',
+      },
+    ];
+    writeFileSync(basePath, `${JSON.stringify(baseRecords, null, 2)}\n`, 'utf8');
+    writeFileSync(candidatePath, `${JSON.stringify(candidateRecords, null, 2)}\n`, 'utf8');
+    importSongsJson({ inputPath: basePath, dbPath });
+
+    runDataStoreCli([
+      'patch-json-delta',
+      '--base',
+      basePath,
+      '--candidate',
+      candidatePath,
+      '--db',
+      dbPath,
+      '--manifest',
+      manifestPath,
+      '--max-touched-songs',
+      '10',
+      '--max-touched-ratio',
+      '1',
+    ]);
+    exportSongsJson({ dbPath, outputPath });
+
+    expect(readFileSync(outputPath, 'utf8')).toBe(`${JSON.stringify(candidateRecords, null, 2)}\n`);
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+      addedCount: number;
+      removedCount: number;
+      changedCount: number;
+      sortOrderChangedCount: number;
+      sqlite: { mutated: boolean; baseDbMatch: string };
+      tokenStats: { affectedTokenCount: number; recalculatedTokenStatCount: number };
+    };
+    expect(manifest.addedCount).toBe(1);
+    expect(manifest.removedCount).toBe(1);
+    expect(manifest.changedCount).toBe(1);
+    expect(manifest.sortOrderChangedCount).toBe(2);
+    expect(manifest.sqlite).toEqual({ mutated: true, baseDbMatch: 'checked' });
+    expect(manifest.tokenStats.affectedTokenCount).toBeGreaterThan(0);
+    expect(manifest.tokenStats.recalculatedTokenStatCount).toBe(
+      manifest.tokenStats.affectedTokenCount,
+    );
+
+    const db = openSongDatabase(dbPath);
+    openDatabases.push(db);
+    const removed = db
+      .prepare("SELECT COUNT(*) AS count FROM songs WHERE id = 'tj-90000'")
+      .get() as {
+      count: number;
+    };
+    expect(removed.count).toBe(0);
+    const mergedNumbers = db
+      .prepare(
+        `SELECT provider, number, number_key FROM karaoke_numbers
+         WHERE song_id = 'joysound-100'
+         ORDER BY provider ASC`,
+      )
+      .all() as unknown as Array<{
+      provider: string;
+      number: string | null;
+      number_key: string | null;
+    }>;
+    expect(mergedNumbers).toEqual([
+      { provider: 'joysound', number: '100', number_key: '100' },
+      { provider: 'ky', number: '50000', number_key: '50000' },
+      { provider: 'tj', number: '90000', number_key: '90000' },
+    ]);
+    const providerMasks = db
+      .prepare(
+        `SELECT DISTINCT provider_mask FROM search_tokens
+         WHERE song_id = 'joysound-100'
+         ORDER BY provider_mask ASC`,
+      )
+      .all() as unknown as Array<{ provider_mask: number }>;
+    expect(providerMasks).toEqual([{ provider_mask: 7 }]);
+  });
+
+  it('writes a dry-run manifest without mutating the SQLite DB', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-delta-'));
+    const basePath = join(dir, 'base.json');
+    const candidatePath = join(dir, 'candidate.json');
+    const dbPath = join(dir, 'songs.sqlite');
+    const outputPath = join(dir, 'roundtrip.json');
+    const manifestPath = join(dir, 'patch-manifest.json');
+    const candidateRecords = cloneRecords(FIXTURE_RECORDS);
+    candidateRecords[0] = {
+      ...fixtureRecord(0),
+      karaoke_numbers: { ...fixtureRecord(0).karaoke_numbers, ky: '77777' },
+    };
+    writeFileSync(basePath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
+    writeFileSync(candidatePath, `${JSON.stringify(candidateRecords, null, 2)}\n`, 'utf8');
+    importSongsJson({ inputPath: basePath, dbPath });
+
+    runDataStoreCli([
+      'patch-json-delta',
+      '--base',
+      basePath,
+      '--candidate',
+      candidatePath,
+      '--db',
+      dbPath,
+      '--manifest',
+      manifestPath,
+      '--dry-run',
+      '--max-touched-ratio',
+      '1',
+    ]);
+    exportSongsJson({ dbPath, outputPath });
+
+    expect(readFileSync(outputPath, 'utf8')).toBe(`${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`);
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+      dryRun: boolean;
+      changedCount: number;
+      sqlite: { mutated: boolean };
+    };
+    expect(manifest.dryRun).toBe(true);
+    expect(manifest.changedCount).toBe(1);
+    expect(manifest.sqlite.mutated).toBe(false);
+  });
+
+  it('refuses to patch when the SQLite DB no longer matches the supplied base corpus', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-data-store-delta-'));
+    const actualPath = join(dir, 'actual.json');
+    const basePath = join(dir, 'base.json');
+    const candidatePath = join(dir, 'candidate.json');
+    const dbPath = join(dir, 'songs.sqlite');
+    const outputPath = join(dir, 'roundtrip.json');
+    const staleBase = cloneRecords(FIXTURE_RECORDS);
+    staleBase[0] = { ...fixtureRecord(0), title_primary: 'Stale Base Title' };
+    const candidateRecords = cloneRecords(staleBase);
+    candidateRecords[1] = {
+      ...fixtureRecord(1),
+      karaoke_numbers: { ...fixtureRecord(1).karaoke_numbers, joysound: '999999' },
+    };
+    writeFileSync(actualPath, `${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`, 'utf8');
+    writeFileSync(basePath, `${JSON.stringify(staleBase, null, 2)}\n`, 'utf8');
+    writeFileSync(candidatePath, `${JSON.stringify(candidateRecords, null, 2)}\n`, 'utf8');
+    importSongsJson({ inputPath: actualPath, dbPath });
+
+    expect(() =>
+      runDataStoreCli([
+        'patch-json-delta',
+        '--base',
+        basePath,
+        '--candidate',
+        candidatePath,
+        '--db',
+        dbPath,
+        '--max-touched-ratio',
+        '1',
+      ]),
+    ).toThrow(/does not match base corpus/);
+    exportSongsJson({ dbPath, outputPath });
+    expect(readFileSync(outputPath, 'utf8')).toBe(`${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`);
+  });
 });
