@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  JOYSOUND_FULL_CATALOG_KANA,
   JoysoundFullCatalogCrawler,
   JoysoundOfficialCrawler,
 } from '../../../src/adapters/joysound-official/crawler.js';
@@ -229,6 +230,41 @@ describe('JoysoundOfficialCrawler — listing → detail → classify → normal
     expect(recs[0]?.id).toBe('joysound-700003');
     expect(fetched).toContain(`${LISTING_BASE}?page=1`);
     expect(fetched).toContain(`${LISTING_BASE}?page=2`);
+  });
+
+  it('full-catalog kana seed covers voiced and semi-voiced public songlist buckets', () => {
+    const expectedMissingFromOriginalSeed = [
+      'ガ',
+      'ギ',
+      'グ',
+      'ゲ',
+      'ゴ',
+      'ザ',
+      'ジ',
+      'ズ',
+      'ゼ',
+      'ゾ',
+      'ダ',
+      'ヂ',
+      'ヅ',
+      'デ',
+      'ド',
+      'バ',
+      'ビ',
+      'ブ',
+      'ベ',
+      'ボ',
+      'パ',
+      'ピ',
+      'プ',
+      'ペ',
+      'ポ',
+      'ヴ',
+    ];
+    expect(new Set(JOYSOUND_FULL_CATALOG_KANA).size).toBe(JOYSOUND_FULL_CATALOG_KANA.length);
+    for (const kana of expectedMissingFromOriginalSeed) {
+      expect(JOYSOUND_FULL_CATALOG_KANA).toContain(kana);
+    }
   });
 
   it('full-catalog crawler walks kana-indexed songlist pages in order', async () => {

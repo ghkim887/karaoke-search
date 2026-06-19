@@ -345,6 +345,22 @@ describe('looseSameSong (conflict-nulling guard)', () => {
     expect(looseSameSong('サクラサク', 'X', 'サクラサク（ラブひな OP）', 'X')).toBe(true);
   });
 
+  it('folds decorative title marks that swap across manual/official sources', () => {
+    expect(looseSameSong('♡人生♡', 'コレサワ', '・人生・', 'コレサワ')).toBe(true);
+    expect(
+      looseSameSong(
+        'ブラック★ロックシューター',
+        '初音ミク',
+        'ブラックロックシューター',
+        '初音ミク',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not erase meaningful internal middle-dot separators', () => {
+    expect(looseSameSong('A・B', 'X', 'AB', 'X')).toBe(false);
+  });
+
   it('folds artist parenthetical / dash rendering variants', () => {
     expect(looseSameSong('紅', 'X-JAPAN', '紅', 'X JAPAN(X)')).toBe(true);
   });
@@ -496,6 +512,24 @@ describe('conservative conflict nulling', () => {
     const { records, conflictsResolved } = resolveExistingNumberConflicts([blog], admits);
     expect(records[0].karaoke_numbers.joysound).toBe('12591');
     expect(conflictsResolved).toBe(0);
+  });
+
+  it('does NOT null a same-song decorative-title variant', () => {
+    const blog = blogRec({
+      title_primary: '♡人生♡',
+      artist_primary: 'コレサワ',
+      karaoke_numbers: { tj: '68958', ky: '75895', joysound: '620074' },
+    });
+    const admits = [
+      { selSongNo: '620074', naviGroupId: 'n-decorative', title: '・人生・', artist: 'コレサワ' },
+    ];
+    const { records, conflictsResolved, benignOverlaps } = resolveExistingNumberConflicts(
+      [blog],
+      admits,
+    );
+    expect(records[0].karaoke_numbers.joysound).toBe('620074');
+    expect(conflictsResolved).toBe(0);
+    expect(benignOverlaps).toBe(1);
   });
 
   it('DOES null a confidently-different song sharing a number', () => {

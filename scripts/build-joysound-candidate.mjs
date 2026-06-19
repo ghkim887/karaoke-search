@@ -241,6 +241,14 @@ export function excludeCheckpoint1Admits(admits, checkpoint1Decisions) {
 // NFKC does NOT fold these into one another (e.g. U+FF0D vs U+30FC stay
 // distinct), so the strict comparator saw `スパイダ－` ≠ `スパイダー`.
 const DASH_LIKE_RE = /[-‐-―−－ーｰ]/gu;
+// Decorative title/credit marks that JOYSOUND/manual sources sometimes swap
+// while referring to the same catalog number (`♡人生♡` vs `・人生・`,
+// `ブラック★ロックシューター` vs `ブラックロックシューター`). Strip only
+// a small, observed ornament set for conflict-nulling; do not use this in strict
+// audit/delta comparisons. Middle dot is only stripped at title/credit edges;
+// internal `・` often separates meaningful title/artist parts.
+const DECORATIVE_MARK_RE = /[♡♥❤★☆♪※◇◆●○◎▽▼△▲□■]/gu;
+const EDGE_MIDDLE_DOT_RE = /^[・･]+|[・･]+$/gu;
 // Parenthetical / subtitle / media-context trailing segments to strip before
 // loose comparison: `(...)`, `（...）`, `~...~`, `～...～`. Applied repeatedly so
 // nested/multiple segments all peel off.
@@ -267,8 +275,14 @@ export function normalizeForLooseMatch(value) {
     prev = s;
     s = s.replace(PAREN_SEGMENT_RE, '').trim();
   } while (s !== prev && s.length > 0);
-  // Remove dash-like marks AND whitespace so dash/space/none all fold.
-  s = s.replace(DASH_LIKE_RE, '').replace(/\s+/gu, '');
+  // Remove dash-like marks, decorative source-rendering marks, edge middle dots,
+  // AND whitespace so dash/space/ornament/none all fold without erasing
+  // meaningful internal middle-dot separators.
+  s = s
+    .replace(DASH_LIKE_RE, '')
+    .replace(DECORATIVE_MARK_RE, '')
+    .replace(EDGE_MIDDLE_DOT_RE, '')
+    .replace(/\s+/gu, '');
   return s;
 }
 
@@ -360,6 +374,15 @@ function looseFieldEqual(a, b) {
   return bigramJaccard(a, b) >= LOOSE_SIMILARITY_THRESHOLD;
 }
 
+function hasInternalMiddleDot(value) {
+  const s = normalizeForConflictMatch(value).replace(EDGE_MIDDLE_DOT_RE, '');
+  return /[・･]/u.test(s);
+}
+
+function internalMiddleDotMismatch(a, b) {
+  return hasInternalMiddleDot(a) !== hasInternalMiddleDot(b);
+}
+
 /**
  * Conservative same-song test for conflict nulling. Returns true when the two
  * (title, artist) pairs are PLAUSIBLY the same song under loose matching, so the
@@ -374,6 +397,8 @@ function looseFieldEqual(a, b) {
  * @returns {boolean}
  */
 export function looseSameSong(aTitle, aArtist, bTitle, bArtist) {
+  if (internalMiddleDotMismatch(aTitle, bTitle)) return false;
+  if (internalMiddleDotMismatch(aArtist, bArtist)) return false;
   const titleOk = looseFieldEqual(normalizeForLooseMatch(aTitle), normalizeForLooseMatch(bTitle));
   if (!titleOk) return false;
   return looseFieldEqual(normalizeForLooseMatch(aArtist), normalizeForLooseMatch(bArtist));

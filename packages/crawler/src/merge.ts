@@ -322,7 +322,8 @@ assertReviewedTierEPairInvariant();
  * body summary.
  *
  * The `'tier_c_merge'`, `'tier_d_context_title_merge'`,
- * `'tier_e_artist_credit_merge'`, and `'tier_f_postcrawl_split_merge'` field
+ * `'tier_e_artist_credit_merge'`, `'tier_f_postcrawl_split_merge'`, and
+ * `'tier_g_auto_residual_merge'` field
  * values document successful soft merges (one marker emitted per cluster, not
  * per record-pair) so the merge surfaces
  * in the crawl PR body for review. Sunset cadence per
@@ -335,7 +336,9 @@ export interface MergeConflict {
    * D keys use `clusterKeyPart(refinedStripContext(title))|clusterKeyPart(artist)`;
    * Tier E keys use `tj:<number>|joysound:<number>` from the reviewed pair;
    * Tier F keys use `<vendor>:<number>|joysound:<number>` from the post-crawl
-   * reviewed split-pair allowlist.
+   * reviewed split-pair allowlist. Tier G keys use
+   * `auto:<vendor>:<number>|joysound:<number>` from conservative residual
+   * title/artist rules.
    * Conflict `cluster_key` strings are FOLDED since 2026-06-13 — cosmetic for
    * PR-body aggregation.
    */
@@ -347,7 +350,8 @@ export interface MergeConflict {
     | 'tier_c_merge'
     | 'tier_d_context_title_merge'
     | 'tier_e_artist_credit_merge'
-    | 'tier_f_postcrawl_split_merge';
+    | 'tier_f_postcrawl_split_merge'
+    | 'tier_g_auto_residual_merge';
   values: { source: string; value: string }[];
   /** The value that wins per source priority, or the merged record id for marker rows. */
   winner: string;
@@ -365,10 +369,10 @@ export interface MergeResult {
  *
  * Fix B.1 (2026-05-01): Tier C merges are NOT disagreements — they're
  * successful soft-merges flagged for visibility. Tier D context-title merges
- * and Tier E reviewed-pair merges follow the same marker semantics. The full
- * conflicts list (and any `sample` slice) keeps marker entries for forensic
- * inspection; only the headline `total` is filtered. Centralised here so
- * `pipeline.ts` and `cli.ts` share one definition.
+ * and Tier E/F/G reviewed/rule pair merges follow the same marker semantics.
+ * The full conflicts list (and any `sample` slice) keeps marker entries for
+ * forensic inspection; only the headline `total` is filtered. Centralised here
+ * so `pipeline.ts` and `cli.ts` share one definition.
  */
 export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
   return conflicts.filter(
@@ -376,7 +380,8 @@ export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
       c.field !== 'tier_c_merge' &&
       c.field !== 'tier_d_context_title_merge' &&
       c.field !== 'tier_e_artist_credit_merge' &&
-      c.field !== 'tier_f_postcrawl_split_merge',
+      c.field !== 'tier_f_postcrawl_split_merge' &&
+      c.field !== 'tier_g_auto_residual_merge',
   );
 }
 
@@ -807,6 +812,10 @@ function tierFClusterKey(vendor: NonJoysoundVendor, number: string, joysound: st
   return `${vendor}:${number}|joysound:${joysound}`;
 }
 
+function tierGClusterKey(vendor: NonJoysoundVendor, number: string, joysound: string): string {
+  return `auto:${vendor}:${number}|joysound:${joysound}`;
+}
+
 function nonNullVendorNumberCount(record: SongRecord): number {
   let count = 0;
   for (const vendor of VENDORS) {
@@ -883,6 +892,312 @@ function collectTierFPostcrawlReviewedGroups(
       if (collectVendorNumberConflicts(cluster).length > 0) continue;
       groups.set(tierFClusterKey(vendor, number, joysound), [targetIdx, joyIdx]);
     }
+  }
+
+  return groups;
+}
+
+// --- Tier G: conservative automatic residual TJ/KY↔JOYSOUND rules --------
+
+const AUTO_TITLE_LEGACY_CHAR_MAP: ReadonlyMap<string, string> = new Map([
+  ['亞', '亜'],
+  ['惡', '悪'],
+  ['壓', '圧'],
+  ['圍', '囲'],
+  ['壹', '一'],
+  ['榮', '栄'],
+  ['驛', '駅'],
+  ['櫻', '桜'],
+  ['奧', '奥'],
+  ['應', '応'],
+  ['歐', '欧'],
+  ['溫', '温'],
+  ['價', '価'],
+  ['樂', '楽'],
+  ['氣', '気'],
+  ['峽', '峡'],
+  ['鄕', '郷'],
+  ['曉', '暁'],
+  ['廣', '広'],
+  ['黑', '黒'],
+  ['碎', '砕'],
+  ['雜', '雑'],
+  ['樣', '様'],
+  ['兒', '児'],
+  ['實', '実'],
+  ['寫', '写'],
+  ['從', '従'],
+  ['澁', '渋'],
+  ['敍', '叙'],
+  ['將', '将'],
+  ['燒', '焼'],
+  ['條', '条'],
+  ['乘', '乗'],
+  ['淨', '浄'],
+  ['眞', '真'],
+  ['圖', '図'],
+  ['數', '数'],
+  ['靑', '青'],
+  ['靜', '静'],
+  ['聲', '声'],
+  ['攝', '摂'],
+  ['戰', '戦'],
+  ['纖', '繊'],
+  ['總', '総'],
+  ['臺', '台'],
+  ['瀧', '滝'],
+  ['單', '単'],
+  ['團', '団'],
+  ['彈', '弾'],
+  ['晝', '昼'],
+  ['蟲', '虫'],
+  ['廳', '庁'],
+  ['鐵', '鉄'],
+  ['轉', '転'],
+  ['傳', '伝'],
+  ['燈', '灯'],
+  ['德', '徳'],
+  ['獨', '独'],
+  ['突', '突'],
+  ['霸', '覇'],
+  ['發', '発'],
+  ['濱', '浜'],
+  ['拂', '払'],
+  ['佛', '仏'],
+  ['邊', '辺'],
+  ['變', '変'],
+  ['辨', '弁'],
+  ['瓣', '弁'],
+  ['寶', '宝'],
+  ['豐', '豊'],
+  ['沒', '没'],
+  ['萬', '万'],
+  ['默', '黙'],
+  ['藥', '薬'],
+  ['譯', '訳'],
+  ['豫', '予'],
+  ['龍', '竜'],
+  ['兩', '両'],
+  ['獵', '猟'],
+  ['戀', '恋'],
+  ['朗', '朗'],
+  ['﨑', '崎'],
+  ['瀨', '瀬'],
+  ['惠', '恵'],
+  ['螢', '蛍'],
+  ['泪', '涙'],
+  ['讚', '讃'],
+] as const);
+
+const AUTO_LEGACY_CHAR_RE = new RegExp(
+  `[${[...AUTO_TITLE_LEGACY_CHAR_MAP.keys()].map(escapeRegExp).join('')}]`,
+  'gu',
+);
+const AUTO_DECORATIVE_ANGLE_RE =
+  /\s*《(?:本人映像|本人歌唱映像|レコおと|アニメカラオケ|ガイドボーカル|生演奏|うたいり|家庭用カラオケ)[^《》]*》\s*$/iu;
+const AUTO_ARTIST_COLLAB_RE = /[\(（\)）,，、/\\&＆＋+×]|\b(?:feat\.?|featuring|with|cv\.?)\b/iu;
+const AUTO_ARTIST_UNSAFE_CREDIT_RE = /[,，、/\\&＆＋+×]|\b(?:feat\.?|featuring|with|cv\.?)\b/iu;
+const AUTO_VOICE_CREDIT_RE = /(?:^|[\s(（\[【:/・])cv\.?\s*[:：.)）]?/iu;
+const AUTO_UNSAFE_SHORT_ARTIST_RE = /^\d{1,2}$/u;
+const AUTO_UNSAFE_TITLE_KEYS = new Set(['notitle', 'untitled', '無題']);
+const AUTO_UNSAFE_TITLE_SURFACE_RE =
+  /[+＋]|(?:tv\s*size|tvサイズ|テレビ.*サイズ|\bsize\b|anime\s*ver\.?|アニメ\s*ver\.?|movie\s*ver\.?|short\s*ver\.?|remix|リミックス|mix|ミックス|club\s*edit|edit|エディット|cover|カバー|version|\bver\.?\b|バージョン|ヴァージョン|シングル|single|m@ster|acoustic|live|instrumental)/iu;
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function foldLegacyChars(s: string): string {
+  return s.replace(AUTO_LEGACY_CHAR_RE, (ch) => AUTO_TITLE_LEGACY_CHAR_MAP.get(ch) ?? ch);
+}
+
+function stripAutoTitleSuffixes(title: string): string {
+  let current = title;
+  let changed = true;
+  while (changed) {
+    changed = false;
+
+    const withoutDecor = current.replace(AUTO_DECORATIVE_ANGLE_RE, '').trimEnd();
+    if (withoutDecor !== current) {
+      current = withoutDecor;
+      changed = true;
+      continue;
+    }
+
+    const context = stripContextSuffix(current);
+    if (context.changed) {
+      current = context.title;
+      changed = true;
+    }
+
+    // Do not strip kana-only parentheticals here. Some are readings, but others
+    // are distinct karaoke cuts or work/version context (`シングル・ヴァージョン`,
+    // `ヒプノシスマイク`). Automatic Tier G stays conservative; reading-only
+    // folds can move to a reviewed allowlist/tier later.
+  }
+  return current;
+}
+
+function autoMergeTitleKey(record: SongRecord): string {
+  return clusterKeyPart(foldLegacyChars(stripAutoTitleSuffixes(record.title_primary)));
+}
+
+function isUnsafeAutoTitleKey(key: string): boolean {
+  return AUTO_UNSAFE_TITLE_KEYS.has(key);
+}
+
+function hasUnsafeAutoTitleSurface(value: string): boolean {
+  return AUTO_UNSAFE_TITLE_SURFACE_RE.test(value);
+}
+
+function autoMergeArtistKey(value: string): string {
+  return clusterKeyPart(foldLegacyChars(value));
+}
+
+function hasUnsafeShortArtistKey(value: string): boolean {
+  return AUTO_UNSAFE_SHORT_ARTIST_RE.test(autoMergeArtistKey(value));
+}
+
+function hasCollabArtistSurface(value: string): boolean {
+  return AUTO_ARTIST_COLLAB_RE.test(value);
+}
+
+function artistBoundarySurface(value: string): string {
+  return foldLegacyChars(value).normalize('NFKC').toLowerCase().replace(/\s+/gu, '');
+}
+
+function hasSafeExpandedArtistPrefix(targetArtistRaw: string, joyArtistRaw: string): boolean {
+  const targetArtist = autoMergeArtistKey(targetArtistRaw);
+  const joyArtist = autoMergeArtistKey(joyArtistRaw);
+  if (targetArtist.length < 3) return false;
+  if (AUTO_UNSAFE_SHORT_ARTIST_RE.test(targetArtist)) return false;
+  if (AUTO_VOICE_CREDIT_RE.test(joyArtistRaw)) return false;
+  if (
+    AUTO_ARTIST_UNSAFE_CREDIT_RE.test(targetArtistRaw) ||
+    AUTO_ARTIST_UNSAFE_CREDIT_RE.test(joyArtistRaw)
+  ) {
+    return false;
+  }
+  if (!joyArtist.startsWith(targetArtist)) return false;
+
+  const targetSurface = artistBoundarySurface(targetArtistRaw);
+  const joySurface = artistBoundarySurface(joyArtistRaw);
+  if (!joySurface.startsWith(targetSurface)) return false;
+  const next = joySurface[targetSurface.length];
+  // Safe automatic prefix expansion is limited to explicit separated credits,
+  // e.g. `GACKT(Gackt)` or `Group(member list)`. Plain lexical prefixes such
+  // as `ALI` -> `AliA` need manual review.
+  return next === undefined || /^[\(（\[【{｛<＜]/u.test(next);
+}
+
+function safeKoBridge(target: SongRecord, joy: SongRecord): boolean {
+  if (target.artist_ko === null || joy.artist_ko === null) return false;
+  if (koDisplayKey(target.artist_ko) !== koDisplayKey(joy.artist_ko)) return false;
+  // Prevent feature-artist leakage such as `MISIA(Feat.HIDE(GReeeeN))` ↔
+  // `GReeeeN`: Korean display names are safe only for simple, non-collab
+  // primary artist surfaces.
+  if (hasCollabArtistSurface(target.artist_primary) || hasCollabArtistSurface(joy.artist_primary)) {
+    return false;
+  }
+  if (
+    hasUnsafeShortArtistKey(target.artist_primary) ||
+    hasUnsafeShortArtistKey(joy.artist_primary)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function safeAutoArtistEvidence(target: SongRecord, joy: SongRecord): boolean {
+  const targetArtist = autoMergeArtistKey(target.artist_primary);
+  const joyArtist = autoMergeArtistKey(joy.artist_primary);
+  if (targetArtist !== '' && targetArtist === joyArtist) return true;
+  // Only boundary-separated prefix expansion is treated as a rule-safe
+  // alias/credit expansion (`Gackt` → `GACKT(Gackt)`, group → group(member
+  // list)). Infix/lexical prefix containment such as character(CV:voice actor)
+  // or `ALI` → `AliA` still needs raw review.
+  if (hasSafeExpandedArtistPrefix(target.artist_primary, joy.artist_primary)) {
+    return true;
+  }
+  return safeKoBridge(target, joy);
+}
+
+function isAutoMergeTarget(record: SongRecord, vendor: NonJoysoundVendor): boolean {
+  return (
+    nonNullVendorNumberCount(record) === 1 &&
+    record.karaoke_numbers[vendor] !== null &&
+    record.karaoke_numbers.joysound === null
+  );
+}
+
+function isAutoMergeJoySide(record: SongRecord): boolean {
+  // Keep the rule-generated surface JOY-only. Exact reviewed exceptions that
+  // import a third provider belong in Tier F, not this broad rule tier.
+  return record.karaoke_numbers.joysound !== null && nonNullVendorNumberCount(record) === 1;
+}
+
+function collectTierGAutoResidualGroups(
+  records: SongRecord[],
+  uf: UnionFind,
+  sizeByRoot: Map<number, number>,
+): Map<string, number[]> {
+  const groups = new Map<string, number[]>();
+  const joyByTitle = new Map<string, number[]>();
+  const targets: { vendor: NonJoysoundVendor; number: string; idx: number; titleKey: string }[] =
+    [];
+
+  for (let i = 0; i < records.length; i++) {
+    const root = uf.find(i);
+    if (sizeByRoot.get(root) !== 1) continue;
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const record = records[i]!;
+    if (hasUnsafeAutoTitleSurface(record.title_primary)) continue;
+    const titleKey = autoMergeTitleKey(record);
+    if (titleKey === '' || isUnsafeAutoTitleKey(titleKey)) continue;
+
+    if (isAutoMergeJoySide(record)) {
+      addToIndex(joyByTitle, titleKey, i);
+      continue;
+    }
+
+    for (const vendor of ['tj', 'ky'] as const satisfies readonly NonJoysoundVendor[]) {
+      if (!isAutoMergeTarget(record, vendor)) continue;
+      const number = record.karaoke_numbers[vendor];
+      if (number === null) continue;
+      targets.push({ vendor, number, idx: i, titleKey });
+    }
+  }
+
+  const candidatesByTarget = new Map<number, number[]>();
+  const targetsByJoy = new Map<string, number[]>();
+  for (const target of targets) {
+    // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+    const targetRecord = records[target.idx]!;
+    const joyCandidates = (joyByTitle.get(target.titleKey) ?? []).filter((joyIdx) => {
+      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+      const joy = records[joyIdx]!;
+      return safeAutoArtistEvidence(targetRecord, joy);
+    });
+    candidatesByTarget.set(target.idx, joyCandidates);
+    for (const joyIdx of joyCandidates) addToIndex(targetsByJoy, String(joyIdx), target.idx);
+  }
+
+  for (const target of targets) {
+    const joyCandidates = candidatesByTarget.get(target.idx);
+    if (joyCandidates?.length !== 1) continue;
+    const joyIdx = joyCandidates[0];
+    if (joyIdx === undefined) continue;
+    if ((targetsByJoy.get(String(joyIdx)) ?? []).length !== 1) continue;
+
+    // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+    const targetRecord = records[target.idx]!;
+    // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+    const joyRecord = records[joyIdx]!;
+    const joysound = joyRecord.karaoke_numbers.joysound;
+    if (joysound === null) continue;
+    const cluster = [targetRecord, joyRecord];
+    if (collectVendorNumberConflicts(cluster).length > 0) continue;
+    groups.set(tierGClusterKey(target.vendor, target.number, joysound), [target.idx, joyIdx]);
   }
 
   return groups;
@@ -1207,6 +1522,20 @@ function recordTierFConflict(
   });
 }
 
+function recordTierGConflict(
+  conflicts: MergeConflict[],
+  cluster: SongRecord[],
+  winner: string,
+  clusterKey: string,
+): void {
+  conflicts.push({
+    cluster_key: clusterKey,
+    field: 'tier_g_auto_residual_merge',
+    values: cluster.map((r) => ({ source: sourceSlug(r), value: r.id })),
+    winner,
+  });
+}
+
 function compareNullableTj(a: string | null, b: string | null): number {
   // Null TJ records sort last regardless of the other side's codepoint.
   if (a === null && b !== null) return 1;
@@ -1332,6 +1661,8 @@ function mergeCluster(
   tierEClusterKeyValue: string | null,
   wasTierF: boolean,
   tierFClusterKeyValue: string | null,
+  wasTierG: boolean,
+  tierGClusterKeyValue: string | null,
   conflicts: MergeConflict[],
 ): SongRecord {
   if (cluster.length === 0) throw new Error('empty cluster');
@@ -1339,15 +1670,17 @@ function mergeCluster(
   // Tier C/D clusters reuse Tier B's vendor-conflict reporting surface under a
   // folded soft-key shape so existing PR-body aggregation continues to work.
   const softClusterKey =
-    wasTierF && tierFClusterKeyValue !== null
-      ? tierFClusterKeyValue
-      : wasTierE && tierEClusterKeyValue !== null
-        ? tierEClusterKeyValue
-        : wasTierD && cluster[0]
-          ? tierDKey(cluster[0])
-          : wasTierB || wasTierC
-            ? tierBKey(cluster[0] as SongRecord)
-            : null;
+    wasTierG && tierGClusterKeyValue !== null
+      ? tierGClusterKeyValue
+      : wasTierF && tierFClusterKeyValue !== null
+        ? tierFClusterKeyValue
+        : wasTierE && tierEClusterKeyValue !== null
+          ? tierEClusterKeyValue
+          : wasTierD && cluster[0]
+            ? tierDKey(cluster[0])
+            : wasTierB || wasTierC
+              ? tierBKey(cluster[0] as SongRecord)
+              : null;
 
   const mergedArtistPrimary =
     pickByOwnership(cluster, TITLE_ARTIST_CHAIN, (r) => r.artist_primary) ??
@@ -1387,6 +1720,7 @@ function mergeCluster(
   if (wasTierD) recordTierDConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
   if (wasTierE) recordTierEConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
   if (wasTierF) recordTierFConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
+  if (wasTierG) recordTierGConflict(conflicts, cluster, merged.id, softClusterKey ?? '');
 
   return merged;
 }
@@ -1394,7 +1728,7 @@ function mergeCluster(
 // --- Public API ----------------------------------------------------------
 
 /**
- * Six-tier dedup + per-field-ownership merge.
+ * Seven-tier dedup + per-field-ownership merge.
  *
  *   Tier A (hard match): per-vendor union-find. Records sharing a non-null
  *   value on the same vendor field (`karaoke_numbers.tj` / `.ky` /
@@ -1446,6 +1780,18 @@ function mergeCluster(
  *   without broadening title-only, fuzzy, reverse-containment, or multi-candidate
  *   queues. Successful groups emit `tier_f_postcrawl_split_merge`.
  *
+ *   Tier G (automatic residual rule pairs): residual singletons after Tier F
+ *   are joined only when a TJ/KY-only target and a JOY-only candidate have a
+ *   one-to-one normalized title key and strong artist evidence: exact artist,
+ *   target artist contained in the JOYSOUND expanded credit, or a guarded
+ *   simple-surface `artist_ko` bridge. The title key folds observed old/new
+ *   kanji variants, safe context suffixes, and JOYSOUND display decorations,
+ *   but deliberately does NOT strip reading-only, version/remix/mix, `+`, or
+ *   edit/single suffixes. Title-only, medium-token, reverse-containment,
+ *   provider-conflict, multi-candidate, short numeric artist, and JOY-side
+ *   extra-provider cases remain split. Successful groups emit
+ *   `tier_g_auto_residual_merge`.
+ *
  *   Per-cluster ownership: each output field is taken from the
  *   highest-priority contributing source per the spec's per-field table.
  *   See `mergeCluster` for the chains.
@@ -1456,7 +1802,7 @@ function mergeCluster(
  *   2) `normalize(title_primary)` ascending — locale-stable string compare.
  *   3) `id` ascending.
  *
- * Conflict warnings (Tier B vendor-number disagreements + Tier C/D/E/F cluster
+ * Conflict warnings (Tier B vendor-number disagreements + Tier C/D/E/F/G cluster
  * fires + Tier D blocked vendor-number disagreements) are returned in
  * `result.conflicts`. Console output is forbidden — callers aggregate them.
  */
@@ -1591,6 +1937,24 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     }
   }
 
+  // --- Tier G: conservative automatic residual split rules ---
+  // Generalizes only the no-manual-review shape: residual singleton TJ/KY-only
+  // target, JOY-only candidate, one-to-one title key, and strong artist evidence
+  // (exact artist, boundary-separated target artist expansion in the JOYSOUND
+  // credit, or a guarded artist_ko bridge). Title-only, medium token, reverse
+  // containment, provider-conflict, reading-only/version/remix/edit/single, `+`,
+  // and JOY-side extra-provider cases stay split.
+  const sizeAfterF = countRoots(uf, n);
+  const tierGGroups = collectTierGAutoResidualGroups(records, uf, sizeAfterF);
+  const tierGRoots = new Set<number>();
+  const tierGClusterKeyByRoot = new Map<number, string>();
+  for (const [clusterKey, idxs] of tierGGroups) {
+    for (const root of unionIndexGroups(uf, [idxs])) {
+      tierGRoots.add(root);
+      tierGClusterKeyByRoot.set(root, clusterKey);
+    }
+  }
+
   // --- Materialize clusters ---
   const clusters = collectClusters(uf, n);
 
@@ -1603,6 +1967,7 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
     const wasTierD = tierDRoots.has(root);
     const wasTierE = tierERoots.has(root);
     const wasTierF = tierFRoots.has(root);
+    const wasTierG = tierGRoots.has(root);
     merged.push(
       mergeCluster(
         cluster,
@@ -1613,6 +1978,8 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
         tierEClusterKeyByRoot.get(root) ?? null,
         wasTierF,
         tierFClusterKeyByRoot.get(root) ?? null,
+        wasTierG,
+        tierGClusterKeyByRoot.get(root) ?? null,
         conflicts,
       ),
     );

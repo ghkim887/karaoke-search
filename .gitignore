@@ -51,6 +51,9 @@ CLAUDE.md
 # Playwright MCP tooling artifact
 .playwright-mcp/
 
+# CodeGraph generated local index
+.codegraph/
+
 # Playwright MCP screenshots from local verification runs
 apps/web/.playwright-mcp/
 apps/web/test-results/

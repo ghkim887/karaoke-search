@@ -1856,6 +1856,301 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
 });
 
 // ---------------------------------------------------------------------
+// Tier G — automatic no-manual-review residual split rules
+// ---------------------------------------------------------------------
+describe('mergeRecords — Tier G automatic residual split rules', () => {
+  it('merges exact-title expanded-artist-credit pairs without an exact allowlist entry', () => {
+    const tjOnly = record({
+      id: 'tj-25090',
+      source_url: 'https://tj.test/25090',
+      title_primary: 'Vanilla',
+      artist_primary: 'Gackt',
+      artist_ko: '각트',
+      karaoke_numbers: { tj: '25090', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-20605',
+      source_url: 'https://www.joysound.com/web/search/song/20605',
+      title_primary: 'Vanilla',
+      artist_primary: 'GACKT(Gackt)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '20669' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25090', ky: null, joysound: '20669' });
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(1);
+    expect(headlineConflicts(conflicts)).toHaveLength(0);
+  });
+
+  it('merges same-artist old/new kanji title variants', () => {
+    const tjOnly = record({
+      id: 'tj-26881',
+      source_url: 'https://tj.test/26881',
+      title_primary: '涙のムコウ(機動戦士ガンダム00 OP)',
+      artist_primary: 'ステレオポニー',
+      karaoke_numbers: { tj: '26881', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-131123',
+      source_url: 'https://www.joysound.com/web/search/song/131123',
+      title_primary: '泪のムコウ',
+      artist_primary: 'ステレオポニー',
+      karaoke_numbers: { tj: null, ky: null, joysound: '90712' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '26881', ky: null, joysound: '90712' });
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(1);
+  });
+
+  it('merges simple artist_ko bridges only when primary artist surfaces are non-collab', () => {
+    const kyOnly = record({
+      id: 'blog-900-1',
+      source_url: 'https://blog.test/900',
+      title_primary: 'Alias Song',
+      artist_primary: 'Reol',
+      artist_ko: '레오루',
+      karaoke_numbers: { tj: null, ky: '50001', joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-900001',
+      source_url: 'https://www.joysound.com/web/search/song/900001',
+      title_primary: 'Alias Song',
+      artist_primary: 'れをる',
+      artist_ko: '레오루',
+      karaoke_numbers: { tj: null, ky: null, joysound: '900001' },
+    });
+
+    const { records, conflicts } = mergeRecords([kyOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: '50001', joysound: '900001' });
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(1);
+  });
+
+  it('does not merge short numeric expanded-artist credits without manual review', () => {
+    const tjOnly = record({
+      id: 'tj-25022',
+      source_url: 'https://tj.test/25022',
+      title_primary: 'たいせつなひと',
+      artist_primary: '19',
+      karaoke_numbers: { tj: '25022', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-11794',
+      source_url: 'https://www.joysound.com/web/search/song/11794',
+      title_primary: 'たいせつなひと',
+      artist_primary: '19(ジューク)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '11802' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('does not merge CV-credit prefix containment without manual review', () => {
+    const tjOnly = record({
+      id: 'tj-28894',
+      source_url: 'https://tj.test/28894',
+      title_primary: 'IKEBUKURO WEST GAME PARK',
+      artist_primary: 'Buster Bros!!!',
+      karaoke_numbers: { tj: '28894', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-690805',
+      source_url: 'https://www.joysound.com/web/search/song/690805',
+      title_primary: 'IKEBUKURO WEST GAME PARK',
+      artist_primary: 'Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平)',
+      karaoke_numbers: { tj: null, ky: null, joysound: '429143' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('does not merge artist_ko leakage from a featured artist', () => {
+    const tjOnly = record({
+      id: 'blog-338-10',
+      source_url: 'https://j-pop-playlist.tistory.com/338',
+      title_primary: "アイノカタチ(ドラマ'義母と娘のブルース' OST)",
+      artist_primary: 'MISIA(Feat.HIDE(GReeeeN))',
+      artist_ko: '그린',
+      karaoke_numbers: { tj: '28895', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-775260',
+      source_url: 'https://www.joysound.com/web/search/song/775260',
+      title_primary: 'アイノカタチ',
+      artist_primary: 'GReeeeN',
+      artist_ko: '그린',
+      karaoke_numbers: { tj: null, ky: null, joysound: '441874' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('keeps version/remix title variants out of the automatic rule tier', () => {
+    const tjOnly = record({
+      id: 'tj-25065',
+      source_url: 'https://tj.test/25065',
+      title_primary: 'Simply Wonderful',
+      artist_primary: '倉木麻衣',
+      karaoke_numbers: { tj: '25065', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-24651',
+      source_url: 'https://www.joysound.com/web/search/song/24651',
+      title_primary: 'Simply Wonderful〈Club Edit〉',
+      artist_primary: '倉木麻衣',
+      karaoke_numbers: { tj: null, ky: null, joysound: '26141' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('does not strip kana-only version parentheticals as automatic readings', () => {
+    const tjOnly = record({
+      id: 'tj-26299',
+      source_url: 'https://tj.test/26299',
+      title_primary: '私がオバさんになっても',
+      artist_primary: '森高千里',
+      karaoke_numbers: { tj: '26299', ky: null, joysound: null },
+    });
+    const joyVersion = record({
+      id: 'joysound-7118',
+      source_url: 'https://www.joysound.com/web/search/song/7118',
+      title_primary: '私がオバさんになっても (シングル・ヴァージョン)',
+      artist_primary: '森高千里',
+      karaoke_numbers: { tj: null, ky: null, joysound: '7118' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyVersion]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('keeps plus-title variants out of the automatic rule tier', () => {
+    const tjOnly = record({
+      id: 'tj-882562',
+      source_url: 'https://tj.test/882562',
+      title_primary: '櫻star',
+      artist_primary: 'Division All Stars',
+      karaoke_numbers: { tj: '882562', ky: null, joysound: null },
+    });
+    const joyPlus = record({
+      id: 'joysound-882562',
+      source_url: 'https://www.joysound.com/web/search/song/882562',
+      title_primary: '桜star +',
+      artist_primary: 'Division All Stars',
+      karaoke_numbers: { tj: null, ky: null, joysound: '498108' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyPlus]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('does not merge plain lexical artist prefixes such as ALI to AliA', () => {
+    const tjOnly = record({
+      id: 'tj-prefix-1',
+      source_url: 'https://tj.test/prefix-1',
+      title_primary: 'Prefix Collision',
+      artist_primary: 'ALI',
+      karaoke_numbers: { tj: '991001', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-prefix-1',
+      source_url: 'https://www.joysound.com/web/search/song/prefix-1',
+      title_primary: 'Prefix Collision',
+      artist_primary: 'AliA',
+      karaoke_numbers: { tj: null, ky: null, joysound: '991001' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('requires one-to-one uniqueness across the full plausible target/candidate graph', () => {
+    const targetA = record({
+      id: 'tj-graph-a',
+      source_url: 'https://tj.test/graph-a',
+      title_primary: '櫻 Graph Song',
+      artist_primary: 'Alpha',
+      karaoke_numbers: { tj: '992001', ky: null, joysound: null },
+    });
+    const targetB = record({
+      id: 'tj-graph-b',
+      source_url: 'https://tj.test/graph-b',
+      title_primary: '櫻 Graph Song',
+      artist_primary: 'Beta',
+      artist_ko: '베타',
+      karaoke_numbers: { tj: '992002', ky: null, joysound: null },
+    });
+    const sharedJoy = record({
+      id: 'joysound-graph-shared',
+      source_url: 'https://www.joysound.com/web/search/song/graph-shared',
+      title_primary: '桜 Graph Song',
+      artist_primary: 'Alpha',
+      artist_ko: '베타',
+      karaoke_numbers: { tj: null, ky: null, joysound: '992101' },
+    });
+    const betaJoy = record({
+      id: 'joysound-graph-beta',
+      source_url: 'https://www.joysound.com/web/search/song/graph-beta',
+      title_primary: '桜 Graph Song',
+      artist_primary: 'Beta',
+      artist_ko: '베타',
+      karaoke_numbers: { tj: null, ky: null, joysound: '992102' },
+    });
+
+    const { records, conflicts } = mergeRecords([targetA, targetB, sharedJoy, betaJoy]);
+
+    expect(records).toHaveLength(4);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+
+  it('keeps JOYSOUND-side rows with unreviewed extra provider numbers out of automatic rules', () => {
+    const tjOnly = record({
+      id: 'tj-25090',
+      source_url: 'https://tj.test/25090',
+      title_primary: 'Vanilla',
+      artist_primary: 'Gackt',
+      karaoke_numbers: { tj: '25090', ky: null, joysound: null },
+    });
+    const joyWithKy = record({
+      id: 'joysound-20605',
+      source_url: 'https://www.joysound.com/web/search/song/20605',
+      title_primary: 'Vanilla',
+      artist_primary: 'GACKT(Gackt)',
+      karaoke_numbers: { tj: null, ky: '99999', joysound: '20669' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyWithKy]);
+
+    expect(records).toHaveLength(2);
+    expect(conflicts.filter((c) => c.field === 'tier_g_auto_residual_merge')).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------
 // Cross-record artist_ko propagation
 //
 // After clusters are materialized, `artist_ko` is propagated across SEPARATE

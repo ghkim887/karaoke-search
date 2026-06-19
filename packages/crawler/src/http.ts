@@ -54,6 +54,11 @@ const ALLOWED_HOSTS: ReadonlyMap<string, HostRule> = new Map<string, HostRule>([
  * 50 MB is well above any real API response in this codebase.
  */
 const BODY_SIZE_LIMIT = 50 * 1024 * 1024;
+// Large finite provider request timeouts: long crawls should not fail just
+// because JOYSOUND/TJ/KY is temporarily slow. Keep a bound so truly hung
+// requests still surface and resume logic can take over.
+const REQUEST_HEADERS_TIMEOUT_MS = 600_000;
+const REQUEST_BODY_TIMEOUT_MS = 600_000;
 
 /**
  * Read a response body with a hard size cap. Uses the streaming `res.body`
@@ -338,6 +343,8 @@ export class HttpClient {
         const res = await request(robotsUrl, {
           method: 'GET',
           headers: { 'user-agent': userAgent },
+          headersTimeout: REQUEST_HEADERS_TIMEOUT_MS,
+          bodyTimeout: REQUEST_BODY_TIMEOUT_MS,
         });
         const body = await readBodyCapped(res.body);
         const status = res.statusCode;
@@ -389,7 +396,12 @@ export class HttpClient {
     if (cached?.etag) headers['if-none-match'] = cached.etag;
     if (cached?.lastModified) headers['if-modified-since'] = cached.lastModified;
 
-    const res = await request(url, { method: 'GET', headers });
+    const res = await request(url, {
+      method: 'GET',
+      headers,
+      headersTimeout: REQUEST_HEADERS_TIMEOUT_MS,
+      bodyTimeout: REQUEST_BODY_TIMEOUT_MS,
+    });
     const status = res.statusCode;
 
     if (status === 304 && cached) {
@@ -449,7 +461,13 @@ export class HttpClient {
       'content-type': 'application/x-www-form-urlencoded',
     };
 
-    const res = await request(url, { method: 'POST', headers, body: encoded });
+    const res = await request(url, {
+      method: 'POST',
+      headers,
+      body: encoded,
+      headersTimeout: REQUEST_HEADERS_TIMEOUT_MS,
+      bodyTimeout: REQUEST_BODY_TIMEOUT_MS,
+    });
     const status = res.statusCode;
     const respBody = await readBodyCapped(res.body);
     const etagHeader = res.headers.etag;
