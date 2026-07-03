@@ -98,16 +98,23 @@ interface SearchTokenStatSourceRow {
  * `compactLength === 1`). For an ultra-common character — Japanese particles
  * like の/い, high-frequency kanji, common Hangul syllables — the posting list
  * spans thousands of songs sharing a near-flat idf, so the LIMIT-truncated
- * result is an arbitrary low-relevance long tail rather than a signal. The
- * exact-text tier ranks strictly above gram1, so the top-1 a user sees for such
- * a query is unchanged whether or not these postings exist.
+ * result is an arbitrary low-relevance long tail rather than a signal. Dropping
+ * those postings is the point: the query then falls through to the higher-ranked
+ * exact-text tier (which supplies the top-1 when an exact single-character title
+ * or artist exists), or returns empty when nothing matches exactly — instead of
+ * an arbitrary tail.
  *
  * I3 investigation (109-query top-20 recall harness, see scratchpad/i3): capping
- * gram1 at df>500 removed ~66% of gram1 postings and ~8.4% of DB bytes with ZERO
- * relevant-recall loss — top-1 stayed stable on every affected query and only the
- * arbitrary long tail of df>500 characters shrank. Tighter caps (df>200, df>100)
- * also dropped genuinely useful mid-frequency characters (e.g. 恋/光/夏/空 sit at
- * or below 500 and MUST stay searchable), so 500 is the chosen floor.
+ * gram1 at df>500 removed ~66% of gram1 postings and ~8.4% of DB bytes (VACUUMed).
+ * The curated golden/smoke query sets are fully preserved — the search-parity
+ * regeneration is a no-op — because their only 1-character queries (恋/光/夏/空/ㄱ,
+ * and smoke 光) sit at or below the cap. The results that DO change are exactly
+ * the targeted long tail: cap-exceeding ultra-high-frequency single characters
+ * are intentionally emptied or reordered (in I3, い/ン/ー/이/사 drop to empty and
+ * ス reorders), a deliberate quality trade rather than a recall regression.
+ * Tighter caps (df>200, df>100) also dropped genuinely useful mid-frequency
+ * characters (恋/光/夏/空 sit at or below 500 and MUST stay searchable), so 500 is
+ * the chosen floor.
  *
  * CHANGING THIS VALUE moves worker results for any 1-character query whose
  * character's df sits between the old and new cap. The search-parity baseline
