@@ -344,16 +344,12 @@ export function assertPhaseOrder(steps: readonly FilterStep[]): void {
     const rank = PHASE_ORDER.indexOf(step.phase);
     if (rank === -1) {
       throw new Error(
-        `FILTER_STEPS phase check: step "${step.name}" has phase "${step.phase}" ` +
-          `which is not in PHASE_ORDER [${PHASE_ORDER.join(' → ')}].`,
+        `FILTER_STEPS phase check: step "${step.name}" has phase "${step.phase}" which is not in PHASE_ORDER [${PHASE_ORDER.join(' → ')}].`,
       );
     }
     if (rank < prevRank && prevStep !== undefined) {
       throw new Error(
-        `FILTER_STEPS order violation: "${step.name}" (phase "${step.phase}") runs after ` +
-          `"${prevStep.name}" (phase "${prevStep.phase}"), but "${step.phase}" must not precede ` +
-          `"${prevStep.phase}" per PHASE_ORDER [${PHASE_ORDER.join(' → ')}]. ` +
-          `The TJ filter chain order is load-bearing — see docs/PROJECT-KNOWLEDGE.md.`,
+        `FILTER_STEPS order violation: "${step.name}" (phase "${step.phase}") runs after "${prevStep.name}" (phase "${prevStep.phase}"), but "${step.phase}" must not precede "${prevStep.phase}" per PHASE_ORDER [${PHASE_ORDER.join(' → ')}]. The TJ filter chain order is load-bearing — see docs/PROJECT-KNOWLEDGE.md.`,
       );
     }
     prevRank = rank;

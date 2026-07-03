@@ -9,9 +9,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   FILTER_STEPS,
+  type FilterStep,
   PHASE_ORDER,
   assertPhaseOrder,
-  type FilterStep,
 } from '../../../src/adapters/tj-media-direct/filterSteps.js';
 
 describe('assertPhaseOrder — phase-tag order guard', () => {

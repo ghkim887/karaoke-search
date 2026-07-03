@@ -13,7 +13,11 @@ import type { KaraokeNumbers } from '@karaoke/schema';
 
 // --- Vendor identity ------------------------------------------------------
 
-export const VENDORS = ['tj', 'ky', 'joysound'] as const satisfies readonly (keyof KaraokeNumbers)[];
+export const VENDORS = [
+  'tj',
+  'ky',
+  'joysound',
+] as const satisfies readonly (keyof KaraokeNumbers)[];
 
 export type Vendor = (typeof VENDORS)[number];
 
@@ -331,7 +335,11 @@ export const REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS = new Map<
   [reviewedTierFPairKey('ky', '44158', '689337'), { tj: '28704' }],
 ]);
 
-export function reviewedTierFPairKey(vendor: NonJoysoundVendor, number: string, joysound: string): string {
+export function reviewedTierFPairKey(
+  vendor: NonJoysoundVendor,
+  number: string,
+  joysound: string,
+): string {
   return `${vendor}|${number}|${joysound}`;
 }
 

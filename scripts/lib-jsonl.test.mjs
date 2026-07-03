@@ -63,7 +63,9 @@ describe('streamJsonl', () => {
     const p = write('in.jsonl', '\n{"a":1}\n{bad\n{"a":2}\n');
     const errors = [];
     const values = await collect(
-      streamJsonl(p, { onParseError: (err, lineNo) => errors.push([lineNo, err instanceof SyntaxError]) }),
+      streamJsonl(p, {
+        onParseError: (err, lineNo) => errors.push([lineNo, err instanceof SyntaxError]),
+      }),
     );
     expect(values).toEqual([{ a: 1 }, { a: 2 }]);
     // Line 1 blank (skipped, not counted as error), line 2 ok, line 3 bad.

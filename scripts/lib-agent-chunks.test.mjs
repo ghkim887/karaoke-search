@@ -26,11 +26,7 @@ afterEach(() => {
 describe('chunkRecords', () => {
   it('splits into consecutive chunks preserving order, last chunk smaller', () => {
     const recs = Array.from({ length: 7 }, (_, i) => i);
-    expect(chunkRecords(recs, 3)).toEqual([
-      [0, 1, 2],
-      [3, 4, 5],
-      [6],
-    ]);
+    expect(chunkRecords(recs, 3)).toEqual([[0, 1, 2], [3, 4, 5], [6]]);
   });
   it('returns [] on empty input', () => {
     expect(chunkRecords([], 3)).toEqual([]);

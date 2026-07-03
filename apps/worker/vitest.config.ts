@@ -6,8 +6,12 @@ export default defineConfig({
   // require a prebuilt dist/. Kept in sync with tsconfig.typecheck.json paths.
   resolve: {
     alias: {
-      '@karaoke/schema': fileURLToPath(new URL('../../packages/schema/src/index.ts', import.meta.url)),
-      '@karaoke/search': fileURLToPath(new URL('../../packages/search/src/index.ts', import.meta.url)),
+      '@karaoke/schema': fileURLToPath(
+        new URL('../../packages/schema/src/index.ts', import.meta.url),
+      ),
+      '@karaoke/search': fileURLToPath(
+        new URL('../../packages/search/src/index.ts', import.meta.url),
+      ),
       '@karaoke/data-store': fileURLToPath(
         new URL('../../packages/data-store/src/index.ts', import.meta.url),
       ),

@@ -569,12 +569,7 @@ export class HttpClient {
     if (cached?.lastModified) headers['if-modified-since'] = cached.lastModified;
 
     // Rate-limit reservation happens per attempt inside getWithRetry.
-    const res = await this.getWithRetry(
-      url,
-      headers,
-      hostCfg.minIntervalMs,
-      hostCfg.jitterMs,
-    );
+    const res = await this.getWithRetry(url, headers, hostCfg.minIntervalMs, hostCfg.jitterMs);
     const status = res.statusCode;
 
     if (status === 304 && cached) {

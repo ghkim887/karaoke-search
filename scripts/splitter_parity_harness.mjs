@@ -53,8 +53,7 @@ async function main() {
     // Hard error, not a skip: a missing dist means the caller forgot to build.
     // Same build hint drop-artist-leaks.mjs uses so the fix is obvious.
     throw new Error(
-      `missing crawler dist at ${CLUSTERING_DIST}\n` +
-        '  Run `corepack pnpm --filter @karaoke/crawler build` first.',
+      `missing crawler dist at ${CLUSTERING_DIST}\n  Run \`corepack pnpm --filter @karaoke/crawler build\` first.`,
     );
   }
   if (!existsSync(fixturePath)) {
@@ -74,7 +73,9 @@ async function main() {
     // The drop filter (isArtistDropped in drop-artist-leaks.mjs) only ever
     // consumes normalizeForMatch(component); the set of those keys IS the
     // observable behavior. Dedupe + sort so the comparison is order-invariant.
-    const keys = [...new Set(components.map((c) => normalizeForMatch(c)).filter((k) => k !== ''))].sort();
+    const keys = [
+      ...new Set(components.map((c) => normalizeForMatch(c)).filter((k) => k !== '')),
+    ].sort();
     return { input, components, keys };
   });
 

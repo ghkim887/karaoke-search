@@ -2,13 +2,13 @@ import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { getLeadComponent } from './clustering.js';
 import { normalize } from './normalize.js';
 import {
+  type NonJoysoundVendor,
   REVIEWED_TIER_E_JOYS_BY_TJ,
   REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS,
   REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER,
-  reviewedTierFPairKey,
   VENDORS,
-  type NonJoysoundVendor,
   type Vendor,
+  reviewedTierFPairKey,
 } from './reviewedMergePairs.js';
 
 /**

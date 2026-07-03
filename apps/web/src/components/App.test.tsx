@@ -769,9 +769,7 @@ describe('App API error surfacing (T1-2)', () => {
   }
 
   it('renders the error state, not NoResults, when an API Browse search fails', async () => {
-    const apiSpy = vi
-      .spyOn(searchModule, 'searchApi')
-      .mockRejectedValue(new Error('network down'));
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockRejectedValue(new Error('network down'));
     await mount();
 
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });

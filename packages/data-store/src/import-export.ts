@@ -3,13 +3,13 @@ import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { validateSongRecord } from '@karaoke/schema';
 import { parseSearchHintFile } from './hints.js';
 import type { SearchHintInput } from './hints.js';
+import { createSongDatabase, openSongDatabase } from './schema.js';
+import type { SongDatabase } from './schema.js';
 import {
   groupResolvedHints,
   recalculateAllTokenStats,
   resolveSearchHints,
 } from './search-index.js';
-import { createSongDatabase, openSongDatabase } from './schema.js';
-import type { SongDatabase } from './schema.js';
 import { prepareSongWriteStatements, writeSongRecordRows } from './song-writer.js';
 
 type TitleKoSource = NonNullable<SongRecord['title_ko_source']>;
@@ -26,9 +26,7 @@ export function importSongs(
   options: ImportSongsOptions = {},
 ): void {
   validateSongCorpus(records);
-  const hintsBySongId = groupResolvedHints(
-    resolveSearchHints(options.searchHints ?? [], records),
-  );
+  const hintsBySongId = groupResolvedHints(resolveSearchHints(options.searchHints ?? [], records));
   db.exec(
     'CREATE TEMP TABLE IF NOT EXISTS temp_import_song_ids (id TEXT PRIMARY KEY) WITHOUT ROWID',
   );

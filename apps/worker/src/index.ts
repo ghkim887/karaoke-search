@@ -3,13 +3,13 @@ import { songColumnsProjection } from '@karaoke/data-store';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import type { SearchTokenKind } from '@karaoke/search';
 import {
+  MAX_PREFIX_TOKEN_CHARS,
+  PROVIDER_MASKS,
   compactSearchText,
   expandSearchQuery,
   makeCharacterNgrams,
   makeHangulInitials,
-  MAX_PREFIX_TOKEN_CHARS,
   parseKaraokeNumberQuery,
-  PROVIDER_MASKS,
   tokenizeSearchWords,
 } from '@karaoke/search';
 
@@ -656,4 +656,3 @@ interface SearchQueryParams {
   limit: number;
   offset: number;
 }
-

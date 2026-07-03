@@ -21,7 +21,7 @@ function fakeStream() {
       if (event === 'drain') drainCbs.push(cb);
     },
     emitDrain() {
-      drainCbs.splice(0).forEach((cb) => cb());
+      for (const cb of drainCbs.splice(0)) cb();
     },
     end(cb) {
       this.ended = true;

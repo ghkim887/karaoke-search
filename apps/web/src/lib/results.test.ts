@@ -1,5 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
 import { describe, expect, it } from 'vitest';
+import type { Vendor } from '../components/VendorChips.js';
 import {
   type ApiBrowseState,
   apiBrowseKey,
@@ -9,7 +10,6 @@ import {
   selectedVendorsForApi,
 } from './results.js';
 import { buildIndex } from './search.js';
-import type { Vendor } from '../components/VendorChips.js';
 
 function rec(over: Partial<SongRecord> & Pick<SongRecord, 'id'>): SongRecord {
   return {
@@ -43,12 +43,23 @@ describe('apiBrowseKey / selectedVendorsForApi', () => {
 });
 
 describe('resolveBrowseCandidates', () => {
-  const bundleRecords = [rec({ id: 'a', title_primary: 'alpha' }), rec({ id: 'b', title_primary: 'beta' })];
-  const bundle = { index: buildIndex(bundleRecords), byId: new Map(bundleRecords.map((r) => [r.id, r])) };
+  const bundleRecords = [
+    rec({ id: 'a', title_primary: 'alpha' }),
+    rec({ id: 'b', title_primary: 'beta' }),
+  ];
+  const bundle = {
+    index: buildIndex(bundleRecords),
+    byId: new Map(bundleRecords.map((r) => [r.id, r])),
+  };
 
   it('empty query yields no candidates', () => {
     expect(
-      resolveBrowseCandidates(true, { query: '', selectedVendors: new Set(), bundle, apiBrowse: IDLE }),
+      resolveBrowseCandidates(true, {
+        query: '',
+        selectedVendors: new Set(),
+        bundle,
+        apiBrowse: IDLE,
+      }),
     ).toEqual([]);
   });
 

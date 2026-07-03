@@ -1,12 +1,12 @@
 import type { JSX } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { createSearchBackend } from '../lib/backend.js';
-import { DEBOUNCE_MS } from '../lib/constants.js';
-import { useFavorites } from '../lib/favorites.js';
 import { useApiBrowse } from '../hooks/useApiBrowse.js';
 import { useApiFavorites } from '../hooks/useApiFavorites.js';
 import { useCorpus } from '../hooks/useCorpus.js';
 import { useSearchResults } from '../hooks/useSearchResults.js';
+import { createSearchBackend } from '../lib/backend.js';
+import { DEBOUNCE_MS } from '../lib/constants.js';
+import { useFavorites } from '../lib/favorites.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';

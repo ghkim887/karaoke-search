@@ -1,30 +1,69 @@
 {
   "description": "Shared behavior-parity fixture for the artist splitter. Consumed by BOTH scripts/splitter_parity_harness.mjs (which runs the canonical TS splitArtistCollab from the built crawler dist) and scripts/test_splitter_behavior_parity.py (which runs the Python artist_components_for_drop_check mirror). Each `input` is fed to both implementations; the test asserts the two produce the SAME set of drop-check keys (normalizeForMatch applied to every component). See test_splitter_behavior_parity.py for the full comparison-contract rationale. Add a case here whenever a new delimiter, edge form, or invariant needs cross-language protection.",
   "cases": [
-    { "input": "MAX(Feat.Huh Yunjin of LE SSERAFIM)", "note": "feat-paren + scoped ' of ' member-of-group sub-split (fires INSIDE the paren only)" },
-    { "input": "LiSA(Feat.SUGA of BTS)", "note": "feat-paren ' of ' sub-split emits both member and group" },
-    { "input": "LE SSERAFIM(Prod.imase)", "note": "(Prod.X) producer credit is structurally identical to (Feat.X)" },
-    { "input": "Charlie Puth(Feat.宇多田ヒカル) & Adele", "note": "mid-string feat paren plus a top-level & delimiter" },
-    { "input": "A(Feat.B) & C(Prod.D)", "note": "two feat/prod parentheticals joined by a top-level & — each paren contributes its inner as a component" },
-    { "input": "Bump of Chicken", "note": "bare ' of ' OUTSIDE any feat/prod paren must NOT split (real band name)" },
+    {
+      "input": "MAX(Feat.Huh Yunjin of LE SSERAFIM)",
+      "note": "feat-paren + scoped ' of ' member-of-group sub-split (fires INSIDE the paren only)"
+    },
+    {
+      "input": "LiSA(Feat.SUGA of BTS)",
+      "note": "feat-paren ' of ' sub-split emits both member and group"
+    },
+    {
+      "input": "LE SSERAFIM(Prod.imase)",
+      "note": "(Prod.X) producer credit is structurally identical to (Feat.X)"
+    },
+    {
+      "input": "Charlie Puth(Feat.宇多田ヒカル) & Adele",
+      "note": "mid-string feat paren plus a top-level & delimiter"
+    },
+    {
+      "input": "A(Feat.B) & C(Prod.D)",
+      "note": "two feat/prod parentheticals joined by a top-level & — each paren contributes its inner as a component"
+    },
+    {
+      "input": "Bump of Chicken",
+      "note": "bare ' of ' OUTSIDE any feat/prod paren must NOT split (real band name)"
+    },
     { "input": "Out of the Blue", "note": "another bare ' of ' non-split guard" },
-    { "input": "SUGA of BTS", "note": "bare ' of ' at top level does NOT split (only fires inside feat/prod parens)" },
-    { "input": "A & B feat. C", "note": "ampersand plus un-parenthesized 'feat.' delimiter in one string" },
+    {
+      "input": "SUGA of BTS",
+      "note": "bare ' of ' at top level does NOT split (only fires inside feat/prod parens)"
+    },
+    {
+      "input": "A & B feat. C",
+      "note": "ampersand plus un-parenthesized 'feat.' delimiter in one string"
+    },
     { "input": "imase & なとり", "note": "ASCII ampersand delimiter" },
     { "input": "imase ＆ なとり", "note": "full-width ampersand U+FF06 (split runs before NFKC)" },
     { "input": "IDOLiSH7,TRIGGER,Re:vale", "note": "comma delimiter, three components" },
     { "input": "Artist1 × Artist2", "note": "multiplication sign U+00D7 delimiter" },
-    { "input": "X｜Y", "note": "full-width vertical bar U+FF5C delimiter (blog collab convention)" },
+    {
+      "input": "X｜Y",
+      "note": "full-width vertical bar U+FF5C delimiter (blog collab convention)"
+    },
     { "input": "椎名もた｜ぽわぽわP", "note": "full-width pipe with CJK operands" },
-    { "input": "Qverktett:||", "note": "ASCII pipe | is NOT a delimiter — must round-trip unchanged" },
+    {
+      "input": "Qverktett:||",
+      "note": "ASCII pipe | is NOT a delimiter — must round-trip unchanged"
+    },
     { "input": "A meets B", "note": "' meets ' delimiter (CHiCO with HoneyWorks meets ...)" },
-    { "input": "CHiCO with HoneyWorks meets 中川翔子", "note": "chained ' with ' and ' meets ' delimiters" },
-    { "input": "安室奈美恵 with スーパーモンキーズ", "note": "' with ' delimiter, whitespace-delimited so it never bites mid-word" },
+    {
+      "input": "CHiCO with HoneyWorks meets 中川翔子",
+      "note": "chained ' with ' and ' meets ' delimiters"
+    },
+    {
+      "input": "安室奈美恵 with スーパーモンキーズ",
+      "note": "' with ' delimiter, whitespace-delimited so it never bites mid-word"
+    },
     { "input": "A FEAT. B", "note": "IGNORECASE: upper-case FEAT. must split like feat." },
     { "input": "a feat. b", "note": "IGNORECASE lower-case control for the FEAT. case above" },
     { "input": "A WITH B", "note": "IGNORECASE: upper-case WITH must split like ' with '" },
     { "input": "A MEETS B", "note": "IGNORECASE: upper-case MEETS must split like ' meets '" },
-    { "input": "imase & IMASE", "note": "case-variant components collapse to one drop-check key under NFKC+lowercase" },
+    {
+      "input": "imase & IMASE",
+      "note": "case-variant components collapse to one drop-check key under NFKC+lowercase"
+    },
     { "input": "YOASOBI", "note": "single artist round-trips unchanged" },
     { "input": "", "note": "empty string yields no components on both sides" },
     { "input": "   ", "note": "whitespace-only string yields no components on both sides" }

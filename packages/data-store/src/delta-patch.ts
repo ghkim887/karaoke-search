@@ -4,16 +4,16 @@ import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import { parseSearchHintFile } from './hints.js';
 import type { SearchHintInput } from './hints.js';
 import { exportSongs, readSongRecordsJson, validateSongCorpus } from './import-export.js';
+import { createSongDatabase, openSongDatabase } from './schema.js';
+import type { SongDatabase } from './schema.js';
 import {
+  KARAOKE_PROVIDERS,
   collectTokenKeysForSong,
   groupResolvedHints,
-  KARAOKE_PROVIDERS,
   recalculateAffectedTokenStats,
   recalculateAllTokenStats,
   resolveSearchHints,
 } from './search-index.js';
-import { createSongDatabase, openSongDatabase } from './schema.js';
-import type { SongDatabase } from './schema.js';
 import { prepareSongWriteStatements, writeSongRecordRows } from './song-writer.js';
 
 export type DeltaPatchTokenStatMode = 'affected' | 'all';

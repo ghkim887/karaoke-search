@@ -2,11 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import type { Vendor } from '../components/VendorChips.js';
 import type { SearchBackend } from '../lib/backend.js';
 import { RESULT_LIMIT } from '../lib/constants.js';
-import {
-  type ApiBrowseState,
-  apiBrowseKey,
-  selectedVendorsForApi,
-} from '../lib/results.js';
+import { type ApiBrowseState, apiBrowseKey, selectedVendorsForApi } from '../lib/results.js';
 
 interface UseApiBrowseInput {
   activeTab: 'browse' | 'favorites';
@@ -41,6 +37,7 @@ export function useApiBrowse(
 ): ApiBrowseResult {
   const [apiBrowse, setApiBrowse] = useState<ApiBrowseState>(IDLE);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: retryNonce is intentionally in the deps to re-run the fetch when the user presses Retry.
   useEffect(() => {
     if (backend.requiresLocalCorpus || activeTab !== 'browse' || query === '') {
       setApiBrowse(IDLE);
@@ -68,8 +65,7 @@ export function useApiBrowse(
   const active = !backend.requiresLocalCorpus && activeTab === 'browse' && query !== '';
   const browseSearchPending =
     active && (apiBrowse.key !== currentKey || apiBrowse.status === 'pending');
-  const browseSearchFailed =
-    active && apiBrowse.key === currentKey && apiBrowse.status === 'error';
+  const browseSearchFailed = active && apiBrowse.key === currentKey && apiBrowse.status === 'error';
 
   return { apiBrowse, browseSearchPending, browseSearchFailed };
 }

@@ -32,6 +32,7 @@ export function useApiFavorites(
   const [apiFavorites, setApiFavorites] = useState<SongRecord[] | null>(null);
   const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: retryNonce is intentionally in the deps to re-run the fetch when the user presses Retry.
   useEffect(() => {
     if (backend.requiresLocalCorpus) return;
     if (favoriteIds.length === 0) {

@@ -1,14 +1,14 @@
 import type { SongRecord } from '@karaoke/schema';
 import { compactSearchText, normalizeSearchText } from '@karaoke/search';
+import type { PreparedStatement, SongDatabase } from './schema.js';
 import {
-  addSearchTokens,
   HINT_TOKEN_FIELD_BY_HINT_FIELD,
+  addSearchTokens,
   karaokeNumberKey,
   karaokeProviderMask,
   searchTextInputs,
 } from './search-index.js';
 import type { ResolvedSearchHint, SearchTokenInput, SearchTokenRow } from './search-index.js';
-import type { PreparedStatement, SongDatabase } from './schema.js';
 
 /**
  * The single set of prepared statements every write path uses. Both the

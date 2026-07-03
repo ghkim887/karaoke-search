@@ -1,14 +1,14 @@
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import type { SearchTokenKind } from '@karaoke/search';
 import {
+  MAX_PREFIX_TOKEN_CHARS,
+  PROVIDER_MASKS,
   compactSearchText,
   deriveKanaRomaji,
   makeCharacterNgrams,
   makeHangulInitials,
-  MAX_PREFIX_TOKEN_CHARS,
   normalizeKaraokeNumber,
   normalizeSearchText,
-  PROVIDER_MASKS,
   tokenizeSearchWords,
 } from '@karaoke/search';
 import type { SearchHintInput } from './hints.js';

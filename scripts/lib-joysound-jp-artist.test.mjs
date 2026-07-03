@@ -60,8 +60,8 @@ describe('buildKnownJapaneseArtistPredicate', () => {
   it('throws with the supplied label when the corpus is not a JSON array', async () => {
     const p = join(dir, 'bad.json');
     writeFileSync(p, JSON.stringify({ not: 'an array' }), 'utf8');
-    await expect(buildKnownJapaneseArtistPredicate(p, { label: 'joysound-diagnostic' })).rejects.toThrow(
-      /\[joysound-diagnostic\] corpus .* is not a JSON array/,
-    );
+    await expect(
+      buildKnownJapaneseArtistPredicate(p, { label: 'joysound-diagnostic' }),
+    ).rejects.toThrow(/\[joysound-diagnostic\] corpus .* is not a JSON array/);
   });
 });

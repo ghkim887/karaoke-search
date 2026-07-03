@@ -360,7 +360,9 @@ describe('HttpClient — rate-limit reservation', () => {
         },
       });
 
-      const all = Promise.all([0, 1, 2].map((i) => client.fetch(`https://j-pop-playlist.tistory.com/c-${i}`)));
+      const all = Promise.all(
+        [0, 1, 2].map((i) => client.fetch(`https://j-pop-playlist.tistory.com/c-${i}`)),
+      );
       await vi.advanceTimersByTimeAsync(1000);
       await all;
 
@@ -451,9 +453,11 @@ describe('HttpClient — GET retry', () => {
     mockedRequest.mockImplementation(async (target) => {
       if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
       n++;
-      return (n === 1
-        ? fakeTextResponse(429, 'slow down', { 'retry-after': '0' })
-        : fakeTextResponse(200, 'ok')) as never;
+      return (
+        n === 1
+          ? fakeTextResponse(429, 'slow down', { 'retry-after': '0' })
+          : fakeTextResponse(200, 'ok')
+      ) as never;
     });
 
     const client = new HttpClient(FAST_RETRY);
@@ -537,9 +541,9 @@ describe('HttpClient — GET retry', () => {
     mockedRequest.mockImplementation(async (target) => {
       if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
       n++;
-      return (n === 1
-        ? fakeTextResponse(503, 'busy')
-        : fakeTextResponse(200, 'final', { etag: '"v9"' })) as never;
+      return (
+        n === 1 ? fakeTextResponse(503, 'busy') : fakeTextResponse(200, 'final', { etag: '"v9"' })
+      ) as never;
     });
 
     const client = new HttpClient({ ...FAST_RETRY, cachePersistEvery: 1 });
