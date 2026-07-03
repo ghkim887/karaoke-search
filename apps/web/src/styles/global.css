@@ -70,7 +70,7 @@ header.site-header {
 }
 
 /* Language switcher — a compact Outlined-Pill trigger (DESIGN.md §4) opening a
-   listbox. Sits in the header top-right; stays narrow on mobile. */
+   single-choice menu. Sits in the header top-right; stays narrow on mobile. */
 .lang-switcher {
   position: relative;
   flex-shrink: 0;

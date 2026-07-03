@@ -90,10 +90,13 @@ describe('LanguageSwitcher', () => {
     expect(btn.textContent).toContain('日本語');
   });
 
-  it('reflects a pre-existing store value on first render', () => {
+  it('adopts a pre-existing store value after mount', async () => {
     setLocale('en');
     render(<LanguageSwitcher />, host);
-    expect(getButton(host).textContent).toContain('English');
+    // First render matches the SSR snapshot (ko); the mount effect then adopts
+    // the stored locale (see useLocaleStore hydration handling).
+    expect(getButton(host).textContent).toContain('한국어');
+    await waitFor(() => getButton(host).textContent?.includes('English') ?? false);
   });
 
   it('opens via ArrowDown and moves focus between items with the arrow keys', async () => {

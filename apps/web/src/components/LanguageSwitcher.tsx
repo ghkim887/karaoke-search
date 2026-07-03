@@ -4,19 +4,23 @@ import { useLocaleStore } from '../lib/locale-hooks.js';
 import { setLocale } from '../lib/locale-store.js';
 
 /**
- * Header language switcher — a globe-labelled trigger that opens a listbox of
- * the three chrome locales (한국어 / English / 日本語). Its own island: it lives in
- * the static `<header>`, outside `<App>`, and shares the active locale with the
+ * Header language switcher — a globe-labelled trigger that opens a menu of the
+ * three chrome locales (한국어 / English / 日本語). Its own island: it lives in the
+ * static `<header>`, outside `<App>`, and shares the active locale with the
  * search UI through the module-level locale store (`useLocaleStore` /
  * `setLocale`), not through Preact context.
  *
- * Accessibility follows the WAI-ARIA listbox pattern:
- *  - trigger is `aria-haspopup="listbox"` with `aria-expanded`;
- *  - the popup is `role="listbox"`, each item `role="option"` with
- *    `aria-selected` on the active locale;
- *  - keyboard: Enter/Space/Arrow open the popup and focus the selected option;
+ * Accessibility follows the WAI-ARIA menu-button pattern (single-choice menu):
+ *  - trigger is `aria-haspopup="menu"` with `aria-expanded`;
+ *  - the popup is `role="menu"`, each item `role="menuitemradio"` with
+ *    `aria-checked` on the active locale;
+ *  - keyboard: Enter/Space/Arrow open the popup and focus the active item;
  *    Up/Down/Home/End move focus; Enter/Space select; Esc closes and restores
  *    focus to the trigger; Tab or an outside click closes.
+ *
+ * Chosen over the listbox/option pattern because menu roles have no semantic-
+ * HTML equivalent (listbox → native `<select>`), matching the owner's custom
+ * dropdown design without a lint suppression.
  */
 export function LanguageSwitcher() {
   const locale = useLocaleStore();
@@ -29,6 +33,25 @@ export function LanguageSwitcher() {
   const pendingFocus = useRef<number | null>(null);
 
   const selectedIndex = LOCALES.indexOf(locale);
+
+  // Keep --header-height synced to the real header box. The sticky `.tab-bar`
+  // offsets by that token (global.css); the hand-derived default is only right
+  // for a single-line title, so a wrapped title — long en/ja titles on narrow
+  // viewports, made likelier by the switcher sharing the header row — would
+  // leave the tab-bar underlapping the header. This is the ResizeObserver fix
+  // the tokens.css TODO anticipated; it also refreshes on locale change (the
+  // header content changes) and viewport resize. SSR keeps the CSS fallback.
+  useEffect(() => {
+    const header = rootRef.current?.closest('header.site-header');
+    if (!(header instanceof HTMLElement) || typeof ResizeObserver === 'undefined') return;
+    const sync = () => {
+      document.documentElement.style.setProperty('--header-height', `${header.offsetHeight}px`);
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   // On open, move focus into the popup (selected option by default, or the
   // Arrow/Home/End-requested index). On close, nothing to do here — closing
