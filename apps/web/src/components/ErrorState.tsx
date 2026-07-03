@@ -1,3 +1,5 @@
+import { t } from '../lib/i18n.js';
+
 interface ErrorStateProps {
   message: string;
   /** When provided, renders a retry affordance. Used by the API browse/favorites
@@ -15,14 +17,11 @@ interface ErrorStateProps {
 export function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
     <div class="error-state" role="alert">
-      <p class="error-state-headline">
-        데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. / Failed to load data. Please try
-        again shortly.
-      </p>
+      <p class="error-state-headline">{t.loadDataFailed}</p>
       <p class="error-state-detail">{message}</p>
       {onRetry ? (
         <button type="button" class="error-state-retry" onClick={onRetry}>
-          다시 시도 / Retry
+          {t.retry}
         </button>
       ) : null}
     </div>

@@ -1,4 +1,5 @@
 import { useRef } from 'preact/hooks';
+import { t } from '../lib/i18n.js';
 
 export type TabId = 'browse' | 'favorites';
 
@@ -13,12 +14,25 @@ const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
   { id: 'favorites', label: '즐겨찾기' },
 ];
 
+/** DOM id of the single results panel these tabs control (see `App.tsx`). */
+export const TAB_PANEL_ID = 'results-tabpanel';
+
+/** Stable DOM id for a tab button, so the panel can point back at the active
+ *  tab via `aria-labelledby`. */
+export function tabButtonId(id: TabId): string {
+  return `tab-${id}`;
+}
+
 /**
  * Two-button tab strip for switching between Browse and Favorites views.
  * Mirrors `VendorChips` for refs-array + arrow-key focus cycling, but uses
  * `<div role="tablist">` (not `<fieldset>`) because
  * `role="tablist"` is semantically incompatible with form-control children.
  * Active-tab click is a hard no-op at the source — parents don't dedupe.
+ *
+ * Implements the WAI-ARIA tabs pattern: roving tabindex (only the active tab
+ * is in the Tab order; ArrowLeft/ArrowRight move focus between tabs), and each
+ * tab wires `aria-controls` to the shared results panel (`TAB_PANEL_ID`).
  */
 export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
   const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
@@ -37,7 +51,7 @@ export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
   };
 
   return (
-    <div class="tab-bar" role="tablist" aria-label="결과 보기 모드">
+    <div class="tab-bar" role="tablist" aria-label={t.viewModeLabel}>
       {TABS.map((tab, idx) => {
         const isActive = activeTab === tab.id;
         return (
@@ -48,8 +62,13 @@ export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
             }}
             type="button"
             role="tab"
+            id={tabButtonId(tab.id)}
             class="tab-button"
             aria-selected={isActive}
+            aria-controls={TAB_PANEL_ID}
+            // Roving tabindex: only the active tab is a Tab stop; the inactive
+            // tab is reachable via ArrowLeft/ArrowRight (handleKeyDown).
+            tabIndex={isActive ? 0 : -1}
             disabled={disabled}
             onClick={() => handleClick(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, idx)}

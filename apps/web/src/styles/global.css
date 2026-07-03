@@ -107,7 +107,10 @@ header.site-header {
            and Body Semibold 600) so the active/inactive contrast reads. */
   font-size: var(--rui-text-body);
   font-weight: 500;
-  padding: 10px 4px;
+  /* Horizontal padding widened from 4px → 12px to grow the pointer/touch hit
+     area toward a ~44px target for the short labels ("검색"/"즐겨찾기") without
+     changing the tab-bar height (vertical padding unchanged). */
+  padding: 10px 12px;
   background: transparent;
   color: var(--rui-fg-muted);
   border: 0;
@@ -878,5 +881,27 @@ footer.site-footer {
 
   .site-footer-meta {
     font-size: 11px;
+  }
+}
+
+/* Reduced-motion — honor `prefers-reduced-motion: reduce`. Appended at the
+   very end so the load-bearing rule order above is untouched (see file
+   header). The only continuous animation is the loading-dot ellipsis pulse;
+   it is replaced with a static, fully-visible ellipsis. The universal rule
+   collapses the remaining short micro-interaction transitions (color / border
+   / background / opacity) to an instant swap so nothing animates for users who
+   opt out. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

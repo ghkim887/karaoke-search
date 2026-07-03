@@ -347,6 +347,21 @@ describe('App tab behavior', () => {
     expect(tabs[0]?.textContent?.trim()).toBe('검색');
   });
 
+  it('renders a results tabpanel whose aria-labelledby tracks the active tab', async () => {
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r1']));
+    await mount();
+    const panel = host.querySelector('#results-tabpanel');
+    expect(panel).not.toBeNull();
+    expect(panel?.getAttribute('role')).toBe('tabpanel');
+    // Browse active → panel labelled by the Browse tab.
+    expect(panel?.getAttribute('aria-labelledby')).toBe('tab-browse');
+    // Switch to Favorites → panel label follows.
+    await clickFavoritesTab(host);
+    expect(host.querySelector('#results-tabpanel')?.getAttribute('aria-labelledby')).toBe(
+      'tab-favorites',
+    );
+  });
+
   it('clicking Favorites with N starred records → body shows all N records, newest-first', async () => {
     // Newest-first ordering in localStorage: r2 (most recent) first, then r1.
     localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r2', 'r1']));

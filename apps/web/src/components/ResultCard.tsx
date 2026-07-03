@@ -1,5 +1,6 @@
 import type { SongRecord } from '@karaoke/schema';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { t } from '../lib/i18n.js';
 
 interface ResultCardProps {
   record: SongRecord;
@@ -56,18 +57,32 @@ function NumberBadge({ label, value, testId }: NumberBadgeProps) {
   };
 
   return (
-    <button
-      type="button"
-      class={`badge badge-number ${value === null ? 'badge-disabled' : ''}`}
-      data-testid={testId}
-      aria-label={`${label} 번호 복사`}
-      disabled={value === null}
-      onClick={handleClick}
-    >
-      <span class="badge-label">{label}</span>
-      <span class="badge-value">{value ?? '—'}</span>
-      {copied && <span class="badge-toast">복사됨</span>}
-    </button>
+    <>
+      <button
+        type="button"
+        class={`badge badge-number ${value === null ? 'badge-disabled' : ''}`}
+        data-testid={testId}
+        aria-label={t.copyNumberLabel(label)}
+        disabled={value === null}
+        onClick={handleClick}
+      >
+        <span class="badge-label">{label}</span>
+        <span class="badge-value">{value ?? '—'}</span>
+        {/* Visual-only toast; hidden from AT so it isn't double-announced with
+            the sr-only live region beside it. */}
+        {copied && (
+          <span class="badge-toast" aria-hidden="true">
+            {t.copiedToast}
+          </span>
+        )}
+      </button>
+      {/* Persistent polite live region (mirrors App's result-count pattern:
+          aria-live span, no explicit role): filled on copy so screen readers
+          announce it once, empty otherwise. */}
+      <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="copy-status">
+        {copied ? t.copiedAnnouncement : ''}
+      </span>
+    </>
   );
 }
 
@@ -84,7 +99,7 @@ export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardP
       <button
         type="button"
         class={`favorite-star ${isFavorite ? 'favorite-star-on' : ''}`}
-        aria-label="즐겨찾기 / Favorite"
+        aria-label={t.favoriteLabel}
         aria-pressed={isFavorite}
         onClick={() => onToggleFavorite(record.id)}
       >
