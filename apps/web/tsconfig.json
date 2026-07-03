@@ -10,6 +10,5 @@
       "@karaoke/search": ["packages/search/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "references": [{ "path": "../../packages/schema" }]
+  "include": ["src/**/*", "tests/**/*"]
 }
