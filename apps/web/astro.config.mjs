@@ -1,6 +1,14 @@
 import preact from '@astrojs/preact';
 import AstroPWA from '@vite-pwa/astro';
 import { defineConfig } from 'astro/config';
+import { assertValidApiBaseUrl } from './scripts/api-base-url-guard.ts';
+
+// Fail fast, at config load (before the expensive build), when the API base
+// env var is corrupted. This is the same value Astro bakes into the client
+// bundle as import.meta.env.PUBLIC_KARAOKE_API_BASE_URL; guarding it here
+// catches the MSYS/Git-Bash path-mangling failure mode. See the guard module
+// for the full incident writeup and the allowed values.
+assertValidApiBaseUrl(process.env.PUBLIC_KARAOKE_API_BASE_URL);
 
 const site = process.env.PUBLIC_SITE_URL ?? 'https://karaokedb.pages.dev';
 const base = process.env.PUBLIC_BASE_PATH ?? '/';
