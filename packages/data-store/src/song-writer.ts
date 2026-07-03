@@ -206,7 +206,7 @@ export function writeSongRecordRows(
   }
 }
 
-export function writeSearchTokens(statements: SongWriteStatements, input: SearchTokenInput): void {
+function writeSearchTokens(statements: SongWriteStatements, input: SearchTokenInput): void {
   const rows: SearchTokenRow[] = [];
   addSearchTokens(rows, new Set<string>(), input);
   for (const row of rows) {

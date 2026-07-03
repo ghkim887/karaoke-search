@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const WORKER_ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const DEFAULT_INPUT_PATH = join(WORKER_ROOT, '..', 'web', 'public', 'data', 'songs.json');
-export const DEFAULT_OUTPUT_PATH = join(WORKER_ROOT, '.wrangler', 'sqlite', 'songs.sqlite');
+export const DEFAULT_OUTPUT_PATH = join(WORKER_ROOT, '.build', 'sqlite', 'songs.sqlite');
 
 export function parseBuildSqliteArgs(argv) {
   const parsed = {

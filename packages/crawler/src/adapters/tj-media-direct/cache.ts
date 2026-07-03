@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { isPlainObject } from './normalize.js';
 
@@ -269,8 +269,18 @@ export async function saveCache(path: string, cache: SearchSongCache): Promise<v
     out.bootstrappedAt = cache.bootstrappedAt;
   }
   const text = `${JSON.stringify(out, null, 2)}\n`;
-  await writeFile(tmp, text, 'utf8');
-  await rename(tmp, path);
+  try {
+    await writeFile(tmp, text, 'utf8');
+    await rename(tmp, path);
+  } catch (err) {
+    // Best-effort cleanup: a failed writeFile or rename leaves the unique tmp
+    // behind (the rename is what removes it on success). The pid+UUID namespace
+    // means an interrupted save would otherwise accumulate orphan `.tmp` files
+    // next to the cache. Swallow any cleanup error — the original failure is
+    // what matters and is rethrown.
+    await rm(tmp, { force: true }).catch(() => {});
+    throw err;
+  }
 }
 
 /**

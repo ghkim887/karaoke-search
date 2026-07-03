@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -216,6 +216,20 @@ describe('saveCache', () => {
     const reloaded = await loadCache(path);
     expect(['a', 'b', 'c']).toContain(reloaded.proEnrichmentMap['1']?.sortTitleKo);
     expect(reloaded.version).toBe(CACHE_VERSION);
+  });
+
+  it('removes the unique tmp file (best-effort) when the atomic rename fails', async () => {
+    // Force rename(tmp, path) to fail by making the destination a directory —
+    // a file cannot be renamed onto a directory on any platform. The unique
+    // pid+uuid tmp must be cleaned up so an interrupted save leaves no orphan.
+    const path = join(dir, 'cache-collision');
+    await mkdir(path);
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+
+    await expect(saveCache(path, cache)).rejects.toThrow();
+
+    const leftovers = (await readdir(dir)).filter((name) => name.includes('.tmp'));
+    expect(leftovers).toEqual([]);
   });
 
   it('does not let extras shadow the PR-1 fields', async () => {
