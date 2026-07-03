@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { App } from '../components/App';
 import Footer from '../components/Footer.astro';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { t } from '../lib/i18n.js';
 import '../styles/tokens.css';
 // Page-global styles hoisted verbatim from this page's former global style
 // block. Import order matters: must come AFTER tokens.css to preserve the
@@ -13,7 +15,10 @@ import '../styles/global.css';
 // the client.
 const songsPath = fileURLToPath(new URL('../../public/data/songs.json', import.meta.url));
 const songCount = (JSON.parse(readFileSync(songsPath, 'utf8')) as unknown[]).length;
-const title = '일본 노래 검색기';
+// Server-render the Korean default chrome; the client localizes at hydration
+// per the stored locale (i18n catalog is the single source of truth).
+const title = t('ko', 'appTitle');
+const subtitle = t('ko', 'appSubtitle');
 const baseNoTrailing = import.meta.env.BASE_URL.replace(/\/$/, '');
 const fontsHref = `${baseNoTrailing}/fonts/fonts.css`;
 const faviconHref = `${baseNoTrailing}/favicon.svg`;
@@ -24,6 +29,19 @@ const appleIconHref = `${baseNoTrailing}/icons/icon-192.png`;
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
+    {/* Pre-hydration locale sync: set <html lang> from the stored preference
+        before paint so CSS `:lang()` / font selection and the a11y language do
+        not flash Korean for a returning en/ja user. Only the lang attribute is
+        touched here (no string duplication); the visible chrome text is swapped
+        at island hydration by applyChrome(). */}
+    <script is:inline>
+      (function () {
+        try {
+          var v = localStorage.getItem('karaoke-locale');
+          if (v === 'ko' || v === 'en' || v === 'ja') document.documentElement.lang = v;
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#191c1f" />
@@ -47,8 +65,15 @@ const appleIconHref = `${baseNoTrailing}/icons/icon-192.png`;
   </head>
   <body>
     <header class="site-header">
-      <h1 class="site-title">{title}</h1>
-      <p class="site-subtitle" lang="en">Karaoke Search</p>
+      {/* Title block wrapped so the switcher can sit top-right of the header
+          (flex row) while title + subtitle stay stacked. `data-i18n` marks the
+          text nodes the client localizes at runtime; `lang` is server-set for
+          the Korean default and updated by applyChrome() on locale change. */}
+      <div class="site-header-titles">
+        <h1 class="site-title" data-i18n="appTitle">{title}</h1>
+        <p class="site-subtitle" lang="en" data-i18n="appSubtitle">{subtitle}</p>
+      </div>
+      <LanguageSwitcher client:load />
     </header>
     <App client:load songCount={songCount} />
     <Footer />

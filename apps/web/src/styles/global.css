@@ -22,6 +22,20 @@ header.site-header {
   z-index: 10;
   background: var(--rui-bg);
   padding: 1.125rem 1.25rem;
+  /* Title block (stacked h1 + subtitle) on the left, language switcher pinned
+     top-right. `flex-start` keeps the switcher aligned to the first line and
+     shorter than the title block, so the hand-derived --header-height token
+     (see tokens.css) is unaffected. */
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.site-header-titles {
+  /* Allow the title/subtitle to shrink and wrap next to the switcher rather
+     than pushing it off the row on narrow viewports. */
+  min-width: 0;
 }
 
 .site-title {
@@ -53,6 +67,85 @@ header.site-header {
   line-height: 1.5;
   letter-spacing: 0.24px;
   color: var(--rui-fg-muted);
+}
+
+/* Language switcher — a compact Outlined-Pill trigger (DESIGN.md §4) opening a
+   single-choice menu. Sits in the header top-right; stays narrow on mobile. */
+.lang-switcher {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lang-switcher-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-family: var(--rui-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--rui-fg);
+  background: var(--rui-pill-ghost-bg);
+  border: 2px solid var(--rui-border);
+  border-radius: var(--rui-radius-pill);
+  cursor: pointer;
+}
+
+.lang-switcher-button:hover {
+  background: var(--rui-surface-hover);
+}
+
+.lang-switcher-button:focus-visible {
+  outline: none;
+  box-shadow: var(--rui-focus-ring);
+}
+
+.lang-switcher-icon {
+  color: var(--rui-fg-muted);
+}
+
+.lang-switcher-caret {
+  color: var(--rui-fg-muted);
+  margin-inline-start: -0.125rem;
+}
+
+.lang-switcher-list {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  inset-inline-end: 0;
+  z-index: 20;
+  min-width: 9rem;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--rui-bg);
+  border: 1px solid var(--rui-border);
+  border-radius: var(--rui-radius-small);
+}
+
+.lang-switcher-option {
+  padding: 0.5rem 0.75rem;
+  font-family: var(--rui-font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--rui-fg);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lang-switcher-option:hover {
+  background: var(--rui-surface-hover);
+}
+
+.lang-switcher-option:focus-visible {
+  outline: none;
+  box-shadow: var(--rui-focus-ring);
+}
+
+.lang-switcher-option-selected {
+  font-weight: 600;
+  background: var(--rui-surface);
 }
 
 .tab-bar {
@@ -834,8 +927,16 @@ footer.site-footer {
 }
 
 .site-footer-disclaimer-ko,
-.site-footer-disclaimer-en {
+.site-footer-disclaimer-en,
+.site-footer-disclaimer-ja {
   display: block;
+}
+
+/* Locale visibility is driven by the `hidden` attribute (toggled by
+   applyChrome). The higher-specificity selector beats the `display: block`
+   above so a hidden line is actually removed from flow. */
+.site-footer-disclaimer [hidden] {
+  display: none;
 }
 
 /* Row 3 — metadata bullets. flex-wrap allows narrow viewports to break

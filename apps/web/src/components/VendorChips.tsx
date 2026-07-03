@@ -1,5 +1,6 @@
 import { useRef } from 'preact/hooks';
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 /**
  * Karaoke-machine vendor keys. UI-only concept (not part of `@karaoke/schema`)
@@ -25,6 +26,7 @@ const CHIPS: ReadonlyArray<{ value: Vendor; label: string }> = [
 ];
 
 export function VendorChips({ selected, onToggle }: VendorChipsProps) {
+  const locale = useLocale();
   const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
   const handleKeyDown = (e: KeyboardEvent, idx: number) => {
@@ -37,7 +39,7 @@ export function VendorChips({ selected, onToggle }: VendorChipsProps) {
 
   return (
     <fieldset class="chip-group chip-group-vendor">
-      <legend class="chip-group-legend">{t.vendorFilterLegend}</legend>
+      <legend class="chip-group-legend">{t(locale, 'vendorFilterLegend')}</legend>
       {CHIPS.map((chip, idx) => {
         const isSelected = selected.has(chip.value);
         return (

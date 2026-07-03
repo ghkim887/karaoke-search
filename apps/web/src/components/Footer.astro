@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { maxCrawledDate } from '../lib/footer-date.js';
+import { t } from '../lib/i18n.js';
 
 // Build-time initial/fallback date: the most recent `crawled_at` in the bundled
 // corpus, mirroring how index.astro reads songs.json for the record count.
@@ -16,13 +17,20 @@ const dbDate = maxCrawledDate(records.map((record) => record.crawled_at));
 
 <footer class="site-footer">
   <div class="site-footer-brand" lang="en">KARAOKE SEARCH</div>
+  {/* All three disclaimer translations are rendered; `applyChrome()` toggles
+      their visibility by locale. The Korean default preserves today's two-line
+      bilingual form (ko + en shown); en/ja collapse to their single line. Text
+      comes from the i18n catalog (single source of truth). */}
   <p class="site-footer-disclaimer">
-    <span class="site-footer-disclaimer-ko">본 검색 결과는 참고용이며 실제 노래방 기기와 다를 수 있습니다.</span>
-    <span class="site-footer-disclaimer-en" lang="en">Results are for reference; the actual karaoke machine may differ.</span>
+    <span class="site-footer-disclaimer-ko" data-disclaimer="ko">{t('ko', 'disclaimer')}</span>
+    <span class="site-footer-disclaimer-en" lang="en" data-disclaimer="en">{t('en', 'disclaimer')}</span>
+    <span class="site-footer-disclaimer-ja" lang="ja" data-disclaimer="ja" hidden>{t('ja', 'disclaimer')}</span>
   </p>
   <div class="site-footer-meta">
     <span class="site-footer-meta-item" data-db-updated hidden={dbDate === ''}
-      >DB 업데이트 <span data-db-updated-date>{dbDate}</span></span
+      ><span data-i18n="dbUpdatedLabel">{t('ko', 'dbUpdatedLabel')}</span> <span
+        data-db-updated-date>{dbDate}</span
+      ></span
     >
     <span class="site-footer-meta-sep" aria-hidden="true" data-db-updated-sep hidden={dbDate === ''}
       >·</span
@@ -41,9 +49,8 @@ const dbDate = maxCrawledDate(records.map((record) => record.crawled_at));
       href="https://github.com/ghkim887/karaoke-search/issues"
       target="_blank"
       rel="noreferrer noopener"
-    >
-      문제 보고 ↗
-    </a>
+      data-i18n="reportIssue"
+    >{t('ko', 'reportIssue')}</a>
     <span class="site-footer-meta-sep" aria-hidden="true">·</span>
     <a
       class="site-footer-meta-item site-footer-link"

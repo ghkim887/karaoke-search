@@ -1,4 +1,5 @@
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 /**
  * Placeholder shown on the Favorites tab when the user has zero favorites.
@@ -7,9 +8,10 @@ import { t } from '../lib/i18n.js';
  * <NoResults /> instead.
  */
 export function FavoritesEmpty() {
+  const locale = useLocale();
   return (
     <div class="favorites-empty">
-      <p>{t.favoritesEmpty}</p>
+      <p>{t(locale, 'favoritesEmpty')}</p>
     </div>
   );
 }
