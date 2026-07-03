@@ -54,6 +54,11 @@ export function importSongs(
 
     db.exec('DELETE FROM songs WHERE id NOT IN (SELECT id FROM temp_import_song_ids)');
     db.exec('DELETE FROM temp_import_song_ids');
+    // Build the query planner's statistics (sqlite_stat1) once the corpus and
+    // its derived rows are final. This adds only planner metadata — never user
+    // data or query results — so the exported corpus is unchanged; it just lets
+    // the planner cost the composite-key lookups with real cardinalities.
+    db.exec('ANALYZE');
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');

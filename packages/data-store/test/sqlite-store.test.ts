@@ -243,10 +243,12 @@ describe('SQLite song store', () => {
         ORDER BY name ASC`,
       )
       .all() as unknown as Array<{ name: string }>;
+    // idx_search_texts_song(song_id) and idx_search_tokens_lookup(kind, token,
+    // song_id) were dropped: each was a left-prefix of its table's primary key,
+    // so the PK already serves those lookups. idx_search_tokens_song(song_id)
+    // stays because the search_tokens PK leads with `kind`, not `song_id`.
     expect(indexes.map((row) => row.name)).toEqual([
       'idx_search_texts_compact',
-      'idx_search_texts_song',
-      'idx_search_tokens_lookup',
       'idx_search_tokens_song',
     ]);
   });
