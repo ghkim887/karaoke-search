@@ -67,3 +67,6 @@ phase4-*.png
 scripts/data/medium-chunk-*.json
 scripts/data/medium-retry-*.json
 scripts/data/medium-review*.csv
+
+# R1 missing-JOYSOUND audit default output dir (generated CSV/summary, never committed)
+scripts/data/audit-missing-joysound/
