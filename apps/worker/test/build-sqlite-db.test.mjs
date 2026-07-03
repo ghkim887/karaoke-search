@@ -36,6 +36,11 @@ describe('build-sqlite-db CLI args', () => {
       searchHintPaths: ['a.jsonl', 'b.jsonl'],
     });
   });
+
+  it('vacuums by default and skips on --no-vacuum', () => {
+    expect(parseBuildSqliteArgs([])).toMatchObject({ vacuum: true });
+    expect(parseBuildSqliteArgs(['--no-vacuum'])).toMatchObject({ vacuum: false });
+  });
 });
 
 describe('build-sqlite-db empty-corpus guard', () => {
@@ -73,6 +78,80 @@ describe('build-sqlite-db empty-corpus guard', () => {
 
     expect(result.songCount).toBe(1);
     expect(result.bytes).toBeGreaterThan(0);
+  });
+});
+
+describe('build-sqlite-db VACUUM', () => {
+  function freelistCount(dbPath) {
+    const db = openSongDatabase(dbPath);
+    try {
+      return Number(db.prepare('PRAGMA freelist_count').get().freelist_count);
+    } finally {
+      db.close();
+    }
+  }
+
+  // Logical dump of every user table (plus ANALYZE's sqlite_stat1), each row set
+  // ordered deterministically, so VACUUM's physical-only rewrite can be proven
+  // to leave the corpus byte-for-byte identical.
+  function dumpAllTables(dbPath) {
+    const db = openSongDatabase(dbPath);
+    try {
+      const tables = db
+        .prepare(
+          `SELECT name FROM sqlite_schema
+           WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+           UNION ALL SELECT 'sqlite_stat1' WHERE EXISTS
+             (SELECT 1 FROM sqlite_schema WHERE name = 'sqlite_stat1')
+           ORDER BY name`,
+        )
+        .all()
+        .map((row) => row.name);
+      const dump = {};
+      for (const table of tables) {
+        const rows = db.prepare(`SELECT * FROM "${table}"`).all();
+        dump[table] = rows.map((row) => JSON.stringify(row)).sort();
+      }
+      return dump;
+    } finally {
+      db.close();
+    }
+  }
+
+  it('produces a compacted database (freelist_count = 0) by default', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-vacuum-'));
+    const inputPath = join(dir, 'songs.json');
+    const outputPath = join(dir, 'songs.sqlite');
+    writeFileSync(inputPath, `${JSON.stringify([JOYSOUND_RECORD], null, 2)}\n`, 'utf8');
+
+    const result = await buildSqliteDb({ inputPath, outputPath });
+
+    expect(result.vacuumed).toBe(true);
+    expect(freelistCount(outputPath)).toBe(0);
+  });
+
+  it('skips VACUUM when --no-vacuum is set', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-novacuum-'));
+    const inputPath = join(dir, 'songs.json');
+    const outputPath = join(dir, 'songs.sqlite');
+    writeFileSync(inputPath, `${JSON.stringify([JOYSOUND_RECORD], null, 2)}\n`, 'utf8');
+
+    const result = await buildSqliteDb({ inputPath, outputPath, vacuum: false });
+
+    expect(result.vacuumed).toBe(false);
+  });
+
+  it('changes only physical layout: the logical corpus is identical', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-vacuum-eq-'));
+    const inputPath = join(dir, 'songs.json');
+    const vacuumedPath = join(dir, 'vacuumed.sqlite');
+    const rawPath = join(dir, 'raw.sqlite');
+    writeFileSync(inputPath, `${JSON.stringify([JOYSOUND_RECORD], null, 2)}\n`, 'utf8');
+
+    await buildSqliteDb({ inputPath, outputPath: vacuumedPath });
+    await buildSqliteDb({ inputPath, outputPath: rawPath, vacuum: false });
+
+    expect(dumpAllTables(vacuumedPath)).toEqual(dumpAllTables(rawPath));
   });
 });
 
