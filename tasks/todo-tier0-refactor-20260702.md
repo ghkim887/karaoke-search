@@ -221,6 +221,55 @@ Wave 3:
   gates it. **Final gate: Linux CI** (pnpm orchestration + astro check/build
   not runnable on this mount).
 
+## Commit status (2026-07-03)
+
+Tier 0–2 committed as `089e8c5` on branch `refactor/tier0-2-20260703`
+(via a local clone — the NAS mount's `.git/objects` is not writable from
+Windows), pushed to origin, **PR #58** open against `feat/sqlite-delta-patcher`
+(the base the refactor was built on). Lockfile regenerated (crawler →
+@karaoke/search link). Excluded from the commit: `apps/web/functions/*`,
+`wrangler.toml` (pre-existing in-flight edits, unreadable ACL), `.old`/`.bak`
+backups. CI on the PR is the final gate.
+
+## Tier 3 execution plan (started 2026-07-03)
+
+- [x] **T3-1 D1/worker naming cleanup** — DONE 2026-07-03, review APPROVE.
+  14 symbols renamed to backend-neutral names (SearchDatabase,
+  PreparedStatementLike, QueryResult, SqlValue, SearchContext{db},
+  SqliteSearchDatabase, SONG_*_SCHEMA_SQL, …); dead Cloudflare
+  `export default {fetch}` removed (zero consumers, all named imports);
+  SQL text byte-identical; docs updated, D1 history preserved. `.wrangler`
+  output path rename HELD — needs coordinated .gitignore + ci-pipeline-pins
+  + build-sqlite-db change (recorded in OPEN-QUESTIONS). tsc 0 ×2; vitest
+  reproduced by reviewer (77 directly + 6 untouched = 53+30 consistent).
+- [x] **T3-2 CI/tooling** — DONE 2026-07-03, review APPROVE. ci.yml only:
+  knip step in verify (non-blocking, report to step summary, exit code
+  preserved so dropping continue-on-error promotes it to a gate); e2e job
+  `if: pull_request` removed — the old comment claimed deploy.yml covered
+  main pushes but deploy.yml doesn't exist, so main-push commits had zero
+  e2e/axe coverage; now e2e runs on PR + main push (reviewer verified no
+  auto-push-to-main paths exist — crawl/full-corpus open PRs — so cost is
+  one e2e run per merge). ci-pipeline-pins tests 3/3 green against the
+  edited yml. knip ran locally: no false positives from T2-7 files; found
+  pre-existing dead CF leftovers `apps/web/functions/*` + 2 unused exports —
+  separate cleanup ticket.
+- [x] **T3-3 small follow-ups** — DONE 2026-07-03, review APPROVE.
+  `.error-state-retry` styled per DESIGN.md §4 primary pill (tokens verified
+  in both themes, 44px target, focus ring; pure insertion — rule order
+  intact); fonts.css weight `45 920`→`45 930` on all 5 faces (fvar max=930
+  independently confirmed via fontTools); tj cache.ts tmp unique
+  (pid+randomUUID, matches http.ts pattern) + concurrent-writer torn-file
+  regression test. crawler/web tsc 0; cache tests 22/22.
+- [x] **T3-4 root hygiene (outside git)** — DONE 2026-07-03, review APPROVE.
+  New `Z:\karaoke\README-ops.md` (roles/retention/serving-path facts, all
+  disk-verified); 12 reversible moves into `_trash-20260703/` (funnel-web
+  .bak, artifact-cleanup ×4, stale logs ×4, session backups ×3); serving
+  path fully intact (SHA256SUMS 16/16 present; API reads only
+  db/current/songs.sqlite). Server-side remainder documented with commands:
+  .tmp_review + 3 db/current scripts (ACL-blocked), worktree removal,
+  SHA256SUMS regen + evidence relocation (owner sign-off). Found: db/current
+  is a byte-mirror of the v18 release dir (originals preserved).
+
 ## Full backlog summary (Tiers 1–3, from the 2026-07-02 review)
 
 - **Tier 1 (high impact):** font subsetting (5.2MB woff2 → unicode-range

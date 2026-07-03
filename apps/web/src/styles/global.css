@@ -719,6 +719,46 @@ main.results .error {
   color: var(--rui-fg-muted);
 }
 
+/* Retry CTA in the API error path (ErrorState with onRetry). The error card
+         sits on --rui-surface, so the retry uses the DESIGN.md §4 Primary Dark
+         Pill treatment (via the shared --rui-pill-primary-* tokens) to read as
+         the clear, single actionable affordance. Sizing matches the §4 pill
+         spec: 14px 32px padding, 9999px radius, Body Semibold text. inline-flex
+         centering + min-height: 44px guarantees the mobile touch target even if
+         padding is later trimmed. Hover opacity 0.85 and the focus-visible ring
+         follow the same conventions as .chip / .badge-number. */
+.error-state-retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: 14px 32px;
+  font-family: var(--rui-font-body);
+  /* DESIGN.md §3 Body Semibold — 16px / 600 / 1.5 / 0.16px */
+  font-size: var(--rui-text-body);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.16px;
+  color: var(--rui-pill-primary-fg);
+  background: var(--rui-pill-primary-bg);
+  border: 0;
+  border-radius: var(--rui-radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 120ms ease;
+}
+
+.error-state-retry:hover {
+  /* DESIGN.md §4 — pill hover is opacity 0.85. */
+  opacity: 0.85;
+}
+
+.error-state-retry:focus-visible {
+  outline: none;
+  box-shadow: var(--rui-focus-ring);
+}
+
 /* Footer — three-row layout: brand label, bilingual disclaimer, metadata.
          Mobile-first sizing with a tablet+ bump at the 720px breakpoint. Each
          metadata item is `white-space: nowrap` so individual tokens never break
