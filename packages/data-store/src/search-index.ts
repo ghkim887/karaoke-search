@@ -5,6 +5,8 @@ import {
   PROVIDER_MASKS,
   compactSearchText,
   deriveKanaRomaji,
+  kanaToHangul,
+  kanaToRomaji,
   makeCharacterNgrams,
   makeHangulInitials,
   normalizeKaraokeNumber,
@@ -17,12 +19,32 @@ import type { SongDatabase } from './schema.js';
 type TitleKoConfidence = NonNullable<SongRecord['title_ko_confidence']>;
 
 export const KARAOKE_PROVIDERS = ['tj', 'ky', 'joysound'] as const;
+
+/**
+ * SEARCH-ONLY weight for the three `title_ruby`-derived fields (the katakana
+ * reading and its deterministic romaji + hangul transliterations).
+ *
+ * Placed at the secondary/alternate-rendering tier (3, same as `artist_ko`),
+ * strictly BELOW the primary title tier (`title_primary` / `title_ko` at 5).
+ * A reading is an alternate rendering of a title, not the title itself, so an
+ * exact match on a real primary/Korean title (which also lands in the exact
+ * `search_texts` tier — see the worker's `MATCH_TIER_EXACT_TEXT`) must still
+ * outrank a song matched only through another song's reading. Kept above the
+ * `artist_alias` (2) and search-hint (1) tiers because a ruby is authoritative
+ * JOYSOUND catalog data, not a heuristic hint. Reading matches are strictly
+ * additive recall: a kanji title becomes findable by its reading typed in kana,
+ * romaji, or hangul without displacing any exact-title result.
+ */
+const RUBY_FIELD_WEIGHT = 3;
 const SEARCH_TEXT_FIELDS = [
   { field: 'title_primary', weight: 5 },
   { field: 'title_ko', weight: 5 },
   { field: 'artist_primary', weight: 3 },
   { field: 'artist_ko', weight: 3 },
   { field: 'artist_alias', weight: 2 },
+  { field: 'title_ruby', weight: RUBY_FIELD_WEIGHT },
+  { field: 'title_ruby_romaji', weight: RUBY_FIELD_WEIGHT },
+  { field: 'title_ruby_hangul', weight: RUBY_FIELD_WEIGHT },
 ] as const;
 
 /**
@@ -156,6 +178,32 @@ export function searchTextInputs(record: SongRecord): SearchTextInput[] {
     inputs.push({ field: 'artist_alias', value: alias, weight: searchFieldWeight('artist_alias') });
   }
 
+  // Reading-search enrichment (R4): index the katakana ruby plus its
+  // deterministic romaji and hangul transliterations so a kanji title becomes
+  // findable by its reading in kana, Latin, or Hangul. Derived transliterations
+  // are SEARCH-ONLY and never mutate canonical data; empty results (e.g. a ruby
+  // with no kana) are skipped so no zero-content field is indexed.
+  const ruby = record.title_ruby ?? null;
+  if (ruby !== null && ruby.length > 0) {
+    inputs.push({ field: 'title_ruby', value: ruby, weight: searchFieldWeight('title_ruby') });
+    const romaji = kanaToRomaji(ruby);
+    if (romaji.length > 0) {
+      inputs.push({
+        field: 'title_ruby_romaji',
+        value: romaji,
+        weight: searchFieldWeight('title_ruby_romaji'),
+      });
+    }
+    const hangul = kanaToHangul(ruby);
+    if (hangul.length > 0) {
+      inputs.push({
+        field: 'title_ruby_hangul',
+        value: hangul,
+        weight: searchFieldWeight('title_ruby_hangul'),
+      });
+    }
+  }
+
   return inputs;
 }
 
@@ -182,8 +230,22 @@ export function addSearchTokens(
     addSearchToken(rows, seen, input, 'gram3', gram);
   }
 
-  const initials = makeHangulInitials(input.value);
-  addPrefixTokens(rows, seen, input, initials, 'initial');
+  // Hangul choseong-initials recall is intentionally NOT derived from the
+  // reading fields. A ruby's hangul transliteration is a phonetic Japanese
+  // reading, and the web offline choseong layer (offline-recall.ts) computes
+  // initials from canonical title/artist text only — never from readings. If
+  // the server indexed ruby-hangul initials, a choseong query would gain recall
+  // on the worker path but not the offline path, splitting the two engines'
+  // results (a search-parity top-1 regression). Readings still contribute the
+  // symmetric term/prefix/gram recall both paths share.
+  if (!isRubyField(input.field)) {
+    const initials = makeHangulInitials(input.value);
+    addPrefixTokens(rows, seen, input, initials, 'initial');
+  }
+}
+
+function isRubyField(field: SearchTokenField): boolean {
+  return field === 'title_ruby' || field === 'title_ruby_romaji' || field === 'title_ruby_hangul';
 }
 
 function addPrefixTokens(

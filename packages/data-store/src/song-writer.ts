@@ -47,8 +47,9 @@ export function prepareSongWriteStatements(db: SongDatabase): SongWriteStatement
         crawled_at,
         media_context_ko,
         title_ko_source,
-        title_ko_confidence
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        title_ko_confidence,
+        title_ruby
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         sort_order = excluded.sort_order,
         source_url = excluded.source_url,
@@ -60,7 +61,8 @@ export function prepareSongWriteStatements(db: SongDatabase): SongWriteStatement
         crawled_at = excluded.crawled_at,
         media_context_ko = excluded.media_context_ko,
         title_ko_source = excluded.title_ko_source,
-        title_ko_confidence = excluded.title_ko_confidence
+        title_ko_confidence = excluded.title_ko_confidence,
+        title_ruby = excluded.title_ruby
     `),
     updateSortOrder: db.prepare('UPDATE songs SET sort_order = ? WHERE id = ? AND sort_order <> ?'),
     deleteSong: db.prepare('DELETE FROM songs WHERE id = ?'),
@@ -135,6 +137,7 @@ export function writeSongRecordRows(
     record.media_context_ko ?? null,
     record.title_ko_source ?? null,
     record.title_ko_confidence ?? null,
+    record.title_ruby ?? null,
   );
   statements.insertNumber.run(
     record.id,
