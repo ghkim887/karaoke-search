@@ -5,7 +5,7 @@ import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runDataStoreCli } from '../src/cli.js';
 import {
-  D1_SCHEMA_SQL,
+  SONG_SCHEMA_SQL,
   createSongDatabase,
   exportSongs,
   exportSongsJson,
@@ -170,10 +170,10 @@ describe('SQLite song store', () => {
     expect(readFileSync(outputPath, 'utf8')).toBe(validJson);
   });
 
-  it('exposes D1 schema SQL that creates a store-compatible database', () => {
+  it('exposes schema SQL that creates a store-compatible database', () => {
     const db = openMemoryDb();
 
-    db.exec(D1_SCHEMA_SQL);
+    db.exec(SONG_SCHEMA_SQL);
     importSongs(db, FIXTURE_RECORDS);
 
     expect(exportSongs(db)).toEqual(FIXTURE_RECORDS);
@@ -182,7 +182,7 @@ describe('SQLite song store', () => {
   it('creates derived search index tables and lookup indexes', () => {
     const db = openMemoryDb();
 
-    db.exec(D1_SCHEMA_SQL);
+    db.exec(SONG_SCHEMA_SQL);
 
     const tables = db
       .prepare(

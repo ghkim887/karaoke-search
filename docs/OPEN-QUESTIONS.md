@@ -81,9 +81,14 @@ Parked because the touched files are in flight on the feature branch:
 - `apps/worker/scripts/build-sqlite-db.mjs` dynamically imports the
   data-store via a hardcoded relative `dist/` path — switch to the
   `@karaoke/data-store` bare specifier so package resolution owns the path;
-- rename the worker's `D1DatabaseLike`/`D1PreparedStatementLike` interfaces,
-  `D1_SCHEMA_SQL`, and the `.wrangler/` scratch-dir convention now that
-  Cloudflare is gone (cosmetic; deliberately not done in the removal PR);
+- the worker's `D1*` interfaces (now `SearchDatabase`/`PreparedStatementLike`/
+  `QueryResult`/`SqlValue`), the sqlite-adapter's `SqliteSearchDatabase`, and
+  data-store's `SONG_SCHEMA_SQL` were renamed backend-neutral (T3-1). Still
+  pending: the `.wrangler/` scratch-dir convention in
+  `apps/worker/scripts/build-sqlite-db.mjs` — held because the dir is gitignored
+  via the repo-root `.gitignore` (shared with `apps/web/.wrangler/`) and pinned
+  by `apps/worker/test/ci-pipeline-pins.test.ts`, so the path rename needs a
+  coordinated `.gitignore` + pin-test change;
 - `apps/web/src/components/App.tsx` hook extraction (the component
   accumulated search/API/favorites state machines);
 - JOYSOUND classifier gate-array restructure — only with a

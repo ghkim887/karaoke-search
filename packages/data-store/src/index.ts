@@ -2,7 +2,7 @@
 // responsibility across sibling modules; this file re-exports the complete
 // public API (unchanged names and signatures) that the worker, the CLI, and
 // tests depend on. Keep additions here in sync with the owning module.
-export { D1_SCHEMA_SQL, createSongDatabase, openSongDatabase } from './schema.js';
+export { SONG_SCHEMA_SQL, createSongDatabase, openSongDatabase } from './schema.js';
 export type { SongDatabase } from './schema.js';
 
 export { parseSearchHintFile } from './hints.js';

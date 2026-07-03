@@ -1,7 +1,7 @@
 import { type IncomingMessage, type Server, type ServerResponse, createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
-import { type D1DatabaseLike, handleRequest } from './index.js';
-import { openSqliteD1Database } from './sqlite-adapter.js';
+import { type SearchDatabase, handleRequest } from './index.js';
+import { openSqliteSearchDatabase } from './sqlite-adapter.js';
 
 interface RateLimitOptions {
   windowMs: number;
@@ -10,7 +10,7 @@ interface RateLimitOptions {
 }
 
 export interface NodeServerOptions {
-  db: D1DatabaseLike;
+  db: SearchDatabase;
   corsOrigin?: string;
   rateLimit?: RateLimitOptions;
   trustProxyHeaders?: boolean;
@@ -40,7 +40,7 @@ export function createKaraokeSearchNodeServer(options: NodeServerOptions): Serve
         if (limited) {
           response = json({ error: 'Rate limit exceeded' }, 429);
         } else {
-          response = await handleRequest(request, { DB: options.db });
+          response = await handleRequest(request, { db: options.db });
         }
       }
       await writeWebResponse(res, withCors(response, options.corsOrigin));
@@ -62,7 +62,7 @@ function startFromEnv(env: NodeJS.ProcessEnv = process.env): Server {
   const port = parsePort(env.PORT ?? '8787');
   const corsOrigin = env.KARAOKE_CORS_ORIGIN;
   const rateLimit = parseRateLimit(env);
-  const db = openSqliteD1Database(dbPath);
+  const db = openSqliteSearchDatabase(dbPath);
   const serverOptions: NodeServerOptions = { db };
   if (corsOrigin !== undefined) serverOptions.corsOrigin = corsOrigin;
   if (rateLimit !== undefined) serverOptions.rateLimit = rateLimit;

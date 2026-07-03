@@ -13,24 +13,24 @@ import {
   tokenizeSearchWords,
 } from '@karaoke/search';
 
-export interface Env {
-  DB: D1DatabaseLike;
+export interface SearchContext {
+  db: SearchDatabase;
 }
 
-export interface D1DatabaseLike {
-  prepare(sql: string): D1PreparedStatementLike;
+export interface SearchDatabase {
+  prepare(sql: string): PreparedStatementLike;
 }
 
-export interface D1PreparedStatementLike {
-  bind(...values: D1Value[]): D1PreparedStatementLike;
-  all<T = Record<string, unknown>>(): Promise<D1Result<T>>;
+export interface PreparedStatementLike {
+  bind(...values: SqlValue[]): PreparedStatementLike;
+  all<T = Record<string, unknown>>(): Promise<QueryResult<T>>;
 }
 
-export interface D1Result<T> {
+export interface QueryResult<T> {
   results?: T[];
 }
 
-type D1Value = string | number | null;
+type SqlValue = string | number | null;
 type Vendor = (typeof VENDORS)[number];
 
 const VENDORS = ['tj', 'ky', 'joysound'] as const;
@@ -49,11 +49,7 @@ const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
 };
 
-export default {
-  fetch: handleRequest,
-};
-
-export async function handleRequest(request: Request, env: Env): Promise<Response> {
+export async function handleRequest(request: Request, context: SearchContext): Promise<Response> {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -74,9 +70,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
   try {
     if (url.pathname === '/api/songs') {
-      return await handleSongsByIdRequest(request, env.DB);
+      return await handleSongsByIdRequest(request, context.db);
     }
-    return await handleSearchRequest(request, env.DB);
+    return await handleSearchRequest(request, context.db);
   } catch (error) {
     if (error instanceof BadRequestError) {
       return json({ error: error.message }, 400);
@@ -85,7 +81,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   }
 }
 
-export async function handleSearchRequest(request: Request, db: D1DatabaseLike): Promise<Response> {
+export async function handleSearchRequest(request: Request, db: SearchDatabase): Promise<Response> {
   const url = new URL(request.url);
   const query = url.searchParams.get('q')?.trim() ?? '';
   const vendors = parseVendors(url.searchParams.get('vendor'));
@@ -107,7 +103,7 @@ export async function handleSearchRequest(request: Request, db: D1DatabaseLike):
 
 export async function handleSongsByIdRequest(
   request: Request,
-  db: D1DatabaseLike,
+  db: SearchDatabase,
 ): Promise<Response> {
   const url = new URL(request.url);
   const ids = parseSongIds(url.searchParams.get('ids'));
@@ -128,7 +124,7 @@ export async function handleSongsByIdRequest(
 }
 
 async function findCandidateRows(
-  db: D1DatabaseLike,
+  db: SearchDatabase,
   params: SearchQueryParams,
 ): Promise<StoredSongRow[]> {
   if (params.query.length === 0) {
@@ -138,11 +134,11 @@ async function findCandidateRows(
 }
 
 async function findFilteredRows(
-  db: D1DatabaseLike,
+  db: SearchDatabase,
   params: SearchQueryParams,
 ): Promise<StoredSongRow[]> {
   const where: string[] = [];
-  const values: D1Value[] = [];
+  const values: SqlValue[] = [];
   appendSongFilters(where, values, params, 's');
 
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
@@ -160,7 +156,7 @@ async function findFilteredRows(
 }
 
 async function findIndexedCandidateRows(
-  db: D1DatabaseLike,
+  db: SearchDatabase,
   params: SearchQueryParams,
 ): Promise<StoredSongRow[]> {
   const numberQuery = parseKaraokeNumberQuery(params.query);
@@ -169,7 +165,7 @@ async function findIndexedCandidateRows(
   }
 
   const subqueries: string[] = [];
-  const values: D1Value[] = [];
+  const values: SqlValue[] = [];
   const queryTokens = buildSearchQueryTokens(params.query);
   const queryTokenValuesSql =
     queryTokens.length > 0 ? queryTokens.map(() => '(?, ?, ?)').join(', ') : null;
@@ -238,12 +234,12 @@ async function findIndexedCandidateRows(
 }
 
 async function findKaraokeNumberCandidateRows(
-  db: D1DatabaseLike,
+  db: SearchDatabase,
   params: SearchQueryParams,
   numberQuery: NonNullable<ReturnType<typeof parseKaraokeNumberQuery>>,
 ): Promise<StoredSongRow[]> {
   const subqueries: string[] = [];
-  const values: D1Value[] = [];
+  const values: SqlValue[] = [];
   const trimmedNumber = trimLeadingZeroes(numberQuery.number);
   appendKaraokeNumberCandidateSubquery({
     subqueries,
@@ -272,7 +268,7 @@ async function findKaraokeNumberCandidateRows(
     params,
     provider: numberQuery.provider,
     predicateSql: 'kn.number LIKE ?',
-    predicateValues: [makeD1NumericPrefixPattern(numberQuery.number)],
+    predicateValues: [makeNumericPrefixPattern(numberQuery.number)],
     notNullColumn: 'number',
     score: 900000000,
   });
@@ -283,7 +279,7 @@ async function findKaraokeNumberCandidateRows(
     params,
     provider: numberQuery.provider,
     predicateSql: 'kn.number_key LIKE ?',
-    predicateValues: [makeD1NumericPrefixPattern(trimmedNumber)],
+    predicateValues: [makeNumericPrefixPattern(trimmedNumber)],
     notNullColumn: 'number_key',
     score: 900000000,
   });
@@ -309,7 +305,7 @@ async function findKaraokeNumberCandidateRows(
 }
 
 async function hydrateSongs(
-  db: D1DatabaseLike,
+  db: SearchDatabase,
   rows: readonly StoredSongRow[],
 ): Promise<SongRecord[]> {
   if (rows.length === 0) {
@@ -379,14 +375,14 @@ async function hydrateSongs(
   });
 }
 
-async function allRows<T>(statement: D1PreparedStatementLike): Promise<T[]> {
+async function allRows<T>(statement: PreparedStatementLike): Promise<T[]> {
   const result = await statement.all<T>();
   return result.results ?? [];
 }
 
 function appendSongFilters(
   where: string[],
-  values: D1Value[],
+  values: SqlValue[],
   params: Pick<SearchQueryParams, 'vendors'>,
   songAlias: string,
 ): void {
@@ -402,7 +398,7 @@ function appendSongFilters(
 
 function appendIndexFilters(
   where: string[],
-  values: D1Value[],
+  values: SqlValue[],
   params: Pick<SearchQueryParams, 'vendors'>,
   indexAlias: string,
 ): void {
@@ -423,16 +419,16 @@ function appendKaraokeNumberCandidateSubquery({
   score,
 }: {
   subqueries: string[];
-  values: D1Value[];
+  values: SqlValue[];
   params: Pick<SearchQueryParams, 'vendors'>;
   provider: Vendor | undefined;
   predicateSql: string;
-  predicateValues: readonly D1Value[];
+  predicateValues: readonly SqlValue[];
   notNullColumn: 'number' | 'number_key';
   score: number;
 }): void {
   const where = [`kn.${notNullColumn} IS NOT NULL`, predicateSql];
-  const branchValues: D1Value[] = [...predicateValues];
+  const branchValues: SqlValue[] = [...predicateValues];
   if (provider !== undefined) {
     where.push('kn.provider = ?');
     branchValues.push(provider);
@@ -627,7 +623,7 @@ function parseNonNegativeInteger(value: string, field: string): number {
   return parsed;
 }
 
-function makeD1NumericPrefixPattern(value: string): string {
+function makeNumericPrefixPattern(value: string): string {
   return `${value}%`;
 }
 
