@@ -1,4 +1,5 @@
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 /**
  * Subtle banner shown only while the app is serving results from the local
@@ -8,9 +9,10 @@ import { t } from '../lib/i18n.js';
  * fallback state, so the healthy-path DOM is unchanged.
  */
 export function FallbackNotice() {
+  const locale = useLocale();
   return (
     <p class="fallback-notice" aria-live="polite" aria-atomic="true">
-      {t.offlineFallback}
+      {t(locale, 'offlineFallback')}
     </p>
   );
 }

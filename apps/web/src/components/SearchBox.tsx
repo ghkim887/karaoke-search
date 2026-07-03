@@ -1,4 +1,5 @@
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 interface SearchBoxProps {
   /** Controlled value — what the input displays. */
@@ -16,10 +17,11 @@ interface SearchBoxProps {
  * featured-artist chip) are immediately reflected in the input box.
  */
 export function SearchBox({ value, onInput, disabled = false }: SearchBoxProps) {
+  const locale = useLocale();
   const handleInput = (e: Event) => {
     onInput((e.currentTarget as HTMLInputElement).value);
   };
-  const placeholder = disabled ? t.loadingIndex : t.searchPlaceholder;
+  const placeholder = disabled ? t(locale, 'loadingIndex') : t(locale, 'searchPlaceholder');
 
   return (
     <div class="search-input-wrap">
@@ -39,7 +41,7 @@ export function SearchBox({ value, onInput, disabled = false }: SearchBoxProps) 
       <input
         class="search-input"
         type="search"
-        aria-label={t.searchInputLabel}
+        aria-label={t(locale, 'searchInputLabel')}
         placeholder={placeholder}
         autocomplete="off"
         spellcheck={false}

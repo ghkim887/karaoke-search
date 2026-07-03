@@ -9,6 +9,7 @@ import { createSearchBackend } from '../lib/backend.js';
 import { DEBOUNCE_MS } from '../lib/constants.js';
 import { useFavorites } from '../lib/favorites.js';
 import { t } from '../lib/i18n.js';
+import { LocaleContext, useLocaleStore } from '../lib/locale-hooks.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
 import { FallbackNotice } from './FallbackNotice.js';
@@ -56,6 +57,10 @@ type RenderMode =
  * capped at 50 (spec §UI).
  */
 export function App({ songCount }: AppProps) {
+  // Active chrome locale from the shared store (the switcher island writes it).
+  // This island is the stateful owner for its own subtree, propagating the
+  // locale down via LocaleContext so every child string re-renders on change.
+  const locale = useLocaleStore();
   // Controlled input value — reflects what the user sees in the box.
   const [inputValue, setInputValue] = useState('');
   // Debounced search query — only updated after 150 ms of quiet.
@@ -160,10 +165,10 @@ export function App({ songCount }: AppProps) {
   // the result count changes — not on every keystroke before debounce settles.
   const resultCount = results.length;
   const resultStatusLabel = browseSearchPending
-    ? t.searching
+    ? t(locale, 'searching')
     : browseSearchFailed || favoritesFailed
-      ? t.errorOccurred
-      : t.resultCount(resultCount);
+      ? t(locale, 'errorOccurred')
+      : t(locale, 'resultCount', resultCount);
 
   // Build-time record count, formatted with thousands separators (en-US to
   // match the prior hard-coded "26,401" format).
@@ -171,7 +176,7 @@ export function App({ songCount }: AppProps) {
 
   const loadingNode = (
     <p class="loading">
-      {t.buildingIndex(songCountDisplay)}
+      {t(locale, 'buildingIndex', songCountDisplay)}
       <span class="loading-dot" aria-hidden="true">
         .
       </span>
@@ -186,7 +191,7 @@ export function App({ songCount }: AppProps) {
 
   const searchLoadingNode = (
     <p class="search-loading">
-      {t.searching}
+      {t(locale, 'searching')}
       <span class="loading-dot" aria-hidden="true">
         .
       </span>
@@ -261,13 +266,13 @@ export function App({ songCount }: AppProps) {
       case 'favorites-empty':
         return <FavoritesEmpty />;
       case 'favorites-error':
-        return <ErrorState message={t.favoritesLoadFailed} onRetry={handleRetry} />;
+        return <ErrorState message={t(locale, 'favoritesLoadFailed')} onRetry={handleRetry} />;
       case 'browse-empty':
         return <EmptyState onPickArtist={handlePickArtist} />;
       case 'browse-searching':
         return searchLoadingNode;
       case 'browse-error':
-        return <ErrorState message={t.searchRequestFailed} onRetry={handleRetry} />;
+        return <ErrorState message={t(locale, 'searchRequestFailed')} onRetry={handleRetry} />;
       case 'favorites':
       case 'browse':
         // Identical render output post-`results` computation; the candidate-
@@ -285,20 +290,22 @@ export function App({ songCount }: AppProps) {
   };
 
   return (
-    <main class="results">
-      <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
-      <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
-      <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
-      {fallbackActive ? <FallbackNotice /> : null}
-      <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
-        {resultStatusLabel}
-      </span>
-      {/* The single results region is the tabpanel controlled by both tabs.
-          `aria-labelledby` tracks the active tab so the panel's accessible
-          name follows the current view. */}
-      <div id={TAB_PANEL_ID} role="tabpanel" aria-labelledby={tabButtonId(activeTab)}>
-        {renderBody()}
-      </div>
-    </main>
+    <LocaleContext.Provider value={locale}>
+      <main class="results">
+        <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
+        <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
+        <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
+        {fallbackActive ? <FallbackNotice /> : null}
+        <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
+          {resultStatusLabel}
+        </span>
+        {/* The single results region is the tabpanel controlled by both tabs.
+            `aria-labelledby` tracks the active tab so the panel's accessible
+            name follows the current view. */}
+        <div id={TAB_PANEL_ID} role="tabpanel" aria-labelledby={tabButtonId(activeTab)}>
+          {renderBody()}
+        </div>
+      </main>
+    </LocaleContext.Provider>
   );
 }
