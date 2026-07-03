@@ -82,6 +82,7 @@ describe('classifier golden — representative scenarios', () => {
     listItem: JoysoundListItem;
     detail?: JoysoundDetail;
     overrides?: { isAllow: (n: string) => boolean; isDrop: (n: string) => boolean };
+    isKnownJapaneseArtist?: (artist: string) => boolean;
     expected: Verdict;
   }> = [
     // positive gates
@@ -193,6 +194,14 @@ describe('classifier golden — representative scenarios', () => {
       detail: detail({ songName: 'Namae', genreNames: ['洋楽'] }),
       expected: { admit: false, reason: 'drop-ascii-only' },
     },
+    // injected known-Japanese-artist admit (step 5) — a Latin row with no
+    // positive script signal that an injected predicate confirms as a JP act.
+    {
+      name: 'admit-jp-artist — injected isKnownJapaneseArtist matches a signal-less Latin row',
+      listItem: listItem({ songName: 'Namae', artistName: 'Yamada Taro' }),
+      isKnownJapaneseArtist: (artist) => artist === 'Yamada Taro',
+      expected: { admit: true, reason: 'admit-jp-artist' },
+    },
     // fall-through drops (listing-only)
     {
       name: 'drop-han-only — Han but no kana',
@@ -218,6 +227,7 @@ describe('classifier golden — representative scenarios', () => {
           listItem: c.listItem,
           detail: c.detail,
           overrides: c.overrides,
+          isKnownJapaneseArtist: c.isKnownJapaneseArtist,
         }),
       ).toEqual(c.expected);
     });
