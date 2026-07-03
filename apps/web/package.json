@@ -23,6 +23,8 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@axe-core/playwright": "^4.11.2",
+    "@karaoke/data-store": "workspace:*",
+    "@karaoke/worker": "workspace:*",
     "@playwright/test": "^1.60.0",
     "@types/node": "^24.12.4",
     "jsdom": "^25.0.1",

@@ -1,0 +1,1471 @@
+{
+  "_readme": "AUTO-GENERATED baseline for search-parity.golden.test.ts. Regenerate with UPDATE_PARITY_SNAPSHOT=1 (see the test file header). jaccard/top1Match are the FROZEN divergence floor; web/worker lists are the top-10 ids at generation time (informational, for reading divergences). Do not hand-edit.",
+  "corpus": {
+    "path": "apps/web/public/data/songs.json",
+    "sha256": "6d351debb7af43bbcfa2a08aeacfbb6e9498976b757d1ce11332127d06378086",
+    "records": 25842
+  },
+  "aggregate": {
+    "queryCount": 61,
+    "meanJaccard": 0.465608,
+    "top1MatchRate": 0.639344
+  },
+  "queries": {
+    "jp-full-yoruni": {
+      "query": "夜に駆ける",
+      "vendors": [],
+      "jaccard": 0.3,
+      "top1Match": true,
+      "web": [
+        "blog-99-1",
+        "blog-99-52",
+        "blog-226-63"
+      ],
+      "worker": [
+        "blog-99-1",
+        "blog-99-52",
+        "blog-226-63",
+        "blog-463-4",
+        "blog-654-29",
+        "blog-524-116",
+        "blog-1544-30",
+        "blog-688-189",
+        "tj-25836",
+        "tj-26580"
+      ]
+    },
+    "jp-full-gurenge": {
+      "query": "紅蓮華",
+      "vendors": [],
+      "jaccard": 0.75,
+      "top1Match": false,
+      "web": [
+        "blog-153-19",
+        "blog-153-1",
+        "blog-153-2"
+      ],
+      "worker": [
+        "blog-153-1",
+        "blog-153-19",
+        "blog-153-2",
+        "tj-27457"
+      ]
+    },
+    "jp-full-byoshin": {
+      "query": "秒針を噛む",
+      "vendors": [],
+      "jaccard": 0.333333,
+      "top1Match": true,
+      "web": [
+        "blog-105-0",
+        "blog-105-62"
+      ],
+      "worker": [
+        "blog-105-0",
+        "blog-105-62",
+        "tj-26170",
+        "blog-338-73",
+        "blog-562-5",
+        "blog-137-20"
+      ]
+    },
+    "jp-full-yasashii": {
+      "query": "優しい歌",
+      "vendors": [],
+      "jaccard": 0.5,
+      "top1Match": true,
+      "web": [
+        "tj-25032",
+        "blog-686-41",
+        "tj-6769",
+        "blog-101-71",
+        "blog-646-49"
+      ],
+      "worker": [
+        "tj-25032",
+        "blog-686-41",
+        "tjpdf-28301",
+        "tj-6769",
+        "blog-99-9",
+        "blog-361-216",
+        "blog-226-10",
+        "blog-101-71",
+        "blog-646-49",
+        "blog-1229-6"
+      ]
+    },
+    "jp-full-soramo": {
+      "query": "空も飛べるはず",
+      "vendors": [],
+      "jaccard": 0.1,
+      "top1Match": true,
+      "web": [
+        "blog-226-7"
+      ],
+      "worker": [
+        "blog-226-7",
+        "blog-224-0",
+        "blog-576-48",
+        "tj-28828",
+        "blog-828-25",
+        "blog-147-32",
+        "blog-224-52",
+        "blog-242-31",
+        "blog-228-75",
+        "blog-837-21"
+      ]
+    },
+    "jp-full-ageha": {
+      "query": "アゲハ蝶",
+      "vendors": [],
+      "jaccard": 0.4,
+      "top1Match": true,
+      "web": [
+        "blog-229-1",
+        "blog-229-86",
+        "blog-229-18",
+        "blog-162-17"
+      ],
+      "worker": [
+        "blog-229-1",
+        "blog-229-18",
+        "blog-229-86",
+        "blog-162-17",
+        "blog-908-6",
+        "blog-500-5",
+        "blog-350-2",
+        "blog-539-148",
+        "blog-654-89",
+        "blog-654-91"
+      ]
+    },
+    "jp-part-mayonaka": {
+      "query": "真夜中",
+      "vendors": [],
+      "jaccard": 0.333333,
+      "top1Match": true,
+      "web": [
+        "blog-594-20",
+        "blog-217-42",
+        "blog-826-5",
+        "blog-162-15",
+        "blog-493-38",
+        "blog-168-141",
+        "blog-730-82",
+        "tj-6272",
+        "blog-1165-17",
+        "blog-579-13"
+      ],
+      "worker": [
+        "blog-594-20",
+        "tj-27015",
+        "tj-27644",
+        "tjpdf-28549",
+        "tj-6272",
+        "blog-299-0",
+        "blog-826-5",
+        "blog-168-141",
+        "blog-579-13",
+        "blog-539-181"
+      ]
+    },
+    "jp-part-kakeru": {
+      "query": "駆ける",
+      "vendors": [],
+      "jaccard": 0.090909,
+      "top1Match": false,
+      "web": [
+        "blog-1544-30",
+        "blog-355-103"
+      ],
+      "worker": [
+        "blog-99-1",
+        "blog-99-52",
+        "blog-226-63",
+        "blog-463-4",
+        "blog-654-29",
+        "blog-524-116",
+        "blog-1544-30",
+        "blog-688-189",
+        "tj-25836",
+        "tj-26580"
+      ]
+    },
+    "jp-part-tenshi": {
+      "query": "天使",
+      "vendors": [],
+      "jaccard": 0.176471,
+      "top1Match": true,
+      "web": [
+        "tj-25782",
+        "blog-229-118",
+        "blog-162-170",
+        "blog-499-48",
+        "blog-162-147",
+        "blog-336-83",
+        "blog-826-82",
+        "blog-350-19",
+        "blog-322-5",
+        "blog-524-9"
+      ],
+      "worker": [
+        "tj-25782",
+        "blog-229-118",
+        "tj-25371",
+        "blog-350-19",
+        "tj-26747",
+        "tjpdf-27563",
+        "blog-1229-10",
+        "blog-163-90",
+        "tj-52409",
+        "blog-484-31"
+      ]
+    },
+    "jp-part-koi": {
+      "query": "恋",
+      "vendors": [],
+      "jaccard": 0.818182,
+      "top1Match": true,
+      "web": [
+        "tj-6595",
+        "blog-117-6",
+        "blog-162-237",
+        "blog-174-26",
+        "blog-195-7",
+        "blog-317-7",
+        "blog-338-37",
+        "blog-539-96",
+        "blog-576-181",
+        "tj-6412"
+      ],
+      "worker": [
+        "tj-6595",
+        "blog-117-6",
+        "blog-162-237",
+        "blog-174-26",
+        "blog-195-7",
+        "blog-317-7",
+        "blog-338-37",
+        "blog-539-96",
+        "blog-576-181",
+        "tj-25086"
+      ]
+    },
+    "jp-kana-ussewa": {
+      "query": "うっせぇわ",
+      "vendors": [],
+      "jaccard": 0.285714,
+      "top1Match": true,
+      "web": [
+        "blog-135-2",
+        "blog-135-67"
+      ],
+      "worker": [
+        "blog-135-2",
+        "blog-135-67",
+        "blog-200-2",
+        "blog-262-0",
+        "blog-499-16",
+        "blog-1142-5",
+        "blog-476-7"
+      ]
+    },
+    "jp-kana-dokidoki": {
+      "query": "ドキドキ",
+      "vendors": [],
+      "jaccard": 0.6,
+      "top1Match": true,
+      "web": [
+        "blog-749-5",
+        "blog-425-23",
+        "tj-27248",
+        "blog-1491-18",
+        "tj-25304",
+        "blog-502-9"
+      ],
+      "worker": [
+        "blog-749-5",
+        "blog-425-23",
+        "blog-502-9",
+        "blog-1491-18",
+        "tj-25304",
+        "tj-27248",
+        "blog-802-0",
+        "tj-25543",
+        "tj-25684",
+        "tj-26067"
+      ]
+    },
+    "jp-kana-cherry": {
+      "query": "チェリー",
+      "vendors": [],
+      "jaccard": 0.5,
+      "top1Match": true,
+      "web": [
+        "blog-226-0",
+        "blog-576-85",
+        "blog-358-6",
+        "blog-564-21",
+        "blog-418-9",
+        "blog-524-7",
+        "blog-475-11",
+        "tj-25179"
+      ],
+      "worker": [
+        "blog-226-0",
+        "blog-576-85",
+        "blog-524-7",
+        "blog-418-9",
+        "tj-25975",
+        "blog-517-42",
+        "tj-26782",
+        "blog-517-12",
+        "blog-358-6",
+        "blog-564-21"
+      ]
+    },
+    "jp-kana-saudade": {
+      "query": "サウダージ",
+      "vendors": [],
+      "jaccard": 0.3,
+      "top1Match": true,
+      "web": [
+        "blog-229-0",
+        "blog-539-83",
+        "blog-229-14"
+      ],
+      "worker": [
+        "blog-229-0",
+        "blog-539-83",
+        "blog-229-14",
+        "tj-28977",
+        "blog-420-31",
+        "blog-724-5",
+        "blog-736-7",
+        "tj-6475",
+        "blog-594-1",
+        "blog-655-8"
+      ]
+    },
+    "jp-kana-robinson": {
+      "query": "ロビンソン",
+      "vendors": [],
+      "jaccard": 0.1,
+      "top1Match": true,
+      "web": [
+        "blog-226-2"
+      ],
+      "worker": [
+        "blog-226-2",
+        "blog-828-66",
+        "tj-27042",
+        "blog-162-200",
+        "blog-151-28",
+        "blog-594-8",
+        "tj-26622",
+        "blog-539-58",
+        "blog-492-14",
+        "blog-135-74"
+      ]
+    },
+    "jp-kana-sayonarabus": {
+      "query": "サヨナラバス",
+      "vendors": [],
+      "jaccard": 0.1,
+      "top1Match": true,
+      "web": [
+        "tj-25108"
+      ],
+      "worker": [
+        "tj-25108",
+        "tj-25422",
+        "tj-25477",
+        "tj-25751",
+        "tj-27098",
+        "tj-27396",
+        "tj-27503",
+        "tjpdf-28487",
+        "tj-28693",
+        "tj-6781"
+      ]
+    },
+    "ko-full-hongryeonhwa": {
+      "query": "홍련화",
+      "vendors": [],
+      "jaccard": 0.272727,
+      "top1Match": true,
+      "web": [
+        "blog-153-1",
+        "blog-153-19",
+        "blog-153-2",
+        "tj-27111"
+      ],
+      "worker": [
+        "blog-153-1",
+        "blog-153-19",
+        "blog-153-2",
+        "tj-26809",
+        "tj-26887",
+        "tj-26889",
+        "tjpdf-28246",
+        "blog-730-63",
+        "blog-455-13",
+        "blog-728-15"
+      ]
+    },
+    "ko-full-bameul": {
+      "query": "밤을 달리다",
+      "vendors": [],
+      "jaccard": 0.25,
+      "top1Match": true,
+      "web": [
+        "blog-99-1",
+        "blog-226-63",
+        "blog-99-52",
+        "blog-1143-49",
+        "blog-691-52",
+        "blog-686-49",
+        "blog-168-75",
+        "blog-535-40",
+        "blog-504-37",
+        "tjpdf-28179"
+      ],
+      "worker": [
+        "blog-99-1",
+        "blog-226-63",
+        "blog-99-52",
+        "tjpdf-28179",
+        "tj-6779",
+        "blog-449-6",
+        "blog-175-81",
+        "blog-445-46",
+        "blog-127-77",
+        "blog-383-17"
+      ]
+    },
+    "ko-full-sikkeureowo": {
+      "query": "시끄러워",
+      "vendors": [],
+      "jaccard": 0.7,
+      "top1Match": true,
+      "web": [
+        "blog-135-2",
+        "blog-596-34",
+        "blog-1142-5",
+        "blog-420-42",
+        "blog-135-67",
+        "blog-489-7",
+        "blog-200-2"
+      ],
+      "worker": [
+        "blog-135-2",
+        "blog-596-34",
+        "blog-1142-5",
+        "blog-135-67",
+        "blog-420-42",
+        "blog-200-2",
+        "blog-489-7",
+        "blog-217-4",
+        "blog-828-25",
+        "blog-688-72"
+      ]
+    },
+    "ko-full-chochim": {
+      "query": "초침을 깨물다",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-105-0",
+        "blog-105-62",
+        "blog-562-5",
+        "blog-434-9",
+        "blog-137-20",
+        "blog-336-69"
+      ],
+      "worker": [
+        "blog-105-0",
+        "blog-105-62",
+        "blog-336-69",
+        "blog-434-9",
+        "blog-562-5",
+        "blog-137-20"
+      ]
+    },
+    "ko-full-sojunghan": {
+      "query": "소중한 사람",
+      "vendors": [],
+      "jaccard": 0.818182,
+      "top1Match": true,
+      "web": [
+        "tj-25022",
+        "blog-826-165",
+        "blog-178-9",
+        "blog-361-105",
+        "blog-495-3",
+        "blog-355-40",
+        "blog-157-44",
+        "tj-25464",
+        "tjpdf-28190",
+        "blog-117-56"
+      ],
+      "worker": [
+        "tj-25022",
+        "blog-826-165",
+        "blog-178-9",
+        "blog-361-105",
+        "blog-495-3",
+        "tj-25464",
+        "tj-25604",
+        "tjpdf-28190",
+        "blog-157-44",
+        "blog-117-56"
+      ]
+    },
+    "ko-part-sarang": {
+      "query": "사랑",
+      "vendors": [],
+      "jaccard": 0.538462,
+      "top1Match": false,
+      "web": [
+        "blog-423-69",
+        "blog-499-53",
+        "blog-172-7",
+        "tj-6595",
+        "blog-117-6",
+        "blog-162-237",
+        "blog-174-26",
+        "blog-195-7",
+        "blog-317-7",
+        "blog-338-37"
+      ],
+      "worker": [
+        "tj-6595",
+        "blog-117-6",
+        "blog-162-237",
+        "blog-174-26",
+        "blog-195-7",
+        "blog-317-7",
+        "blog-338-37",
+        "blog-539-96",
+        "blog-576-181",
+        "blog-174-27"
+      ]
+    },
+    "ko-part-dallida": {
+      "query": "달리다",
+      "vendors": [],
+      "jaccard": 0.176471,
+      "top1Match": true,
+      "web": [
+        "blog-99-1",
+        "blog-226-63",
+        "blog-99-52",
+        "blog-229-142",
+        "blog-354-8",
+        "blog-242-19",
+        "tj-27366",
+        "blog-225-69",
+        "blog-336-4",
+        "blog-105-14"
+      ],
+      "worker": [
+        "blog-99-1",
+        "blog-99-52",
+        "blog-226-63",
+        "blog-457-11",
+        "blog-420-1",
+        "blog-414-11",
+        "blog-465-36",
+        "blog-495-9",
+        "blog-429-40",
+        "blog-779-37"
+      ]
+    },
+    "ko-part-norae": {
+      "query": "노래",
+      "vendors": [],
+      "jaccard": 0.111111,
+      "top1Match": true,
+      "web": [
+        "blog-520-156",
+        "blog-224-96",
+        "tj-25032",
+        "tj-25132",
+        "tj-25373",
+        "tj-25707",
+        "tj-25735",
+        "blog-688-38",
+        "tj-25815",
+        "tj-26232"
+      ],
+      "worker": [
+        "blog-520-156",
+        "blog-342-3",
+        "blog-178-1",
+        "blog-178-20",
+        "blog-178-41",
+        "blog-178-68",
+        "blog-178-44",
+        "blog-226-48",
+        "tj-28802",
+        "tj-25032"
+      ]
+    },
+    "romaji-dokidoki": {
+      "query": "dokidoki",
+      "vendors": [],
+      "jaccard": 0.7,
+      "top1Match": true,
+      "web": [
+        "blog-422-22",
+        "blog-749-5",
+        "blog-425-23",
+        "tj-27248",
+        "blog-1491-18",
+        "tj-25304",
+        "blog-502-9"
+      ],
+      "worker": [
+        "blog-422-22",
+        "blog-749-5",
+        "blog-425-23",
+        "blog-502-9",
+        "blog-1491-18",
+        "blog-119-19",
+        "blog-119-139",
+        "blog-1143-43",
+        "tj-25304",
+        "tj-27248"
+      ]
+    },
+    "romaji-robinson": {
+      "query": "robinson",
+      "vendors": [],
+      "jaccard": 0.1,
+      "top1Match": true,
+      "web": [
+        "blog-226-2"
+      ],
+      "worker": [
+        "blog-226-2",
+        "blog-828-66",
+        "tj-27042",
+        "blog-162-200",
+        "blog-151-28",
+        "blog-594-8",
+        "blog-133-18",
+        "tjpdf-27653",
+        "blog-440-74",
+        "blog-336-50"
+      ]
+    },
+    "romaji-sayonara": {
+      "query": "sayonara",
+      "vendors": [],
+      "jaccard": 0.666667,
+      "top1Match": false,
+      "web": [
+        "tj-25779",
+        "blog-828-22",
+        "blog-151-26",
+        "blog-183-8",
+        "blog-224-59",
+        "blog-707-21",
+        "blog-423-115",
+        "tj-26278",
+        "tj-26501",
+        "blog-828-251"
+      ],
+      "worker": [
+        "blog-828-22",
+        "blog-151-26",
+        "blog-183-8",
+        "blog-224-59",
+        "tj-6951",
+        "blog-101-6",
+        "tj-25779",
+        "tj-26278",
+        "tj-26501",
+        "blog-707-21"
+      ]
+    },
+    "romaji-sakura": {
+      "query": "sakura",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": false,
+      "web": [
+        "blog-301-18",
+        "blog-539-57",
+        "blog-523-84",
+        "blog-523-34",
+        "blog-301-120",
+        "tj-27462",
+        "blog-159-3",
+        "blog-909-16",
+        "tj-27018",
+        "tj-27377"
+      ],
+      "worker": [
+        "tj-27462",
+        "blog-159-3",
+        "blog-909-16",
+        "blog-301-18",
+        "blog-523-34",
+        "blog-523-84",
+        "blog-539-57",
+        "blog-301-120",
+        "tj-27018",
+        "tj-27377"
+      ]
+    },
+    "romaji-cherry": {
+      "query": "cherry",
+      "vendors": [],
+      "jaccard": 0.818182,
+      "top1Match": false,
+      "web": [
+        "blog-161-27",
+        "blog-576-231",
+        "blog-826-151",
+        "blog-615-27",
+        "blog-615-116",
+        "tj-26719",
+        "tj-26729",
+        "tj-26803",
+        "tj-27275",
+        "tj-27785"
+      ],
+      "worker": [
+        "blog-576-231",
+        "blog-826-151",
+        "blog-537-0",
+        "blog-161-27",
+        "blog-615-27",
+        "blog-615-116",
+        "tj-26803",
+        "tj-26719",
+        "tj-26729",
+        "tj-27275"
+      ]
+    },
+    "hangul-initials-oosb": {
+      "query": "ㅇㅅㅂ",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "blog-418-18",
+        "tj-6445",
+        "tj-6562",
+        "blog-218-10",
+        "blog-165-7",
+        "blog-429-36",
+        "blog-117-115",
+        "blog-461-5",
+        "blog-418-60",
+        "blog-464-20"
+      ]
+    },
+    "hangul-initials-hrh": {
+      "query": "ㅎㄹㅎ",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "tj-26809",
+        "tj-26887",
+        "tj-26889",
+        "tjpdf-28246",
+        "blog-153-1",
+        "blog-730-63",
+        "blog-455-13",
+        "blog-728-15",
+        "blog-1601-14",
+        "blog-376-18"
+      ]
+    },
+    "hangul-initials-skrw": {
+      "query": "ㅅㅋㄹㅇ",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "tj-26724",
+        "blog-157-114",
+        "blog-507-17",
+        "blog-707-17",
+        "blog-802-47",
+        "blog-436-24",
+        "blog-1149-35",
+        "tj-26407",
+        "tjpdf-68074"
+      ]
+    },
+    "artist-yoasobi": {
+      "query": "YOASOBI",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-5",
+        "blog-99-25",
+        "blog-99-17",
+        "blog-99-27",
+        "blog-99-33",
+        "blog-99-37",
+        "blog-99-18",
+        "blog-99-8",
+        "blog-99-12",
+        "blog-99-1"
+      ],
+      "worker": [
+        "blog-99-5",
+        "blog-99-25",
+        "blog-99-17",
+        "blog-99-27",
+        "blog-99-33",
+        "blog-99-37",
+        "blog-99-18",
+        "blog-99-8",
+        "blog-99-12",
+        "blog-99-1"
+      ]
+    },
+    "artist-alias-zutomayo": {
+      "query": "ZUTOMAYO",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-105-31",
+        "blog-105-0",
+        "blog-105-7",
+        "blog-105-19",
+        "blog-105-15",
+        "blog-105-16",
+        "blog-105-9",
+        "blog-105-8",
+        "blog-105-6",
+        "blog-105-12"
+      ],
+      "worker": [
+        "blog-105-31",
+        "blog-105-0",
+        "blog-105-7",
+        "blog-105-19",
+        "blog-105-15",
+        "blog-105-16",
+        "blog-105-9",
+        "blog-105-8",
+        "blog-105-6",
+        "blog-105-12"
+      ]
+    },
+    "artist-alias-spitz": {
+      "query": "Spitz",
+      "vendors": [],
+      "jaccard": 0.818182,
+      "top1Match": false,
+      "web": [
+        "blog-594-52",
+        "blog-226-13",
+        "blog-226-0",
+        "blog-226-7",
+        "blog-226-2",
+        "blog-226-21",
+        "blog-226-20",
+        "blog-226-12",
+        "blog-226-15",
+        "blog-226-30"
+      ],
+      "worker": [
+        "blog-226-13",
+        "blog-226-0",
+        "blog-226-7",
+        "blog-226-2",
+        "blog-226-21",
+        "blog-226-20",
+        "blog-226-12",
+        "blog-226-15",
+        "blog-226-30",
+        "blog-226-237"
+      ]
+    },
+    "artist-alias-judyandmary": {
+      "query": "Judy and Mary",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-749-1",
+        "blog-749-5",
+        "blog-749-10",
+        "blog-749-11",
+        "blog-749-8",
+        "blog-749-0",
+        "blog-749-4",
+        "blog-749-9",
+        "blog-749-41",
+        "blog-749-13"
+      ],
+      "worker": [
+        "blog-749-1",
+        "blog-749-5",
+        "blog-749-10",
+        "blog-749-11",
+        "blog-749-8",
+        "blog-749-0",
+        "blog-749-4",
+        "blog-749-9",
+        "blog-749-41",
+        "blog-749-13"
+      ]
+    },
+    "artist-yonezu": {
+      "query": "米津玄師",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-101-27",
+        "blog-101-21",
+        "blog-101-24",
+        "blog-101-22",
+        "blog-101-5",
+        "blog-101-16",
+        "blog-101-10",
+        "blog-101-3",
+        "blog-101-12",
+        "blog-101-2"
+      ],
+      "worker": [
+        "blog-101-27",
+        "blog-101-21",
+        "blog-101-24",
+        "blog-101-22",
+        "blog-101-5",
+        "blog-101-16",
+        "blog-101-10",
+        "blog-101-3",
+        "blog-101-12",
+        "blog-101-2"
+      ]
+    },
+    "artist-ko-yonezu": {
+      "query": "요네즈 켄시",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-101-27",
+        "blog-101-21",
+        "blog-101-24",
+        "blog-101-22",
+        "blog-101-5",
+        "blog-101-16",
+        "blog-101-10",
+        "blog-101-3",
+        "blog-101-35",
+        "blog-101-8"
+      ],
+      "worker": [
+        "blog-101-27",
+        "blog-101-21",
+        "blog-101-24",
+        "blog-101-22",
+        "blog-101-5",
+        "blog-101-16",
+        "blog-101-10",
+        "blog-101-3",
+        "blog-101-35",
+        "blog-101-8"
+      ]
+    },
+    "artist-lisa": {
+      "query": "LiSA",
+      "vendors": [],
+      "jaccard": 0.818182,
+      "top1Match": false,
+      "web": [
+        "blog-219-23",
+        "blog-153-25",
+        "blog-153-6",
+        "blog-153-10",
+        "blog-153-50",
+        "blog-153-32",
+        "blog-153-4",
+        "blog-153-18",
+        "blog-153-21",
+        "blog-153-9"
+      ],
+      "worker": [
+        "blog-153-25",
+        "blog-153-6",
+        "blog-153-10",
+        "blog-153-50",
+        "blog-153-32",
+        "blog-153-4",
+        "blog-153-18",
+        "blog-153-21",
+        "blog-153-9",
+        "blog-153-1"
+      ]
+    },
+    "artist-utada": {
+      "query": "宇多田ヒカル",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-301-10",
+        "blog-301-19",
+        "blog-301-13",
+        "blog-301-31",
+        "blog-301-18",
+        "blog-301-15",
+        "blog-301-22",
+        "blog-301-40",
+        "blog-301-38",
+        "blog-301-6"
+      ],
+      "worker": [
+        "blog-301-10",
+        "blog-301-19",
+        "blog-301-13",
+        "blog-301-31",
+        "blog-301-18",
+        "blog-301-15",
+        "blog-301-22",
+        "blog-301-40",
+        "blog-301-38",
+        "blog-301-6"
+      ]
+    },
+    "short-hikari": {
+      "query": "光",
+      "vendors": [],
+      "jaccard": 0.818182,
+      "top1Match": true,
+      "web": [
+        "blog-301-13",
+        "tj-25957",
+        "blog-180-31",
+        "blog-215-182",
+        "blog-338-58",
+        "blog-625-15",
+        "blog-646-31",
+        "blog-696-70",
+        "blog-751-16",
+        "tj-25144"
+      ],
+      "worker": [
+        "blog-301-13",
+        "tj-25957",
+        "blog-180-31",
+        "blog-215-182",
+        "blog-338-58",
+        "blog-625-15",
+        "blog-646-31",
+        "blog-696-70",
+        "blog-751-16",
+        "tjpdf-27875"
+      ]
+    },
+    "short-natsu": {
+      "query": "夏",
+      "vendors": [],
+      "jaccard": 0.176471,
+      "top1Match": true,
+      "web": [
+        "blog-1172-61",
+        "blog-179-25",
+        "tj-6919",
+        "blog-576-134",
+        "tj-25526",
+        "blog-112-36",
+        "blog-169-2",
+        "blog-168-83",
+        "blog-361-113",
+        "blog-887-4"
+      ],
+      "worker": [
+        "blog-1172-61",
+        "blog-179-25",
+        "tj-25073",
+        "tj-25227",
+        "tj-25418",
+        "tj-25526",
+        "tj-25544",
+        "tj-25546",
+        "tj-25613",
+        "tj-25767"
+      ]
+    },
+    "short-sora": {
+      "query": "空",
+      "vendors": [],
+      "jaccard": 0.052632,
+      "top1Match": true,
+      "web": [
+        "blog-164-127",
+        "blog-1229-142",
+        "blog-521-66",
+        "blog-464-35",
+        "blog-215-196",
+        "blog-654-105",
+        "blog-211-44",
+        "blog-304-19",
+        "blog-594-41",
+        "blog-229-195"
+      ],
+      "worker": [
+        "blog-164-127",
+        "blog-226-7",
+        "tj-25115",
+        "tj-25274",
+        "tj-25287",
+        "tj-25317",
+        "tj-25368",
+        "blog-802-150",
+        "tj-25436",
+        "tj-25459"
+      ]
+    },
+    "short-ai": {
+      "query": "ai",
+      "vendors": [],
+      "jaccard": 0.538462,
+      "top1Match": false,
+      "web": [
+        "blog-1508-105",
+        "blog-1321-45",
+        "blog-307-42",
+        "blog-460-14",
+        "blog-456-42",
+        "blog-374-27",
+        "tj-26590",
+        "blog-465-62",
+        "tj-68772",
+        "blog-1575-4"
+      ],
+      "worker": [
+        "blog-307-42",
+        "blog-460-14",
+        "tj-27382",
+        "tj-27419",
+        "tj-28655",
+        "blog-1508-105",
+        "blog-1321-45",
+        "tj-26590",
+        "blog-456-42",
+        "blog-1575-4"
+      ]
+    },
+    "short-love": {
+      "query": "love",
+      "vendors": [],
+      "jaccard": 0.052632,
+      "top1Match": false,
+      "web": [
+        "blog-828-153",
+        "blog-828-152",
+        "tj-25159",
+        "tj-6708",
+        "tj-6914",
+        "blog-133-5",
+        "blog-635-4",
+        "tj-25165",
+        "blog-311-4",
+        "tj-26156"
+      ],
+      "worker": [
+        "tj-25114",
+        "blog-101-111",
+        "blog-164-63",
+        "blog-307-74",
+        "blog-423-124",
+        "blog-521-165",
+        "blog-730-324",
+        "blog-790-31",
+        "tj-52956",
+        "tj-25159"
+      ]
+    },
+    "short-jamo-g": {
+      "query": "ㄱ",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [],
+      "worker": []
+    },
+    "num-tj-full": {
+      "query": "68381",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "blog-99-1"
+      ]
+    },
+    "num-joy-full": {
+      "query": "446181",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "blog-99-1"
+      ]
+    },
+    "num-ky-full": {
+      "query": "44656",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "blog-99-1",
+        "blog-150-8",
+        "blog-218-11"
+      ]
+    },
+    "num-tj-prefixed": {
+      "query": "tj68381",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "blog-99-1"
+      ]
+    },
+    "num-joy-prefixed": {
+      "query": "joysound446181",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "blog-99-1"
+      ]
+    },
+    "num-short-prefix": {
+      "query": "684",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [
+        "blog-127-49"
+      ],
+      "worker": [
+        "blog-308-0",
+        "blog-349-3",
+        "tj-6840",
+        "blog-384-29",
+        "blog-99-10",
+        "tj-68403",
+        "blog-146-3",
+        "blog-350-7",
+        "blog-99-13",
+        "blog-114-8"
+      ]
+    },
+    "num-tj-cherry": {
+      "query": "25008",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [
+        "blog-496-16"
+      ],
+      "worker": [
+        "blog-226-0"
+      ]
+    },
+    "vendor-love-joysound": {
+      "query": "love",
+      "vendors": [
+        "joysound"
+      ],
+      "jaccard": 0.111111,
+      "top1Match": false,
+      "web": [
+        "blog-828-153",
+        "blog-828-152",
+        "blog-133-5",
+        "blog-635-4",
+        "blog-311-4",
+        "blog-826-13",
+        "blog-272-30",
+        "blog-730-349",
+        "blog-730-241",
+        "blog-577-8"
+      ],
+      "worker": [
+        "blog-101-111",
+        "blog-164-63",
+        "blog-307-74",
+        "blog-423-124",
+        "blog-521-165",
+        "blog-730-324",
+        "blog-790-31",
+        "blog-311-25",
+        "blog-577-8",
+        "blog-826-13"
+      ]
+    },
+    "vendor-yoasobi-tj": {
+      "query": "YOASOBI",
+      "vendors": [
+        "tj"
+      ],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-5",
+        "blog-99-25",
+        "blog-99-17",
+        "blog-99-27",
+        "blog-99-33",
+        "blog-99-37",
+        "blog-99-18",
+        "blog-99-8",
+        "blog-99-12",
+        "blog-99-1"
+      ],
+      "worker": [
+        "blog-99-5",
+        "blog-99-25",
+        "blog-99-17",
+        "blog-99-27",
+        "blog-99-33",
+        "blog-99-37",
+        "blog-99-18",
+        "blog-99-8",
+        "blog-99-12",
+        "blog-99-1"
+      ]
+    },
+    "vendor-gurenge-ky": {
+      "query": "紅蓮華",
+      "vendors": [
+        "ky"
+      ],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-153-1"
+      ],
+      "worker": [
+        "blog-153-1"
+      ]
+    },
+    "vendor-sarang-tjky": {
+      "query": "사랑",
+      "vendors": [
+        "tj",
+        "ky"
+      ],
+      "jaccard": 0.176471,
+      "top1Match": true,
+      "web": [
+        "tj-6595",
+        "tj-26162",
+        "blog-338-1",
+        "tj-27002",
+        "tj-27964",
+        "blog-381-6",
+        "tj-6164",
+        "tj-6222",
+        "tj-6412",
+        "tj-6414"
+      ],
+      "worker": [
+        "tj-6595",
+        "tjpdf-29981",
+        "tj-25633",
+        "blog-338-1",
+        "tjpdf-28313",
+        "tj-28709",
+        "tjpdf-29910",
+        "blog-145-7",
+        "tj-52832",
+        "tj-6164"
+      ]
+    },
+    "vendor-yonezu-joysound": {
+      "query": "米津玄師",
+      "vendors": [
+        "joysound"
+      ],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-101-27",
+        "blog-101-21",
+        "blog-101-24",
+        "blog-101-22",
+        "blog-101-5",
+        "blog-101-16",
+        "blog-101-10",
+        "blog-101-3",
+        "blog-101-12",
+        "blog-101-2"
+      ],
+      "worker": [
+        "blog-101-27",
+        "blog-101-21",
+        "blog-101-24",
+        "blog-101-22",
+        "blog-101-5",
+        "blog-101-16",
+        "blog-101-10",
+        "blog-101-3",
+        "blog-101-12",
+        "blog-101-2"
+      ]
+    },
+    "empty-latin-gibberish": {
+      "query": "zzzzxqvxyz",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [],
+      "worker": []
+    },
+    "empty-latin-keyboard": {
+      "query": "qwertyuiopasdfghjkl",
+      "vendors": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [],
+      "worker": []
+    },
+    "empty-mixed-absent": {
+      "query": "zzzq존재없는곡목xyz",
+      "vendors": [],
+      "jaccard": 0,
+      "top1Match": false,
+      "web": [],
+      "worker": [
+        "tj-27249",
+        "blog-525-6",
+        "tj-27307",
+        "tj-28585",
+        "tjpdf-68045",
+        "tj-25517",
+        "tj-25840",
+        "tj-26180",
+        "blog-1508-84",
+        "blog-263-58"
+      ]
+    }
+  }
+}
