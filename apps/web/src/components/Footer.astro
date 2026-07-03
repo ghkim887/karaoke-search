@@ -1,56 +1,17 @@
 ---
-import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { dirname, join, parse, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { formatDbDate } from '../lib/footer-date.js';
+import { maxCrawledDate } from '../lib/footer-date.js';
 
-// Resolve the repo root by walking up for a `.git` marker. Audit found the
-// prior `../../../..` from `import.meta.url` was brittle: any future relocation
-// of this file (or change in Astro's build layout) silently lands in the wrong
-// directory. The `.git` walk is layout-independent.
-function findRepoRoot(start: string): string | null {
-  let dir = resolve(start);
-  const root = parse(dir).root;
-  while (dir !== root) {
-    if (existsSync(join(dir, '.git'))) return dir;
-    dir = dirname(dir);
-  }
-  return null;
-}
-
-const repoRoot = findRepoRoot(fileURLToPath(import.meta.url)) ?? findRepoRoot(process.cwd());
-
-let gitOutput = '';
-if (repoRoot === null) {
-  // Neither the source-tree walk nor the cwd walk found a .git marker.
-  // Running git log from an unrelated directory would silently return a wrong
-  // date, so skip the command entirely and leave gitOutput empty.
-  console.warn(
-    '[Footer] could not resolve repo root via .git walk from import.meta.url or process.cwd();',
-    `skipping git log (process.cwd()=${process.cwd()})`,
-  );
-} else {
-  try {
-    gitOutput = execSync('git log -1 --format=%cs -- apps/web/public/data/songs.json', {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-  } catch (err) {
-    // git unavailable, shallow checkout, or path not in history — fall through.
-    // In CI an empty result is a build-time signal: surface it as a warning so
-    // the deploy log captures the regression. Locally, swallow silently.
-    if (process.env.CI === 'true') {
-      console.warn(
-        '[Footer] git log failed for songs.json — date will render empty:',
-        err instanceof Error ? err.message : err,
-      );
-    }
-  }
-}
-
-const dbDate = formatDbDate(gitOutput, process.env.SOURCE_DATE_EPOCH);
+// Build-time initial/fallback date: the most recent `crawled_at` in the bundled
+// corpus, mirroring how index.astro reads songs.json for the record count.
+// Build-time only — the JSON is not bundled into the client. This is only the
+// initial render; the inline script below replaces it at runtime with the live
+// value from GET /api/meta (the serving DB updates independently of the static
+// deploy). On any fetch failure the build-time date stays.
+const songsPath = fileURLToPath(new URL('../../public/data/songs.json', import.meta.url));
+const records = JSON.parse(readFileSync(songsPath, 'utf8')) as { crawled_at?: string }[];
+const dbDate = maxCrawledDate(records.map((record) => record.crawled_at));
 ---
 
 <footer class="site-footer">
@@ -60,19 +21,19 @@ const dbDate = formatDbDate(gitOutput, process.env.SOURCE_DATE_EPOCH);
     <span class="site-footer-disclaimer-en" lang="en">Results are for reference; the actual karaoke machine may differ.</span>
   </p>
   <div class="site-footer-meta">
-    {dbDate !== '' && (
-      <>
-        <span class="site-footer-meta-item">DB 업데이트 {dbDate}</span>
-        <span class="site-footer-meta-sep" aria-hidden="true">·</span>
-      </>
-    )}
+    <span class="site-footer-meta-item" data-db-updated hidden={dbDate === ''}
+      >DB 업데이트 <span data-db-updated-date>{dbDate}</span></span
+    >
+    <span class="site-footer-meta-sep" aria-hidden="true" data-db-updated-sep hidden={dbDate === ''}
+      >·</span
+    >
     <a
       class="site-footer-meta-item site-footer-link"
       href="https://github.com/ghkim887/karaoke-search/blob/main/LICENSE"
       target="_blank"
       rel="noreferrer noopener"
     >
-      AGPL-3.0-or-later
+      MIT
     </a>
     <span class="site-footer-meta-sep" aria-hidden="true">·</span>
     <a
@@ -94,3 +55,37 @@ const dbDate = formatDbDate(gitOutput, process.env.SOURCE_DATE_EPOCH);
     </a>
   </div>
 </footer>
+
+<script>
+  import { getApiSearchBaseUrl } from '../lib/search.js';
+
+  // Replace the build-time DB-update date with the live value from the serving
+  // database (GET /api/meta), which is updated independently of this static
+  // deploy. On any failure (no API configured, offline, an older API without
+  // /api/meta, or a malformed/empty payload) the build-time date is left
+  // untouched, so the footer degrades to exactly the server-rendered value.
+  const base = getApiSearchBaseUrl();
+  const item = document.querySelector<HTMLElement>('[data-db-updated]');
+  const dateEl = document.querySelector<HTMLElement>('[data-db-updated-date]');
+  const sep = document.querySelector<HTMLElement>('[data-db-updated-sep]');
+  if (base !== null && item !== null && dateEl !== null && sep !== null) {
+    void (async () => {
+      try {
+        const response = await fetch(new URL('api/meta', `${base}/`).toString(), {
+          headers: { accept: 'application/json' },
+        });
+        if (!response.ok) return;
+        const data = (await response.json()) as { dbUpdatedAt?: unknown };
+        const value = typeof data.dbUpdatedAt === 'string' ? data.dbUpdatedAt : '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+        dateEl.textContent = value;
+        // Reveal the token if the build-time corpus had no date but the live DB
+        // does; a no-op when it was already shown.
+        item.hidden = false;
+        sep.hidden = false;
+      } catch {
+        // Network/parse failure — keep the build-time date.
+      }
+    })();
+  }
+</script>

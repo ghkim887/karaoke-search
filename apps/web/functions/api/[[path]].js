@@ -1,5 +1,5 @@
 const DEFAULT_FUNNEL_ORIGIN = 'https://hermes-host.tail04d970.ts.net';
-const ALLOWED_API_PATHS = new Set(['search', 'songs']);
+const ALLOWED_API_PATHS = new Set(['search', 'songs', 'meta']);
 const ALLOWED_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 function upstreamOrigin(env) {

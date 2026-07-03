@@ -219,6 +219,4 @@ CI runs `sqlite:build` against the committed corpus on every PR — it schema-va
 
 ## License
 
-GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See [LICENSE](LICENSE).
-
-If you modify this project and let users interact with it over a network, the AGPL requires you to offer those users access to the corresponding source code.
+MIT License (`MIT`). See [LICENSE](LICENSE).

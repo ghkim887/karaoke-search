@@ -843,6 +843,53 @@ describe('worker batch-by-id API', () => {
   });
 });
 
+describe('worker meta API', () => {
+  it('returns the latest crawled_at truncated to a YYYY-MM-DD date', async () => {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
+
+    const response = await handleRequest(new Request('https://karaoke.example/api/meta'), { db });
+
+    expect(response.status).toBe(200);
+    // FIXTURE_RECORDS' newest crawled_at is 2026-01-04T00:00:00.000Z.
+    await expect(response.json()).resolves.toEqual({ dbUpdatedAt: '2026-01-04' });
+  });
+
+  it('returns an empty dbUpdatedAt for an empty database', async () => {
+    const db = createSearchDatabaseWithSongs([]);
+
+    const response = await handleRequest(new Request('https://karaoke.example/api/meta'), { db });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ dbUpdatedAt: '' });
+  });
+
+  it('computes MAX(crawled_at) once and memoizes it per database instance', async () => {
+    const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS, {
+      inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
+    });
+
+    const first = await handleRequest(new Request('https://karaoke.example/api/meta'), { db });
+    const second = await handleRequest(new Request('https://karaoke.example/api/meta'), { db });
+
+    await expect(first.json()).resolves.toEqual({ dbUpdatedAt: '2026-01-04' });
+    await expect(second.json()).resolves.toEqual({ dbUpdatedAt: '2026-01-04' });
+    const maxQueries = statements.filter((entry) => entry.sql.includes('MAX(crawled_at)'));
+    expect(maxQueries).toHaveLength(1);
+  });
+
+  it('rejects non-GET methods on the meta endpoint', async () => {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
+
+    const response = await handleRequest(
+      new Request('https://karaoke.example/api/meta', { method: 'POST' }),
+      { db },
+    );
+
+    expect(response.status).toBe(405);
+  });
+});
+
 async function fetchJson(db: SearchDatabase, path: string): Promise<SearchResponseBody> {
   const response = await handleRequest(new Request(`https://karaoke.example${path}`), { db });
   expect(response.status).toBe(200);

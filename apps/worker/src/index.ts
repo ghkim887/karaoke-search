@@ -61,7 +61,11 @@ export async function handleRequest(request: Request, context: SearchContext): P
     });
   }
 
-  if (url.pathname !== '/api/search' && url.pathname !== '/api/songs') {
+  if (
+    url.pathname !== '/api/search' &&
+    url.pathname !== '/api/songs' &&
+    url.pathname !== '/api/meta'
+  ) {
     return json({ error: 'Not found' }, 404);
   }
   if (request.method !== 'GET') {
@@ -71,6 +75,9 @@ export async function handleRequest(request: Request, context: SearchContext): P
   try {
     if (url.pathname === '/api/songs') {
       return await handleSongsByIdRequest(request, context.db);
+    }
+    if (url.pathname === '/api/meta') {
+      return await handleMetaRequest(context.db);
     }
     return await handleSearchRequest(request, context.db);
   } catch (error) {
@@ -121,6 +128,46 @@ export async function handleSongsByIdRequest(
   const items = await hydrateSongs(db, rows);
 
   return json({ items });
+}
+
+/**
+ * Per-database memo for `GET /api/meta`. The serving database is immutable for
+ * the lifetime of the process — a data release swaps the SQLite file via a full
+ * symlink swap + service restart, never in place — so `MAX(crawled_at)` is
+ * computed once per database instance and reused for every subsequent request.
+ * Keyed by the database object (WeakMap) so multiple databases in the same
+ * process (e.g. tests) never share a value and short-lived databases can be
+ * garbage-collected. A rejected computation is evicted so it can be retried.
+ */
+const dbUpdatedAtCache = new WeakMap<SearchDatabase, Promise<string>>();
+
+export async function handleMetaRequest(db: SearchDatabase): Promise<Response> {
+  const dbUpdatedAt = await getDbUpdatedAt(db);
+  return json({ dbUpdatedAt });
+}
+
+function getDbUpdatedAt(db: SearchDatabase): Promise<string> {
+  const cached = dbUpdatedAtCache.get(db);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const computed = computeDbUpdatedAt(db).catch((error) => {
+    dbUpdatedAtCache.delete(db);
+    throw error;
+  });
+  dbUpdatedAtCache.set(db, computed);
+  return computed;
+}
+
+async function computeDbUpdatedAt(db: SearchDatabase): Promise<string> {
+  const rows = await allRows<{ max_crawled_at: string | null }>(
+    db.prepare('SELECT MAX(crawled_at) AS max_crawled_at FROM songs'),
+  );
+  const value = rows[0]?.max_crawled_at ?? null;
+  // `crawled_at` is an ISO-8601 UTC timestamp; ISO strings sort lexicographically
+  // in chronological order, so MAX is the latest instant. Truncate to its
+  // YYYY-MM-DD date. An empty songs table yields '' (no date).
+  return value === null ? '' : value.slice(0, 10);
 }
 
 async function findCandidateRows(
