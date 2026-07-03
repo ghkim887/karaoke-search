@@ -623,11 +623,42 @@ describe('worker search API', () => {
     await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
   });
 
-  it('does not bind oversized D1 LIKE patterns while preserving long numeric exact search', async () => {
-    const longNumber = '1'.repeat(50);
+  it('returns prefix matches for numeric queries longer than the former 50-byte D1 LIKE limit', async () => {
+    // The prefix pattern `${longPrefix}%` is 52 bytes, which the removed D1 gate
+    // used to drop, silently skipping the prefix subquery and losing this record.
+    const longPrefix = '1'.repeat(51);
+    const prefixMatchRecord: SongRecord = {
+      id: 'long-number-prefix-1',
+      source_url: 'https://example.com/long-number-prefix',
+      title_primary: 'Long Number Prefix Song',
+      title_ko: null,
+      artist_primary: 'Long Number Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: `${longPrefix}23`, ky: null, joysound: null },
+      crawled_at: '2026-01-09T00:00:00.000Z',
+    };
+    const db = createD1WithSongs([...FIXTURE_RECORDS, prefixMatchRecord]);
+    const response = await handleRequest(
+      new Request(`https://karaoke.example/api/search?q=${longPrefix}`),
+      {
+        DB: db,
+      },
+    );
+
+    // The stored number (`${longPrefix}23`) never equals the query, so only the
+    // LIKE prefix subquery can surface it — proving the length gate is gone.
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      items: [prefixMatchRecord],
+      nextCursor: null,
+    });
+  });
+
+  it('still resolves numeric queries longer than the former 50-byte D1 LIKE limit by exact match', async () => {
+    const longNumber = '1'.repeat(51);
     const longNumberRecord: SongRecord = {
-      id: 'long-number-1',
-      source_url: 'https://example.com/long-number',
+      id: 'long-number-exact-1',
+      source_url: 'https://example.com/long-number-exact',
       title_primary: 'Long Number Song',
       title_ko: null,
       artist_primary: 'Long Number Artist',
@@ -635,9 +666,7 @@ describe('worker search API', () => {
       karaoke_numbers: { tj: longNumber, ky: null, joysound: null },
       crawled_at: '2026-01-09T00:00:00.000Z',
     };
-    const db = createD1WithSongs([...FIXTURE_RECORDS, longNumberRecord], {
-      enforceD1SuffixLikePatternLimit: true,
-    });
+    const db = createD1WithSongs([...FIXTURE_RECORDS, longNumberRecord]);
     const response = await handleRequest(
       new Request(`https://karaoke.example/api/search?q=${longNumber}`),
       {

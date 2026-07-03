@@ -47,16 +47,14 @@
  *   node scripts/joysound-replay-classifier.mjs [--in <decision-log.jsonl>]
  *     [--out <replayed.jsonl>] [--flips-out <flips.jsonl>] [--corpus <songs.json>]
  */
-import { createReadStream, createWriteStream, mkdirSync, renameSync } from 'node:fs';
+import { createWriteStream, mkdirSync, renameSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { createInterface } from 'node:readline';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { buildKnownJapaneseArtistPredicate } from './joysound-detail-sweep.mjs';
-
-const DIST_DIAGNOSTIC = new URL(
-  '../packages/crawler/dist/adapters/joysound-official/diagnostic.js',
-  import.meta.url,
-);
+import { fileURLToPath } from 'node:url';
+import { isCliInvocation } from './lib/cli.mjs';
+import { loadJoysoundClassifier } from './lib/joysound-dist.mjs';
+import { buildKnownJapaneseArtistPredicate } from './lib/joysound-jp-artist.mjs';
+import { streamJsonl } from './lib/jsonl.mjs';
+import { endStream, writeLineBackpressured } from './lib/stream.mjs';
 
 const SWEEP_DIR = '../.tmp_review/joysound-detail-sweep-20260610/';
 const DEFAULT_IN = fileURLToPath(new URL(`${SWEEP_DIR}decision-log.jsonl`, import.meta.url));
@@ -198,20 +196,6 @@ export function flipPurityViolation(flip) {
   return `admit→drop flip is not a ${YOUGAKU_GENRE}-vetoed admit-jp-detail row and not a curated DROP: ${ident}`;
 }
 
-/** Write one line honoring stream backpressure. */
-function writeLine(stream, text) {
-  return stream.write(text)
-    ? Promise.resolve()
-    : new Promise((resolve) => stream.once('drain', resolve));
-}
-
-/** Close a write stream, surfacing any flush error. */
-function endStream(stream) {
-  return new Promise((resolve, reject) => {
-    stream.end((err) => (err ? reject(err) : resolve()));
-  });
-}
-
 /**
  * Core replay, exported for tests. Streams `inPath` line-by-line (never
  * whole-file — the real log is ~192 MB), replays each row through the current
@@ -222,17 +206,13 @@ function endStream(stream) {
  * @param {{ inPath: string, outPath: string, flipsOutPath: string, corpusPath: string }} opts
  */
 export async function runReplay({ inPath, outPath, flipsOutPath, corpusPath }) {
-  let buildJoysoundDecision;
-  try {
-    ({ buildJoysoundDecision } = await import(DIST_DIAGNOSTIC.href));
-  } catch (err) {
-    console.error(
-      `[joysound-replay] failed to import built classifier from ${DIST_DIAGNOSTIC.href}.\nRun \`corepack pnpm --filter @karaoke/crawler build\` first.`,
-    );
-    throw err;
-  }
+  const { buildJoysoundDecision } = await loadJoysoundClassifier('joysound-replay');
 
-  const isKnownJapaneseArtist = await buildKnownJapaneseArtistPredicate(corpusPath);
+  // Pass the detail-sweep label so the predicate-build log line stays the exact
+  // string this replay historically emitted (it reused the sweep's builder).
+  const isKnownJapaneseArtist = await buildKnownJapaneseArtistPredicate(corpusPath, {
+    label: 'joysound-detail-sweep',
+  });
 
   mkdirSync(dirname(outPath), { recursive: true });
   mkdirSync(dirname(flipsOutPath), { recursive: true });
@@ -254,25 +234,14 @@ export async function runReplay({ inPath, outPath, flipsOutPath, corpusPath }) {
   };
 
   try {
-    const rl = createInterface({
-      input: createReadStream(inPath, { encoding: 'utf8' }),
-      crlfDelay: Number.POSITIVE_INFINITY,
-    });
-    let lineNo = 0;
-    for await (const line of rl) {
-      lineNo += 1;
-      const trimmed = line.trim();
-      if (trimmed === '') continue;
-      let row;
-      try {
-        row = JSON.parse(trimmed);
-      } catch (err) {
-        // The sweep guarantees a newline-terminated, parseable log; a corrupt
-        // line means the input is not the artifact this replay expects, and a
-        // silently skipped row would invalidate the purity proof. Fail fast.
-        const msg = err instanceof Error ? err.message : String(err);
-        throw new Error(`[joysound-replay] unparseable decision-log line ${lineNo}: ${msg}`);
-      }
+    const onParseError = (err, lineNo) => {
+      // The sweep guarantees a newline-terminated, parseable log; a corrupt
+      // line means the input is not the artifact this replay expects, and a
+      // silently skipped row would invalidate the purity proof. Fail fast.
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`[joysound-replay] unparseable decision-log line ${lineNo}: ${msg}`);
+    };
+    for await (const row of streamJsonl(inPath, { onParseError })) {
       stats.rows += 1;
 
       const listItem = rebuildListItem(row);
@@ -291,7 +260,7 @@ export async function runReplay({ inPath, outPath, flipsOutPath, corpusPath }) {
         reason: decision.reason,
         detailFlipRisk: decision.detailFlipRisk,
       };
-      await writeLine(out, `${JSON.stringify(newRow)}\n`);
+      await writeLineBackpressured(out, `${JSON.stringify(newRow)}\n`);
 
       const flip = classifyFlip(row, newRow);
       if (flip) {
@@ -300,7 +269,7 @@ export async function runReplay({ inPath, outPath, flipsOutPath, corpusPath }) {
         else stats.dropToAdmit += 1;
         const pairKey = `${flip.oldReason} → ${flip.newReason}`;
         stats.reasonPairs.set(pairKey, (stats.reasonPairs.get(pairKey) ?? 0) + 1);
-        await writeLine(flipsOut, `${JSON.stringify(flip)}\n`);
+        await writeLineBackpressured(flipsOut, `${JSON.stringify(flip)}\n`);
         const violation = flipPurityViolation(flip);
         if (violation !== null) {
           stats.violationCount += 1;
@@ -428,7 +397,7 @@ async function main() {
   if (stats.violationCount > 0) process.exit(1);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   main().catch((err) => {
     console.error(err);
     process.exit(1);

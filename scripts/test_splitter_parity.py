@@ -30,8 +30,13 @@ import unittest
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS_DIR = Path(__file__).resolve().parent
 _SIDECAR_PATH = _REPO_ROOT / 'packages' / 'crawler' / 'src' / 'clustering-rules.json'
 _TS_SOURCE_PATH = _REPO_ROOT / 'packages' / 'crawler' / 'src' / 'clustering.ts'
+
+# Make scripts/ importable so `from lib.artist_split import ...` works.
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
 
 
 def _read_sidecar_pattern() -> str:
@@ -65,6 +70,25 @@ def _read_ts_source_pattern() -> str:
         raise ValueError(
             f'Could not find SPLIT_RE_SOURCE assignment in {_TS_SOURCE_PATH}.\n'
             'Expected: export const SPLIT_RE_SOURCE = String.raw`...`;'
+        )
+    return m.group(1)
+
+
+def _read_ts_source_flags() -> str:
+    """Extract SPLIT_RE_FLAGS value from clustering.ts via regex.
+
+    Looks for: export const SPLIT_RE_FLAGS = '<flags>';
+    and returns the quoted flags string.
+    """
+    ts_text = _TS_SOURCE_PATH.read_text(encoding='utf-8')
+    m = re.search(
+        r"export\s+const\s+SPLIT_RE_FLAGS\s*=\s*['\"]([^'\"]*)['\"]",
+        ts_text,
+    )
+    if not m:
+        raise ValueError(
+            f'Could not find SPLIT_RE_FLAGS assignment in {_TS_SOURCE_PATH}.\n'
+            "Expected: export const SPLIT_RE_FLAGS = 'i';"
         )
     return m.group(1)
 
@@ -108,6 +132,72 @@ class TestSplitterParity(unittest.TestCase):
             msg=(
                 'splitterPattern must contain U+FF5C (｜) for blog pipe-form collab splitting.\n'
                 'Do not remove this delimiter without updating the parity test.'
+            ),
+        )
+
+    def test_sidecar_flags_match_ts_source(self) -> None:
+        """splitterFlags in the sidecar must equal SPLIT_RE_FLAGS in clustering.ts.
+
+        The delimiter STRING alone is not the whole splitter contract: the flags
+        (`i` = IGNORECASE) decide whether `FEAT.` / `WITH` / `MEETS` split like
+        their lower-case forms. A flags-only edit in clustering.ts must not slip
+        past the sidecar gate.
+        """
+        data = json.loads(_SIDECAR_PATH.read_text(encoding='utf-8'))
+        sidecar_flags = data.get('splitterFlags')
+        ts_flags = _read_ts_source_flags()
+        self.assertEqual(
+            sidecar_flags,
+            ts_flags,
+            msg=(
+                'clustering-rules.json splitterFlags diverged from clustering.ts '
+                'SPLIT_RE_FLAGS.\n'
+                f'  sidecar : {sidecar_flags!r}\n'
+                f'  TS src  : {ts_flags!r}\n'
+                'Fix: run `corepack pnpm --filter @karaoke/crawler build` then commit the sidecar.'
+            ),
+        )
+
+    def test_python_fallback_matches_ts_source(self) -> None:
+        """`_SPLIT_RE_SOURCE_FALLBACK` in artist_split.py must equal TS SPLIT_RE_SOURCE.
+
+        The fallback is the last-resort copy used only when the sidecar is
+        missing/malformed (partial-build state). It is unprotected by the
+        `git diff --exit-code` sidecar gate, so it can silently drift from the TS
+        source. This assertion is the only thing keeping the degraded path honest.
+        """
+        from lib.artist_split import _SPLIT_RE_SOURCE_FALLBACK
+
+        ts_pattern = _read_ts_source_pattern()
+        self.assertEqual(
+            _SPLIT_RE_SOURCE_FALLBACK,
+            ts_pattern,
+            msg=(
+                'lib/artist_split.py _SPLIT_RE_SOURCE_FALLBACK diverged from '
+                'clustering.ts SPLIT_RE_SOURCE.\n'
+                f'  fallback : {_SPLIT_RE_SOURCE_FALLBACK!r}\n'
+                f'  TS src   : {ts_pattern!r}\n'
+                'Update the hardcoded fallback in artist_split.py to match clustering.ts.'
+            ),
+        )
+
+    def test_python_splitter_uses_ignorecase(self) -> None:
+        """The compiled Python splitter must carry IGNORECASE when TS flags include `i`.
+
+        artist_split.py hardcodes `re.IGNORECASE`; TS carries it via
+        SPLIT_RE_FLAGS='i'. If TS ever drops the `i` flag, this test flags the
+        drift (Python would still be matching case-insensitively).
+        """
+        from lib.artist_split import DROP_SPLIT_RE
+
+        ts_flags = _read_ts_source_flags()
+        self.assertEqual(
+            'i' in ts_flags,
+            bool(DROP_SPLIT_RE.flags & re.IGNORECASE),
+            msg=(
+                'IGNORECASE parity broke: TS SPLIT_RE_FLAGS='
+                f'{ts_flags!r} but Python DROP_SPLIT_RE IGNORECASE='
+                f'{bool(DROP_SPLIT_RE.flags & re.IGNORECASE)}.'
             ),
         )
 

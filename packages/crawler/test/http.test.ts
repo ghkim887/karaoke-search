@@ -329,3 +329,228 @@ describe('HttpClient — per-host cache opt-out', () => {
     expect(second?.body).toBe('cached-body');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Rate-limit reservation: concurrent callers must be staggered, not fired
+// together after one shared gap. Sequential cadence must stay ~minInterval.
+// ---------------------------------------------------------------------------
+describe('HttpClient — rate-limit reservation', () => {
+  beforeEach(() => {
+    mockedRequest.mockReset();
+  });
+
+  it('staggers concurrent GETs by the per-host interval instead of firing together', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    try {
+      const getTimes: number[] = [];
+      mockedRequest.mockImplementation(async (target) => {
+        if (String(target).endsWith('/robots.txt')) {
+          return fakeTextResponse(200, '') as never;
+        }
+        getTimes.push(Date.now());
+        return fakeTextResponse(200, 'ok') as never;
+      });
+
+      // jitter 0 → gap is exactly minIntervalMs so timings are deterministic.
+      const client = new HttpClient({
+        maxRetries: 0,
+        hostConfigOverrides: {
+          'j-pop-playlist.tistory.com': { minIntervalMs: 100, jitterMs: 0 },
+        },
+      });
+
+      const all = Promise.all([0, 1, 2].map((i) => client.fetch(`https://j-pop-playlist.tistory.com/c-${i}`)));
+      await vi.advanceTimersByTimeAsync(1000);
+      await all;
+
+      // Reserved slots: 0ms, 100ms, 200ms. Without reservation all three would
+      // have fired at ~0ms (one shared gap read).
+      expect(getTimes).toEqual([0, 100, 200]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('spaces sequential GETs by the per-host interval; first request is immediate', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    try {
+      const getTimes: number[] = [];
+      mockedRequest.mockImplementation(async (target) => {
+        if (String(target).endsWith('/robots.txt')) {
+          return fakeTextResponse(200, '') as never;
+        }
+        getTimes.push(Date.now());
+        return fakeTextResponse(200, 'ok') as never;
+      });
+      const client = new HttpClient({
+        maxRetries: 0,
+        hostConfigOverrides: {
+          'j-pop-playlist.tistory.com': { minIntervalMs: 200, jitterMs: 0 },
+        },
+      });
+
+      const p1 = client.fetch('https://j-pop-playlist.tistory.com/s-1');
+      await vi.advanceTimersByTimeAsync(0);
+      await p1;
+      const p2 = client.fetch('https://j-pop-playlist.tistory.com/s-2');
+      await vi.advanceTimersByTimeAsync(500);
+      await p2;
+
+      expect(getTimes[0]).toBe(0); // first request: no wait
+      expect(getTimes[1]).toBe(200); // second request: one full interval later
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Transient-failure retry on the idempotent GET path.
+// retryBaseDelayMs:0 + minIntervalMs:0 → no real waiting, so real timers are
+// fine and each test resolves promptly.
+// ---------------------------------------------------------------------------
+describe('HttpClient — GET retry', () => {
+  const FAST_RETRY = {
+    maxRetries: 2,
+    retryBaseDelayMs: 0,
+    hostConfigOverrides: {
+      'j-pop-playlist.tistory.com': { minIntervalMs: 0, jitterMs: 0 },
+    },
+  } as const;
+
+  beforeEach(() => {
+    mockedRequest.mockReset();
+  });
+
+  /** Count of non-robots (i.e. actual target) requests seen by the mock. */
+  function targetCalls(url: string): number {
+    return mockedRequest.mock.calls.filter(([target]) => target === url).length;
+  }
+
+  it('retries a 5xx and returns the eventual 200', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/flaky';
+    let n = 0;
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      n++;
+      return (n === 1 ? fakeTextResponse(503, 'busy') : fakeTextResponse(200, 'ok')) as never;
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    const res = await client.fetch(url);
+    expect(res?.status).toBe(200);
+    expect(res?.body).toBe('ok');
+    expect(targetCalls(url)).toBe(2); // one retry
+  });
+
+  it('retries a 429 (rate limited) and returns the eventual 200', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/throttled';
+    let n = 0;
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      n++;
+      return (n === 1
+        ? fakeTextResponse(429, 'slow down', { 'retry-after': '0' })
+        : fakeTextResponse(200, 'ok')) as never;
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    const res = await client.fetch(url);
+    expect(res?.status).toBe(200);
+    expect(targetCalls(url)).toBe(2);
+  });
+
+  it('does NOT retry a 4xx client error', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/gone';
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      return fakeTextResponse(404, 'not found') as never;
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    const res = await client.fetch(url);
+    expect(res?.status).toBe(404);
+    expect(targetCalls(url)).toBe(1); // no retry
+  });
+
+  it('propagates the final 5xx response after retries are exhausted', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/down';
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      return fakeTextResponse(500, 'err') as never;
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    const res = await client.fetch(url);
+    expect(res?.status).toBe(500);
+    expect(targetCalls(url)).toBe(3); // initial + 2 retries
+  });
+
+  it('retries a retryable network error and then succeeds', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/reset';
+    let n = 0;
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      n++;
+      if (n === 1) {
+        const err = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+        throw err;
+      }
+      return fakeTextResponse(200, 'ok') as never;
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    const res = await client.fetch(url);
+    expect(res?.status).toBe(200);
+    expect(targetCalls(url)).toBe(2);
+  });
+
+  it('rethrows the network error once retries are exhausted', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/dead';
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      throw Object.assign(new Error('connect ETIMEDOUT'), { code: 'ETIMEDOUT' });
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    await expect(client.fetch(url)).rejects.toThrow(/ETIMEDOUT/);
+    expect(targetCalls(url)).toBe(3); // initial + 2 retries
+  });
+
+  it('does NOT retry a non-retryable network error', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/nohost';
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      throw Object.assign(new Error('getaddrinfo ENOTFOUND'), { code: 'ENOTFOUND' });
+    });
+
+    const client = new HttpClient(FAST_RETRY);
+    await expect(client.fetch(url)).rejects.toThrow(/ENOTFOUND/);
+    expect(targetCalls(url)).toBe(1); // no retry
+  });
+
+  it('a successful retry still stores the body in cache', async () => {
+    const url = 'https://j-pop-playlist.tistory.com/flaky-cached';
+    let n = 0;
+    mockedRequest.mockImplementation(async (target) => {
+      if (String(target).endsWith('/robots.txt')) return fakeTextResponse(200, '') as never;
+      n++;
+      return (n === 1
+        ? fakeTextResponse(503, 'busy')
+        : fakeTextResponse(200, 'final', { etag: '"v9"' })) as never;
+    });
+
+    const client = new HttpClient({ ...FAST_RETRY, cachePersistEvery: 1 });
+    const first = await client.fetch(url);
+    expect(first?.body).toBe('final');
+    // Second fetch should carry the conditional header from the cached success.
+    await client.fetch(url);
+    const conditional = mockedRequest.mock.calls
+      .filter(([target]) => target === url)
+      .map(([, opts]) => (opts as { headers: Record<string, string> }).headers)
+      .some((h) => h['if-none-match'] === '"v9"');
+    expect(conditional).toBe(true);
+  });
+});

@@ -1,10 +1,15 @@
+import type { AliasRow, KaraokeNumberRow, StoredSongRow } from '@karaoke/data-store';
+import { songColumnsProjection } from '@karaoke/data-store';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
+import type { SearchTokenKind } from '@karaoke/search';
 import {
   compactSearchText,
   expandSearchQuery,
   makeCharacterNgrams,
   makeHangulInitials,
+  MAX_PREFIX_TOKEN_CHARS,
   parseKaraokeNumberQuery,
+  PROVIDER_MASKS,
   tokenizeSearchWords,
 } from '@karaoke/search';
 
@@ -27,8 +32,6 @@ export interface D1Result<T> {
 
 type D1Value = string | number | null;
 type Vendor = (typeof VENDORS)[number];
-type TitleKoSource = NonNullable<SongRecord['title_ko_source']>;
-type TitleKoConfidence = NonNullable<SongRecord['title_ko_confidence']>;
 
 const VENDORS = ['tj', 'ky', 'joysound'] as const;
 const DEFAULT_LIMIT = 30;
@@ -40,9 +43,6 @@ const MAX_QUERY_TOKENS = 24;
 const EXPANDED_VARIANT_WEIGHT_SCALE = 0.5;
 const MATCH_TIER_TOKEN = 1;
 const MATCH_TIER_EXACT_TEXT = 2;
-const MAX_PREFIX_TOKEN_CHARS = 12;
-const MAX_D1_LIKE_PATTERN_BYTES = 50;
-const VENDOR_MASKS: Record<Vendor, number> = { tj: 1, ky: 2, joysound: 4 };
 const HANGUL_INITIALS_QUERY_PATTERN = /^[ㄱ-ㅎ]+$/u;
 const JSON_HEADERS = {
   'access-control-allow-origin': '*',
@@ -116,18 +116,7 @@ export async function handleSongsByIdRequest(
   const rows = await allRows<StoredSongRow>(
     db
       .prepare(
-        `SELECT
-          s.id,
-          s.source_url,
-          s.title_primary,
-          s.title_ko,
-          s.artist_primary,
-          s.artist_ko,
-          s.artist_aliases_present,
-          s.crawled_at,
-          s.media_context_ko,
-          s.title_ko_source,
-          s.title_ko_confidence
+        `SELECT ${songColumnsProjection('s')}
         FROM songs s
         WHERE s.id IN (${placeholders})`,
       )
@@ -159,18 +148,7 @@ async function findFilteredRows(
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const statement = db
     .prepare(
-      `SELECT
-        s.id,
-        s.source_url,
-        s.title_primary,
-        s.title_ko,
-        s.artist_primary,
-        s.artist_ko,
-        s.artist_aliases_present,
-        s.crawled_at,
-        s.media_context_ko,
-        s.title_ko_source,
-        s.title_ko_confidence
+      `SELECT ${songColumnsProjection('s')}
       FROM songs s
       ${whereSql}
       ORDER BY s.sort_order ASC, s.id ASC
@@ -248,18 +226,7 @@ async function findIndexedCandidateRows(
         FROM candidates
         GROUP BY song_id
       )
-      SELECT
-        s.id,
-        s.source_url,
-        s.title_primary,
-        s.title_ko,
-        s.artist_primary,
-        s.artist_ko,
-        s.artist_aliases_present,
-        s.crawled_at,
-        s.media_context_ko,
-        s.title_ko_source,
-        s.title_ko_confidence
+      SELECT ${songColumnsProjection('s')}
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
       ORDER BY r.match_tier DESC, r.score DESC, s.sort_order ASC, s.id ASC
@@ -299,33 +266,27 @@ async function findKaraokeNumberCandidateRows(
     score: 990000000,
   });
 
-  const numberPrefixPattern = makeD1NumericPrefixPattern(numberQuery.number);
-  if (numberPrefixPattern !== null) {
-    appendKaraokeNumberCandidateSubquery({
-      subqueries,
-      values,
-      params,
-      provider: numberQuery.provider,
-      predicateSql: 'kn.number LIKE ?',
-      predicateValues: [numberPrefixPattern],
-      notNullColumn: 'number',
-      score: 900000000,
-    });
-  }
+  appendKaraokeNumberCandidateSubquery({
+    subqueries,
+    values,
+    params,
+    provider: numberQuery.provider,
+    predicateSql: 'kn.number LIKE ?',
+    predicateValues: [makeD1NumericPrefixPattern(numberQuery.number)],
+    notNullColumn: 'number',
+    score: 900000000,
+  });
 
-  const numberKeyPrefixPattern = makeD1NumericPrefixPattern(trimmedNumber);
-  if (numberKeyPrefixPattern !== null) {
-    appendKaraokeNumberCandidateSubquery({
-      subqueries,
-      values,
-      params,
-      provider: numberQuery.provider,
-      predicateSql: 'kn.number_key LIKE ?',
-      predicateValues: [numberKeyPrefixPattern],
-      notNullColumn: 'number_key',
-      score: 900000000,
-    });
-  }
+  appendKaraokeNumberCandidateSubquery({
+    subqueries,
+    values,
+    params,
+    provider: numberQuery.provider,
+    predicateSql: 'kn.number_key LIKE ?',
+    predicateValues: [makeD1NumericPrefixPattern(trimmedNumber)],
+    notNullColumn: 'number_key',
+    score: 900000000,
+  });
 
   const statement = db
     .prepare(
@@ -336,18 +297,7 @@ async function findKaraokeNumberCandidateRows(
         FROM candidates
         GROUP BY song_id
       )
-      SELECT
-        s.id,
-        s.source_url,
-        s.title_primary,
-        s.title_ko,
-        s.artist_primary,
-        s.artist_ko,
-        s.artist_aliases_present,
-        s.crawled_at,
-        s.media_context_ko,
-        s.title_ko_source,
-        s.title_ko_confidence
+      SELECT ${songColumnsProjection('s')}
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
       ORDER BY r.score DESC, s.sort_order ASC, s.id ASC
@@ -618,7 +568,7 @@ function parseVendors(value: string | null): Vendor[] | undefined {
 function combinedVendorMask(vendors: readonly Vendor[]): number {
   let mask = 0;
   for (const vendor of vendors) {
-    mask |= VENDOR_MASKS[vendor];
+    mask |= PROVIDER_MASKS[vendor];
   }
   return mask;
 }
@@ -677,9 +627,8 @@ function parseNonNegativeInteger(value: string, field: string): number {
   return parsed;
 }
 
-function makeD1NumericPrefixPattern(value: string): string | null {
-  const pattern = `${value}%`;
-  return new TextEncoder().encode(pattern).length <= MAX_D1_LIKE_PATTERN_BYTES ? pattern : null;
+function makeD1NumericPrefixPattern(value: string): string {
+  return `${value}%`;
 }
 
 function isOneOf<T extends readonly string[]>(value: string, allowed: T): value is T[number] {
@@ -695,8 +644,6 @@ function json(body: unknown, status = 200): Response {
 
 class BadRequestError extends Error {}
 
-type SearchTokenKind = 'term' | 'prefix' | 'gram1' | 'gram2' | 'gram3' | 'initial';
-
 interface SearchQueryToken {
   kind: SearchTokenKind;
   token: string;
@@ -710,27 +657,3 @@ interface SearchQueryParams {
   offset: number;
 }
 
-interface StoredSongRow {
-  id: string;
-  source_url: string;
-  title_primary: string;
-  title_ko: string | null;
-  artist_primary: string;
-  artist_ko: string | null;
-  artist_aliases_present: number;
-  crawled_at: string;
-  media_context_ko: string | null;
-  title_ko_source: TitleKoSource | null;
-  title_ko_confidence: TitleKoConfidence | null;
-}
-
-interface KaraokeNumberRow {
-  song_id: string;
-  provider: Vendor;
-  number: string | null;
-}
-
-interface AliasRow {
-  song_id: string;
-  alias: string;
-}

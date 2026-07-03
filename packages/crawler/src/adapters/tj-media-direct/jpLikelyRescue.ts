@@ -1,6 +1,6 @@
+import { hasKana } from '@karaoke/search';
 import type { HttpClient } from '../../http.js';
 import type { EnrichmentEntry, SearchSongCache } from './cache.js';
-import { RE_HIRAGANA, RE_KATAKANA } from './normalize.js';
 import { classifyRecord } from './parser.js';
 import { searchSongByPro } from './searchSong.js';
 
@@ -91,7 +91,7 @@ export async function rescueJpLikelyDroppedRecords(
 
 function isStrongJpLikelyCandidate(shell: CatalogShell): boolean {
   const text = `${shell.title} ${shell.artist}`;
-  if (RE_HIRAGANA.test(text) || RE_KATAKANA.test(text)) return true;
+  if (hasKana(text)) return true;
   return (
     /\b(OP|ED|OST)\b/.test(shell.title) &&
     /[犬夜叉銀魂進撃名探偵図書館戦争地獄少女最遊記]/.test(shell.title)

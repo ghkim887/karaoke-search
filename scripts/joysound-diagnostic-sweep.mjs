@@ -23,77 +23,12 @@
  * Usage:
  *   node scripts/joysound-diagnostic-sweep.mjs <listing-rows.jsonl> <out-decision-log.jsonl> [corpus.json]
  */
-import { createReadStream, createWriteStream, readFileSync } from 'node:fs';
-import { createInterface } from 'node:readline';
-import { pathToFileURL } from 'node:url';
-
-const DIST_DIAGNOSTIC = new URL(
-  '../packages/crawler/dist/adapters/joysound-official/diagnostic.js',
-  import.meta.url,
-);
-const DIST_CLUSTERING = new URL('../packages/crawler/dist/clustering.js', import.meta.url);
-const DIST_KOREAN_DROP = new URL(
-  '../packages/crawler/dist/adapters/tj-media-direct/koreanArtistDropList.js',
-  import.meta.url,
-);
-const DIST_CHINESE_DROP = new URL(
-  '../packages/crawler/dist/adapters/tj-media-direct/chineseArtistDropList.js',
-  import.meta.url,
-);
-
-/**
- * Generic bucket names that must NOT seed the known-Japanese-artist set — a
- * handful of real JP rows would otherwise make `Various Artists` look Japanese
- * and admit every OST/BGM row filed under the same bucket. Mirrors
- * `GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST` in the TJ filter chain and the audit.
- */
-const GENERIC_ARTIST_KEYS = new Set([
-  'variousartists',
-  'variousartist',
-  'various',
-  'unknown',
-  'unknownartist',
-  'オムニバス',
-]);
-
-/**
- * Build the normalized known-Japanese-artist predicate from a corpus file.
- * Returns `undefined` when no corpus path was supplied so the classifier's
- * recall path stays off (production-equivalent behavior).
- */
-async function buildKnownJapaneseArtistPredicate(corpusPath) {
-  if (!corpusPath) return undefined;
-
-  const { normalizeForMatch, splitArtistCollab } = await import(DIST_CLUSTERING.href);
-  const { isInDropList } = await import(DIST_KOREAN_DROP.href);
-  const { isInChineseDropList } = await import(DIST_CHINESE_DROP.href);
-
-  const isDropListForeign = (artist) =>
-    splitArtistCollab(artist).some((component) => {
-      const key = normalizeForMatch(component);
-      return key !== '' && (isInDropList(key) || isInChineseDropList(key));
-    });
-
-  const records = JSON.parse(readFileSync(corpusPath, 'utf8'));
-  if (!Array.isArray(records)) {
-    throw new Error(`[joysound-diagnostic] corpus ${corpusPath} is not a JSON array`);
-  }
-
-  const set = new Set();
-  for (const record of records) {
-    const artist = typeof record?.artist_primary === 'string' ? record.artist_primary : '';
-    if (artist === '') continue;
-    const key = normalizeForMatch(artist);
-    if (key === '' || GENERIC_ARTIST_KEYS.has(key)) continue;
-    if (isDropListForeign(artist)) continue;
-    set.add(key);
-  }
-
-  console.log(
-    `[joysound-diagnostic] built known-Japanese-artist set (${set.size} artists) from ${corpusPath}`,
-  );
-  return (artist) => set.has(normalizeForMatch(artist));
-}
+import { createWriteStream } from 'node:fs';
+import { isCliInvocation } from './lib/cli.mjs';
+import { loadJoysoundClassifier } from './lib/joysound-dist.mjs';
+import { buildKnownJapaneseArtistPredicate } from './lib/joysound-jp-artist.mjs';
+import { streamJsonl } from './lib/jsonl.mjs';
+import { endStream, writeLineBackpressured } from './lib/stream.mjs';
 
 async function main() {
   const [, , inPath, outPath, corpusPath] = process.argv;
@@ -104,22 +39,12 @@ async function main() {
     process.exit(2);
   }
 
-  let buildJoysoundDecision;
-  try {
-    ({ buildJoysoundDecision } = await import(DIST_DIAGNOSTIC.href));
-  } catch (err) {
-    console.error(
-      `[joysound-diagnostic] failed to import built classifier from ${DIST_DIAGNOSTIC.href}.\nRun \`corepack pnpm --filter @karaoke/crawler build\` first.`,
-    );
-    throw err;
-  }
+  const { buildJoysoundDecision } = await loadJoysoundClassifier('joysound-diagnostic');
 
-  const isKnownJapaneseArtist = await buildKnownJapaneseArtistPredicate(corpusPath);
-
-  const input = createInterface({
-    input: createReadStream(inPath, { encoding: 'utf8' }),
-    crlfDelay: Number.POSITIVE_INFINITY,
+  const isKnownJapaneseArtist = await buildKnownJapaneseArtistPredicate(corpusPath, {
+    label: 'joysound-diagnostic',
   });
+
   const output = createWriteStream(outPath, { encoding: 'utf8' });
 
   let total = 0;
@@ -127,18 +52,12 @@ async function main() {
   let dropped = 0;
   let parseErrors = 0;
 
-  for await (const line of input) {
-    const trimmed = line.trim();
-    if (trimmed === '') continue;
-    let listItem;
-    try {
-      listItem = JSON.parse(trimmed);
-    } catch (err) {
-      parseErrors++;
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[joysound-diagnostic] skipping unparseable line ${total + 1}: ${msg}`);
-      continue;
-    }
+  const onParseError = (err) => {
+    parseErrors++;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[joysound-diagnostic] skipping unparseable line ${total + 1}: ${msg}`);
+  };
+  for await (const listItem of streamJsonl(inPath, { onParseError })) {
     // Normalize optional listing fields the JoysoundListItem contract expects
     // but a leaner listing-rows dump may omit (artistId / tieupId / tieupInfo).
     const normalized = {
@@ -154,18 +73,14 @@ async function main() {
       normalized,
       isKnownJapaneseArtist ? { isKnownJapaneseArtist } : undefined,
     );
-    if (!output.write(`${JSON.stringify(decision)}\n`)) {
-      // Respect backpressure on the large stream.
-      await new Promise((r) => output.once('drain', r));
-    }
+    // Respect backpressure on the large stream.
+    await writeLineBackpressured(output, `${JSON.stringify(decision)}\n`);
     total++;
     if (decision.decision === 'admit') admitted++;
     else dropped++;
   }
 
-  await new Promise((resolve, reject) => {
-    output.end((err) => (err ? reject(err) : resolve()));
-  });
+  await endStream(output);
 
   console.log(
     `[joysound-diagnostic] wrote ${total} decision(s) to ${outPath}: ` +
@@ -173,7 +88,7 @@ async function main() {
   );
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   main().catch((err) => {
     console.error(err);
     process.exit(1);

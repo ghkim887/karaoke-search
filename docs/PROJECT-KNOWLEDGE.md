@@ -229,6 +229,23 @@ above).
   `RenderMode` discriminator with an exhaustive `default: never` arm — adding
   a mode without a case fails typecheck.
 
+## Self-host service permissions (intentional — do not tighten)
+
+The hermes-host self-host deployment intentionally runs permissive while it
+is under active development, so the operator can write anywhere in the tree
+without friction:
+
+- `karaoke-api.service` sets `ReadWritePaths=/srv/karaoke` (the whole tree,
+  not just `db/current`).
+- `karaoke-api.env` and `tailscale-cert/` sit as plain files in the NAS tree
+  root (`/nas/karaoke`, also exposed over SMB), and `migration-backups/`
+  keeps a pre-migration copy of the env file.
+
+This is a deliberate owner decision (recorded 2026-07-02), **not** an
+oversight. Do not tighten the unit sandboxing, chmod/move the env or cert
+files, or delete the backup copy without explicit owner sign-off. Revisit
+once the self-host setup stabilizes.
+
 ## Windows development notes
 
 - Always `corepack pnpm` — plain `pnpm` may not be on PATH.

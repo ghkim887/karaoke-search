@@ -85,6 +85,9 @@ importers:
       '@karaoke/schema':
         specifier: workspace:*
         version: link:../schema
+      '@karaoke/search':
+        specifier: workspace:*
+        version: link:../search
       cheerio:
         specifier: ^1.0.0
         version: 1.2.0

@@ -62,10 +62,11 @@
  *   node scripts/drop-artist-leaks.mjs --list korean --dry-run
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { writeCorpusAtomic } from './lib/corpus.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
+import { loadCorpus, writeCorpusAtomic } from './lib/corpus.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -231,7 +232,7 @@ export async function runDropArtistLeaks({
   }
   log.log(`loaded ${predicates.keyCount} ${list} drop-list keys (from crawler dist)`);
 
-  const corpus = JSON.parse(readFileSync(corpusPath, 'utf-8'));
+  const corpus = loadCorpus(corpusPath);
   const totalBefore = corpus.length;
   const { kept, droppedCount, droppedSamples } = partitionCorpus(corpus, predicates);
   const totalAfter = kept.length;
@@ -291,7 +292,7 @@ async function main() {
   });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   main().catch((err) => {
     console.error(`drop-artist-leaks failed: ${err.message}`);
     process.exitCode = 1;

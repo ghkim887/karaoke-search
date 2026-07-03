@@ -11,7 +11,7 @@
 // source !== 'llm-translated').
 
 import { readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { isCliInvocation } from './lib/cli.mjs';
 import { loadCorpus, writeCorpusAtomic } from './lib/corpus.mjs';
 
 /**
@@ -95,6 +95,6 @@ async function main() {
   );
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   main();
 }

@@ -43,6 +43,28 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Delay before the next attempt: honor a parseable `Retry-After` on the given
+ * response, otherwise fall back to exponential backoff. Both clamped to
+ * RETRY_AFTER_MAX_MS. `res` is null on a network error (no header available).
+ */
+function nextDelayMs(attempt: number, res: Response | null): number {
+  if (res !== null) {
+    const retryAfterMs = parseRetryAfter(res.headers.get('Retry-After'));
+    if (retryAfterMs !== null) return Math.min(retryAfterMs, RETRY_AFTER_MAX_MS);
+  }
+  return Math.min(backoffMs(attempt), RETRY_AFTER_MAX_MS);
+}
+
+/**
+ * A non-2xx status worth retrying: transient server/rate-limit conditions.
+ * Other non-2xx (notably 4xx client errors) are NOT retried — retrying a bad
+ * request never succeeds — so callers can surface their own status-coded error.
+ */
+function isTransientStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
 export async function fetchWithRetry(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -76,21 +98,58 @@ export async function fetchWithRetry(
       throw new Error(`fetch failed after retry: ${String(input)} — ${detail}`);
     }
 
-    // Compute delay before next attempt
-    let delay: number;
-    if (networkErr === null && res !== null) {
-      // Non-2xx response: honor Retry-After if present
-      const retryAfterMs = parseRetryAfter(res.headers.get('Retry-After'));
-      delay =
-        retryAfterMs !== null
-          ? Math.min(retryAfterMs, RETRY_AFTER_MAX_MS)
-          : Math.min(backoffMs(attempt), RETRY_AFTER_MAX_MS);
-    } else {
-      // Network failure: use backoff only
-      delay = Math.min(backoffMs(attempt), RETRY_AFTER_MAX_MS);
+    await sleep(nextDelayMs(attempt, res));
+  }
+
+  // Unreachable, but satisfies TypeScript
+  throw new Error(`fetch failed after retry: ${String(input)}`);
+}
+
+/**
+ * Retry helper tuned for JSON API calls whose callers do their own response
+ * validation (status codes, body shape). Shares the same Retry-After/backoff
+ * pacing as `fetchWithRetry`, but differs in two ways:
+ *   - Only TRANSIENT failures retry: network errors and 5xx/429 responses. A
+ *     non-transient non-ok response (e.g. 400/404) is returned unretried so the
+ *     caller emits its own status-coded error message.
+ *   - It resolves with the final `Response` (even non-ok) rather than throwing
+ *     on non-ok; it throws only when every attempt was a network error and there
+ *     is therefore no response to hand back.
+ * A `fetchImpl` may be injected (defaults to global `fetch`) for testability.
+ */
+export async function fetchWithTransientRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  options?: { maxAttempts?: number; fetchImpl?: typeof fetch | undefined },
+): Promise<Response> {
+  const maxAttempts = options?.maxAttempts ?? MAX_ATTEMPTS;
+  const doFetch = options?.fetchImpl ?? fetch;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let res: Response | null = null;
+    let networkErr: unknown = null;
+
+    try {
+      res = await doFetch(input, init);
+    } catch (err) {
+      networkErr = err;
     }
 
-    await sleep(delay);
+    // A response we won't retry (ok, or a non-transient non-ok) is handed back
+    // to the caller for its own status/shape handling.
+    if (networkErr === null && res !== null && (res.ok || !isTransientStatus(res.status))) {
+      return res;
+    }
+
+    // Out of attempts: return the last transient response if we have one;
+    // otherwise every attempt was a network error, so throw.
+    if (attempt === maxAttempts - 1) {
+      if (networkErr === null && res !== null) return res;
+      const detail = networkErr instanceof Error ? networkErr.message : String(networkErr);
+      throw new Error(`fetch failed after retry: ${String(input)} — ${detail}`);
+    }
+
+    await sleep(nextDelayMs(attempt, res));
   }
 
   // Unreachable, but satisfies TypeScript

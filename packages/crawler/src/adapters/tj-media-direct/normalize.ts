@@ -8,32 +8,16 @@
  * file keep the existing in-adapter import paths working without forcing every
  * call site to retarget `../../clustering.js` in the same PR.
  *
- * What stays here: TJ-server-quirk helpers (`sanitizeSearchTxt`),
- * blog-whitelist script-detection regexes (`RE_HIRAGANA`, `RE_KATAKANA`,
- * `RE_HAN`, `RE_HANGUL`), and the JSON-shape coercion helpers shared across
- * the TJ-direct modules (`isPlainObject`, `coerceProString`).
+ * What stays here: TJ-server-quirk helpers (`sanitizeSearchTxt`) and the
+ * JSON-shape coercion helpers shared across the TJ-direct modules
+ * (`isPlainObject`, `coerceProString`).
+ *
+ * The blog-whitelist script-detection regexes (`RE_HIRAGANA`, `RE_KATAKANA`,
+ * `RE_HAN`, `RE_HANGUL`) that used to live here were unified into the shared
+ * `hasKana` / `hasHan` / `hasHangul` predicates in `@karaoke/search` (T1-3);
+ * `blogWhitelist.ts` and `jpLikelyRescue.ts` now import those directly.
  */
 export { normalizeForMatch, splitArtistCollab } from '../../clustering.js';
-
-/**
- * Script-detection regexes used by the blog-whitelist trim (PR-3).
- *
- * The blog-rescue path (`defaultBlogWhitelistSource`) historically admitted
- * every TJ# present in the blog corpus. An audit found that ~88% of the
- * rescued records were Mandopop / Cantopop / K-pop entries mistakenly carried
- * with `categories: ['jpop']`. The signal that exposes them is artist-name
- * script: pure-Han (Chinese) or pure-Hangul (Korean) artist strings with no
- * kana are almost never genuine JP acts.
- *
- * Ranges match the BMP blocks for Hiragana, Katakana, Han ideographs (CJK
- * Unified Ideographs main block), and Hangul syllables. They are intentionally
- * narrow — the blog-whitelist filter only needs a yes/no script signal, not a
- * full Unicode character classification.
- */
-export const RE_HIRAGANA = /[぀-ゟ]/;
-export const RE_KATAKANA = /[゠-ヿ]/;
-export const RE_HAN = /[一-鿿]/;
-export const RE_HANGUL = /[가-힣]/;
 
 /**
  * Sanitize a `searchTxt` value before sending it to `/legacy/api/searchSong`.

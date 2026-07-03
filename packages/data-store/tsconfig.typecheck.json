@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "noEmit": true,
+    "rootDir": "../..",
+    "baseUrl": "../..",
+    "paths": {
+      "@karaoke/schema": ["packages/schema/src/index.ts"],
+      "@karaoke/search": ["packages/search/src/index.ts"]
+    }
+  },
+  "references": []
+}

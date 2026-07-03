@@ -1,8 +1,7 @@
 import type { SongRecord } from '@karaoke/schema';
-import { expandSearchQuery } from '@karaoke/search';
+import { compactSearchText, expandSearchQuery } from '@karaoke/search';
 import MiniSearch, { type SearchResult } from 'minisearch';
-import { normalize } from './normalize.js';
-import { fetchWithRetry } from './retry.js';
+import { fetchWithRetry, fetchWithTransientRetry } from './retry.js';
 
 /**
  * Fields indexed by MiniSearch. Keep in sync with the boost map below.
@@ -49,13 +48,13 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
     idField: 'id',
     fields: [...SEARCH_FIELDS],
     storeFields: ['id'],
-    processTerm: (term, _fieldName) => normalize(term),
+    processTerm: (term, _fieldName) => compactSearchText(term),
     searchOptions: {
       boost: { ...SEARCH_BOOSTS },
       // spec asks for fuzzy distance 1; MiniSearch fuzzy is a ratio of term length, so 0.2 ≈ 1 edit per 5 chars.
       fuzzy: 0.2,
       prefix: true,
-      processTerm: (term) => normalize(term),
+      processTerm: (term) => compactSearchText(term),
     },
   });
   index.addAll(records);
@@ -169,8 +168,13 @@ export async function searchApi(baseUrl: string, options: ApiSearchOptions): Pro
   if (vendors.length > 0) {
     url.searchParams.set('vendor', vendors.join(','));
   }
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const response = await fetchImpl(url.toString());
+  // Browse search is interactive (debounced): cap at 2 attempts so a single
+  // transient blip is absorbed without stalling the "검색 중" state, and a
+  // superseded query is not held open through a long backoff chain.
+  const response = await fetchWithTransientRetry(url.toString(), undefined, {
+    fetchImpl: options.fetchImpl,
+    maxAttempts: 2,
+  });
   if (!response.ok) {
     throw new Error(`Search API failed: HTTP ${response.status}`);
   }
@@ -203,7 +207,10 @@ export async function fetchSongsByIds(
     batches.map(async (batch) => {
       const url = new URL('api/songs', base);
       url.searchParams.set('ids', batch.join(','));
-      const response = await fetchImpl(url.toString());
+      // Favorites hydration is not per-keystroke (fires on favorite-set change),
+      // so the default 3-attempt policy applies — more headroom for transient
+      // failures than the interactive Browse path.
+      const response = await fetchWithTransientRetry(url.toString(), undefined, { fetchImpl });
       if (!response.ok) {
         throw new Error(`Songs API failed: HTTP ${response.status}`);
       }

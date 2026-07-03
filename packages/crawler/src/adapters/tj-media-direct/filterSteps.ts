@@ -59,9 +59,52 @@ export interface FilterContext {
   force: ReadonlySet<string> | undefined;
 }
 
+/**
+ * Semantic role of a filter step. The chain runs strictly in the order these
+ * phases are declared in {@link PHASE_ORDER}; that declaration IS the owner
+ * policy (docs/PROJECT-KNOWLEDGE.md §"TJ filter chain"). Each phase maps to
+ * exactly one step today, so "the phase order" and "the step order" coincide —
+ * the point is that the order is now expressed as data the module can verify,
+ * not just an array literal + prose comments that a reorder would silently pass.
+ *
+ * The two admit paths are split into `admit-pro` / `admit-artist` (rather than a
+ * single `admit` phase) on purpose: when a record matches BOTH a JPN pro tag and
+ * a JPN lead-artist tag, whichever step runs first wins the admit and stamps the
+ * observable `via` counter (KeepStats `admittedByPro` vs `admittedByArtist`).
+ * The doc ranks the per-song pro `nationalcode` as the stronger signal, so
+ * `admit-pro` must precede `admit-artist` — that relative order is load-bearing.
+ */
+export type FilterPhase =
+  | 'hard-drop'
+  | 'override-reject'
+  | 'curated-allow'
+  | 'deny-list'
+  | 'admit-pro'
+  | 'admit-artist'
+  | 'rescue';
+
+/**
+ * Declared phase order — the single machine-checkable statement of the
+ * load-bearing chain order. {@link assertPhaseOrder} runs at module load and
+ * throws if {@link FILTER_STEPS} is not sorted by this sequence, so a reorder of
+ * the array (or a step tagged out of policy order) fails fast at import time
+ * instead of silently shipping a mis-ordered pipeline.
+ */
+export const PHASE_ORDER: readonly FilterPhase[] = [
+  'hard-drop',
+  'override-reject',
+  'curated-allow',
+  'deny-list',
+  'admit-pro',
+  'admit-artist',
+  'rescue',
+];
+
 export interface FilterStep {
   /** Stable name used as a key in KeepStats counters and for test assertions. */
   name: string;
+  /** Semantic phase; enforced against {@link PHASE_ORDER} at module load. */
+  phase: FilterPhase;
   evaluate: (ctx: FilterContext) => FilterVerdict;
 }
 
@@ -82,6 +125,30 @@ function leadComponentOf(components: string[]): string | undefined {
   return components.length >= 2 ? components[1] : components[0];
 }
 
+/**
+ * Normalized match key for the lead component, or '' when there is no usable
+ * lead (empty components, or a lead that normalizes away). Shared by the two
+ * lead-driven steps (jpn-admit-artist, blog-rescue) so both derive the key the
+ * same way.
+ */
+function leadKeyOf(components: string[]): string {
+  const lead = leadComponentOf(components);
+  return lead === undefined ? '' : normalizeForMatch(lead);
+}
+
+/**
+ * True when the lead component is a deliberately generic bucket name that must
+ * never blanket-admit on a JPN artist tag or blog rescue (see
+ * {@link GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST}). An empty key is never blocked.
+ *
+ * Extracted from the duplicated check in jpn-admit-artist and blog-rescue; the
+ * `leadKey !== ''` guard reproduces both call sites exactly (jpn-admit-artist
+ * only reaches the check with a non-empty key; blog-rescue guarded it inline).
+ */
+function isGenericAdmitBlocked(leadKey: string): boolean {
+  return leadKey !== '' && GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey);
+}
+
 // ---------------------------------------------------------------------------
 // Step implementations, declared in pipeline order (see FILTER_STEPS below
 // for the authoritative order — the array literal defines execution order)
@@ -95,6 +162,7 @@ function leadComponentOf(components: string[]): string | undefined {
  */
 const reviewedSongDropStep: FilterStep = {
   name: 'reviewed-song-drop',
+  phase: 'hard-drop',
   evaluate({ tj }): FilterVerdict {
     if (isReviewedTjSongDrop(tj)) return { decision: 'reject', reason: 'reviewed-song-drop' };
     return { decision: 'pass' };
@@ -110,6 +178,7 @@ const reviewedSongDropStep: FilterStep = {
  */
 const nonJpnProRejectStep: FilterStep = {
   name: 'non-jpn-pro-reject',
+  phase: 'override-reject',
   evaluate({ tj, cache }): FilterVerdict {
     const proEntry = cache.proEnrichmentMap[tj];
     if (proEntry?.nationalcode && proEntry.nationalcode !== 'JPN') {
@@ -129,6 +198,7 @@ const nonJpnProRejectStep: FilterStep = {
  */
 const reviewedSongAllowStep: FilterStep = {
   name: 'reviewed-song-allow',
+  phase: 'curated-allow',
   evaluate({ tj }): FilterVerdict {
     if (isReviewedTjSongAllow(tj)) return { decision: 'admit', via: 'song-override' };
     return { decision: 'pass' };
@@ -148,6 +218,7 @@ const reviewedSongAllowStep: FilterStep = {
  */
 const dropListRejectStep: FilterStep = {
   name: 'drop-list-reject',
+  phase: 'deny-list',
   evaluate({ components }): FilterVerdict {
     for (const component of components) {
       const key = normalizeForMatch(component);
@@ -167,6 +238,7 @@ const dropListRejectStep: FilterStep = {
  */
 const proJpnAdmitStep: FilterStep = {
   name: 'jpn-admit-pro',
+  phase: 'admit-pro',
   evaluate({ tj, cache }): FilterVerdict {
     const proEntry = cache.proEnrichmentMap[tj];
     if (proEntry?.nationalcode === 'JPN') return { decision: 'admit', via: 'pro' };
@@ -190,13 +262,12 @@ const proJpnAdmitStep: FilterStep = {
  */
 const jpnAdmitStep: FilterStep = {
   name: 'jpn-admit-artist',
+  phase: 'admit-artist',
   evaluate({ components, cache }): FilterVerdict {
     if (components.length === 0) return { decision: 'pass' };
-    const lead = leadComponentOf(components);
-    if (lead === undefined) return { decision: 'pass' };
-    const leadKey = normalizeForMatch(lead);
+    const leadKey = leadKeyOf(components);
     if (leadKey === '') return { decision: 'pass' };
-    if (GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) return { decision: 'pass' };
+    if (isGenericAdmitBlocked(leadKey)) return { decision: 'pass' };
     const entry = cache.artistNationalityMap[leadKey];
     if (entry?.code === 'JPN') return { decision: 'admit', via: 'artist' };
     return { decision: 'pass' };
@@ -214,12 +285,9 @@ const jpnAdmitStep: FilterStep = {
  */
 const blogRescueStep: FilterStep = {
   name: 'blog-rescue',
+  phase: 'rescue',
   evaluate({ tj, force, components }): FilterVerdict {
-    const lead = leadComponentOf(components);
-    const leadKey = lead === undefined ? '' : normalizeForMatch(lead);
-    if (leadKey !== '' && GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey)) {
-      return { decision: 'pass' };
-    }
+    if (isGenericAdmitBlocked(leadKeyOf(components))) return { decision: 'pass' };
     if (force?.has(tj)) return { decision: 'admit', via: 'rescue' };
     return { decision: 'pass' };
   },
@@ -243,6 +311,10 @@ const blogRescueStep: FilterStep = {
  * drop-list-reject (step 3) precedes the JPN admit paths (steps 4-6) so a
  * drop-listed Korean act with a JPN pro tag that is NOT curated into
  * reviewed-song-allow is rejected before jpn-admit-pro can admit it.
+ *
+ * This order is not enforced by comment alone: each step carries a `phase`
+ * ({@link PHASE_ORDER}) and {@link assertPhaseOrder} runs at module load, so a
+ * reorder of this array throws at import time.
  */
 export const FILTER_STEPS: FilterStep[] = [
   reviewedSongDropStep,
@@ -253,6 +325,44 @@ export const FILTER_STEPS: FilterStep[] = [
   jpnAdmitStep,
   blogRescueStep,
 ];
+
+/**
+ * Structurally enforce the load-bearing chain order: every step's {@link
+ * FilterStep.phase} must appear in non-decreasing {@link PHASE_ORDER} rank as
+ * the array is traversed. A reorder that would (re)introduce a KPOP-leak class
+ * bug — e.g. an admit phase sliding ahead of `deny-list` — trips this and
+ * throws at module load, before any record is classified. Prose comments and
+ * the array literal alone could not catch that; this can.
+ *
+ * Exported so tests can assert both the real chain passes and that a
+ * deliberately reordered array is rejected.
+ */
+export function assertPhaseOrder(steps: readonly FilterStep[]): void {
+  let prevRank = -1;
+  let prevStep: FilterStep | undefined;
+  for (const step of steps) {
+    const rank = PHASE_ORDER.indexOf(step.phase);
+    if (rank === -1) {
+      throw new Error(
+        `FILTER_STEPS phase check: step "${step.name}" has phase "${step.phase}" ` +
+          `which is not in PHASE_ORDER [${PHASE_ORDER.join(' → ')}].`,
+      );
+    }
+    if (rank < prevRank && prevStep !== undefined) {
+      throw new Error(
+        `FILTER_STEPS order violation: "${step.name}" (phase "${step.phase}") runs after ` +
+          `"${prevStep.name}" (phase "${prevStep.phase}"), but "${step.phase}" must not precede ` +
+          `"${prevStep.phase}" per PHASE_ORDER [${PHASE_ORDER.join(' → ')}]. ` +
+          `The TJ filter chain order is load-bearing — see docs/PROJECT-KNOWLEDGE.md.`,
+      );
+    }
+    prevRank = rank;
+    prevStep = step;
+  }
+}
+
+// Fail fast at import time if the pipeline is ever reordered out of policy.
+assertPhaseOrder(FILTER_STEPS);
 
 /**
  * Build a FilterContext from the raw classifyRecord parameters.
