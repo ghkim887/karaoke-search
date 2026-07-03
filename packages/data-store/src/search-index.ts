@@ -392,12 +392,66 @@ function isHintConfidence(value: unknown): value is HintConfidence {
   return value === 'high' || value === 'medium' || value === 'low';
 }
 
-export function collectTokenKeysForSong(db: SongDatabase, songId: string, out: Set<string>): void {
-  const rows = db
-    .prepare('SELECT DISTINCT kind, token FROM search_tokens WHERE song_id = ?')
-    .all(songId) as unknown as Array<{ kind: SearchTokenKind; token: string }>;
-  for (const row of rows) {
-    out.add(tokenStatKey(row.kind, row.token));
+/**
+ * Upper bound on how many `song_id` values a single `WHERE song_id IN (...)`
+ * statement may bind. node:sqlite (SQLite ≥ 3.32) caps bound parameters at
+ * `SQLITE_MAX_VARIABLE_NUMBER` = 32766 and throws "too many SQL variables"
+ * past it. The delta patcher's `maxTouchedSongs` guard defaults to 1000, so a
+ * single chunk covers every normal patch; this bound only splits the query if a
+ * caller deliberately raises that guard into the tens of thousands. Set well
+ * below the hard cap so the same list can also carry a few unrelated params if
+ * ever needed, and so that fewer, larger chunks minimize full-table scans
+ * (`search_tokens` has no `song_id` index — see schema.ts — so each chunk is
+ * one scan).
+ */
+export const SONG_ID_IN_CHUNK_SIZE = 20000;
+
+function* chunkSongIds(songIds: readonly string[]): Generator<readonly string[]> {
+  for (let start = 0; start < songIds.length; start += SONG_ID_IN_CHUNK_SIZE) {
+    yield songIds.slice(start, start + SONG_ID_IN_CHUNK_SIZE);
+  }
+}
+
+/**
+ * Collect the distinct `(kind, token)` stat keys of every `search_tokens` row
+ * belonging to any of `songIds`, adding each to `out`. Set-based: one scan per
+ * chunk (see {@link SONG_ID_IN_CHUNK_SIZE}) instead of one scan per song. The
+ * resulting key set is exactly the union of the per-song sweeps this replaced,
+ * so the delta patcher's affected-token accounting (and the gram1 df-cap prune
+ * that reads it) is unchanged.
+ */
+export function collectTokenKeysForSongs(
+  db: SongDatabase,
+  songIds: readonly string[],
+  out: Set<string>,
+): void {
+  for (const chunk of chunkSongIds(songIds)) {
+    if (chunk.length === 0) {
+      continue;
+    }
+    const placeholders = chunk.map(() => '?').join(',');
+    const rows = db
+      .prepare(`SELECT DISTINCT kind, token FROM search_tokens WHERE song_id IN (${placeholders})`)
+      .all(...chunk) as unknown as Array<{ kind: SearchTokenKind; token: string }>;
+    for (const row of rows) {
+      out.add(tokenStatKey(row.kind, row.token));
+    }
+  }
+}
+
+/**
+ * Delete every `search_tokens` row for the given songs in one set-based pass per
+ * chunk (see {@link SONG_ID_IN_CHUNK_SIZE}), replacing the delta patcher's old
+ * per-song `DELETE ... WHERE song_id = ?` loop. Correct on both layouts and
+ * needs no `song_id` index.
+ */
+export function deleteSearchTokensForSongs(db: SongDatabase, songIds: readonly string[]): void {
+  for (const chunk of chunkSongIds(songIds)) {
+    if (chunk.length === 0) {
+      continue;
+    }
+    const placeholders = chunk.map(() => '?').join(',');
+    db.prepare(`DELETE FROM search_tokens WHERE song_id IN (${placeholders})`).run(...chunk);
   }
 }
 

@@ -15,7 +15,13 @@ import {
   openSongDatabase,
 } from '../src/index.js';
 import type { SongDatabase } from '../src/schema.js';
-import { GRAM1_DF_CAP, pruneHighDfGram1Tokens } from '../src/search-index.js';
+import {
+  GRAM1_DF_CAP,
+  SONG_ID_IN_CHUNK_SIZE,
+  collectTokenKeysForSongs,
+  deleteSearchTokensForSongs,
+  pruneHighDfGram1Tokens,
+} from '../src/search-index.js';
 
 const openDatabases: Array<{ close(): void }> = [];
 
@@ -249,11 +255,11 @@ describe('SQLite song store', () => {
     // idx_search_texts_song(song_id) and idx_search_tokens_lookup(kind, token,
     // song_id) were dropped: each was a left-prefix of its table's primary key,
     // so the PK already serves those lookups. idx_search_tokens_song(song_id)
-    // stays because the search_tokens PK leads with `kind`, not `song_id`.
-    expect(indexes.map((row) => row.name)).toEqual([
-      'idx_search_texts_compact',
-      'idx_search_tokens_song',
-    ]);
+    // was also dropped (2026-07, I4): it was ~41% of the DB and served only the
+    // delta patcher's per-song token sweeps, which are now set-based over all
+    // touched songs (collectTokenKeysForSongs / deleteSearchTokensForSongs) and
+    // need no song_id index. So idx_search_texts_compact is the only survivor.
+    expect(indexes.map((row) => row.name)).toEqual(['idx_search_texts_compact']);
   });
 
   it('materializes exact text, token, and token-stat search index rows during SQLite import', () => {
@@ -703,3 +709,128 @@ describe('gram1 df-cap pruning (T5-B)', () => {
     expect(gram1PostingCount(first, 'か')).toBe(0);
   });
 });
+
+describe('set-based token sweeps (T5-C — idx_search_tokens_song removed)', () => {
+  const CJK_SEARCH_RECORD_2: SongRecord = {
+    id: 'joysound-777',
+    source_url: 'https://example.com/joysound/777',
+    title_primary: '夜に駆ける',
+    title_ko: '밤을 달리다',
+    artist_primary: 'YOASOBI',
+    artist_ko: '요아소비',
+    artist_aliases: ['よあそび'],
+    karaoke_numbers: { tj: '777001', ky: null, joysound: '777' },
+    crawled_at: '2026-01-05T00:00:00.000Z',
+  };
+
+  /** Union of the per-song `DISTINCT kind, token` sweeps the batch collect replaced. */
+  function collectTokenKeysPerSong(db: SongDatabase, songIds: readonly string[]): Set<string> {
+    const query = db.prepare('SELECT DISTINCT kind, token FROM search_tokens WHERE song_id = ?');
+    const out = new Set<string>();
+    for (const songId of songIds) {
+      const rows = query.all(songId) as unknown as Array<{ kind: string; token: string }>;
+      for (const row of rows) {
+        out.add(`${row.kind} ${row.token}`);
+      }
+    }
+    return out;
+  }
+
+  it('collectTokenKeysForSongs equals the union of the per-song sweeps it replaced', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+    importSongs(db, [CJK_SEARCH_RECORD, CJK_SEARCH_RECORD_2]);
+    const songIds = [CJK_SEARCH_RECORD.id, CJK_SEARCH_RECORD_2.id];
+
+    const batch = new Set<string>();
+    collectTokenKeysForSongs(db, songIds, batch);
+
+    expect(batch).toEqual(collectTokenKeysPerSong(db, songIds));
+    // Guard against a vacuous comparison of two empty sets.
+    expect(batch.size).toBeGreaterThan(0);
+  });
+
+  it('collectTokenKeysForSongs and deleteSearchTokensForSongs span the IN chunk boundary', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+    importSongs(db, [CJK_SEARCH_RECORD, CJK_SEARCH_RECORD_2]);
+
+    // Place the two real ids in DIFFERENT chunks: id 1 at index 0 (chunk 1), id
+    // 2 at index SONG_ID_IN_CHUNK_SIZE (chunk 2). The rest are non-existent ids
+    // that pad the array past one chunk without needing thousands of real songs
+    // (the IN list does not require its values to exist).
+    const padded: string[] = Array.from(
+      { length: SONG_ID_IN_CHUNK_SIZE + 1 },
+      (_, index) => `absent-${index}`,
+    );
+    padded[0] = CJK_SEARCH_RECORD.id;
+    padded[SONG_ID_IN_CHUNK_SIZE] = CJK_SEARCH_RECORD_2.id;
+
+    const collected = new Set<string>();
+    collectTokenKeysForSongs(db, padded, collected);
+    // Chunked collect over both chunks equals the union of both songs' sweeps.
+    expect(collected).toEqual(
+      collectTokenKeysPerSong(db, [CJK_SEARCH_RECORD.id, CJK_SEARCH_RECORD_2.id]),
+    );
+
+    // The chunked delete clears both songs' postings across the boundary.
+    deleteSearchTokensForSongs(db, padded);
+    const remaining = db
+      .prepare('SELECT COUNT(*) AS count FROM search_tokens WHERE song_id IN (?, ?)')
+      .get(CJK_SEARCH_RECORD.id, CJK_SEARCH_RECORD_2.id) as { count: number };
+    expect(remaining.count).toBe(0);
+  });
+
+  it('drops a legacy idx_search_tokens_song and still applies a delta correctly', () => {
+    const db = openMemoryDb();
+    // Simulate a legacy database: canonical schema PLUS the removed index.
+    createSongDatabase(db);
+    db.exec('CREATE INDEX idx_search_tokens_song ON search_tokens(song_id)');
+    const baseRecords = cloneRecords(FIXTURE_RECORDS);
+    importSongs(db, baseRecords);
+    // Legacy index is present before the patch runs.
+    expect(hasSongIndex(db)).toBe(true);
+
+    const candidateRecords = cloneRecords(FIXTURE_RECORDS);
+    candidateRecords[0] = {
+      ...fixtureRecord(0),
+      title_primary: 'Yoru ni Kakeru (Delta Edit)',
+    };
+    const added: SongRecord = {
+      id: 'joysound-888',
+      source_url: 'https://example.com/joysound/888',
+      title_primary: 'Legacy Delta Add',
+      title_ko: null,
+      artist_primary: 'Legacy Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: '888000', ky: null, joysound: null },
+      crawled_at: '2026-01-06T00:00:00.000Z',
+    };
+    candidateRecords.push(added);
+
+    const manifest = applySongDeltaPatch({
+      db,
+      baseRecords,
+      candidateRecords,
+      maxTouchedRatio: 1,
+      tokenStatMode: 'affected',
+    });
+
+    // createSongDatabase (invoked inside the patch) reconverges the legacy DB on
+    // the canonical schema, so the stale index is gone.
+    expect(hasSongIndex(db)).toBe(false);
+    expect(manifest.sqlite.mutated).toBe(true);
+    // The delta still applied correctly on the (formerly legacy) database.
+    expect(exportSongs(db)).toEqual(candidateRecords);
+  });
+});
+
+function hasSongIndex(db: SongDatabase): boolean {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS count FROM sqlite_schema
+       WHERE type = 'index' AND name = 'idx_search_tokens_song'`,
+    )
+    .get() as { count: number };
+  return row.count > 0;
+}
