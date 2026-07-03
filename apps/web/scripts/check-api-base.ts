@@ -22,9 +22,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // to a known root segment keeps the signal specific to the incident (the
 // mangled value observed in production was "C:/Program Files/Git/"). The
 // separator is `[\\/]+` so it matches both the forward-slash form MSYS emits
-// and an escaped-backslash "C:\\Program Files\\Git" form in a JS string.
+// and an escaped-backslash "C:\\Program Files\\Git" form in a JS string. The
+// `(?<![A-Za-z])` before the drive letter stops a legit host like
+// "https://Git.example.com" from matching via the trailing `s:` of `https`
+// (it is a no-op for a real drive path, whose letter is quote-preceded).
 export const CORRUPTION_PATTERN =
-  /file:\/\/\/|[A-Za-z]:[\\/]+(?:Program Files|Windows|Users|Git\b)/g;
+  /file:\/\/\/|(?<![A-Za-z])[A-Za-z]:[\\/]+(?:Program Files|Windows|Users|Git\b)/g;
 
 /** Returns the distinct corruption signatures found in `text` (empty = clean). */
 export function findCorruptionSignatures(text: string): string[] {

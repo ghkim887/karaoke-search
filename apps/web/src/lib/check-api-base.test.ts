@@ -37,4 +37,8 @@ describe('findCorruptionSignatures (postbuild corruption scan)', () => {
       [],
     );
   });
+
+  it('does NOT flag an https host whose name collides with a root segment', () => {
+    expect(findCorruptionSignatures('u="https://Git.example.com"')).toEqual([]);
+  });
 });
