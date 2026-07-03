@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApiBrowse } from '../hooks/useApiBrowse.js';
 import { useApiFavorites } from '../hooks/useApiFavorites.js';
 import { useCorpus } from '../hooks/useCorpus.js';
+import { useFallbackStatus } from '../hooks/useFallbackStatus.js';
 import { useSearchResults } from '../hooks/useSearchResults.js';
 import { createSearchBackend } from '../lib/backend.js';
 import { DEBOUNCE_MS } from '../lib/constants.js';
@@ -10,6 +11,7 @@ import { useFavorites } from '../lib/favorites.js';
 import { t } from '../lib/i18n.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
+import { FallbackNotice } from './FallbackNotice.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';
 import { NoResults } from './NoResults.js';
 import { ResultList } from './ResultList.js';
@@ -71,6 +73,10 @@ export function App({ songCount }: AppProps) {
   const backend = useMemo(() => createSearchBackend(), []);
 
   const { bundle, loading, error } = useCorpus(backend);
+  // True only while results are being served from the local offline corpus
+  // because the API is unreachable (T4-6). Drives the offline hint banner;
+  // stays false on the healthy API path, so the DOM there is unchanged.
+  const fallbackActive = useFallbackStatus(backend);
   const { apiBrowse, browseSearchPending, browseSearchFailed } = useApiBrowse(backend, {
     activeTab,
     query,
@@ -283,6 +289,7 @@ export function App({ songCount }: AppProps) {
       <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
       <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
       <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
+      {fallbackActive ? <FallbackNotice /> : null}
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
         {resultStatusLabel}
       </span>

@@ -6,7 +6,9 @@
       "entry": [],
       "project": []
     },
-    "apps/web": {},
+    "apps/web": {
+      "entry": ["src/sw.ts"]
+    },
     "apps/worker": {},
     "packages/*": {},
     "scripts": {

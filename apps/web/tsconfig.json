@@ -12,5 +12,7 @@
       "@karaoke/worker": ["apps/worker/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*", "tests/**/*"],
+  "comment:exclude": "src/sw.ts is a WebWorker module (bundled by vite-plugin-pwa via esbuild). It mixes the WebWorker lib with the app's DOM lib and is excluded from the app typecheck to avoid a global-scope lib conflict; it is not part of the app's module graph.",
+  "exclude": ["src/sw.ts"]
 }

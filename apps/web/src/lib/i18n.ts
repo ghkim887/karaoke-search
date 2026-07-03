@@ -52,6 +52,13 @@ export const t = {
     'Failed to load data. Please try again shortly.',
   ),
   favoritesLoadFailed: bilingual('즐겨찾기를 불러오지 못했습니다', "Couldn't load favorites"),
+  // Shown when the API is unreachable and results come from the local offline
+  // corpus (T4-6). The corpus is refreshed weekly, so results may be slightly
+  // behind the live catalog — the hint sets that expectation.
+  offlineFallback: bilingual(
+    '오프라인 · 저장된 목록에서 검색 중',
+    'Offline · searching saved list',
+  ),
   searchRequestFailed: bilingual('검색 요청이 실패했습니다', 'The search request failed'),
   retry: bilingual('다시 시도', 'Retry'),
   notYet: bilingual('아직 없음', 'Not yet'),
