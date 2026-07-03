@@ -100,13 +100,23 @@ export async function buildSqliteDb(argv) {
 async function vacuumDatabaseFile(openSongDatabase, dbPath) {
   const tempPath = `${dbPath}.${process.pid}.${Date.now()}.vacuum.tmp`;
   await rm(tempPath, { force: true });
-  const db = openSongDatabase(dbPath);
+  // Mirror importSongRecordsToDatabaseFile's cleanup: the temp file only becomes
+  // dbPath via the rename below, so any earlier failure must leave no orphan.
+  let renamed = false;
   try {
-    db.exec(`VACUUM INTO '${tempPath.replace(/'/g, "''")}'`);
+    const db = openSongDatabase(dbPath);
+    try {
+      db.exec(`VACUUM INTO '${tempPath.replace(/'/g, "''")}'`);
+    } finally {
+      db.close();
+    }
+    await rename(tempPath, dbPath);
+    renamed = true;
   } finally {
-    db.close();
+    if (!renamed) {
+      await rm(tempPath, { force: true });
+    }
   }
-  await rename(tempPath, dbPath);
 }
 
 function countSongs(openSongDatabase, dbPath) {

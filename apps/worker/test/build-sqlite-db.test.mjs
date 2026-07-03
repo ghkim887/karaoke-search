@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openSongDatabase } from '@karaoke/data-store';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { buildSqliteDb, parseBuildSqliteArgs } from '../scripts/build-sqlite-db.mjs';
 
 const JOYSOUND_RECORD = {
@@ -118,40 +118,57 @@ describe('build-sqlite-db VACUUM', () => {
     }
   }
 
-  it('produces a compacted database (freelist_count = 0) by default', async () => {
+  // A 1-record corpus builds with freelist=0 already, so it can't tell a real
+  // VACUUM apart from a no-op. This corpus makes every title/artist share the
+  // same characters, so their gram1 tokens blow past GRAM1_DF_CAP (500) and get
+  // pruned mid-import — the deletes leave free pages the VACUUM must reclaim.
+  function bulkCorpus(count) {
+    const records = [];
+    for (let index = 0; index < count; index += 1) {
+      records.push({
+        id: `bulk-${index}`,
+        source_url: `https://example.com/bulk/${index}`,
+        title_primary: `common shared title ${index}`,
+        title_ko: `공통 제목 ${index}`,
+        artist_primary: `common shared artist ${index}`,
+        artist_ko: `공통 가수 ${index}`,
+        karaoke_numbers: { tj: `${100000 + index}`, ky: null, joysound: null },
+        crawled_at: '2026-01-01T00:00:00.000Z',
+      });
+    }
+    return records;
+  }
+
+  let rawResult;
+  let vacuumResult;
+  let rawPath;
+  let vacuumPath;
+
+  beforeAll(async () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-vacuum-'));
     const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs.sqlite');
-    writeFileSync(inputPath, `${JSON.stringify([JOYSOUND_RECORD], null, 2)}\n`, 'utf8');
-
-    const result = await buildSqliteDb({ inputPath, outputPath });
-
-    expect(result.vacuumed).toBe(true);
-    expect(freelistCount(outputPath)).toBe(0);
+    rawPath = join(dir, 'raw.sqlite');
+    vacuumPath = join(dir, 'vacuumed.sqlite');
+    // 700 records reliably exceeds the df-cap for several shared gram1 tokens,
+    // producing free pages in the un-vacuumed build (see probe: freelist ~53).
+    writeFileSync(inputPath, JSON.stringify(bulkCorpus(700)), 'utf8');
+    rawResult = await buildSqliteDb({ inputPath, outputPath: rawPath, vacuum: false });
+    vacuumResult = await buildSqliteDb({ inputPath, outputPath: vacuumPath });
   });
 
-  it('skips VACUUM when --no-vacuum is set', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-novacuum-'));
-    const inputPath = join(dir, 'songs.json');
-    const outputPath = join(dir, 'songs.sqlite');
-    writeFileSync(inputPath, `${JSON.stringify([JOYSOUND_RECORD], null, 2)}\n`, 'utf8');
-
-    const result = await buildSqliteDb({ inputPath, outputPath, vacuum: false });
-
-    expect(result.vacuumed).toBe(false);
+  it('leaves reclaimable free pages when --no-vacuum is set', () => {
+    expect(rawResult.vacuumed).toBe(false);
+    expect(freelistCount(rawPath)).toBeGreaterThan(0);
   });
 
-  it('changes only physical layout: the logical corpus is identical', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-vacuum-eq-'));
-    const inputPath = join(dir, 'songs.json');
-    const vacuumedPath = join(dir, 'vacuumed.sqlite');
-    const rawPath = join(dir, 'raw.sqlite');
-    writeFileSync(inputPath, `${JSON.stringify([JOYSOUND_RECORD], null, 2)}\n`, 'utf8');
+  it('compacts to zero free pages and a smaller file by default', () => {
+    expect(vacuumResult.vacuumed).toBe(true);
+    expect(freelistCount(vacuumPath)).toBe(0);
+    expect(vacuumResult.bytes).toBeLessThan(rawResult.bytes);
+  });
 
-    await buildSqliteDb({ inputPath, outputPath: vacuumedPath });
-    await buildSqliteDb({ inputPath, outputPath: rawPath, vacuum: false });
-
-    expect(dumpAllTables(vacuumedPath)).toEqual(dumpAllTables(rawPath));
+  it('changes only physical layout: the logical corpus is identical', () => {
+    expect(dumpAllTables(vacuumPath)).toEqual(dumpAllTables(rawPath));
   });
 });
 
