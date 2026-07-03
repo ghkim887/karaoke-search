@@ -80,4 +80,23 @@ test.describe('offline fallback', () => {
 
     await context.setOffline(false);
   });
+
+  test('resolves a karaoke-number query from the local fallback (T6-1)', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => navigator.serviceWorker?.controller != null, null, {
+      timeout: 30_000,
+    });
+
+    const input = page.locator('.search-input');
+    await expect(input).toBeEnabled();
+    // 68381 is 夜に駆ける's TJ number. MiniSearch indexes no numbers, so this
+    // result comes exclusively from the offline number-recall path.
+    await input.fill('68381');
+
+    const card = page.locator('[data-testid="result-card"]').first();
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    await expect(card.locator('[data-testid="badge-tj"]')).toContainText('68381');
+    await expect(page.locator('.fallback-notice')).toBeVisible();
+    await expect(page.locator('.error-state')).toHaveCount(0);
+  });
 });

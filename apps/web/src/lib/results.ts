@@ -62,7 +62,10 @@ export function resolveBrowseCandidates(
     return [];
   }
   if (bundle === null) return [];
-  const hits = searchLocalIndex(bundle.index, query);
+  // Vendor chips scope karaoke-number matches to the selected providers, so the
+  // offline number path converges with the worker's `kn.provider IN (...)`
+  // filter. `finalizeResults` still applies the OR vendor filter afterwards.
+  const hits = searchLocalIndex(bundle.index, query, { vendors: selectedVendors });
   const records: SongRecord[] = [];
   for (const hit of hits) {
     const rec = bundle.byId.get(String(hit.id));
