@@ -221,7 +221,47 @@ describe('findCandidates / auditCorpus tiering end to end', () => {
       ]),
       stripped: new Map(),
     };
-    expect(findCandidates(song, index, fakeDeps)).toEqual([]);
+    expect(findCandidates(song, index, fakeDeps)).toEqual({ tier: 'C', candidates: [] });
+  });
+
+  it('tiers on the FULL match set and keeps the overlap candidate when covers flood the slice', () => {
+    // Regression for the sliced-tier bug: a zero-overlap exact-title flood must
+    // not bury the sole artist-overlap (stripped-title) candidate. compareCandidates
+    // ranks all exact-title above any stripped-title, so without full-set tiering +
+    // a reserved slot this song would mis-tier B and drop its only merge target.
+    const affected = {
+      id: 'tj-flood',
+      title_primary: 'Rocket Dive(AWOL OP)',
+      artist_primary: 'hide',
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+    };
+    // Six unrelated covers whose EXACT title equals the affected exact key.
+    const covers = Array.from({ length: 6 }, (_, i) => ({
+      id: `joy-cover-${i}`,
+      title_primary: 'Rocket Dive(AWOL OP)',
+      artist_primary: `Cover Band ${i}`,
+      karaoke_numbers: { tj: null, ky: null, joysound: `${100 + i}` },
+    }));
+    // The real target: matches only after decoration strip, and SHARES 'hide'
+    // (the `&` split is what the fake splitArtistCollab keys on).
+    const target = {
+      id: 'joy-target',
+      title_primary: 'Rocket Dive',
+      artist_primary: 'hide & Spread Beaver',
+      karaoke_numbers: { tj: null, ky: null, joysound: '200' },
+    };
+    const { results, summary } = auditCorpus([affected, ...covers, target], fakeDeps);
+    const [row] = results;
+    // Full-set tiering sees the overlap candidate -> A (not B from the slice).
+    expect(row.tier).toBe('A');
+    // The overlap target survived the slice via the reserved slot.
+    const ids = row.candidates.map((c) => c.candidate_id);
+    expect(ids).toContain('joy-target');
+    expect(row.candidates).toHaveLength(5);
+    const kept = row.candidates.find((c) => c.candidate_id === 'joy-target');
+    expect(kept.match_kind).toBe('stripped-title');
+    expect(kept.artist_overlap_keys).toContain('hide');
+    expect(summary.byTier).toEqual({ A: 1, B: 0, C: 0 });
   });
 });
 

@@ -260,9 +260,26 @@ function compareCandidates(a, b) {
 }
 
 /**
- * Find up to MAX_CANDIDATES_PER_SONG ranked JOYSOUND candidates for one
- * affected song. Exact-key hits win over stripped-key-only hits; a candidate
- * reachable both ways is kept once as exact-title. Self-id is skipped defensively.
+ * Find JOYSOUND candidates for one affected song. Returns
+ * `{ tier, candidates }` where `candidates` is at most
+ * MAX_CANDIDATES_PER_SONG rows and `tier` is decided on the FULL match set.
+ * Exact-key hits win over stripped-key-only hits; a candidate reachable both
+ * ways is kept once as exact-title. Self-id is skipped defensively.
+ *
+ * Two things MUST use the full (unsliced) ranking, not the emitted slice:
+ *
+ *  1. Tier. `compareCandidates` ranks every exact-title candidate above any
+ *     stripped-title one (artist overlap only tie-breaks WITHIN a match_kind),
+ *     so a flood of zero-overlap exact-title covers can push the sole
+ *     artist-overlap candidate past the top-5 cutoff. Tiering on the slice
+ *     would then mislabel a genuine merge (tier A) as the review set (tier B).
+ *
+ *  2. Actionability of the CSV. For a tier-A song the overlap candidate IS the
+ *     merge target a reviewer needs to see. We reserve a slot for it: if the
+ *     best overlap candidate would be sliced off, it replaces the lowest-ranked
+ *     emitted row (keeping the total ≤ MAX). An exact-title overlap candidate
+ *     can never be sliced off (it ranks at the top of its group), so this only
+ *     ever rescues the stripped-title-overlap case that motivated the fix.
  */
 export function findCandidates(song, index, deps) {
   const { normalizeForMatch } = deps;
@@ -304,7 +321,20 @@ export function findCandidates(song, index, deps) {
     });
   }
   candidates.sort(compareCandidates);
-  return candidates.slice(0, MAX_CANDIDATES_PER_SONG);
+
+  // Tier from the FULL sorted set — never the slice (see the docblock).
+  const tier = tierForSong(candidates);
+
+  let emitted = candidates.slice(0, MAX_CANDIDATES_PER_SONG);
+  // Reserve a slot for the best artist-overlap candidate so a tier-A song
+  // always carries its actionable merge target into the CSV, even when
+  // zero-overlap exact-title covers filled the slice. `bestOverlap` is a
+  // reference into `candidates`, so `emitted.includes` is an identity check.
+  const bestOverlap = candidates.find((c) => c.overlapCount > 0);
+  if (bestOverlap && !emitted.includes(bestOverlap)) {
+    emitted = [...emitted.slice(0, MAX_CANDIDATES_PER_SONG - 1), bestOverlap];
+  }
+  return { tier, candidates: emitted };
 }
 
 /**
@@ -358,10 +388,10 @@ export function auditCorpus(corpus, deps) {
 
   const results = [];
   for (const song of affected) {
-    const candidates = findCandidates(song, index, deps);
+    const { tier, candidates } = findCandidates(song, index, deps);
     const k = song.karaoke_numbers ?? {};
     results.push({
-      tier: tierForSong(candidates),
+      tier,
       song_id: song.id == null ? '' : String(song.id),
       title_primary: typeof song.title_primary === 'string' ? song.title_primary : '',
       artist_primary: typeof song.artist_primary === 'string' ? song.artist_primary : '',
