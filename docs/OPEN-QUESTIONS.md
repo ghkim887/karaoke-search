@@ -1,7 +1,8 @@
 # Open Questions
 
 Live undecided items, with context and what unblocks each. Companion to
-[ARCHITECTURE.md](ARCHITECTURE.md) and [PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md).
+[ARCHITECTURE.md](ARCHITECTURE.md), [PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md)
+and [ROADMAP.md](ROADMAP.md) (decided-but-not-started future work).
 Items referencing the JOYSOUND feature branch
 (`feat/joysound-full-catalog-sweep`) describe in-progress work that is NOT on
 `main` yet.
