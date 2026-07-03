@@ -1856,6 +1856,122 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
 });
 
 // ---------------------------------------------------------------------
+// R1 audit batch (2026-07-02 owner-reviewed missing-JOYSOUND residuals)
+// ---------------------------------------------------------------------
+describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
+  it('lands the JOYSOUND number for a new Tier E pair (tj-6284 ↔ 別離/小林幸子)', () => {
+    const tjOnly = record({
+      id: 'tj-6284',
+      source_url: 'https://tj.test/6284',
+      title_primary: '別 離',
+      artist_primary: '小林幸子',
+      karaoke_numbers: { tj: '6284', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-1755',
+      source_url: 'https://www.joysound.com/web/search/song/1755',
+      title_primary: '別離(わかれ)',
+      artist_primary: '小林幸子',
+      karaoke_numbers: { tj: null, ky: null, joysound: '1755' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '6284', ky: null, joysound: '1755' });
+    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(1);
+  });
+
+  it('lands the JOYSOUND number for a new Tier F pair (tjpdf-28113 ↔ Ready!!)', () => {
+    const tjOnly = record({
+      id: 'tjpdf-28113',
+      source_url: 'https://tj.test/pdf/28113',
+      title_primary: 'Ready!!',
+      artist_primary: '765PRO ALLSTARS',
+      karaoke_numbers: { tj: '28113', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-171278',
+      source_url: 'https://www.joysound.com/web/search/song/171278',
+      title_primary: 'READY!!(M@STER VERSION)',
+      artist_primary: '765PRO ALLSTARS',
+      karaoke_numbers: { tj: null, ky: null, joysound: '110661' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '28113', ky: null, joysound: '110661' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+  });
+
+  it('lands JOYSOUND + KY for the tj-68342 Tier F pair via its explicit extra-provider allowance', () => {
+    const tjOnly = record({
+      id: 'tj-68342',
+      source_url: 'https://tj.test/68342',
+      title_primary: '再会',
+      artist_primary: 'LiSA,Uru(produced by Ayase)',
+      karaoke_numbers: { tj: '68342', ky: null, joysound: null },
+    });
+    const joyWithKy = record({
+      id: 'blog-153-179',
+      source_url: 'https://j-pop-playlist.tistory.com/153',
+      title_primary: '再会 (produced by Ayase)',
+      artist_primary: 'LiSA',
+      karaoke_numbers: { tj: null, ky: '44631', joysound: '487541' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyWithKy]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '68342', ky: '44631', joysound: '487541' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+  });
+
+  it('leaves a both-vendor target (blog-1184-3) unmerged — outside Tier F scope', () => {
+    const bothVendor = record({
+      id: 'blog-1184-3',
+      source_url: 'https://j-pop-playlist.tistory.com/1184',
+      title_primary: '&Z',
+      artist_primary: '澤野弘之',
+      karaoke_numbers: { tj: '28002', ky: '43884', joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-418665',
+      source_url: 'https://www.joysound.com/web/search/song/418665',
+      title_primary: '&Z',
+      artist_primary: 'SawanoHiroyuki[nZk]:mizuki',
+      karaoke_numbers: { tj: null, ky: null, joysound: '670815' },
+    });
+
+    const { records } = mergeRecords([bothVendor, joyOnly]);
+
+    expect(records).toHaveLength(2);
+  });
+
+  it('leaves a pair unmerged when the candidate carries its own conflicting TJ number (tj-25103 ↔ tj-6579)', () => {
+    const tjOnly = record({
+      id: 'tj-25103',
+      source_url: 'https://tj.test/25103',
+      title_primary: 'Rocket Dive',
+      artist_primary: 'hide',
+      karaoke_numbers: { tj: '25103', ky: null, joysound: null },
+    });
+    const joyWithTj = record({
+      id: 'tj-6579',
+      source_url: 'https://tj.test/6579',
+      title_primary: 'ROCKET DIVE(AWOL OP)',
+      artist_primary: 'hide with Spread Beaver',
+      karaoke_numbers: { tj: '6579', ky: null, joysound: '17108' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyWithTj]);
+
+    expect(records).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------
 // Tier G — automatic no-manual-review residual split rules
 // ---------------------------------------------------------------------
 describe('mergeRecords — Tier G automatic residual split rules', () => {
@@ -2023,19 +2139,23 @@ describe('mergeRecords — Tier G automatic residual split rules', () => {
   });
 
   it('does not strip kana-only version parentheticals as automatic readings', () => {
+    // NOTE: uses non-allowlisted numbers (tj 26298 / joysound 7119) so this
+    // Tier G regression is not short-circuited by a reviewed Tier E/F pair.
+    // The real tj-26299 ↔ joysound-7118 pair is now an owner-reviewed Tier E
+    // merge (R1 batch), which is exercised separately.
     const tjOnly = record({
-      id: 'tj-26299',
-      source_url: 'https://tj.test/26299',
+      id: 'tj-26298',
+      source_url: 'https://tj.test/26298',
       title_primary: '私がオバさんになっても',
       artist_primary: '森高千里',
-      karaoke_numbers: { tj: '26299', ky: null, joysound: null },
+      karaoke_numbers: { tj: '26298', ky: null, joysound: null },
     });
     const joyVersion = record({
-      id: 'joysound-7118',
-      source_url: 'https://www.joysound.com/web/search/song/7118',
+      id: 'joysound-7119',
+      source_url: 'https://www.joysound.com/web/search/song/7119',
       title_primary: '私がオバさんになっても (シングル・ヴァージョン)',
       artist_primary: '森高千里',
-      karaoke_numbers: { tj: null, ky: null, joysound: '7118' },
+      karaoke_numbers: { tj: null, ky: null, joysound: '7119' },
     });
 
     const { records, conflicts } = mergeRecords([tjOnly, joyVersion]);
