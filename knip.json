@@ -7,7 +7,7 @@
       "project": []
     },
     "apps/web": {
-      "entry": ["src/sw.ts"]
+      "entry": ["src/sw.ts", "functions/**/*.js"]
     },
     "apps/worker": {},
     "packages/*": {},
