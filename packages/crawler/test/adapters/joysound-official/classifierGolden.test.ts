@@ -1,10 +1,13 @@
 import { hasKana, hasLatinLetter } from '@karaoke/search';
 import { describe, expect, it } from 'vitest';
 import {
-  classifyJoysoundRecordWithReason,
   type JoysoundClassifyReason,
+  classifyJoysoundRecordWithReason,
 } from '../../../src/adapters/joysound-official/classifier.js';
-import type { JoysoundDetail, JoysoundListItem } from '../../../src/adapters/joysound-official/types.js';
+import type {
+  JoysoundDetail,
+  JoysoundListItem,
+} from '../../../src/adapters/joysound-official/types.js';
 
 /**
  * Golden regression gate for the JOYSOUND classifier (T5-D).
@@ -89,7 +92,11 @@ describe('classifier golden — representative scenarios', () => {
     },
     {
       name: 'admit-anime — TVアニメ tieup',
-      listItem: listItem({ songName: '紅蓮華', artistName: 'LiSA', tieupInfo: 'TVアニメ「鬼滅の刃」OP' }),
+      listItem: listItem({
+        songName: '紅蓮華',
+        artistName: 'LiSA',
+        tieupInfo: 'TVアニメ「鬼滅の刃」OP',
+      }),
       expected: { admit: true, reason: 'admit-anime' },
     },
     {
@@ -218,11 +225,19 @@ describe('classifier golden — representative scenarios', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Part B1 — Phase-1 divergence code points (kana unification).
+// Part B1 — Phase-1 divergence code points (kana unification). CHANGE SPEC.
 //
-// These assertions encode the CURRENT (pre-swap) verdict. When
-// `hasKanaScript`/`RE_KANA` are replaced by the shared `hasKana`, EXACTLY these
-// four assertions flip; their diff is the Phase-1 change specification.
+// These four assertions are the ENTIRE behavioural change of the Phase-1 swap
+// (`hasKanaScript`/`RE_KANA` → shared `hasKana`). Each was flipped from its
+// pre-swap verdict (in the commit that introduced this file) to the value
+// below; the git diff of this block is the change specification. Both effects
+// are strict widenings — a DROP becoming an ADMIT — so no genuine-JP row can be
+// lost:
+//   (1) admit path: a title whose only kana is a Katakana Phonetic Extension
+//       (U+31F0–31FF) now admits as jpop instead of dropping.
+//   (2) echo path: a foreign-name field pairing Han with only half-width
+//       (U+FF66–FF9F) or phonetic-extension kana is now recognised as a
+//       Japanese-title echo, suppressing the foreign-Chinese DROP.
 // ---------------------------------------------------------------------------
 describe('classifier golden — Phase-1 divergence code points (kana)', () => {
   // Bare title/artist made only of the probe code point (isolates the
@@ -235,31 +250,31 @@ describe('classifier golden — Phase-1 divergence code points (kana)', () => {
     detail: detail({ songNameForeign: foreign }),
   });
 
-  it('phonetic-extension kana ㇰ (U+31F0) in title — CURRENT drop-no-signal (Phase-1 will admit)', () => {
+  it('phonetic-extension kana ㇰ (U+31F0) in title — admit-jpop-kana (was drop-no-signal; recall ↑)', () => {
     expect(classifyJoysoundRecordWithReason({ listItem: bare('ㇰ') })).toEqual({
-      admit: false,
-      reason: 'drop-no-signal',
+      admit: true,
+      reason: 'admit-jpop-kana',
     });
   });
 
-  it('phonetic-extension kana ㇿ (U+31FF) in title — CURRENT drop-no-signal (Phase-1 will admit)', () => {
+  it('phonetic-extension kana ㇿ (U+31FF) in title — admit-jpop-kana (was drop-no-signal; recall ↑)', () => {
     expect(classifyJoysoundRecordWithReason({ listItem: bare('ㇿ') })).toEqual({
-      admit: false,
-      reason: 'drop-no-signal',
+      admit: true,
+      reason: 'admit-jpop-kana',
     });
   });
 
-  it('half-width kana echo ｱｲｳ (U+FF71+) in foreign-name — CURRENT foreign-chinese (Phase-1 will suppress → admit)', () => {
+  it('half-width kana echo ｱｲｳ (U+FF71+) in foreign-name — echo suppressed → admit-jpop-kana (was foreign-chinese)', () => {
     expect(classifyJoysoundRecordWithReason(echo('桜ｱｲｳ'))).toEqual({
-      admit: false,
-      reason: 'foreign-chinese',
+      admit: true,
+      reason: 'admit-jpop-kana',
     });
   });
 
-  it('phonetic-extension kana echo ㇰ (U+31F0) in foreign-name — CURRENT foreign-chinese (Phase-1 will suppress → admit)', () => {
+  it('phonetic-extension kana echo ㇰ (U+31F0) in foreign-name — echo suppressed → admit-jpop-kana (was foreign-chinese)', () => {
     expect(classifyJoysoundRecordWithReason(echo('桜ㇰ'))).toEqual({
-      admit: false,
-      reason: 'foreign-chinese',
+      admit: true,
+      reason: 'admit-jpop-kana',
     });
   });
 });
@@ -384,14 +399,16 @@ describe('classifier differential — kana widening & Latin identity', () => {
     'ꥠ',
   ];
 
-  const inAdmitWideningZone = (s: string) => [...s].some((ch) => {
-    const c = ch.codePointAt(0)!;
-    return c >= 0x31f0 && c <= 0x31ff; // phonetic-extension kana only
-  });
-  const inEchoWideningZone = (s: string) => [...s].some((ch) => {
-    const c = ch.codePointAt(0)!;
-    return (c >= 0x31f0 && c <= 0x31ff) || (c >= 0xff66 && c <= 0xff9f); // phonetic-ext + half-width
-  });
+  const inAdmitWideningZone = (s: string) =>
+    [...s].some((ch) => {
+      const c = ch.codePointAt(0) ?? 0;
+      return c >= 0x31f0 && c <= 0x31ff; // phonetic-extension kana only
+    });
+  const inEchoWideningZone = (s: string) =>
+    [...s].some((ch) => {
+      const c = ch.codePointAt(0) ?? 0;
+      return (c >= 0x31f0 && c <= 0x31ff) || (c >= 0xff66 && c <= 0xff9f); // phonetic-ext + half-width
+    });
 
   it('shared hasKana is a strict SUPERSET of the former admit-path regex (no match ever lost)', () => {
     for (const s of probes) {
@@ -412,7 +429,9 @@ describe('classifier differential — kana widening & Latin identity', () => {
   it('admit-path widening is confined to phonetic-extension kana', () => {
     for (const s of probes) {
       if (hasKana(s) !== FORMER_KANA_ADMIT.test(s)) {
-        expect(inAdmitWideningZone(s), `unexpected admit-path flip: ${JSON.stringify(s)}`).toBe(true);
+        expect(inAdmitWideningZone(s), `unexpected admit-path flip: ${JSON.stringify(s)}`).toBe(
+          true,
+        );
       }
     }
   });
