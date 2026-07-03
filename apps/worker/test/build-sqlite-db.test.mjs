@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openSongDatabase } from '@karaoke/data-store';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { buildSqliteDb, parseBuildSqliteArgs } from '../scripts/build-sqlite-db.mjs';
 
 const JOYSOUND_RECORD = {
@@ -35,6 +35,11 @@ describe('build-sqlite-db CLI args', () => {
     ).toMatchObject({
       searchHintPaths: ['a.jsonl', 'b.jsonl'],
     });
+  });
+
+  it('vacuums by default and skips on --no-vacuum', () => {
+    expect(parseBuildSqliteArgs([])).toMatchObject({ vacuum: true });
+    expect(parseBuildSqliteArgs(['--no-vacuum'])).toMatchObject({ vacuum: false });
   });
 });
 
@@ -73,6 +78,97 @@ describe('build-sqlite-db empty-corpus guard', () => {
 
     expect(result.songCount).toBe(1);
     expect(result.bytes).toBeGreaterThan(0);
+  });
+});
+
+describe('build-sqlite-db VACUUM', () => {
+  function freelistCount(dbPath) {
+    const db = openSongDatabase(dbPath);
+    try {
+      return Number(db.prepare('PRAGMA freelist_count').get().freelist_count);
+    } finally {
+      db.close();
+    }
+  }
+
+  // Logical dump of every user table (plus ANALYZE's sqlite_stat1), each row set
+  // ordered deterministically, so VACUUM's physical-only rewrite can be proven
+  // to leave the corpus byte-for-byte identical.
+  function dumpAllTables(dbPath) {
+    const db = openSongDatabase(dbPath);
+    try {
+      const tables = db
+        .prepare(
+          `SELECT name FROM sqlite_schema
+           WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+           UNION ALL SELECT 'sqlite_stat1' WHERE EXISTS
+             (SELECT 1 FROM sqlite_schema WHERE name = 'sqlite_stat1')
+           ORDER BY name`,
+        )
+        .all()
+        .map((row) => row.name);
+      const dump = {};
+      for (const table of tables) {
+        const rows = db.prepare(`SELECT * FROM "${table}"`).all();
+        dump[table] = rows.map((row) => JSON.stringify(row)).sort();
+      }
+      return dump;
+    } finally {
+      db.close();
+    }
+  }
+
+  // A 1-record corpus builds with freelist=0 already, so it can't tell a real
+  // VACUUM apart from a no-op. This corpus makes every title/artist share the
+  // same characters, so their gram1 tokens blow past GRAM1_DF_CAP (500) and get
+  // pruned mid-import — the deletes leave free pages the VACUUM must reclaim.
+  function bulkCorpus(count) {
+    const records = [];
+    for (let index = 0; index < count; index += 1) {
+      records.push({
+        id: `bulk-${index}`,
+        source_url: `https://example.com/bulk/${index}`,
+        title_primary: `common shared title ${index}`,
+        title_ko: `공통 제목 ${index}`,
+        artist_primary: `common shared artist ${index}`,
+        artist_ko: `공통 가수 ${index}`,
+        karaoke_numbers: { tj: `${100000 + index}`, ky: null, joysound: null },
+        crawled_at: '2026-01-01T00:00:00.000Z',
+      });
+    }
+    return records;
+  }
+
+  let rawResult;
+  let vacuumResult;
+  let rawPath;
+  let vacuumPath;
+
+  beforeAll(async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-vacuum-'));
+    const inputPath = join(dir, 'songs.json');
+    rawPath = join(dir, 'raw.sqlite');
+    vacuumPath = join(dir, 'vacuumed.sqlite');
+    // 700 records reliably exceeds the df-cap for several shared gram1 tokens,
+    // producing free pages in the un-vacuumed build (see probe: freelist ~53).
+    writeFileSync(inputPath, JSON.stringify(bulkCorpus(700)), 'utf8');
+    rawResult = await buildSqliteDb({ inputPath, outputPath: rawPath, vacuum: false });
+    vacuumResult = await buildSqliteDb({ inputPath, outputPath: vacuumPath });
+  });
+
+  it('leaves reclaimable free pages when --no-vacuum is set', () => {
+    expect(rawResult.vacuumed).toBe(false);
+    expect(freelistCount(rawPath)).toBeGreaterThan(0);
+  });
+
+  it('compacts to zero free pages and a smaller file by default', () => {
+    expect(vacuumResult.vacuumed).toBe(true);
+    expect(freelistCount(vacuumPath)).toBe(0);
+    expect(vacuumResult.bytes).toBeLessThan(rawResult.bytes);
+  });
+
+  it('changes only physical layout: the logical corpus is identical', () => {
+    expect(dumpAllTables(vacuumPath)).toEqual(dumpAllTables(rawPath));
   });
 });
 
