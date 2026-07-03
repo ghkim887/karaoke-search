@@ -12,7 +12,7 @@
     "scripts": {
       "entry": ["*.mjs"],
       "project": ["**/*.mjs"],
-      "ignoreDependencies": ["@karaoke/crawler", "@karaoke/schema"]
+      "ignoreDependencies": ["@karaoke/crawler"]
     }
   }
 }

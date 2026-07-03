@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import robotsParser from 'robots-parser';
 import { request } from 'undici';
@@ -309,8 +309,18 @@ async function writeJsonFileAtomic(path: string, value: unknown): Promise<void> 
   // pid + a random token makes each writer's tmp private; the rename onto the
   // final path stays atomic.
   const tmp = `${path}.${process.pid}.${randomUUID()}.tmp`;
-  await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  await rename(tmp, path);
+  try {
+    await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    await rename(tmp, path);
+  } catch (err) {
+    // Best-effort cleanup: a failed writeFile or rename leaves the unique tmp
+    // behind (the rename is what makes it disappear on success). Because the
+    // tmp name is namespaced by pid + UUID, an interrupted persist would
+    // otherwise accumulate orphan `.tmp` files next to the cache. Swallow any
+    // cleanup error — the original failure is what matters and is rethrown.
+    await rm(tmp, { force: true }).catch(() => {});
+    throw err;
+  }
 }
 
 /**

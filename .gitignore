@@ -7,9 +7,13 @@ dist/
 .cache/
 *.tsbuildinfo
 
-# Worker local scratch artifacts (sqlite:build output, cached crawl audits).
-# The .wrangler directory name is historical (Cloudflare removed 2026-06-13);
-# kept so existing local scratch state stays ignored.
+# Worker local scratch artifacts. sqlite:build writes its output under
+# apps/worker/.build/ (backend-neutral name). apps/worker/.wrangler/ is the
+# historical output dir name (Cloudflare removed 2026-06-13); kept so existing
+# local scratch state (e.g. cached crawl audits) stays ignored.
+# apps/web/.wrangler/ is Cloudflare Pages' local dev/build state and is still
+# live — see apps/web/wrangler.toml.
+apps/worker/.build/
 apps/worker/.wrangler/
 apps/web/.wrangler/
 

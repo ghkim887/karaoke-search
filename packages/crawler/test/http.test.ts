@@ -19,13 +19,15 @@ vi.mock('node:fs/promises', () => ({
     throw new Error('no cache file');
   }),
   rename: vi.fn(async () => undefined),
+  rm: vi.fn(async () => undefined),
   writeFile: vi.fn(async () => undefined),
 }));
 
-import { rename as mockRename } from 'node:fs/promises';
+import { rename as mockRename, rm as mockRm } from 'node:fs/promises';
 import { request as mockRequest } from 'undici';
 const mockedRequest = vi.mocked(mockRequest);
 const mockedRename = vi.mocked(mockRename);
+const mockedRm = vi.mocked(mockRm);
 
 // ---------------------------------------------------------------------------
 // Helper: build a fake undici response whose body is an async-iterable of
@@ -181,6 +183,7 @@ describe('HttpClient — cache persist batching', () => {
   beforeEach(() => {
     mockedRequest.mockReset();
     mockedRename.mockClear();
+    mockedRm.mockClear();
     mockedRequest.mockImplementation(async () => fakeTextResponse(200, 'ok') as never);
   });
 
@@ -231,6 +234,34 @@ describe('HttpClient — cache persist batching', () => {
     // And the retry actually drained the batch — no further writes.
     await client.flush();
     expect(mockedRename).toHaveBeenCalledTimes(2);
+  });
+
+  it('removes the unique tmp file (best-effort) when the atomic rename fails', async () => {
+    const client = new HttpClient({
+      cachePersistEvery: 1, // one store → immediate flush whose rename fails
+      hostConfigOverrides: { 'j-pop-playlist.tistory.com': FAST_BLOG_HOST },
+    });
+    mockedRename.mockRejectedValueOnce(new Error('EXDEV: cross-device link'));
+
+    await expect(client.fetch('https://j-pop-playlist.tistory.com/orphan')).rejects.toThrow(
+      /EXDEV/,
+    );
+
+    // The orphan tmp the failed rename targeted must be cleaned up so an
+    // interrupted persist does not leave `.tmp` files next to the cache.
+    const tmp = mockedRename.mock.calls[0]?.[0];
+    expect(tmp).toBeDefined();
+    expect(mockedRm).toHaveBeenCalledWith(tmp, { force: true });
+  });
+
+  it('does not remove anything on a successful persist', async () => {
+    const client = new HttpClient({
+      cachePersistEvery: 1,
+      hostConfigOverrides: { 'j-pop-playlist.tistory.com': FAST_BLOG_HOST },
+    });
+    await client.fetch('https://j-pop-playlist.tistory.com/clean');
+    expect(mockedRename).toHaveBeenCalledTimes(1);
+    expect(mockedRm).not.toHaveBeenCalled();
   });
 
   it('concurrent flush calls are serialized into a single persist', async () => {

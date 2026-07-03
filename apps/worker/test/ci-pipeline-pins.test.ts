@@ -31,9 +31,14 @@ describe('CI pipeline pins', () => {
     expect(packageJson.scripts.test).not.toContain('d1-runtime');
   });
 
-  it('keeps the worker scratch directory ignored', () => {
+  it('keeps the worker scratch directories ignored', () => {
     const gitignore = readFileSync(join(REPO_ROOT, '.gitignore'), 'utf8');
 
+    // sqlite:build writes its output under apps/worker/.build/ — it must stay
+    // ignored so the self-host DB built on every PR is never committed.
+    expect(gitignore).toContain('apps/worker/.build/');
+    // The historical .wrangler/ output dir is retained so existing local
+    // scratch state (cached crawl audits) stays ignored after the rename.
     expect(gitignore).toContain('apps/worker/.wrangler/');
   });
 

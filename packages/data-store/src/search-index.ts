@@ -45,7 +45,7 @@ const DERIVED_KANA_ROMAJI_SOURCE = 'derived_kana_romaji';
 type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
 type HintField = (typeof HINT_FIELDS)[number];
 type HintTokenField = (typeof HINT_TOKEN_FIELD_BY_HINT_FIELD)[HintField];
-export type SearchTokenField = SearchField | HintTokenField;
+type SearchTokenField = SearchField | HintTokenField;
 type HintConfidence = NonNullable<TitleKoConfidence>;
 
 export interface SearchTextInput {
