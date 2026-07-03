@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "postbuild": "node scripts/check-bundle-size.mjs",
+    "postbuild": "node scripts/check-bundle-size.mjs && node scripts/check-api-base.mjs",
     "build:icons": "node scripts/build-pwa-icons.mjs",
     "preview": "astro preview",
     "test": "vitest run",
