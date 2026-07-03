@@ -284,6 +284,46 @@ describe('SongRecord — title_ko_confidence', () => {
   });
 });
 
+describe('SongRecord — title_ruby', () => {
+  it('accepts a record with a katakana title_ruby', () => {
+    const record = makeRecord({ title_primary: '○', title_ruby: 'マル' });
+    expect(() => validateSongRecord(record)).not.toThrow();
+    expect(record.title_ruby).toBe('マル');
+  });
+
+  it('accepts an explicit null title_ruby', () => {
+    expect(() => validateSongRecord(makeRecord({ title_ruby: null }))).not.toThrow();
+  });
+
+  it('accepts a record with title_ruby absent (optional)', () => {
+    const record = makeRecord();
+    expect(record).not.toHaveProperty('title_ruby');
+    expect(() => validateSongRecord(record)).not.toThrow();
+  });
+
+  it('accepts a ruby identical to the title', () => {
+    expect(() =>
+      validateSongRecord(makeRecord({ title_primary: 'レモン', title_ruby: 'レモン' })),
+    ).not.toThrow();
+  });
+
+  it('rejects an empty-string title_ruby (minLength 1)', () => {
+    expect(() => validateSongRecord({ ...makeRecord(), title_ruby: '' })).toThrowError(
+      /title_ruby/,
+    );
+  });
+
+  it('rejects a non-string title_ruby', () => {
+    expect(() => validateSongRecord({ ...makeRecord(), title_ruby: 123 })).toThrowError(
+      /title_ruby/,
+    );
+  });
+
+  it('types title_ruby as string | null | undefined', () => {
+    expectTypeOf<SongRecord['title_ruby']>().toEqualTypeOf<string | null | undefined>();
+  });
+});
+
 describe('RawSongRecord type shape', () => {
   // Type-level checks. These are compile-time assertions; placement inside a
   // describe block is purely organizational — they run regardless of position.

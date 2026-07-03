@@ -2,7 +2,7 @@
   "_readme": "AUTO-GENERATED baseline for search-parity.golden.test.ts. Regenerate with UPDATE_PARITY_SNAPSHOT=1 (see the test file header). jaccard/top1Match are the FROZEN divergence floor; web/worker lists are the top-10 ids at generation time (informational, for reading divergences). Do not hand-edit.",
   "corpus": {
     "path": "apps/web/public/data/songs.json",
-    "sha256": "6d351debb7af43bbcfa2a08aeacfbb6e9498976b757d1ce11332127d06378086",
+    "sha256": "d03cc68c17760b65bdb8c51cec1468db7bdf4e38370aedee2a3ebf2ff8cef7ad",
     "records": 25842
   },
   "aggregate": {
