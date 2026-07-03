@@ -101,6 +101,59 @@ describe('searchLocalIndex — romaji↔kana expansion (offline fallback recall)
   });
 });
 
+describe('searchLocalIndex — offline number & initials recall (T6-1)', () => {
+  it('routes a karaoke-number query to the number path', () => {
+    const index = buildIndex([
+      makeSearchRecord({
+        id: 'num-hit',
+        karaoke_numbers: { tj: '68381', ky: null, joysound: null },
+      }),
+      makeSearchRecord({
+        id: 'num-miss',
+        karaoke_numbers: { tj: '99999', ky: null, joysound: null },
+      }),
+    ]);
+
+    const ids = searchModule.searchLocalIndex(index, '68381').map((hit) => String(hit.id));
+
+    expect(ids).toEqual(['num-hit']);
+  });
+
+  it('scopes number matches to the vendors option', () => {
+    const index = buildIndex([
+      makeSearchRecord({ id: 'tj', karaoke_numbers: { tj: '68381', ky: null, joysound: null } }),
+      makeSearchRecord({ id: 'ky', karaoke_numbers: { tj: null, ky: '68381', joysound: null } }),
+    ]);
+
+    const ids = searchModule
+      .searchLocalIndex(index, '68381', { vendors: new Set(['ky']) })
+      .map((hit) => String(hit.id));
+
+    expect(ids).toEqual(['ky']);
+  });
+
+  it('routes an all-choseong query to the initials path', () => {
+    const index = buildIndex([
+      makeSearchRecord({ id: 'yoru', title_primary: '夜に駆ける', title_ko: '밤을 달리다' }),
+    ]);
+
+    const ids = searchModule.searchLocalIndex(index, 'ㅂㅇ').map((hit) => String(hit.id));
+
+    expect(ids).toEqual(['yoru']);
+  });
+
+  it('leaves a plain text query on the MiniSearch path (recall paths do not fire)', () => {
+    const index = buildIndex([makeSearchRecord({ id: 'text-1', title_primary: 'RADWIMPS' })]);
+
+    // Byte-identical to the raw MiniSearch result for a non-number, non-initials query.
+    const viaLocal = searchModule.searchLocalIndex(index, 'RADWIMPS').map((hit) => String(hit.id));
+    const viaRaw = index.search('RADWIMPS').map((hit) => String(hit.id));
+
+    expect(viaLocal).toEqual(viaRaw);
+    expect(viaLocal).toContain('text-1');
+  });
+});
+
 describe('search index — artist_aliases (spec 2026-05-04)', () => {
   function makeRecord(over: Partial<SongRecord>): SongRecord {
     return {

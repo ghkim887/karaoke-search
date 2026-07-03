@@ -7,8 +7,8 @@
   },
   "aggregate": {
     "queryCount": 61,
-    "meanJaccard": 0.465608,
-    "top1MatchRate": 0.639344
+    "meanJaccard": 0.629542,
+    "top1MatchRate": 0.803279
   },
   "queries": {
     "jp-full-yoruni": {
@@ -753,9 +753,20 @@
     "hangul-initials-oosb": {
       "query": "ㅇㅅㅂ",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-418-18",
+        "tj-6445",
+        "tj-6562",
+        "blog-218-10",
+        "blog-165-7",
+        "blog-429-36",
+        "blog-117-115",
+        "blog-461-5",
+        "blog-418-60",
+        "blog-464-20"
+      ],
       "worker": [
         "blog-418-18",
         "tj-6445",
@@ -772,9 +783,20 @@
     "hangul-initials-hrh": {
       "query": "ㅎㄹㅎ",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "tj-26809",
+        "tj-26887",
+        "tj-26889",
+        "tjpdf-28246",
+        "blog-153-1",
+        "blog-730-63",
+        "blog-455-13",
+        "blog-728-15",
+        "blog-1601-14",
+        "blog-376-18"
+      ],
       "worker": [
         "tj-26809",
         "tj-26887",
@@ -791,9 +813,19 @@
     "hangul-initials-skrw": {
       "query": "ㅅㅋㄹㅇ",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "tj-26724",
+        "blog-157-114",
+        "blog-507-17",
+        "blog-707-17",
+        "blog-802-47",
+        "blog-436-24",
+        "blog-1149-35",
+        "tj-26407",
+        "tjpdf-68074"
+      ],
       "worker": [
         "tj-26724",
         "blog-157-114",
@@ -1207,9 +1239,11 @@
     "num-tj-full": {
       "query": "68381",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-1"
+      ],
       "worker": [
         "blog-99-1"
       ]
@@ -1217,9 +1251,11 @@
     "num-joy-full": {
       "query": "446181",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-1"
+      ],
       "worker": [
         "blog-99-1"
       ]
@@ -1227,9 +1263,13 @@
     "num-ky-full": {
       "query": "44656",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-1",
+        "blog-150-8",
+        "blog-218-11"
+      ],
       "worker": [
         "blog-99-1",
         "blog-150-8",
@@ -1239,9 +1279,11 @@
     "num-tj-prefixed": {
       "query": "tj68381",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-1"
+      ],
       "worker": [
         "blog-99-1"
       ]
@@ -1249,9 +1291,11 @@
     "num-joy-prefixed": {
       "query": "joysound446181",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
-      "web": [],
+      "jaccard": 1,
+      "top1Match": true,
+      "web": [
+        "blog-99-1"
+      ],
       "worker": [
         "blog-99-1"
       ]
@@ -1259,10 +1303,19 @@
     "num-short-prefix": {
       "query": "684",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
+      "jaccard": 1,
+      "top1Match": true,
       "web": [
-        "blog-127-49"
+        "blog-308-0",
+        "blog-349-3",
+        "tj-6840",
+        "blog-384-29",
+        "blog-99-10",
+        "tj-68403",
+        "blog-146-3",
+        "blog-350-7",
+        "blog-99-13",
+        "blog-114-8"
       ],
       "worker": [
         "blog-308-0",
@@ -1280,10 +1333,10 @@
     "num-tj-cherry": {
       "query": "25008",
       "vendors": [],
-      "jaccard": 0,
-      "top1Match": false,
+      "jaccard": 1,
+      "top1Match": true,
       "web": [
-        "blog-496-16"
+        "blog-226-0"
       ],
       "worker": [
         "blog-226-0"

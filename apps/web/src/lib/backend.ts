@@ -146,7 +146,10 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
         this.#setFallbackActive(false);
         throw apiError;
       }
-      const hits = searchLocalIndex(bundle.index, query);
+      const vendorSet: ReadonlySet<Vendor> = new Set(vendors);
+      // Scope number matches to the selected vendors (worker parity); the text
+      // and initials paths ignore `vendors`.
+      const hits = searchLocalIndex(bundle.index, query, { vendors: vendorSet });
       const records: SongRecord[] = [];
       for (const hit of hits) {
         const rec = bundle.byId.get(String(hit.id));
@@ -155,7 +158,6 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
       // Mirror the API contract: vendor-filtered and capped. The caller re-applies
       // both (idempotently) via `finalizeResults`, so the visible result matches
       // the offline backend's own path exactly.
-      const vendorSet: ReadonlySet<Vendor> = new Set(vendors);
       const result = filterByVendors(records, vendorSet).slice(0, limit);
       this.#setFallbackActive(true);
       return result;
