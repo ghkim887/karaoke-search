@@ -37,24 +37,36 @@ export type NonJoysoundVendor = Exclude<Vendor, 'joysound'>;
  * - 1 short-token false positive (`FLOW X GRANRODEO` vs `XG`).
  */
 const REVIEWED_TIER_E_STRONG_PAIRS = [
+  ['6284', '1755'], // 別 離 / 小林幸子 ↔ 別離(わかれ) / 小林幸子
+  ['6461', '2978'], // 蒼 月 / 長山洋子 ↔ 蒼月(つき) / 長山洋子
+  ['6499', '1976'], // 冬の華 / 大月みやこ ↔ 冬の華(はな) / 大月みやこ
+  ['6981', '11726'], // 時 代 / 嵐 ↔ 時代(ジダイ) / 嵐
+  ['25017', '495453'], // おもかげ / milet & Aimer & 幾田りら ↔ おもかげ(produced by Vaundy) / milet×Aimer×幾田りら
   ['25031', '492355'], // 六幻 / 林勇 ↔ 佐野万次郎(CV:林勇)
   ['25134', '492356'], // Rusted Fist / 新祐樹 ↔ 花垣武道(CV:新祐樹)
   ['25257', '36852'], // For フルーツバスケット / 岡崎律子 外 ↔ 岡崎律子
   ['25283', '53411'], // Let Me Be With You / Round table ↔ ROUND TABLE featuring Nino
   ['25372', '26946'], // 御旗のもとに / 巴里華撃団 ↔ 日高のり子ほか (巴里華撃団)
   ['25468', '27700'], // もっと!モット!ときめき / 金月真美 ↔ 金月真美(藤崎詩織)
+  ['25533', '28584'], // さくら / 森山直太朗 ↔ さくら(独唱) / 森山直太朗
   ['25542', '36509'], // storm / JAM Project ↔ JAM Project featuring 水木一郎&影山ヒロノブ
   ['25663', '37378'], // Fire wars / JAM Project ↔ JAM Project featuring 影山ヒロノブ
   ['25715', '4586'], // 恋しさとせつなさと心強さと / 篠原涼子 ↔ 篠原涼子 with t.komuro
+  ['25733', '30794'], // 風信子 / 松浦亜弥 ↔ 風信子(ヒヤシンス) / 松浦亜弥
   ['25780', '53543'], // WHITE LINE / 青酢 ↔ 青酢(皆川純子/置鮎龍太郎/近藤孝行/甲斐田ゆき)
   ['25798', '60803'], // Agape / メロキュア ↔ メロキュア(岡崎律子/日向めぐみ)
+  ['25898', '10142'], // 渡良瀬橋 / 松浦亜弥 ↔ 渡良瀬橋(わたらせばし) / 松浦亜弥
   ['25918', '65161'], // スクランブル / 堀江由衣 ↔ 堀江由衣 with UNSCANDAL
   ['25963', '32521'], // あぁいいな! / ダブルユー ↔ W(ダブルユー)
   ['26007', '62537'], // チチをもげ! / パルコ・フォルゴレ(高橋広樹) ↔ 高橋広樹
+  ['26097', '22484'], // 父親 / 北島三郎 ↔ 父親(おやじ) / 北島三郎
   ['26112', '78294'], // 黄色いバカンス / 桃月学園1年C組(Feat.片桐姫子) ↔ 桃月学園1年C組 feat.片桐姫子(折笠富美子)
+  ['26125', '121389'], // Cassis / ガゼット ↔ Cassis / the GazettE
   ['26190', '61149'], // 静かな夜に / 田中理恵 ↔ 田中理恵(ラクス・クライン)
   ['26293', '198114'], // しあわせの魔法 / 丹下桜 ↔ 木之本桜(丹下桜)
+  ['26299', '7118'], // 私がオバさんになっても / 森高千里 ↔ 私がオバさんになっても (シングル・ヴァージョン) / 森高千里
   ['26324', '68716'], // くじびきアンバランス / UNDER17 ↔ UNDER17(桃井はるこ)
+  ['26333', '30203'], // 恋ing / モーニング娘。 ↔ 恋 ING(アイエヌジー) / モーニング娘。
   ['26334', '71482'], // 魔神見参!! / JAM Project ↔ JAM Project featuring 遠藤正明
   ['26405', '7807'], // 翔べ! ガンダム / 池田 鴻 ↔ 池田鴻/フィーリングフリー/ミュージッククリエイション
   ['26505', '102326'], // 星の在り処 / う～み ↔ ファルコム/う～み
@@ -71,7 +83,9 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['26961', '162935'], // STORMBRINGER / JAM Project ↔ JAM Project(...)
   ['27655', '94213'], // ミライボウル / ももいろクローバーZ ↔ ももいろクローバー
   ['27800', '728174'], // Cutie Panther / BiBi ↔ BiBi ～... from μ's～
+  ['27806', '93640'], // Pledge / ガゼット ↔ PLEDGE / the GazettE
   ['27827', '726997'], // Starlog / ChouCho ↔ ChouCho(ちょうちょ)
+  ['27861', '145876'], // CHANGE!!!!(M@STER VER) / 765PRO ALLSTARS ↔ CHANGE!!!!(M@STER VERSION) / 765PRO ALLSTARS
   ['27895', '682372'], // QUESTION / 3年E組うた担 ↔ 3年E組うた担 (...)
   ['27897', '681824'], // もうそうえくすぷれす / 花澤香菜 ↔ 千石撫子(花澤香菜)
   ['27931', '682354'], // SIX SHAME FACES ~今夜も最高!!!!!!~ / トト子(...) ↔ トト子 feat....
@@ -86,9 +100,11 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['28991', '685194'], // EZ DO DANCE -K.O.P. REMIX- / 増田俊樹,武内駿輔 ↔ 仁科カヅキ vs ...
   ['52786', '443607'], // メイド・イン・トキメキ♪ / Ra*bits ↔ Ra*bits(...)
   ['52787', '692333'], // Neo Sanctuary / fine ↔ fine(...)
+  ['52921', '637875'], // BLOOM / TWS(Feat.Ayumu Imazu) ↔ BLOOM (feat. Ayumu Imazu) / TWS
   ['68021', '425517'], // ルナティックDEStiNy / 蒼井翔太 ↔ 如月ルヰ (CV.蒼井翔太)
   ['68042', '439823'], // チカっとチカ千花っ / 小原好美 ↔ 藤原千花(CV.小原好美)
   ['68097', '441786'], // マッチョアネーム? / 石川界人 ↔ 街雄鳴造(CV:石川界人)
+  ['68134', '444504'], // イントゥ・ジ・アンノウン ~心のままに / 松たか子,オーロラ ↔ イントゥ・ジ・アンノウン～心のままに / 松たか子(エルサ)(feat. オーロラ)
   ['68142', '444804'], // 魔法の川の子守唄 / 吉田羊 ↔ 吉田羊(イドゥナ王妃)
   ['68143', '444810'], // わたしにできること / 神田沙也加 ↔ 神田沙也加(アナ)
   ['68153', '444919'], // 1・2・3 / After the Rain ↔ After the Rain [そらる×まふまふ]
@@ -98,10 +114,13 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['68322', '486984'], // 灰色のサーガ / ChouCho ↔ ChouCho(ちょうちょ)
   ['68340', '486983'], // 快眠！安眠！スヤリスト生活 / 水瀬いのり ↔ スヤリス姫(CV.水瀬いのり)
   ['68382', '443457'], // サニードロップ / 山下七海 ↔ 大槻唯(CV:山下七海)
+  ['68384', '488132'], // うやむや(YouTube Ver.) / SixTONES ↔ うやむや / SixTONES
   ['68443', '693032'], // イシュカン・コミュニケーション / ちょろゴンず ↔ ちょろゴンず(...)
   ['68576', '493580'], // I Believe / 狩野翔 ↔ 松野千冬(CV:狩野翔)
   ['68734', '493581'], // Rest In Rampage / 水中雅章 ↔ 場地圭介(CV:水中雅章)
   ['68825', '618291'], // サインはＢ -アイ Solo Ver.- / Ｂ小町アイ ↔ B小町 アイ (CV:高橋李依)
+  ['68889', '487547'], // Life Is Beautiful / The Cat's Whiskers ↔ Life Is Beautiful / The Cat's Whiskers
+  ['68890', '487548'], // FRE△KOUT / BAE ↔ FRE△KOUT / BAE
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -111,7 +130,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 65;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 84;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
@@ -311,9 +330,21 @@ const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
   ['tj', '68064', '685969'], // nth color / 宍戸留美 ↔ nth color / 天羽ジュネ cv. 宍戸留美
   ['tj', '68082', '430428'], // Starved For You / 蒼井翔太,武内駿輔 ↔ Starved For You / 如月ルヰ、大和アレクサンダー(cv.蒼井翔太、武内駿輔)
   ['tj', '68262', '680296'], // 秘密のトワレ / 藍原ことみ ↔ 秘密のトワレ / 一ノ瀬志希(CV 藍原ことみ)
+  // --- R1 audit batch (2026-07-02 owner-reviewed missing-JOYSOUND residuals) ---
+  // Single-vendor TJ/KY-only target rows paired to a JOYSOUND-bearing candidate.
+  // Both-vendor targets (`blog-1184-1/-3`, `blog-487-11`) and candidates that
+  // carry their own conflicting TJ number (`tj-25103↔tj-6579`,
+  // `tj-27098↔blog-523-9`) are outside this mechanism and were left out.
+  ['tj', '28113', '110661'], // Ready!! / 765PRO ALLSTARS ↔ READY!!(M@STER VERSION) / 765PRO ALLSTARS
+  ['tj', '28127', '100139'], // Shiver / ガゼット ↔ SHIVER / the GazettE
+  ['tj', '28456', '7687'], // ペガサス幻想 / MAKE-UP ↔ ペガサス幻想(ファンタジー) / MAKE-UP
+  ['tj', '28513', '24891'], // 深紅 / 島谷ひとみ ↔ 深紅(original version) / 島谷ひとみ
+  ['tj', '28603', '733701'], // snowdrop(春奈るな Ver.) / 春奈るな ↔ snowdrop / 春奈るな
+  ['tj', '68007', '57864'], // wind / Akeboshi ↔ wind(ワインド) / Akeboshi
+  ['tj', '68342', '487541'], // 再会 / LiSA,Uru(produced by Ayase) ↔ 再会 (produced by Ayase) / LiSA
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 138;
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 145;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
   ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
@@ -333,6 +364,11 @@ export const REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS = new Map<
   // the reviewed TJ↔JOY merge (`tj-28704` + JOY 689337). This is an explicit
   // triple, not a general permission to import arbitrary JOY-side TJ/KY cells.
   [reviewedTierFPairKey('ky', '44158', '689337'), { tj: '28704' }],
+  // R1 batch: `再会` / LiSA — the TJ-only target (`tj-68342`) pairs to a blog
+  // row (`blog-153-179`) that already carries a reviewed KY number (`44631`)
+  // alongside the JOY number (`487541`). Explicit triple, not a general
+  // permission to import arbitrary JOY-side TJ/KY cells.
+  [reviewedTierFPairKey('tj', '68342', '487541'), { ky: '44631' }],
 ]);
 
 export function reviewedTierFPairKey(
