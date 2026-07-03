@@ -21,7 +21,7 @@
  * and in the R2 report.
  */
 
-import { type Locale, type MessageKey, isLocale, messages, t } from './i18n.js';
+import { type Locale, type MessageKey, isLocale, messages } from './i18n.js';
 
 /** localStorage key holding the user's chosen locale. */
 export const LOCALE_STORAGE_KEY = 'karaoke-locale';
@@ -33,8 +33,9 @@ const LOCALE_EVENT = 'karaoke:locale-change';
  *  and the default render must stay Korean (R2 spec §2). */
 const DEFAULT_LOCALE: Locale = 'ko';
 
-/** Read the persisted locale, tolerating missing/blocked storage. */
-export function getStoredLocale(): Locale {
+/** Read the persisted locale, tolerating missing/blocked storage. Internal —
+ *  callers use {@link getLocale} (cached) or {@link getServerLocale}. */
+function getStoredLocale(): Locale {
   try {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
     return isLocale(stored) ? stored : DEFAULT_LOCALE;
@@ -96,8 +97,11 @@ export function setLocale(next: Locale): void {
  * footer disclaimer is handled by visibility toggling instead, so all three
  * translations can be present in the a11y-inert markup and swapped without
  * re-parsing text.
+ *
+ * Internal: invoked by {@link setLocale} and the module-init sync below. The
+ * static chrome is never localized from outside this module.
  */
-export function applyChrome(locale: Locale): void {
+function applyChrome(locale: Locale): void {
   if (typeof document === 'undefined') return;
 
   document.documentElement.lang = locale;
@@ -140,7 +144,3 @@ function applyDisclaimer(locale: Locale): void {
 if (typeof document !== 'undefined') {
   applyChrome(getLocale());
 }
-
-// Re-export `t` so consumers can pull the translator and the store from one
-// place if convenient; the canonical source remains ./i18n.
-export { t };
