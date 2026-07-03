@@ -695,6 +695,23 @@ main.results .error {
   border: 0;
 }
 
+/* Offline-fallback hint (T4-6). A quiet, low-emphasis pill on the surface
+   token — it must inform without competing with results or reading as an
+   error. Muted foreground + Body Small sizing keep it subordinate to the
+   result cards below it. */
+.fallback-notice {
+  margin: 0.75rem 0 0 0;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--rui-radius-pill);
+  background: var(--rui-surface);
+  color: var(--rui-fg-muted);
+  font-family: var(--rui-font-body);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  letter-spacing: 0.16px;
+  text-align: center;
+}
+
 .error-state {
   margin-top: 1rem;
   padding: 1rem 1.25rem;
