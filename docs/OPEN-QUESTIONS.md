@@ -153,3 +153,25 @@ production, plus a real JOYSOUND foreign-name-field distribution sample for the
 Hangul/Han code points above. The Phase-2 divergence points are already pinned at
 their current behaviour in the golden gate's Part B2 — flipping those assertions
 is the Phase-2 change spec.
+
+## 8. Offsite full-corpus backup publication (HELD 2026-07-04, owner)
+
+Local retention now keeps only current+previous release (README-ops on the
+NAS root), which makes an offsite corpus copy the only protection against
+NAS loss short of a re-crawl (hours). The pipeline is fully built: upload
+`full-corpus.json` as a GitHub Release asset, then dispatch
+`full-corpus.yml` (trust-no-one re-verification -> manifest PR). What is
+held is the DECISION to publish the ~93 MB corpus as a public release
+asset. Unblocked by: owner approval of public publication (the same
+metadata is already publicly queryable through the live API), or choosing
+a private storage target instead.
+
+## 9. Watchdog alert channel (HELD 2026-07-04, owner)
+
+`karaoke-healthz.timer` (1-min healthz watchdog with auto-restart and a
+10-min restart-loop guard) is live on the host and logs to the journal
+(tag `karaoke-healthz`). No alert channel is wired - a wedged service is
+self-healed but a HUMAN is only informed via journal inspection. Unblocked
+by: owner picking a channel (Telegram / Discord webhook / e-mail / none);
+the hook point is the `logger` calls in
+`/srv/nas/karaoke/healthz-watchdog.sh`.
