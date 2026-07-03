@@ -1,4 +1,5 @@
 import { useRef } from 'preact/hooks';
+import { t } from '../lib/i18n.js';
 
 /**
  * Karaoke-machine vendor keys. UI-only concept (not part of `@karaoke/schema`)
@@ -36,7 +37,7 @@ export function VendorChips({ selected, onToggle }: VendorChipsProps) {
 
   return (
     <fieldset class="chip-group chip-group-vendor">
-      <legend class="chip-group-legend">머신 필터</legend>
+      <legend class="chip-group-legend">{t.vendorFilterLegend}</legend>
       {CHIPS.map((chip, idx) => {
         const isSelected = selected.has(chip.value);
         return (

@@ -100,4 +100,32 @@ describe('TabBar', () => {
     expect(list?.tagName).toBe('DIV');
     expect(list?.getAttribute('aria-label')).toBeTruthy();
   });
+
+  it('applies roving tabindex: active tab is tabindex=0, inactive tab is tabindex=-1', () => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
+    let tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    expect(tabs[0]?.getAttribute('tabindex')).toBe('0');
+    expect(tabs[1]?.getAttribute('tabindex')).toBe('-1');
+
+    // Roving stop follows the active tab.
+    render(<TabBar activeTab="favorites" onChange={() => {}} disabled={false} />, host);
+    tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    expect(tabs[0]?.getAttribute('tabindex')).toBe('-1');
+    expect(tabs[1]?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('wires each tab to the results tabpanel: stable id + aria-controls', () => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<TabBar activeTab="browse" onChange={() => {}} disabled={false} />, host);
+    const tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    // Each tab has a stable id and points at the same single results panel.
+    expect(tabs[0]?.id).toBe('tab-browse');
+    expect(tabs[1]?.id).toBe('tab-favorites');
+    expect(tabs[0]?.getAttribute('aria-controls')).toBe('results-tabpanel');
+    expect(tabs[1]?.getAttribute('aria-controls')).toBe('results-tabpanel');
+  });
 });

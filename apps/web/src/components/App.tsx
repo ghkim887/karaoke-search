@@ -7,6 +7,7 @@ import { useSearchResults } from '../hooks/useSearchResults.js';
 import { createSearchBackend } from '../lib/backend.js';
 import { DEBOUNCE_MS } from '../lib/constants.js';
 import { useFavorites } from '../lib/favorites.js';
+import { t } from '../lib/i18n.js';
 import { EmptyState } from './EmptyState.js';
 import { ErrorState } from './ErrorState.js';
 import { FavoritesEmpty } from './FavoritesEmpty.js';
@@ -14,7 +15,7 @@ import { NoResults } from './NoResults.js';
 import { ResultList } from './ResultList.js';
 import { SearchBox } from './SearchBox.js';
 import type { TabId } from './TabBar.js';
-import { TabBar } from './TabBar.js';
+import { TAB_PANEL_ID, TabBar, tabButtonId } from './TabBar.js';
 import type { Vendor } from './VendorChips.js';
 import { VendorChips } from './VendorChips.js';
 
@@ -153,10 +154,10 @@ export function App({ songCount }: AppProps) {
   // the result count changes — not on every keystroke before debounce settles.
   const resultCount = results.length;
   const resultStatusLabel = browseSearchPending
-    ? '검색 중 / Searching'
+    ? t.searching
     : browseSearchFailed || favoritesFailed
-      ? '오류가 발생했습니다 / An error occurred'
-      : `${resultCount}건 / ${resultCount} results`;
+      ? t.errorOccurred
+      : t.resultCount(resultCount);
 
   // Build-time record count, formatted with thousands separators (en-US to
   // match the prior hard-coded "26,401" format).
@@ -164,7 +165,7 @@ export function App({ songCount }: AppProps) {
 
   const loadingNode = (
     <p class="loading">
-      {songCountDisplay}곡 검색 인덱스 빌드 중 / Building {songCountDisplay}-song index
+      {t.buildingIndex(songCountDisplay)}
       <span class="loading-dot" aria-hidden="true">
         .
       </span>
@@ -179,7 +180,7 @@ export function App({ songCount }: AppProps) {
 
   const searchLoadingNode = (
     <p class="search-loading">
-      검색 중 / Searching
+      {t.searching}
       <span class="loading-dot" aria-hidden="true">
         .
       </span>
@@ -254,23 +255,13 @@ export function App({ songCount }: AppProps) {
       case 'favorites-empty':
         return <FavoritesEmpty />;
       case 'favorites-error':
-        return (
-          <ErrorState
-            message="즐겨찾기를 불러오지 못했습니다 / Couldn't load favorites"
-            onRetry={handleRetry}
-          />
-        );
+        return <ErrorState message={t.favoritesLoadFailed} onRetry={handleRetry} />;
       case 'browse-empty':
         return <EmptyState onPickArtist={handlePickArtist} />;
       case 'browse-searching':
         return searchLoadingNode;
       case 'browse-error':
-        return (
-          <ErrorState
-            message="검색 요청이 실패했습니다 / The search request failed"
-            onRetry={handleRetry}
-          />
-        );
+        return <ErrorState message={t.searchRequestFailed} onRetry={handleRetry} />;
       case 'favorites':
       case 'browse':
         // Identical render output post-`results` computation; the candidate-
@@ -295,7 +286,12 @@ export function App({ songCount }: AppProps) {
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
         {resultStatusLabel}
       </span>
-      {renderBody()}
+      {/* The single results region is the tabpanel controlled by both tabs.
+          `aria-labelledby` tracks the active tab so the panel's accessible
+          name follows the current view. */}
+      <div id={TAB_PANEL_ID} role="tabpanel" aria-labelledby={tabButtonId(activeTab)}>
+        {renderBody()}
+      </div>
     </main>
   );
 }
