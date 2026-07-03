@@ -6,7 +6,9 @@ import type { SearchHintInput } from './hints.js';
 import { createSongDatabase, openSongDatabase } from './schema.js';
 import type { SongDatabase } from './schema.js';
 import {
+  GRAM1_DF_CAP,
   groupResolvedHints,
+  pruneHighDfGram1Tokens,
   recalculateAllTokenStats,
   resolveSearchHints,
 } from './search-index.js';
@@ -51,6 +53,11 @@ export function importSongs(
     });
 
     recalculateAllTokenStats(db, records.length);
+    // Prune the low-relevance gram1 long tail once df/idf are final, before
+    // ANALYZE, so the planner statistics below are built over the pruned table.
+    // Deterministic set-based deletes over the freshly-computed df, so the same
+    // corpus always yields the same pruned database.
+    pruneHighDfGram1Tokens(db, GRAM1_DF_CAP);
 
     db.exec('DELETE FROM songs WHERE id NOT IN (SELECT id FROM temp_import_song_ids)');
     db.exec('DELETE FROM temp_import_song_ids');

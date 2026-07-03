@@ -90,6 +90,33 @@ interface SearchTokenStatSourceRow {
   df: number;
 }
 
+/**
+ * Document-frequency cap for `gram1` (single non-ASCII character) tokens.
+ *
+ * `gram1` postings are consulted by the worker for ONE query shape only: a
+ * 1-character non-ASCII query (see apps/worker `buildSearchQueryTokens`,
+ * `compactLength === 1`). For an ultra-common character — Japanese particles
+ * like の/い, high-frequency kanji, common Hangul syllables — the posting list
+ * spans thousands of songs sharing a near-flat idf, so the LIMIT-truncated
+ * result is an arbitrary low-relevance long tail rather than a signal. The
+ * exact-text tier ranks strictly above gram1, so the top-1 a user sees for such
+ * a query is unchanged whether or not these postings exist.
+ *
+ * I3 investigation (109-query top-20 recall harness, see scratchpad/i3): capping
+ * gram1 at df>500 removed ~66% of gram1 postings and ~8.4% of DB bytes with ZERO
+ * relevant-recall loss — top-1 stayed stable on every affected query and only the
+ * arbitrary long tail of df>500 characters shrank. Tighter caps (df>200, df>100)
+ * also dropped genuinely useful mid-frequency characters (e.g. 恋/光/夏/空 sit at
+ * or below 500 and MUST stay searchable), so 500 is the chosen floor.
+ *
+ * CHANGING THIS VALUE moves worker results for any 1-character query whose
+ * character's df sits between the old and new cap. The search-parity baseline
+ * (apps/web/src/lib/__snapshots__/search-parity.baseline.json) is frozen against
+ * the current cap, so it MUST be regenerated (`UPDATE_PARITY_SNAPSHOT=1 …`, see
+ * search-parity.golden.test.ts) and the diff reviewed after any change here.
+ */
+export const GRAM1_DF_CAP = 500;
+
 export function searchTextInputs(record: SongRecord): SearchTextInput[] {
   const inputs: SearchTextInput[] = [
     {
@@ -412,6 +439,70 @@ export function recalculateAllTokenStats(db: SongDatabase, songCount: number): n
     insert.run(row.kind, row.token, df, tokenIdfScaled(songCount, df));
   }
   return rows.length;
+}
+
+/**
+ * Delete every `gram1` token whose document frequency exceeds `cap` from BOTH
+ * `search_tokens` (the postings) and `search_token_stats` (the df/idf row), so a
+ * pruned token is absent everywhere. Keeping the two tables in lock-step is the
+ * invariant that matters: df is derived by COUNT-ing `search_tokens`, so a token
+ * left with orphaned postings but no stat row (or vice versa) would let a later
+ * recalculation resurrect a wrong df. See {@link GRAM1_DF_CAP} for the rationale.
+ *
+ * Reads df from `search_token_stats`, which the caller MUST have refreshed
+ * (`recalculateAllTokenStats` / `recalculateAffectedTokenStats`) immediately
+ * before calling. Omit `affectedTokenKeys` to sweep the whole corpus (the full
+ * {@link importSongs} path). Pass it to restrict pruning to the gram1 tokens a
+ * delta patch actually touched (the incremental path): this is deliberately
+ * ONE-DIRECTIONAL — a delta only ever prunes newly-over-cap tokens, and a token
+ * pruned by a past build whose df has since fallen back below the cap is NOT
+ * restored (its postings were already deleted and the delta patcher never
+ * rebuilds unaffected songs). That drift is bounded by the release cadence: the
+ * served DB is a fresh full build each release, which reprunes from scratch.
+ *
+ * Returns the number of gram1 tokens pruned.
+ */
+export function pruneHighDfGram1Tokens(
+  db: SongDatabase,
+  cap: number,
+  affectedTokenKeys?: ReadonlySet<string>,
+): number {
+  const tokens = collectHighDfGram1Tokens(db, cap, affectedTokenKeys);
+  const deletePostings = db.prepare("DELETE FROM search_tokens WHERE kind = 'gram1' AND token = ?");
+  const deleteStat = db.prepare(
+    "DELETE FROM search_token_stats WHERE kind = 'gram1' AND token = ?",
+  );
+  for (const token of tokens) {
+    deletePostings.run(token);
+    deleteStat.run(token);
+  }
+  return tokens.length;
+}
+
+function collectHighDfGram1Tokens(
+  db: SongDatabase,
+  cap: number,
+  affectedTokenKeys?: ReadonlySet<string>,
+): string[] {
+  if (affectedTokenKeys === undefined) {
+    const rows = db
+      .prepare("SELECT token FROM search_token_stats WHERE kind = 'gram1' AND df > ?")
+      .all(cap) as unknown as Array<{ token: string }>;
+    return rows.map((row) => row.token);
+  }
+  const getDf = db.prepare("SELECT df FROM search_token_stats WHERE kind = 'gram1' AND token = ?");
+  const tokens: string[] = [];
+  for (const key of affectedTokenKeys) {
+    const { kind, token } = parseTokenStatKey(key);
+    if (kind !== 'gram1') {
+      continue;
+    }
+    const row = getDf.get(token) as { df: number } | undefined;
+    if (row !== undefined && Number(row.df) > cap) {
+      tokens.push(token);
+    }
+  }
+  return tokens;
 }
 
 function tokenIdfScaled(songCount: number, df: number): number {
