@@ -15,7 +15,7 @@
  */
 
 /** Join a Korean and an English fragment with the canonical ` / ` separator. */
-export function bilingual(ko: string, en: string): string {
+function bilingual(ko: string, en: string): string {
   return `${ko} / ${en}`;
 }
 

@@ -23,16 +23,21 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - name: Dead-code / unused-dependency scan (knip)
-        # Non-blocking to start (continue-on-error): knip reports unused files,
-        # exports and dependencies across the workspace but must not fail the
-        # build yet. The full report is copied to the job summary so findings are
+        # Required gate: knip's exit code fails the build on any unused file,
+        # export or dependency across the workspace (report is now clean).
+        # continue-on-error was dropped once the report was reviewed and trusted
+        # (T5-A); the step already preserves knip's exit code via PIPESTATUS +
+        # `exit "$knip_exit"`, so removing continue-on-error alone promotes it.
+        # The full report is still copied to the job summary so findings are
         # visible without opening raw logs. knip's built-in vitest / playwright /
         # astro / typescript plugins already recognise the per-package
         # vitest.config.ts, playwright.config.ts, astro.config.mjs and
         # tsconfig.typecheck.json files, so knip.json needs no bespoke entry
-        # globs for them. Once the report is reviewed and trusted, drop
-        # continue-on-error to promote this to a required gate.
-        continue-on-error: true
+        # globs for them. apps/web/functions/**/*.js are declared as knip entry
+        # points in knip.json — they are the Cloudflare Pages Functions live
+        # production entry (karaokedb.pages.dev /api + /healthz) and so are
+        # unreachable from the import graph, which would otherwise flag them as
+        # unused files.
         run: |
           report="$RUNNER_TEMP/knip-report.txt"
           set +e
