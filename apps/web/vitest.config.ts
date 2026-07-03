@@ -12,6 +12,13 @@ export default defineConfig({
       '@karaoke/search': fileURLToPath(
         new URL('../../packages/search/src/index.ts', import.meta.url),
       ),
+      // Resolved from source (no prebuilt dist/) so the cross-path search-parity
+      // gate (search-parity.golden.test.ts) can drive the worker's SQLite path
+      // and build an in-memory corpus. Test-only; no production module imports these.
+      '@karaoke/data-store': fileURLToPath(
+        new URL('../../packages/data-store/src/index.ts', import.meta.url),
+      ),
+      '@karaoke/worker': fileURLToPath(new URL('../worker/src/index.ts', import.meta.url)),
     },
   },
   test: {

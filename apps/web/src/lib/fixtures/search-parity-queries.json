@@ -1,0 +1,387 @@
+{
+  "_readme": "Golden query fixture for the client-MiniSearch vs worker-SQLite search-parity gate (T4-2). Each entry: id (stable key into the baseline snapshot), category, query (raw user text), optional vendors (vendor-chip filter, mirrors the production union filter), and note (why this query was chosen). Consumed by search-parity.golden.test.ts. Queries are chosen to exercise real usage across scripts, lengths, karaoke numbers, vendor filters, and known-divergent paths (numbers / Hangul initials / n-gram recall exist only on the worker path). Adding/removing a query requires regenerating the baseline snapshot (see search-parity.golden.test.ts header).",
+  "queries": [
+    {
+      "id": "jp-full-yoruni",
+      "category": "jp-title-full",
+      "query": "夜に駆ける",
+      "note": "Iconic kanji+kana title (YOASOBI). Exact full-title recall on both paths."
+    },
+    {
+      "id": "jp-full-gurenge",
+      "category": "jp-title-full",
+      "query": "紅蓮華",
+      "note": "Pure-kanji title (LiSA). Worker relies on gram tokens; MiniSearch on term/prefix."
+    },
+    {
+      "id": "jp-full-byoshin",
+      "category": "jp-title-full",
+      "query": "秒針を噛む",
+      "note": "Kanji+kana title (ZUTOMAYO). Multi-word tokenization on both paths."
+    },
+    {
+      "id": "jp-full-yasashii",
+      "category": "jp-title-full",
+      "query": "優しい歌",
+      "note": "Common-word kanji title (Mr.Children). Tests ranking under many near-matches."
+    },
+    {
+      "id": "jp-full-soramo",
+      "category": "jp-title-full",
+      "query": "空も飛べるはず",
+      "note": "Longer kanji+kana title (Spitz). Exercises longer multi-token queries."
+    },
+    {
+      "id": "jp-full-ageha",
+      "category": "jp-title-full",
+      "query": "アゲハ蝶",
+      "note": "Katakana+kanji title (Porno Graffitti). Mixed-script single word."
+    },
+
+    {
+      "id": "jp-part-mayonaka",
+      "category": "jp-title-partial",
+      "query": "真夜中",
+      "note": "Kanji substring shared by many titles/artists. Prefix vs gram recall diverge."
+    },
+    {
+      "id": "jp-part-kakeru",
+      "category": "jp-title-partial",
+      "query": "駆ける",
+      "note": "Kanji+kana verb fragment. Partial-title recall stress."
+    },
+    {
+      "id": "jp-part-tenshi",
+      "category": "jp-title-partial",
+      "query": "天使",
+      "note": "High-frequency 2-kanji word; large candidate set tests ranking stability."
+    },
+    {
+      "id": "jp-part-koi",
+      "category": "jp-title-partial",
+      "query": "恋",
+      "note": "Single very common kanji; broad recall, order-sensitive."
+    },
+
+    {
+      "id": "jp-kana-ussewa",
+      "category": "jp-title-kana",
+      "query": "うっせぇわ",
+      "note": "Hiragana title with small kana (Ado). Exact kana recall."
+    },
+    {
+      "id": "jp-kana-dokidoki",
+      "category": "jp-title-kana",
+      "query": "ドキドキ",
+      "note": "Katakana reduplication (JUDY AND MARY). Katakana-vs-hiragana normalization."
+    },
+    {
+      "id": "jp-kana-cherry",
+      "category": "jp-title-kana",
+      "query": "チェリー",
+      "note": "Katakana loanword with chōonpu (Spitz). Long-vowel handling."
+    },
+    {
+      "id": "jp-kana-saudade",
+      "category": "jp-title-kana",
+      "query": "サウダージ",
+      "note": "Katakana loanword (Porno Graffitti). Voiced-mark + chōonpu."
+    },
+    {
+      "id": "jp-kana-robinson",
+      "category": "jp-title-kana",
+      "query": "ロビンソン",
+      "note": "Katakana name title (Spitz). Single distinctive katakana token."
+    },
+    {
+      "id": "jp-kana-sayonarabus",
+      "category": "jp-title-kana",
+      "query": "サヨナラバス",
+      "note": "Compound katakana title (Yuzu). Word-splitting differences."
+    },
+
+    {
+      "id": "ko-full-hongryeonhwa",
+      "category": "ko-title-full",
+      "query": "홍련화",
+      "note": "Korean title_ko of 紅蓮華. Hangul syllable term match."
+    },
+    {
+      "id": "ko-full-bameul",
+      "category": "ko-title-full",
+      "query": "밤을 달리다",
+      "note": "Korean title_ko of 夜に駆ける. Multi-word Hangul."
+    },
+    {
+      "id": "ko-full-sikkeureowo",
+      "category": "ko-title-full",
+      "query": "시끄러워",
+      "note": "Korean title_ko of うっせぇわ. Single Hangul word."
+    },
+    {
+      "id": "ko-full-chochim",
+      "category": "ko-title-full",
+      "query": "초침을 깨물다",
+      "note": "Korean title_ko of 秒針を噛む. Longer Hangul phrase."
+    },
+    {
+      "id": "ko-full-sojunghan",
+      "category": "ko-title-full",
+      "query": "소중한 사람",
+      "note": "Korean title_ko (たいせつなひと). Common Hangul words."
+    },
+
+    {
+      "id": "ko-part-sarang",
+      "category": "ko-title-partial",
+      "query": "사랑",
+      "note": "Very common Hangul word ('love'); huge candidate set, ranking stress."
+    },
+    {
+      "id": "ko-part-dallida",
+      "category": "ko-title-partial",
+      "query": "달리다",
+      "note": "Hangul verb fragment; partial-title recall."
+    },
+    {
+      "id": "ko-part-norae",
+      "category": "ko-title-partial",
+      "query": "노래",
+      "note": "Common Hangul word ('song'); broad recall."
+    },
+
+    {
+      "id": "romaji-dokidoki",
+      "category": "romaji",
+      "query": "dokidoki",
+      "note": "Romaji of ドキドキ; exercises expandSearchQuery romaji→kana on both paths."
+    },
+    {
+      "id": "romaji-robinson",
+      "category": "romaji",
+      "query": "robinson",
+      "note": "Romaji of ロビンソン; latin→katakana expansion recall."
+    },
+    {
+      "id": "romaji-sayonara",
+      "category": "romaji",
+      "query": "sayonara",
+      "note": "Romaji fragment; latin→kana expansion, many candidates."
+    },
+    {
+      "id": "romaji-sakura",
+      "category": "romaji",
+      "query": "sakura",
+      "note": "Romaji likely matching さくら/サクラ titles; expansion recall."
+    },
+    {
+      "id": "romaji-cherry",
+      "category": "romaji",
+      "query": "cherry",
+      "note": "English word doubling as romaji; latin term + kana expansion interplay."
+    },
+
+    {
+      "id": "hangul-initials-oosb",
+      "category": "hangul-initials",
+      "query": "ㅇㅅㅂ",
+      "note": "Choseong initials (요아소비/YOASOBI). Worker 'initial' tokens only; MiniSearch has none — known divergence."
+    },
+    {
+      "id": "hangul-initials-hrh",
+      "category": "hangul-initials",
+      "query": "ㅎㄹㅎ",
+      "note": "Choseong of 홍련화. Worker-only initial recall; MiniSearch empty."
+    },
+    {
+      "id": "hangul-initials-skrw",
+      "category": "hangul-initials",
+      "query": "ㅅㅋㄹㅇ",
+      "note": "Longer choseong string; worker prefix-initial path, MiniSearch empty."
+    },
+
+    {
+      "id": "artist-yoasobi",
+      "category": "artist",
+      "query": "YOASOBI",
+      "note": "Latin artist name; artist-field boost + full catalog recall."
+    },
+    {
+      "id": "artist-alias-zutomayo",
+      "category": "artist-alias",
+      "query": "ZUTOMAYO",
+      "note": "Alias resolving to ずっと真夜中でいいのに。; alias-field indexing on both paths."
+    },
+    {
+      "id": "artist-alias-spitz",
+      "category": "artist-alias",
+      "query": "Spitz",
+      "note": "Romaji alias of スピッツ; alias recall + ordering differences."
+    },
+    {
+      "id": "artist-alias-judyandmary",
+      "category": "artist-alias",
+      "query": "Judy and Mary",
+      "note": "Multi-word alias of JUDY AND MARY; multi-token alias match."
+    },
+    {
+      "id": "artist-yonezu",
+      "category": "artist",
+      "query": "米津玄師",
+      "note": "Kanji artist name; large single-artist catalog, ranking stability."
+    },
+    {
+      "id": "artist-ko-yonezu",
+      "category": "artist",
+      "query": "요네즈 켄시",
+      "note": "Korean artist_ko of 米津玄師; Hangul artist recall."
+    },
+    {
+      "id": "artist-lisa",
+      "category": "artist",
+      "query": "LiSA",
+      "note": "Short mixed-case artist; casefold + very large candidate set."
+    },
+    {
+      "id": "artist-utada",
+      "category": "artist",
+      "query": "宇多田ヒカル",
+      "note": "Kanji+katakana artist name; mixed-script artist recall."
+    },
+
+    {
+      "id": "short-hikari",
+      "category": "short-query",
+      "query": "光",
+      "note": "Single kanji query; worker gram1 vs MiniSearch prefix on 1 char."
+    },
+    {
+      "id": "short-natsu",
+      "category": "short-query",
+      "query": "夏",
+      "note": "Single common kanji; broad recall, order-sensitive top-10."
+    },
+    {
+      "id": "short-sora",
+      "category": "short-query",
+      "query": "空",
+      "note": "Single kanji; gram1 path vs MiniSearch."
+    },
+    {
+      "id": "short-ai",
+      "category": "short-query",
+      "query": "ai",
+      "note": "2-char latin; extremely broad, MiniSearch fuzzy/prefix vs worker term/prefix."
+    },
+    {
+      "id": "short-love",
+      "category": "short-query",
+      "query": "love",
+      "note": "Short common English word; heavy overlap set, ranking stress."
+    },
+    {
+      "id": "short-jamo-g",
+      "category": "short-query",
+      "query": "ㄱ",
+      "note": "Single Hangul jamo; below worker's 2-char initial floor — recall-edge case."
+    },
+
+    {
+      "id": "num-tj-full",
+      "category": "karaoke-number",
+      "query": "68381",
+      "note": "Exact TJ number for 夜に駆ける. Worker resolves; MiniSearch does not index numbers — known divergence."
+    },
+    {
+      "id": "num-joy-full",
+      "category": "karaoke-number",
+      "query": "446181",
+      "note": "Exact JOYSOUND number for 夜に駆ける. Worker-only number match."
+    },
+    {
+      "id": "num-ky-full",
+      "category": "karaoke-number",
+      "query": "44656",
+      "note": "Exact KY number for 夜に駆ける. Worker-only number match."
+    },
+    {
+      "id": "num-tj-prefixed",
+      "category": "karaoke-number",
+      "query": "tj68381",
+      "note": "Provider-prefixed number query; worker parseKaraokeNumberQuery path."
+    },
+    {
+      "id": "num-joy-prefixed",
+      "category": "karaoke-number",
+      "query": "joysound446181",
+      "note": "Provider-prefixed JOYSOUND number; worker provider-scoped number path."
+    },
+    {
+      "id": "num-short-prefix",
+      "category": "karaoke-number",
+      "query": "684",
+      "note": "Short numeric prefix; worker number-prefix recall, MiniSearch treats as text."
+    },
+    {
+      "id": "num-tj-cherry",
+      "category": "karaoke-number",
+      "query": "25008",
+      "note": "Exact TJ number for チェリー; second worker-only number anchor."
+    },
+
+    {
+      "id": "vendor-love-joysound",
+      "category": "vendor-filter",
+      "query": "love",
+      "vendors": ["joysound"],
+      "note": "Common term + single-vendor filter; both paths apply an OR vendor filter."
+    },
+    {
+      "id": "vendor-yoasobi-tj",
+      "category": "vendor-filter",
+      "query": "YOASOBI",
+      "vendors": ["tj"],
+      "note": "Artist + TJ filter; only TJ-numbered records survive on both paths."
+    },
+    {
+      "id": "vendor-gurenge-ky",
+      "category": "vendor-filter",
+      "query": "紅蓮華",
+      "vendors": ["ky"],
+      "note": "Title + KY filter; narrows to the KY-numbered record."
+    },
+    {
+      "id": "vendor-sarang-tjky",
+      "category": "vendor-filter",
+      "query": "사랑",
+      "vendors": ["tj", "ky"],
+      "note": "Common Hangul word + multi-vendor UNION filter (tj OR ky)."
+    },
+    {
+      "id": "vendor-yonezu-joysound",
+      "category": "vendor-filter",
+      "query": "米津玄師",
+      "vendors": ["joysound"],
+      "note": "Kanji artist + JOYSOUND filter; artist catalog narrowed by vendor."
+    },
+
+    {
+      "id": "empty-latin-gibberish",
+      "category": "no-result",
+      "query": "zzzzxqvxyz",
+      "note": "ASCII gibberish; no term/prefix/gram match on either path — expected empty=empty parity."
+    },
+    {
+      "id": "empty-latin-keyboard",
+      "category": "no-result",
+      "query": "qwertyuiopasdfghjkl",
+      "note": "Long ASCII keyboard mash; ASCII has no worker gram tokens, so both empty."
+    },
+    {
+      "id": "empty-mixed-absent",
+      "category": "no-result",
+      "query": "zzzq존재없는곡목xyz",
+      "note": "Absent mixed-script string; worker n-gram recall may still fire — captures a real empty-vs-nonempty divergence if present."
+    }
+  ]
+}

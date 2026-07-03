@@ -42,6 +42,12 @@ importers:
       '@axe-core/playwright':
         specifier: ^4.11.2
         version: 4.11.2(playwright-core@1.60.0)
+      '@karaoke/data-store':
+        specifier: workspace:*
+        version: link:../../packages/data-store
+      '@karaoke/worker':
+        specifier: workspace:*
+        version: link:../worker
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
