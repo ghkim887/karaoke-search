@@ -111,3 +111,45 @@ scan false-positives on ~2k kanji-titled Japanese songs and is the wrong
 tool). Grow the catalog-anomaly ID list in `scripts/drop-artist-leaks.mjs` as
 anomalies surface; revisit list structure if the Chinese list grows past ~20
 entries (see PROJECT-KNOWLEDGE, drop lists).
+
+## 7. JOYSOUND classifier safe-predicate unification — Phase 2 (deferred)
+
+The JOYSOUND classifier
+(`packages/crawler/src/adapters/joysound-official/classifier.ts`) historically
+carried its own script-detection regexes that drifted from the shared
+`@karaoke/search` predicates. T5-D unified this in two phases, gated by a golden
+regression harness
+(`packages/crawler/test/adapters/joysound-official/classifierGolden.test.ts`).
+
+**Phase 1 (DONE, T5-D):** the three *safe* predicates were swapped to the shared
+`@karaoke/search` functions —
+- `RE_ASCII_LETTER` → `hasLatinLetter` (byte-identical, zero behaviour change);
+- `hasKanaScript` (admit path) → `hasKana`;
+- `RE_KANA` (foreign-name echo path) → `hasKana`.
+
+The only behavioural effect is a strict *widening* of kana recognition, verified
+by the golden gate's Part B1 (change spec) and the always-on Part C differential:
+Katakana Phonetic Extensions (U+31F0–31FF) now admit as `admit-jpop-kana`, and a
+Han foreign-name whose only kana is half-width (U+FF66–FF9F) or phonetic-ext is
+now recognised as a Japanese-title echo (suppressing `foreign-chinese`). Both
+are DROP→ADMIT flips, so genuine-JP dropout is structurally impossible. A full
+`songs.json` differential (98,772 distinct strings, current corpus) showed **0
+flips** in either direction for all three predicates — the widening is latent
+for today's catalog and only affects future rows carrying those code points.
+
+**Phase 2 (deferred — proceed after the golden gate has soaked one crawl
+cycle):** unify the remaining three predicates, which sit on ADMIT/DROP-critical
+paths whose real JOYSOUND foreign-name distribution is not yet validated:
+- `RE_HANGUL` → `hasHangul` (`\p{Script=Hangul}`): adds half-width Hangul and
+  Jamo Extended-A/B → widens the `foreign-korean` DROP directly;
+- `RE_HAN_FOREIGN` → `hasHan` (`\p{Script=Han}`): adds supplementary-plane Han →
+  changes the `foreign-chinese` DROP directly;
+- `RE_HAN` (drop-reason split) → `hasHan`: adds CJK-compat / supplementary-plane
+  Han and drops the Yijing-hexagram block → shifts `drop-han-only` vs
+  `drop-no-signal`.
+
+Phase 2 is unblocked by: a fresh crawl cycle confirming the Phase-1 gate holds in
+production, plus a real JOYSOUND foreign-name-field distribution sample for the
+Hangul/Han code points above. The Phase-2 divergence points are already pinned at
+their current behaviour in the golden gate's Part B2 — flipping those assertions
+is the Phase-2 change spec.
