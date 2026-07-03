@@ -8,7 +8,7 @@ import {
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createKaraokeSearchNodeServer, isCliEntrypoint } from '../src/node-server.js';
-import { SqliteD1Database } from '../src/sqlite-adapter.js';
+import { SqliteSearchDatabase } from '../src/sqlite-adapter.js';
 
 const openDatabases: SongDatabase[] = [];
 const servers: Awaited<ReturnType<typeof listenOnEphemeralPort>>[] = [];
@@ -47,7 +47,7 @@ describe('Node self-host CLI entrypoint', () => {
 describe('Node self-host API server', () => {
   it('serves health and API search over HTTP using the shared Worker handler', async () => {
     const sqlite = seedSqlite();
-    const server = createKaraokeSearchNodeServer({ db: new SqliteD1Database(sqlite) });
+    const server = createKaraokeSearchNodeServer({ db: new SqliteSearchDatabase(sqlite) });
     const listener = await listenOnEphemeralPort(server);
     servers.push(listener);
 
@@ -63,7 +63,7 @@ describe('Node self-host API server', () => {
   it('does not trust spoofed forwarded IP headers for rate limiting by default', async () => {
     const sqlite = seedSqlite();
     const server = createKaraokeSearchNodeServer({
-      db: new SqliteD1Database(sqlite),
+      db: new SqliteSearchDatabase(sqlite),
       rateLimit: { windowMs: 60_000, maxRequests: 1 },
     });
     const listener = await listenOnEphemeralPort(server);
@@ -82,7 +82,7 @@ describe('Node self-host API server', () => {
   it('allows Chrome Private Network Access preflights for the pinned Pages origin', async () => {
     const sqlite = seedSqlite();
     const server = createKaraokeSearchNodeServer({
-      db: new SqliteD1Database(sqlite),
+      db: new SqliteSearchDatabase(sqlite),
       corsOrigin: 'https://karaokedb.pages.dev',
     });
     const listener = await listenOnEphemeralPort(server);
@@ -107,7 +107,7 @@ describe('Node self-host API server', () => {
   it('can restrict CORS origin and rate-limit repeated clients', async () => {
     const sqlite = seedSqlite();
     const server = createKaraokeSearchNodeServer({
-      db: new SqliteD1Database(sqlite),
+      db: new SqliteSearchDatabase(sqlite),
       corsOrigin: 'https://karaokedb.pages.dev',
       rateLimit: { windowMs: 60_000, maxRequests: 1 },
     });

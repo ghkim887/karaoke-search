@@ -11,11 +11,12 @@
     "build": "tsc -b && node ../../scripts/export-drop-list.mjs && node ../../scripts/export-clustering-rules.mjs",
     "prestart": "tsc -b",
     "start": "node ./dist/cli.js",
-    "test": "tsc -b && vitest run",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.typecheck.json"
   },
   "dependencies": {
     "@karaoke/schema": "workspace:*",
+    "@karaoke/search": "workspace:*",
     "cheerio": "^1.0.0",
     "robots-parser": "^3.0.1",
     "undici": "^6.21.0"

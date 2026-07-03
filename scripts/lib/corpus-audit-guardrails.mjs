@@ -1,6 +1,6 @@
 import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { isCliInvocation } from './cli.mjs';
 
 const SAMPLE_LIMIT = 20;
 const RE_HANGUL = /[\uac00-\ud7af]/u;
@@ -1930,7 +1930,7 @@ export function runCli(argv = process.argv.slice(2)) {
   return report;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   try {
     runCli();
   } catch (err) {

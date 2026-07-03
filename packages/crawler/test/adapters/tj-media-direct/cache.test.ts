@@ -178,6 +178,46 @@ describe('saveCache', () => {
     expect(reloaded.artistNationalityMap.yoasobi?.votes.JPN).toBe(5);
   });
 
+  it('concurrent writers never leave a torn cache file (unique tmp per write)', async () => {
+    // A shared `${path}.tmp` lets overlapping writers write the SAME tmp file
+    // simultaneously, so a rename can publish a half-written interleave of two
+    // payloads. The pid+uuid tmp name makes each writer's tmp private, so the
+    // file that lands is always exactly one writer's complete, valid payload.
+    //
+    // Note: on Windows two renames onto the same existing path can race to
+    // EPERM for the loser — that's a platform rename quirk (shared by http.ts),
+    // NOT a tmp collision, so we tolerate it here. The invariant under test is
+    // "whatever lands is complete and parseable", which unique tmp guarantees.
+    const path = join(dir, 'cache.json');
+    const makeCache = (title: string) => {
+      const c = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+      c.proEnrichmentMap['1'] = {
+        nationalcode: 'JPN',
+        sortTitleKo: title,
+        sortSongKo: null,
+        subTitle: null,
+        publishdate: null,
+        lastSeen: '2026-04-29T00:00:00.000Z',
+      };
+      return c;
+    };
+    const tolerateRenameRace = (p: Promise<void>) =>
+      p.catch((err: NodeJS.ErrnoException) => {
+        if (err.code === 'EPERM' || err.code === 'ENOENT') return; // Windows rename race
+        throw err;
+      });
+    await Promise.all([
+      tolerateRenameRace(saveCache(path, makeCache('a'))),
+      tolerateRenameRace(saveCache(path, makeCache('b'))),
+      tolerateRenameRace(saveCache(path, makeCache('c'))),
+    ]);
+    // At least one rename won, so the file exists, parses cleanly, and carries a
+    // complete entry — never a truncated interleave of two writers' payloads.
+    const reloaded = await loadCache(path);
+    expect(['a', 'b', 'c']).toContain(reloaded.proEnrichmentMap['1']?.sortTitleKo);
+    expect(reloaded.version).toBe(CACHE_VERSION);
+  });
+
   it('does not let extras shadow the PR-1 fields', async () => {
     const path = join(dir, 'cache.json');
     const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));

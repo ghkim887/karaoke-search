@@ -44,6 +44,8 @@ import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
+import { loadCorpus } from './lib/corpus.mjs';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -78,7 +80,7 @@ async function main() {
 
   const sizeBefore = statSync(CACHE_PATH).size;
 
-  const songs = JSON.parse(readFileSync(SONGS_PATH, 'utf8'));
+  const songs = loadCorpus(SONGS_PATH);
   const cache = JSON.parse(readFileSync(CACHE_PATH, 'utf8'));
 
   if (
@@ -141,7 +143,9 @@ async function main() {
   console.log(`  size_after_mb:     ${(sizeAfter / 1024 / 1024).toFixed(2)} MB`);
 }
 
-main().catch((err) => {
-  console.error('prune-artist-nationality-cache failed:', err);
-  process.exit(1);
-});
+if (isCliInvocation(import.meta.url)) {
+  main().catch((err) => {
+    console.error('prune-artist-nationality-cache failed:', err);
+    process.exit(1);
+  });
+}

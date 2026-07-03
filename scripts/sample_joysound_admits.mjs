@@ -29,11 +29,11 @@
  *   node scripts/sample_joysound_admits.mjs <decision-log.jsonl> <songs.json> <out-dir>
  */
 
-import { createReadStream, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
+import { streamJsonl } from './lib/jsonl.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -118,14 +118,7 @@ async function readDecisionLog(path) {
   // ABSENT from the listing entirely?).
   const dropNumbers = new Map();
 
-  const rl = createInterface({
-    input: createReadStream(path, { encoding: 'utf-8' }),
-    crlfDelay: Number.POSITIVE_INFINITY,
-  });
-
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    const row = JSON.parse(line);
+  for await (const row of streamJsonl(path)) {
     byDecision[row.decision] = (byDecision[row.decision] ?? 0) + 1;
     if (row.decision === 'admit') {
       admitReasonCounts[row.reason] = (admitReasonCounts[row.reason] ?? 0) + 1;

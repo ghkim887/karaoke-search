@@ -28,11 +28,20 @@
  * touch reviewedJoysoundOverrides.ts.
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import {
+  chunkRecords,
+  parseFlag,
+  readJsonChunks,
+  writeChunkInputs as writeChunkInputFiles,
+  writeCsvWithBom,
+} from './lib/agent-chunks.mjs';
 import { writeJsonAtomic, writeTextAtomic } from './lib/atomic-write.mjs';
-import { csvEscape } from './lib/csv.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
+
+// Re-exported for the .test.mjs suite (identical impl now lives in the lib).
+export { chunkRecords };
 
 /**
  * Canonical TSV column contract emitted by `writeJoysoundReviewQueues` /
@@ -211,19 +220,6 @@ export function dedupeQueueRecords(fpRows, fnRows) {
 }
 
 /**
- * Deterministic split of `records` into consecutive chunks of `size`,
- * preserving order. Last chunk may be smaller. Mirrors the title_ko pipeline.
- */
-export function chunkRecords(records, size) {
-  if (records.length === 0) return [];
-  const chunks = [];
-  for (let i = 0; i < records.length; i += size) {
-    chunks.push(records.slice(i, i + size));
-  }
-  return chunks;
-}
-
-/**
  * Write each chunk to <out-dir>/adjudicate-<stream>-chunk-NN-input.json
  * (zero-padded NN, two digits). Atomic per-file write via .tmp + rename.
  *
@@ -232,10 +228,7 @@ export function chunkRecords(records, size) {
  * @param {object[][]} chunks
  */
 export function writeChunkInputs(outDir, stream, chunks) {
-  chunks.forEach((chunk, idx) => {
-    const nn = String(idx).padStart(2, '0');
-    writeJsonAtomic(join(outDir, `adjudicate-${stream}-chunk-${nn}-input.json`), chunk);
-  });
+  writeChunkInputFiles(outDir, chunks, (nn) => `adjudicate-${stream}-chunk-${nn}-input.json`);
 }
 
 /**
@@ -287,16 +280,7 @@ export function runPrep({ fpPath, fnPath, outDir, chunkSize = 250 }) {
  * complement: input files end in `-input.json`.
  */
 function loadChunkInputs(outDir) {
-  const files = readdirSync(outDir)
-    .filter((f) => /^adjudicate-(fp|fn)-chunk-\d+-input\.json$/u.test(f))
-    .sort();
-  const records = [];
-  for (const f of files) {
-    const arr = JSON.parse(readFileSync(join(outDir, f), 'utf-8'));
-    if (!Array.isArray(arr)) throw new Error(`${f}: expected JSON array`);
-    records.push(...arr);
-  }
-  return records;
+  return readJsonChunks(outDir, /^adjudicate-(fp|fn)-chunk-\d+-input\.json$/u);
 }
 
 /**
@@ -305,16 +289,7 @@ function loadChunkInputs(outDir) {
  * array of `{selSongNo, verdict, reason, web_sources?}` entries.
  */
 function loadChunkOutputs(outDir) {
-  const files = readdirSync(outDir)
-    .filter((f) => /^adjudicate-(fp|fn)-chunk-\d+\.json$/u.test(f))
-    .sort();
-  const outputs = [];
-  for (const f of files) {
-    const arr = JSON.parse(readFileSync(join(outDir, f), 'utf-8'));
-    if (!Array.isArray(arr)) throw new Error(`${f}: expected JSON array`);
-    outputs.push(...arr);
-  }
-  return outputs;
+  return readJsonChunks(outDir, /^adjudicate-(fp|fn)-chunk-\d+\.json$/u);
 }
 
 /**
@@ -417,23 +392,19 @@ function joinCell(values) {
  * @param {Array<{selSongNo,title,artist,buckets,verdict,reason,web_sources}>} verdicts
  */
 export function writeReviewCsv(path, verdicts) {
-  const lines = ['selSongNo,title,artist,buckets,verdict,reason,web_sources'];
+  const rows = [['selSongNo', 'title', 'artist', 'buckets', 'verdict', 'reason', 'web_sources']];
   for (const v of verdicts) {
-    lines.push(
-      [
-        v.selSongNo,
-        v.title ?? '',
-        v.artist ?? '',
-        joinCell(v.buckets),
-        v.verdict,
-        v.reason ?? '',
-        joinCell(v.web_sources),
-      ]
-        .map(csvEscape)
-        .join(','),
-    );
+    rows.push([
+      v.selSongNo,
+      v.title ?? '',
+      v.artist ?? '',
+      joinCell(v.buckets),
+      v.verdict,
+      v.reason ?? '',
+      joinCell(v.web_sources),
+    ]);
   }
-  writeTextAtomic(path, `﻿${lines.join('\n')}\n`);
+  writeCsvWithBom(path, rows);
 }
 
 /**
@@ -474,12 +445,7 @@ export function runMerge({ outDir, reviewCsvPath }) {
   };
 }
 
-function parseFlag(argv, name) {
-  const idx = argv.indexOf(name);
-  return idx >= 0 ? argv[idx + 1] : undefined;
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   const cmd = process.argv[2];
   if (cmd === 'prep') {
     const fpPath = process.argv[3];

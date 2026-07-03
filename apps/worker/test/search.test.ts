@@ -7,23 +7,23 @@ import {
 } from '@karaoke/data-store';
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
-import { type D1DatabaseLike, handleRequest } from '../src/index.js';
-import { SqliteD1Database, type SqliteD1Options } from '../src/sqlite-adapter.js';
+import { type SearchDatabase, handleRequest } from '../src/index.js';
+import { type SqliteDatabaseOptions, SqliteSearchDatabase } from '../src/sqlite-adapter.js';
 
 const openDatabases: SongDatabase[] = [];
 
-interface NodeSqliteD1Options extends SqliteD1Options {}
+interface NodeSqliteDatabaseOptions extends SqliteDatabaseOptions {}
 
-function createD1WithSongs(
+function createSearchDatabaseWithSongs(
   records: readonly SongRecord[],
-  options: NodeSqliteD1Options = {},
+  options: NodeSqliteDatabaseOptions = {},
   importOptions: ImportSongsOptions = {},
-): D1DatabaseLike {
+): SearchDatabase {
   const sqlite = openSongDatabase(':memory:');
   openDatabases.push(sqlite);
   createSongDatabase(sqlite);
   importSongs(sqlite, records, importOptions);
-  return new SqliteD1Database(sqlite, options);
+  return new SqliteSearchDatabase(sqlite, options);
 }
 
 afterEach(() => {
@@ -260,7 +260,7 @@ const KANA_RECALL_RECORDS: SongRecord[] = [
 
 describe('worker search API — romaji↔kana expansion (search recall only)', () => {
   it('finds a kana-only title from a Latin romaji query', async () => {
-    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+    const db = createSearchDatabaseWithSongs(KANA_RECALL_RECORDS);
 
     const byYoru = await fetchJson(db, `/api/search?q=${encodeURIComponent('yoru')}`);
     const byGurenge = await fetchJson(db, `/api/search?q=${encodeURIComponent('gurenge')}`);
@@ -270,7 +270,7 @@ describe('worker search API — romaji↔kana expansion (search recall only)', (
   });
 
   it('preserves the original query: a direct kana query still matches', async () => {
-    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+    const db = createSearchDatabaseWithSongs(KANA_RECALL_RECORDS);
 
     const byKana = await fetchJson(db, `/api/search?q=${encodeURIComponent('よる')}`);
 
@@ -278,7 +278,7 @@ describe('worker search API — romaji↔kana expansion (search recall only)', (
   });
 
   it('leaves numeric karaoke-number queries unexpanded', async () => {
-    const db = createD1WithSongs(KANA_RECALL_RECORDS);
+    const db = createSearchDatabaseWithSongs(KANA_RECALL_RECORDS);
 
     const byNumber = await fetchJson(db, '/api/search?q=700001');
 
@@ -304,7 +304,7 @@ const KANJI_HINT_RECORDS: SongRecord[] = [
 
 describe('worker search API — JOYSOUND ruby hints (search recall only)', () => {
   it('finds a kanji canonical title from a kana query via a ruby hint', async () => {
-    const db = createD1WithSongs(
+    const db = createSearchDatabaseWithSongs(
       KANJI_HINT_RECORDS,
       {},
       {
@@ -329,7 +329,7 @@ describe('worker search API — JOYSOUND ruby hints (search recall only)', () =>
   });
 
   it('finds a kanji canonical title from a romaji query via the derived romaji hint', async () => {
-    const db = createD1WithSongs(
+    const db = createSearchDatabaseWithSongs(
       KANJI_HINT_RECORDS,
       {},
       {
@@ -353,7 +353,7 @@ describe('worker search API — JOYSOUND ruby hints (search recall only)', () =>
   });
 
   it('does not surface the song for an unrelated kana query', async () => {
-    const db = createD1WithSongs(
+    const db = createSearchDatabaseWithSongs(
       KANJI_HINT_RECORDS,
       {},
       {
@@ -376,7 +376,7 @@ describe('worker search API — JOYSOUND ruby hints (search recall only)', () =>
 
 describe('worker search API', () => {
   it('returns matching songs from title, artist, alias, and karaoke number fields', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const byArtist = await fetchJson(db, '/api/search?q=yoasobi');
     const byAlias = await fetchJson(db, '/api/search?q=Yoa%20Alias');
@@ -389,7 +389,7 @@ describe('worker search API', () => {
   });
 
   it('uses derived search indexes for compact aliases, CJK grams, Hangul initials, and provider numbers', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const byJapaneseGram = await fetchJson(db, '/api/search?q=%E5%A4%A9%E4%BD%BF');
     const bySingleKanji = await fetchJson(db, '/api/search?q=%E5%A4%A9');
@@ -412,7 +412,7 @@ describe('worker search API', () => {
   });
 
   it('preserves MiniSearch parity for Japanese artist, Latin casefolding, punctuation prefixes, and long prefixes', async () => {
-    const db = createD1WithSongs(MINISEARCH_PARITY_RECORDS);
+    const db = createSearchDatabaseWithSongs(MINISEARCH_PARITY_RECORDS);
 
     const byJapaneseArtist = await fetchJson(
       db,
@@ -429,7 +429,7 @@ describe('worker search API', () => {
   });
 
   it('does not reorder equal-relevance matches by provider availability', async () => {
-    const db = createD1WithSongs(PROVIDER_ORDER_RECORDS);
+    const db = createSearchDatabaseWithSongs(PROVIDER_ORDER_RECORDS);
 
     const result = await fetchJson(db, '/api/search?q=provider%20priority');
 
@@ -437,7 +437,7 @@ describe('worker search API', () => {
   });
 
   it('ranks exact text matches above weak token matches without applying provider priority', async () => {
-    const db = createD1WithSongs(EXACT_MATCH_TIER_RECORDS);
+    const db = createSearchDatabaseWithSongs(EXACT_MATCH_TIER_RECORDS);
 
     const result = await fetchJson(db, `/api/search?q=${encodeURIComponent('天音かなた')}`);
 
@@ -445,7 +445,7 @@ describe('worker search API', () => {
   });
 
   it('filters a vendor-selected search without provider coverage reranking (vendor=joysound)', async () => {
-    const db = createD1WithSongs(COVERAGE_RANK_RECORDS);
+    const db = createSearchDatabaseWithSongs(COVERAGE_RANK_RECORDS);
 
     const result = await fetchJson(db, '/api/search?q=coverage&vendor=joysound');
 
@@ -457,7 +457,7 @@ describe('worker search API', () => {
   });
 
   it('filters a vendor-selected search without provider coverage reranking (vendor=ky)', async () => {
-    const db = createD1WithSongs(COVERAGE_RANK_RECORDS);
+    const db = createSearchDatabaseWithSongs(COVERAGE_RANK_RECORDS);
 
     const result = await fetchJson(db, '/api/search?q=coverage&vendor=ky');
 
@@ -469,7 +469,7 @@ describe('worker search API', () => {
   });
 
   it('filters a multi-vendor search without provider coverage reranking (vendor=tj,joysound)', async () => {
-    const db = createD1WithSongs(COVERAGE_RANK_RECORDS);
+    const db = createSearchDatabaseWithSongs(COVERAGE_RANK_RECORDS);
 
     const result = await fetchJson(db, '/api/search?q=coverage&vendor=tj,joysound');
     const ids = result.items.map((song) => song.id);
@@ -479,7 +479,7 @@ describe('worker search API', () => {
   });
 
   it('serves three-or-more-character Hangul initial prefixes without internal errors', async () => {
-    const db = createD1WithSongs(MINISEARCH_PARITY_RECORDS);
+    const db = createSearchDatabaseWithSongs(MINISEARCH_PARITY_RECORDS);
 
     const byArtistInitial = await fetchJson(db, '/api/search?q=%E3%84%B9%E3%84%B7%E3%85%87');
     const byTitleInitial = await fetchJson(db, '/api/search?q=%E3%85%85%E3%85%8D%E3%85%8B');
@@ -489,7 +489,7 @@ describe('worker search API', () => {
   });
 
   it('applies vendor filters', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const withTj = await fetchJson(db, '/api/search?vendor=tj');
     const withKy = await fetchJson(db, '/api/search?vendor=ky');
@@ -500,7 +500,7 @@ describe('worker search API', () => {
 
   it('applies vendor filters while using the derived search index', async () => {
     const statements: string[] = [];
-    const db = createD1WithSongs(FIXTURE_RECORDS, {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS, {
       inspectStatement: (sql) => statements.push(sql),
     });
 
@@ -517,7 +517,7 @@ describe('worker search API', () => {
   });
 
   it('applies a multi-vendor filter as the union of the selected vendors', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     // song-1/song-2/song-4 are tj-tagged, song-3 is ky-only.
     const withTjKy = await fetchJson(db, '/api/search?vendor=tj,ky');
@@ -530,7 +530,7 @@ describe('worker search API', () => {
   });
 
   it('keeps single-vendor filtering working for back-compat', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const withJoysound = await fetchJson(db, '/api/search?vendor=joysound');
 
@@ -539,7 +539,7 @@ describe('worker search API', () => {
 
   it('ORs the multi-vendor bitmask in the derived search index path', async () => {
     const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
-    const db = createD1WithSongs(FIXTURE_RECORDS, {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS, {
       inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
     });
 
@@ -559,7 +559,7 @@ describe('worker search API', () => {
 
   it('ORs the multi-vendor set in the karaoke-number candidate path', async () => {
     const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
-    const db = createD1WithSongs(FIXTURE_RECORDS, {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS, {
       inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
     });
 
@@ -577,11 +577,11 @@ describe('worker search API', () => {
   });
 
   it('rejects an invalid vendor member inside a multi-vendor filter with HTTP 400', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const response = await handleRequest(
       new Request('https://karaoke.example/api/search?vendor=tj,nope'),
-      { DB: db },
+      { db },
     );
 
     expect(response.status).toBe(400);
@@ -589,7 +589,7 @@ describe('worker search API', () => {
   });
 
   it('paginates using limit and cursor without dropping result order', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const first = await fetchJson(db, '/api/search?limit=2');
     const second = await fetchJson(db, `/api/search?limit=2&cursor=${first.nextCursor}`);
@@ -601,11 +601,11 @@ describe('worker search API', () => {
   });
 
   it('rejects invalid filters with HTTP 400', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const response = await handleRequest(
       new Request('https://karaoke.example/api/search?vendor=invalid'),
-      { DB: db },
+      { db },
     );
 
     expect(response.status).toBe(400);
@@ -613,21 +613,52 @@ describe('worker search API', () => {
   });
 
   it('accepts long search queries without D1 LIKE-pattern failures', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
     const response = await handleRequest(
       new Request(`https://karaoke.example/api/search?q=${'a'.repeat(49)}`),
-      { DB: db },
+      { db },
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
   });
 
-  it('does not bind oversized D1 LIKE patterns while preserving long numeric exact search', async () => {
-    const longNumber = '1'.repeat(50);
+  it('returns prefix matches for numeric queries longer than the former 50-byte D1 LIKE limit', async () => {
+    // The prefix pattern `${longPrefix}%` is 52 bytes, which the removed D1 gate
+    // used to drop, silently skipping the prefix subquery and losing this record.
+    const longPrefix = '1'.repeat(51);
+    const prefixMatchRecord: SongRecord = {
+      id: 'long-number-prefix-1',
+      source_url: 'https://example.com/long-number-prefix',
+      title_primary: 'Long Number Prefix Song',
+      title_ko: null,
+      artist_primary: 'Long Number Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: `${longPrefix}23`, ky: null, joysound: null },
+      crawled_at: '2026-01-09T00:00:00.000Z',
+    };
+    const db = createSearchDatabaseWithSongs([...FIXTURE_RECORDS, prefixMatchRecord]);
+    const response = await handleRequest(
+      new Request(`https://karaoke.example/api/search?q=${longPrefix}`),
+      {
+        db,
+      },
+    );
+
+    // The stored number (`${longPrefix}23`) never equals the query, so only the
+    // LIKE prefix subquery can surface it — proving the length gate is gone.
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      items: [prefixMatchRecord],
+      nextCursor: null,
+    });
+  });
+
+  it('still resolves numeric queries longer than the former 50-byte D1 LIKE limit by exact match', async () => {
+    const longNumber = '1'.repeat(51);
     const longNumberRecord: SongRecord = {
-      id: 'long-number-1',
-      source_url: 'https://example.com/long-number',
+      id: 'long-number-exact-1',
+      source_url: 'https://example.com/long-number-exact',
       title_primary: 'Long Number Song',
       title_ko: null,
       artist_primary: 'Long Number Artist',
@@ -635,13 +666,11 @@ describe('worker search API', () => {
       karaoke_numbers: { tj: longNumber, ky: null, joysound: null },
       crawled_at: '2026-01-09T00:00:00.000Z',
     };
-    const db = createD1WithSongs([...FIXTURE_RECORDS, longNumberRecord], {
-      enforceD1SuffixLikePatternLimit: true,
-    });
+    const db = createSearchDatabaseWithSongs([...FIXTURE_RECORDS, longNumberRecord]);
     const response = await handleRequest(
       new Request(`https://karaoke.example/api/search?q=${longNumber}`),
       {
-        DB: db,
+        db,
       },
     );
 
@@ -654,7 +683,7 @@ describe('worker search API', () => {
 
   it('splits numeric lookup branches so exact and prefix predicates remain indexable', async () => {
     const statements: string[] = [];
-    const db = createD1WithSongs(FIXTURE_RECORDS, {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS, {
       inspectStatement: (sql) => statements.push(sql),
     });
 
@@ -669,10 +698,10 @@ describe('worker search API', () => {
   });
 
   it('rejects unsafe cursor offsets', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
     const response = await handleRequest(
       new Request('https://karaoke.example/api/search?cursor=9007199254740992'),
-      { DB: db },
+      { db },
     );
 
     expect(response.status).toBe(400);
@@ -682,10 +711,10 @@ describe('worker search API', () => {
   });
 
   it('returns 404 for non-API routes', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const response = await handleRequest(new Request('https://karaoke.example/not-found'), {
-      DB: db,
+      db,
     });
 
     expect(response.status).toBe(404);
@@ -694,7 +723,7 @@ describe('worker search API', () => {
 
 describe('worker batch-by-id API', () => {
   it('hydrates full records (numbers + aliases) for the requested ids', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const result = await fetchJson(db, '/api/songs?ids=song-1,song-4');
 
@@ -712,7 +741,7 @@ describe('worker batch-by-id API', () => {
   });
 
   it('tolerates missing ids by returning only the records that exist', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const result = await fetchJson(db, '/api/songs?ids=song-2,does-not-exist,song-3');
 
@@ -720,17 +749,17 @@ describe('worker batch-by-id API', () => {
   });
 
   it('returns 400 when the ids parameter is empty or absent', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const missing = await handleRequest(new Request('https://karaoke.example/api/songs'), {
-      DB: db,
+      db,
     });
     const empty = await handleRequest(new Request('https://karaoke.example/api/songs?ids='), {
-      DB: db,
+      db,
     });
     const blank = await handleRequest(
       new Request('https://karaoke.example/api/songs?ids=%20,%20'),
-      { DB: db },
+      { db },
     );
 
     expect(missing.status).toBe(400);
@@ -739,19 +768,19 @@ describe('worker batch-by-id API', () => {
   });
 
   it('returns 400 when more than the per-request id cap is requested', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
     const oversized = Array.from({ length: 101 }, (_, index) => `song-${index}`).join(',');
 
     const response = await handleRequest(
       new Request(`https://karaoke.example/api/songs?ids=${oversized}`),
-      { DB: db },
+      { db },
     );
 
     expect(response.status).toBe(400);
   });
 
   it('serves exactly the per-request id cap without error', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
     const ids = ['song-1', ...Array.from({ length: 99 }, (_, index) => `absent-${index}`)].join(
       ',',
     );
@@ -763,7 +792,7 @@ describe('worker batch-by-id API', () => {
 
   it('binds ids as parameters with no SQL-injection surface', async () => {
     const statements: { sql: string; parameters: readonly (string | number | null)[] }[] = [];
-    const db = createD1WithSongs(FIXTURE_RECORDS, {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS, {
       inspectStatement: (sql, parameters) => statements.push({ sql, parameters }),
     });
 
@@ -788,19 +817,19 @@ describe('worker batch-by-id API', () => {
   });
 
   it('rejects non-GET methods on the batch endpoint', async () => {
-    const db = createD1WithSongs(FIXTURE_RECORDS);
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
 
     const response = await handleRequest(
       new Request('https://karaoke.example/api/songs?ids=song-1', { method: 'POST' }),
-      { DB: db },
+      { db },
     );
 
     expect(response.status).toBe(405);
   });
 });
 
-async function fetchJson(db: D1DatabaseLike, path: string): Promise<SearchResponseBody> {
-  const response = await handleRequest(new Request(`https://karaoke.example${path}`), { DB: db });
+async function fetchJson(db: SearchDatabase, path: string): Promise<SearchResponseBody> {
+  const response = await handleRequest(new Request(`https://karaoke.example${path}`), { db });
   expect(response.status).toBe(200);
   return (await response.json()) as SearchResponseBody;
 }

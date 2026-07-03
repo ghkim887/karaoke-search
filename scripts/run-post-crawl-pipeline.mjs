@@ -34,7 +34,8 @@
 
 import { spawn } from 'node:child_process';
 import { dirname, isAbsolute, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { isCliInvocation } from './lib/cli.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = resolve(__dirname, '..');
@@ -274,7 +275,7 @@ async function main() {
   process.exitCode = ok ? 0 : 1;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   main().catch((err) => {
     console.error(err.message);
     console.error(USAGE);

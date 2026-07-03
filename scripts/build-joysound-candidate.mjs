@@ -39,6 +39,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
 import { compareCorpora } from './lib/corpus-audit-guardrails.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1033,7 +1034,7 @@ Heap: parses the ~12 MB corpus + ~291k decision rows — run with
 }
 
 // Only run main() when invoked directly (not when imported by the test).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   if (process.argv.includes('-h') || process.argv.includes('--help')) {
     printUsage();
     process.exit(0);

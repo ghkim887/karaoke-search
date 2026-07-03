@@ -718,3 +718,139 @@ describe('App favorites via API (full API-first mode)', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('App API error surfacing (T1-2)', () => {
+  let host: HTMLElement;
+
+  beforeEach(() => {
+    localStorage.removeItem('karaoke-favorites:v1');
+    vi.spyOn(searchModule, 'getApiSearchBaseUrl').mockReturnValue('https://api.example.test');
+    // In API mode App never calls loadIndex; a resolved stub keeps any stray
+    // deferred mount effect off the network.
+    vi.spyOn(searchModule, 'loadIndex').mockResolvedValue({
+      index: { search: () => [] },
+      byId: new Map(),
+      // biome-ignore lint/suspicious/noExplicitAny: minimal IndexBundle stub for tests
+    } as any);
+  });
+
+  afterEach(() => {
+    if (host?.parentNode) host.parentNode.removeChild(host);
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    localStorage.removeItem('karaoke-favorites:v1');
+  });
+
+  function getTabs(h: HTMLElement): HTMLButtonElement[] {
+    return Array.from(h.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  }
+
+  async function mount(): Promise<HTMLElement> {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<App songCount={26401} />, host);
+    await waitFor(() => {
+      const tabs = getTabs(host);
+      return tabs.length === 2 && tabs.every((t) => t.disabled === false) ? tabs : null;
+    });
+    return host;
+  }
+
+  async function clickFavoritesTab(h: HTMLElement) {
+    getTabs(h)[1]?.click();
+    await flushPromises();
+  }
+
+  function typeQuery(h: HTMLElement, value: string) {
+    const input = h.querySelector<HTMLInputElement>('.search-input');
+    if (!input) throw new Error('search input not found');
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  it('renders the error state, not NoResults, when an API Browse search fails', async () => {
+    const apiSpy = vi.spyOn(searchModule, 'searchApi').mockRejectedValue(new Error('network down'));
+    await mount();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    await waitFor(() => (apiSpy.mock.calls.length > 0 ? true : null));
+    const err = await waitFor(() => host.querySelector<HTMLElement>('.error-state'));
+    expect(err).not.toBeNull();
+    // The failure is an error, NOT a masqueraded "no matches".
+    expect(host.querySelector('.no-results')).toBeNull();
+    expect(host.querySelector('[data-testid="result-count"]')?.textContent).toContain('오류');
+  });
+
+  it('renders the error state, not NoResults, when API Favorites hydration fails', async () => {
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r1']));
+    const fetchSpy = vi
+      .spyOn(searchModule, 'fetchSongsByIds')
+      .mockRejectedValue(new Error('network down'));
+    await mount();
+    await clickFavoritesTab(host);
+
+    await waitFor(() => (fetchSpy.mock.calls.length > 0 ? true : null));
+    const err = await waitFor(() => host.querySelector<HTMLElement>('.error-state'));
+    expect(err).not.toBeNull();
+    expect(host.querySelector('.no-results')).toBeNull();
+    expect(host.querySelector('.favorites-empty')).toBeNull();
+  });
+
+  it('recovers to results when the Browse query changes after an error', async () => {
+    const apiRecord = fixtureRecords[1];
+    if (apiRecord === undefined) throw new Error('fixture record missing');
+    const apiSpy = vi
+      .spyOn(searchModule, 'searchApi')
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValue([apiRecord]);
+    await mount();
+
+    // First query fails → error state.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kic');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+    await waitFor(() => host.querySelector<HTMLElement>('.error-state'));
+
+    // Changing the query re-issues the request, which now succeeds.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+    await waitFor(() => {
+      const card = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return card?.textContent?.includes('KICK BACK') ? card : null;
+    });
+    expect(host.querySelector('.error-state')).toBeNull();
+    expect(apiSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('recovers via the Retry button after a Browse error', async () => {
+    const apiRecord = fixtureRecords[1];
+    if (apiRecord === undefined) throw new Error('fixture record missing');
+    vi.spyOn(searchModule, 'searchApi')
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValue([apiRecord]);
+    await mount();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    const err = await waitFor(() => host.querySelector<HTMLElement>('.error-state'));
+    const retry = err.querySelector<HTMLButtonElement>('.error-state-retry');
+    expect(retry).not.toBeNull();
+    retry?.click();
+
+    await waitFor(() => {
+      const card = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return card?.textContent?.includes('KICK BACK') ? card : null;
+    });
+    expect(host.querySelector('.error-state')).toBeNull();
+  });
+});

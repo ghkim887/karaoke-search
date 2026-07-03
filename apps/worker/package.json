@@ -14,10 +14,10 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && tsc -b",
-    "test": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && vitest run",
-    "typecheck": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && tsc --noEmit",
-    "sqlite:build": "corepack pnpm --filter @karaoke/search build && corepack pnpm --filter @karaoke/data-store build && node scripts/build-sqlite-db.mjs",
+    "build": "tsc -b",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "sqlite:build": "tsc -b && node scripts/build-sqlite-db.mjs",
     "serve:node": "node dist/node-server.js"
   },
   "dependencies": {

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import robotsParser from 'robots-parser';
@@ -59,6 +60,86 @@ const BODY_SIZE_LIMIT = 50 * 1024 * 1024;
 // requests still surface and resume logic can take over.
 const REQUEST_HEADERS_TIMEOUT_MS = 600_000;
 const REQUEST_BODY_TIMEOUT_MS = 600_000;
+
+/**
+ * Retry defaults for the idempotent GET path. A long catalog sweep issues
+ * hundreds of thousands of GETs; a single transient 5xx / connection reset /
+ * timeout should not abort the run. We retry only conditions that are safe to
+ * repeat on an idempotent request:
+ *   - HTTP 429 (rate limited) and 5xx (server-side transient), and
+ *   - network-level errors whose code is in RETRYABLE_ERROR_CODES.
+ * 4xx (except 429) are NOT retried — they are deterministic client errors.
+ * Backoff is exponential with equal jitter and honors a server `Retry-After`
+ * header when present. The POST path (`postForm`) is intentionally NOT retried:
+ * it is the only non-GET call site and POSTs are not assumed idempotent.
+ */
+const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_RETRY_BASE_DELAY_MS = 500;
+const DEFAULT_RETRY_MAX_DELAY_MS = 30_000;
+
+/**
+ * Network-error codes considered transient and therefore safe to retry on an
+ * idempotent GET. Covers both Node system-call errors and undici's own timeout
+ * / socket error codes.
+ */
+const RETRYABLE_ERROR_CODES: ReadonlySet<string> = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EAI_AGAIN',
+  'EPIPE',
+  'ENETUNREACH',
+  'EHOSTUNREACH',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
+
+/** True for HTTP statuses that a retry might resolve (429 + 5xx). */
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || (status >= 500 && status < 600);
+}
+
+/** True for thrown errors whose `code` marks a transient network failure. */
+function isRetryableError(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null | undefined)?.code;
+  return typeof code === 'string' && RETRYABLE_ERROR_CODES.has(code);
+}
+
+/**
+ * Parse a `Retry-After` header into milliseconds. Supports both the
+ * delta-seconds form (`"120"`) and the HTTP-date form. Returns `undefined`
+ * when absent or unparseable so the caller falls back to exponential backoff.
+ */
+function parseRetryAfter(headerVal: string | string[] | undefined): number | undefined {
+  if (headerVal === undefined) return undefined;
+  const raw = Array.isArray(headerVal) ? headerVal[0] : headerVal;
+  if (raw === undefined) return undefined;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const dateMs = Date.parse(raw);
+  if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  return undefined;
+}
+
+/**
+ * Drain and discard a response body to release the underlying socket before a
+ * retry. Errors while draining are swallowed — we are about to retry anyway.
+ */
+async function drainBody(body: {
+  [Symbol.asyncIterator](): AsyncIterator<Uint8Array>;
+}): Promise<void> {
+  const iterator = body[Symbol.asyncIterator]();
+  try {
+    // Pull and discard every chunk to release the socket before retrying.
+    while (!(await iterator.next()).done) {
+      /* discard */
+    }
+  } catch {
+    // ignore — the response is being abandoned
+  }
+}
 
 /**
  * Read a response body with a hard size cap. Uses the streaming `res.body`
@@ -179,6 +260,15 @@ export interface HttpClientOptions {
    * rate-limits or disable caching for a host without editing the table.
    */
   hostConfigOverrides?: Record<string, HostConfig>;
+  /**
+   * Max retry attempts (beyond the first) for transient GET failures.
+   * Default 2 → up to 3 total attempts. Set 0 to disable retries.
+   */
+  maxRetries?: number;
+  /** Base backoff delay in ms; doubles per attempt. Default 500. */
+  retryBaseDelayMs?: number;
+  /** Upper bound on any single backoff (and on honored Retry-After). Default 30s. */
+  retryMaxDelayMs?: number;
 }
 
 interface CacheEntry {
@@ -213,7 +303,12 @@ async function readJsonFile<T>(path: string): Promise<T | null> {
 
 async function writeJsonFileAtomic(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  const tmp = `${path}.tmp`;
+  // Unique tmp name per write: `${path}.tmp` is shared, so two crawler
+  // processes (or two overlapping writers) targeting the same cache file would
+  // clobber each other's tmp and rename a torn file into place. Namespacing by
+  // pid + a random token makes each writer's tmp private; the rename onto the
+  // final path stays atomic.
+  const tmp = `${path}.${process.pid}.${randomUUID()}.tmp`;
   await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
   await rename(tmp, path);
 }
@@ -225,11 +320,19 @@ async function writeJsonFileAtomic(path: string, value: unknown): Promise<void> 
  *    overrides may set a different UA (e.g. Chrome spoof for TJ Media).
  *  - ~4-6 req/sec via 200ms base delay + ±50ms uniform jitter, applied per
  *    process. Per-host overrides may slow this down (e.g. 500ms for TJ).
- *  - The rate-limit timestamp is global ("slowest-host wins") rather than
- *    per-host. Project scale doesn't justify the per-host Map; per-host
- *    fairness would only matter under concurrent multi-host crawling.
- *  - robots.txt is fetched once per host and consulted BEFORE the rate-limit
- *    timestamp is recorded — disallowed requests do not consume a slot.
+ *  - The rate limiter is a single global RESERVATION clock ("slowest-host
+ *    wins") rather than per-host. On entry each request atomically advances
+ *    `nextAllowedAt = max(now, nextAllowedAt) + gap` and sleeps until its
+ *    reserved slot, so N concurrent callers (Promise.all) are spaced out
+ *    instead of all firing after one shared gap. Sequential single-host
+ *    cadence is unchanged (first request immediate, then ~gap apart). Project
+ *    scale doesn't justify a per-host clock; per-host fairness would only
+ *    matter under concurrent multi-host crawling.
+ *  - The idempotent GET path retries transient failures (429 / 5xx / network
+ *    errors) with exponential backoff + jitter, re-reserving a rate-limit slot
+ *    per attempt and honoring `Retry-After`. POSTs are not retried.
+ *  - robots.txt is fetched once per host and consulted BEFORE any rate-limit
+ *    slot is reserved — disallowed requests do not consume a slot.
  *  - ETag / Last-Modified disk cache at `.cache/http.json` (cwd-relative). On
  *    a 304 response, the cached body is replayed. Persistence is batched (see
  *    DEFAULT_CACHE_PERSIST_EVERY); callers that own the client lifecycle MUST
@@ -240,12 +343,20 @@ async function writeJsonFileAtomic(path: string, value: unknown): Promise<void> 
 export class HttpClient {
   private cache: Record<string, CacheEntry> = {};
   private cacheLoaded = false;
-  private lastRequestAt = 0;
+  /**
+   * Global reservation clock: the earliest wall-clock time the next request
+   * may fire. Advanced synchronously on entry to `waitForRateLimit` so
+   * concurrent callers reserve distinct, staggered slots.
+   */
+  private nextAllowedAt = 0;
   private robotsByHost = new Map<string, Promise<RobotsRules>>();
   private loggedHosts = new Set<string>();
   private readonly cachePersistEvery: number;
   private readonly cachePersistMaxAgeMs: number;
   private readonly hostConfigOverrides: Record<string, HostConfig>;
+  private readonly maxRetries: number;
+  private readonly retryBaseDelayMs: number;
+  private readonly retryMaxDelayMs: number;
   private pendingCacheStores = 0;
   private lastPersistAt = Date.now();
   private flushInFlight: Promise<void> | undefined;
@@ -254,6 +365,9 @@ export class HttpClient {
     this.cachePersistEvery = options.cachePersistEvery ?? DEFAULT_CACHE_PERSIST_EVERY;
     this.cachePersistMaxAgeMs = options.cachePersistMaxAgeMs ?? DEFAULT_CACHE_PERSIST_MAX_AGE_MS;
     this.hostConfigOverrides = options.hostConfigOverrides ?? {};
+    this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
+    this.retryBaseDelayMs = options.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
+    this.retryMaxDelayMs = options.retryMaxDelayMs ?? DEFAULT_RETRY_MAX_DELAY_MS;
   }
 
   private async loadCache(): Promise<void> {
@@ -348,12 +462,18 @@ export class HttpClient {
         });
         const body = await readBodyCapped(res.body);
         const status = res.statusCode;
-        // Per RFC: 4xx means no rules apply (allow all); 5xx pessimistically
-        // disallows. We follow common crawler convention: treat non-2xx as
-        // empty rules (allow all) to avoid blocking on stale errors.
+        // Actual policy (deliberate, not RFC-strict): ANY non-2xx response —
+        // 4xx AND 5xx alike — is treated as empty rules (allow-all), so a
+        // temporarily broken or missing robots.txt never blocks a crawl. A
+        // stricter "5xx ⇒ disallow" posture is a crawl-policy decision owned
+        // elsewhere; do not change behavior here without that sign-off.
         const text = status >= 200 && status < 300 ? body : '';
         return robotsParser(robotsUrl, text);
-      } catch {
+      } catch (err) {
+        // Fetch itself failed (DNS, connection, timeout, size cap). Same
+        // allow-all fallback as a non-2xx response; log once per host so the
+        // run log records that robots.txt was never actually evaluated.
+        console.debug(`[http] robots.txt fetch failed for ${origin}; treating as allow-all`, err);
         return robotsParser(robotsUrl, '');
       }
     })();
@@ -361,13 +481,67 @@ export class HttpClient {
     return promise;
   }
 
-  private async waitForRateLimit(minIntervalMs: number, jitterMs: number): Promise<void> {
+  private waitForRateLimit(minIntervalMs: number, jitterMs: number): Promise<void> {
     const gap = minIntervalMs + (Math.random() - 0.5) * jitterMs;
-    const elapsed = Date.now() - this.lastRequestAt;
-    if (elapsed < gap) {
-      await sleep(gap - elapsed);
+    const now = Date.now();
+    // Reserve this request's slot atomically (synchronously, before any await)
+    // so concurrent callers each claim a distinct slot instead of all reading
+    // the same timestamp and firing together. First request (nextAllowedAt in
+    // the past) fires immediately; each subsequent one is pushed `gap` later.
+    const scheduledAt = Math.max(now, this.nextAllowedAt);
+    this.nextAllowedAt = scheduledAt + gap;
+    const wait = scheduledAt - now;
+    return wait > 0 ? sleep(wait) : Promise.resolve();
+  }
+
+  /** Backoff for retry `attempt` (0-based): honored Retry-After, else equal jitter. */
+  private retryDelayMs(attempt: number, retryAfterMs?: number): number {
+    if (retryAfterMs !== undefined) {
+      return Math.min(retryAfterMs, this.retryMaxDelayMs);
     }
-    this.lastRequestAt = Date.now();
+    const ceiling = Math.min(this.retryMaxDelayMs, this.retryBaseDelayMs * 2 ** attempt);
+    // Equal jitter: half fixed + half random, so backoff is never zero (unless
+    // the base delay is configured to 0) yet still spreads out retry storms.
+    return ceiling / 2 + Math.random() * (ceiling / 2);
+  }
+
+  /**
+   * Perform an idempotent GET with rate-limit reservation and transient-failure
+   * retry. Each attempt re-reserves a rate-limit slot. Retries 429/5xx (after
+   * draining the abandoned body) and retryable network errors with exponential
+   * backoff; a non-retryable status is returned as-is, and once retries are
+   * exhausted the final response is returned (5xx) or the final error rethrown.
+   */
+  private async getWithRetry(
+    url: string,
+    headers: Record<string, string>,
+    minIntervalMs: number,
+    jitterMs: number,
+  ): Promise<Awaited<ReturnType<typeof request>>> {
+    for (let attempt = 0; ; attempt++) {
+      await this.waitForRateLimit(minIntervalMs, jitterMs);
+      try {
+        const res = await request(url, {
+          method: 'GET',
+          headers,
+          headersTimeout: REQUEST_HEADERS_TIMEOUT_MS,
+          bodyTimeout: REQUEST_BODY_TIMEOUT_MS,
+        });
+        if (attempt < this.maxRetries && isRetryableStatus(res.statusCode)) {
+          const retryAfterMs = parseRetryAfter(res.headers['retry-after']);
+          await drainBody(res.body);
+          await sleep(this.retryDelayMs(attempt, retryAfterMs));
+          continue;
+        }
+        return res;
+      } catch (err) {
+        if (attempt < this.maxRetries && isRetryableError(err)) {
+          await sleep(this.retryDelayMs(attempt));
+          continue;
+        }
+        throw err;
+      }
+    }
   }
 
   /**
@@ -389,19 +563,13 @@ export class HttpClient {
       return null;
     }
 
-    await this.waitForRateLimit(hostCfg.minIntervalMs, hostCfg.jitterMs);
-
     const cached = hostCfg.cache ? this.cache[url] : undefined;
     const headers: Record<string, string> = { 'user-agent': hostCfg.userAgent };
     if (cached?.etag) headers['if-none-match'] = cached.etag;
     if (cached?.lastModified) headers['if-modified-since'] = cached.lastModified;
 
-    const res = await request(url, {
-      method: 'GET',
-      headers,
-      headersTimeout: REQUEST_HEADERS_TIMEOUT_MS,
-      bodyTimeout: REQUEST_BODY_TIMEOUT_MS,
-    });
+    // Rate-limit reservation happens per attempt inside getWithRetry.
+    const res = await this.getWithRetry(url, headers, hostCfg.minIntervalMs, hostCfg.jitterMs);
     const status = res.statusCode;
 
     if (status === 304 && cached) {

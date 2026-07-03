@@ -51,8 +51,6 @@ from lib.corpus_io import (  # noqa: E402
 )
 from lib.artist_split import (  # noqa: E402
     DROP_SPLIT_RE,
-    FEAT_INNER_OF_RE,
-    FEAT_PAREN_FINDALL_RE,
     artist_components_for_drop_check,
     is_artist_in_drop_list,
     load_drop_keys,
@@ -91,19 +89,6 @@ DROP_LIST_SIDECAR = (
     / 'adapters'
     / 'tj-media-direct'
     / 'korean-artist-drop-list.json'
-)
-
-# Clustering-rules JSON sidecar produced by `scripts/export-clustering-rules.mjs`
-# (which reads `SPLIT_RE_SOURCE` / `SPLIT_RE_FLAGS` from the built dist of
-# `packages/crawler/src/clustering.ts`). Tracked in git alongside the TS source.
-# Treated as graceful-degradation when missing or malformed: fall back to a
-# hardcoded copy of the delimiter alternations with a stderr warning.
-CLUSTERING_RULES_SIDECAR = (
-    REPO_ROOT
-    / 'packages'
-    / 'crawler'
-    / 'src'
-    / 'clustering-rules.json'
 )
 
 # Anchor: a 4-or-5 digit number not adjacent to other digits or a decimal point.

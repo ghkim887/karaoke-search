@@ -46,9 +46,7 @@ export async function buildSqliteDb(argv) {
   const searchHintPaths = args.searchHintPaths ?? [];
   await mkdir(dirname(args.outputPath), { recursive: true });
   await rm(args.outputPath, { force: true });
-  const { importSongsJson, openSongDatabase } = await import(
-    pathToFileURL(join(WORKER_ROOT, '..', '..', 'packages', 'data-store', 'dist', 'index.js')).href
-  );
+  const { importSongsJson, openSongDatabase } = await import('@karaoke/data-store');
 
   importSongsJson({
     inputPath: args.inputPath,
