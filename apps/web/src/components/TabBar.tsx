@@ -1,5 +1,6 @@
 import { useRef } from 'preact/hooks';
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 export type TabId = 'browse' | 'favorites';
 
@@ -9,9 +10,11 @@ interface TabBarProps {
   disabled: boolean;
 }
 
-const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
-  { id: 'browse', label: '검색' },
-  { id: 'favorites', label: '즐겨찾기' },
+// `labelKey` is narrowed to the two static tab keys (not the full MessageKey
+// union) so `t()` sees a param-less key and needs no interpolation arguments.
+const TABS: ReadonlyArray<{ id: TabId; labelKey: 'tabBrowse' | 'tabFavorites' }> = [
+  { id: 'browse', labelKey: 'tabBrowse' },
+  { id: 'favorites', labelKey: 'tabFavorites' },
 ];
 
 /** DOM id of the single results panel these tabs control (see `App.tsx`). */
@@ -35,6 +38,7 @@ export function tabButtonId(id: TabId): string {
  * tab wires `aria-controls` to the shared results panel (`TAB_PANEL_ID`).
  */
 export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
+  const locale = useLocale();
   const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
   const handleKeyDown = (e: KeyboardEvent, idx: number) => {
@@ -51,7 +55,7 @@ export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
   };
 
   return (
-    <div class="tab-bar" role="tablist" aria-label={t.viewModeLabel}>
+    <div class="tab-bar" role="tablist" aria-label={t(locale, 'viewModeLabel')}>
       {TABS.map((tab, idx) => {
         const isActive = activeTab === tab.id;
         return (
@@ -73,7 +77,7 @@ export function TabBar({ activeTab, onChange, disabled }: TabBarProps) {
             onClick={() => handleClick(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
           >
-            {tab.label}
+            {t(locale, tab.labelKey)}
           </button>
         );
       })}

@@ -1,6 +1,7 @@
 import type { SongRecord } from '@karaoke/schema';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 interface ResultCardProps {
   record: SongRecord;
@@ -35,6 +36,7 @@ interface NumberBadgeProps {
 }
 
 function NumberBadge({ label, value, testId }: NumberBadgeProps) {
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -62,7 +64,7 @@ function NumberBadge({ label, value, testId }: NumberBadgeProps) {
         type="button"
         class={`badge badge-number ${value === null ? 'badge-disabled' : ''}`}
         data-testid={testId}
-        aria-label={t.copyNumberLabel(label)}
+        aria-label={t(locale, 'copyNumberLabel', label)}
         disabled={value === null}
         onClick={handleClick}
       >
@@ -72,7 +74,7 @@ function NumberBadge({ label, value, testId }: NumberBadgeProps) {
             the sr-only live region beside it. */}
         {copied && (
           <span class="badge-toast" aria-hidden="true">
-            {t.copiedToast}
+            {t(locale, 'copiedToast')}
           </span>
         )}
       </button>
@@ -80,13 +82,14 @@ function NumberBadge({ label, value, testId }: NumberBadgeProps) {
           aria-live span, no explicit role): filled on copy so screen readers
           announce it once, empty otherwise. */}
       <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="copy-status">
-        {copied ? t.copiedAnnouncement : ''}
+        {copied ? t(locale, 'copiedAnnouncement') : ''}
       </span>
     </>
   );
 }
 
 export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardProps) {
+  const locale = useLocale();
   const titleText = joinBilingual(record.title_primary, record.title_ko);
   // Spec 2026-05-04: alias display runs first, then bilingual joiner. The
   // resulting string is e.g. `"スピッツ (Spitz) — 스피츠"` when both aliases
@@ -99,7 +102,7 @@ export function ResultCard({ record, isFavorite, onToggleFavorite }: ResultCardP
       <button
         type="button"
         class={`favorite-star ${isFavorite ? 'favorite-star-on' : ''}`}
-        aria-label={t.favoriteLabel}
+        aria-label={t(locale, 'favoriteLabel')}
         aria-pressed={isFavorite}
         onClick={() => onToggleFavorite(record.id)}
       >

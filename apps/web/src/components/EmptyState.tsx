@@ -1,5 +1,6 @@
 import { featured, featuredArtistLabel, featuredArtistQuery } from '../data/featured.js';
 import { t } from '../lib/i18n.js';
+import { useLocale } from '../lib/locale-hooks.js';
 
 interface EmptyStateProps {
   onPickArtist: (name: string) => void;
@@ -17,6 +18,7 @@ const SECTIONS: ReadonlyArray<{ key: keyof typeof featured; label: string }> = [
  * now (see TabBar + App.tsx). EmptyState is purely featured-artist content.
  */
 export function EmptyState({ onPickArtist }: EmptyStateProps) {
+  const locale = useLocale();
   return (
     <div class="empty-state">
       {SECTIONS.map((section) => {
@@ -25,7 +27,7 @@ export function EmptyState({ onPickArtist }: EmptyStateProps) {
           <section key={section.key} class="empty-section">
             <h2 class="empty-section-title">{section.label}</h2>
             {artists.length === 0 ? (
-              <p class="empty-section-placeholder">{t.notYet}</p>
+              <p class="empty-section-placeholder">{t(locale, 'notYet')}</p>
             ) : (
               <div class="empty-section-chips">
                 {artists.map((artist) => {
