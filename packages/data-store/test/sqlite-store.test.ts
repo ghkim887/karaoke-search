@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { runDataStoreCli } from '../src/cli.js';
 import {
   SONG_SCHEMA_SQL,
+  applySongDeltaPatch,
   createSongDatabase,
   exportSongs,
   exportSongsJson,
@@ -13,6 +14,8 @@ import {
   importSongsJson,
   openSongDatabase,
 } from '../src/index.js';
+import type { SongDatabase } from '../src/schema.js';
+import { GRAM1_DF_CAP, pruneHighDfGram1Tokens } from '../src/search-index.js';
 
 const openDatabases: Array<{ close(): void }> = [];
 
@@ -549,5 +552,154 @@ describe('SQLite song store', () => {
     ).toThrow(/does not match base corpus/);
     exportSongsJson({ dbPath, outputPath });
     expect(readFileSync(outputPath, 'utf8')).toBe(`${JSON.stringify(FIXTURE_RECORDS, null, 2)}\n`);
+  });
+});
+
+/**
+ * Build `count` schema-valid songs whose only non-ASCII character is `char`
+ * (title `${char}${index}`; ASCII artist), so each song contributes exactly one
+ * gram1 posting for `char` and the token's document frequency equals `count`.
+ * Distinct ids and tj numbers keep every record unique.
+ */
+function gram1Corpus(char: string, count: number, prefix: string, tjBase: number): SongRecord[] {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `${prefix}-${index}`,
+    source_url: `https://example.com/${prefix}/${index}`,
+    title_primary: `${char}${index}`,
+    title_ko: null,
+    artist_primary: `Artist ${prefix} ${index}`,
+    artist_ko: null,
+    karaoke_numbers: { tj: String(tjBase + index), ky: null, joysound: null },
+    crawled_at: '2026-01-01T00:00:00.000Z',
+  }));
+}
+
+/**
+ * Deterministically ordered logical dump of every corpus/derived table. Two
+ * imports of the same records must produce byte-identical dumps.
+ */
+function dumpSearchDatabase(db: SongDatabase): string {
+  const queries = [
+    'SELECT * FROM songs ORDER BY sort_order, id',
+    'SELECT * FROM karaoke_numbers ORDER BY song_id, provider',
+    'SELECT * FROM artist_aliases ORDER BY song_id, position',
+    'SELECT * FROM search_texts ORDER BY song_id, field, text_compact',
+    'SELECT * FROM search_tokens ORDER BY kind, token, song_id, field',
+    'SELECT * FROM search_token_stats ORDER BY kind, token',
+    'SELECT * FROM search_hints ORDER BY song_id, field, source, text_compact',
+    'SELECT tbl, idx, stat FROM sqlite_stat1 ORDER BY tbl, idx',
+  ];
+  return queries.map((sql) => JSON.stringify(db.prepare(sql).all())).join('\n');
+}
+
+function gram1Df(db: SongDatabase, token: string): number | undefined {
+  const row = db
+    .prepare("SELECT df FROM search_token_stats WHERE kind = 'gram1' AND token = ?")
+    .get(token) as { df: number } | undefined;
+  return row?.df;
+}
+
+function gram1PostingCount(db: SongDatabase, token: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS count FROM search_tokens WHERE kind = 'gram1' AND token = ?")
+    .get(token) as { count: number };
+  return row.count;
+}
+
+describe('gram1 df-cap pruning (T5-B)', () => {
+  it('on import, prunes gram1 tokens above the cap and keeps tokens at the cap (boundary df=cap/cap+1)', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+    // 'あ' in exactly GRAM1_DF_CAP songs -> df == cap -> KEPT (not > cap).
+    // 'か' in GRAM1_DF_CAP + 1 songs      -> df == cap + 1 -> PRUNED.
+    const kept = gram1Corpus('あ', GRAM1_DF_CAP, 'keep', 100_000);
+    const pruned = gram1Corpus('か', GRAM1_DF_CAP + 1, 'prune', 300_000);
+
+    importSongs(db, [...kept, ...pruned]);
+
+    expect(gram1Df(db, 'あ')).toBe(GRAM1_DF_CAP);
+    expect(gram1PostingCount(db, 'あ')).toBe(GRAM1_DF_CAP);
+    // Pruned token is absent from BOTH postings and stats (the lock-step invariant).
+    expect(gram1Df(db, 'か')).toBeUndefined();
+    expect(gram1PostingCount(db, 'か')).toBe(0);
+  });
+
+  it('on a delta patch, prunes a gram1 token the candidate pushes above the cap and keeps a fresh below-cap token (affected mode)', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+    // Base holds 'あ' exactly AT the cap, so the full import keeps it.
+    const base = gram1Corpus('あ', GRAM1_DF_CAP, 'base', 100_000);
+    importSongs(db, base);
+    expect(gram1Df(db, 'あ')).toBe(GRAM1_DF_CAP);
+
+    // Candidate appends one song containing 'あ' (df -> cap + 1) and a brand-new
+    // below-cap char 'ぞ' (df == 1).
+    const added: SongRecord = {
+      id: 'delta-900',
+      source_url: 'https://example.com/delta/900',
+      title_primary: 'あぞ',
+      title_ko: null,
+      artist_primary: 'Delta Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: '900000', ky: null, joysound: null },
+      crawled_at: '2026-02-01T00:00:00.000Z',
+    };
+    const candidate = [...base, added];
+
+    const manifest = applySongDeltaPatch({
+      db,
+      baseRecords: base,
+      candidateRecords: candidate,
+      maxTouchedRatio: 1,
+      tokenStatMode: 'affected',
+    });
+
+    // 'あ' crossed the cap via the delta -> pruned everywhere.
+    expect(manifest.tokenStats.prunedGram1TokenCount).toBe(1);
+    expect(gram1Df(db, 'あ')).toBeUndefined();
+    expect(gram1PostingCount(db, 'あ')).toBe(0);
+    // The freshly-touched below-cap char stays indexed.
+    expect(gram1Df(db, 'ぞ')).toBe(1);
+    expect(gram1PostingCount(db, 'ぞ')).toBe(1);
+  });
+
+  it('pruneHighDfGram1Tokens honors an injected cap and never touches other token kinds', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+    // Import a small corpus (nothing hits GRAM1_DF_CAP), then re-run the prune
+    // with a tiny explicit cap to exercise the boundary cheaply. '天' has df 3.
+    importSongs(db, gram1Corpus('天', 3, 'x', 100_000));
+    const gram2Before = db
+      .prepare("SELECT COUNT(*) AS count FROM search_tokens WHERE kind = 'gram2'")
+      .get() as { count: number };
+
+    // cap = 3: df == 3 is NOT > cap, so nothing is pruned.
+    expect(pruneHighDfGram1Tokens(db, 3)).toBe(0);
+    expect(gram1PostingCount(db, '天')).toBe(3);
+    // cap = 2: df == 3 > cap, so '天' is pruned.
+    expect(pruneHighDfGram1Tokens(db, 2)).toBe(1);
+    expect(gram1Df(db, '天')).toBeUndefined();
+    expect(gram1PostingCount(db, '天')).toBe(0);
+    // Other token kinds are untouched by a gram1 prune.
+    const gram2After = db
+      .prepare("SELECT COUNT(*) AS count FROM search_tokens WHERE kind = 'gram2'")
+      .get() as { count: number };
+    expect(gram2After.count).toBe(gram2Before.count);
+  });
+
+  it('produces an identical logical dump for the same corpus, including the gram1 prune (determinism)', () => {
+    // Include an over-cap character so the prune step actually fires in both builds.
+    const corpus = [...gram1Corpus('か', GRAM1_DF_CAP + 1, 'prune', 300_000), ...FIXTURE_RECORDS];
+
+    const first = openMemoryDb();
+    createSongDatabase(first);
+    importSongs(first, corpus);
+    const second = openMemoryDb();
+    createSongDatabase(second);
+    importSongs(second, corpus);
+
+    expect(dumpSearchDatabase(first)).toBe(dumpSearchDatabase(second));
+    // Not a vacuous check: the over-cap char really was pruned in the dumped DB.
+    expect(gram1PostingCount(first, 'か')).toBe(0);
   });
 });

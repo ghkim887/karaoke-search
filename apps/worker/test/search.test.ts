@@ -411,6 +411,21 @@ describe('worker search API', () => {
     expect(byMismatchedIndexedFilters.items).toEqual([]);
   });
 
+  it('keeps below-cap single-character (gram1) queries searchable after df-cap pruning', async () => {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
+
+    // '残' and '天' each occur in exactly one fixture song, far below
+    // GRAM1_DF_CAP, so the T5-B gram1 df-cap prune must leave their postings
+    // intact. A 1-character non-ASCII query is the ONLY shape that consults
+    // gram1 (buildSearchQueryTokens `compactLength === 1`), so this is the
+    // behavior that would silently break if pruning were too aggressive.
+    const byZan = await fetchJson(db, `/api/search?q=${encodeURIComponent('残')}`);
+    const byTen = await fetchJson(db, `/api/search?q=${encodeURIComponent('天')}`);
+
+    expect(byZan.items.map((song) => song.id)).toEqual(['song-4']);
+    expect(byTen.items.map((song) => song.id)).toEqual(['song-4']);
+  });
+
   it('preserves MiniSearch parity for Japanese artist, Latin casefolding, punctuation prefixes, and long prefixes', async () => {
     const db = createSearchDatabaseWithSongs(MINISEARCH_PARITY_RECORDS);
 

@@ -7,9 +7,11 @@ import { exportSongs, readSongRecordsJson, validateSongCorpus } from './import-e
 import { createSongDatabase, openSongDatabase } from './schema.js';
 import type { SongDatabase } from './schema.js';
 import {
+  GRAM1_DF_CAP,
   KARAOKE_PROVIDERS,
   collectTokenKeysForSong,
   groupResolvedHints,
+  pruneHighDfGram1Tokens,
   recalculateAffectedTokenStats,
   recalculateAllTokenStats,
   resolveSearchHints,
@@ -86,6 +88,12 @@ export interface SongDeltaPatchManifest {
     mode: DeltaPatchTokenStatMode;
     affectedTokenCount: number;
     recalculatedTokenStatCount: number;
+    /**
+     * gram1 tokens deleted by the df-cap prune ({@link GRAM1_DF_CAP}) after this
+     * patch's stat recalculation. In `affected` mode only tokens touched by the
+     * delta are considered (one-directional — see `pruneHighDfGram1Tokens`).
+     */
+    prunedGram1TokenCount: number;
   };
   sqlite: {
     mutated: boolean;
@@ -194,6 +202,7 @@ export function applySongDeltaPatch(args: ApplySongDeltaPatchArgs): SongDeltaPat
   manifest.sqlite.mutated = true;
   manifest.tokenStats.affectedTokenCount = patchResult.affectedTokenCount;
   manifest.tokenStats.recalculatedTokenStatCount = patchResult.recalculatedTokenStatCount;
+  manifest.tokenStats.prunedGram1TokenCount = patchResult.prunedGram1TokenCount;
   return manifest;
 }
 
@@ -365,6 +374,7 @@ function createPatchManifest({
       mode: tokenStatMode,
       affectedTokenCount: 0,
       recalculatedTokenStatCount: 0,
+      prunedGram1TokenCount: 0,
     },
     sqlite: {
       mutated: false,
@@ -395,6 +405,7 @@ interface DeltaMutationOptions {
 interface DeltaMutationResult {
   affectedTokenCount: number;
   recalculatedTokenStatCount: number;
+  prunedGram1TokenCount: number;
 }
 
 function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): DeltaMutationResult {
@@ -447,10 +458,19 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
       options.tokenStatMode === 'all'
         ? recalculateAllTokenStats(db, options.candidateRecords.length)
         : recalculateAffectedTokenStats(db, affectedTokenKeys, options.candidateRecords.length);
+    // Apply the same gram1 df-cap as the full import, over freshly-recomputed df.
+    // `all` mode re-swept every stat, so prune the whole corpus; `affected` mode
+    // only refreshed touched tokens, so restrict the prune to those (the
+    // documented one-directional behavior — see pruneHighDfGram1Tokens).
+    const prunedGram1TokenCount =
+      options.tokenStatMode === 'all'
+        ? pruneHighDfGram1Tokens(db, GRAM1_DF_CAP)
+        : pruneHighDfGram1Tokens(db, GRAM1_DF_CAP, affectedTokenKeys);
     db.exec('COMMIT');
     return {
       affectedTokenCount: affectedTokenKeys.size,
       recalculatedTokenStatCount,
+      prunedGram1TokenCount,
     };
   } catch (error) {
     db.exec('ROLLBACK');
