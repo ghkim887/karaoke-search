@@ -23,8 +23,15 @@ const SONG_INDEX_SCHEMA_SQL = `CREATE INDEX IF NOT EXISTS idx_songs_sort_order O
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_number ON karaoke_numbers(number, provider, song_id) WHERE number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_number_key ON karaoke_numbers(number_key, provider, song_id) WHERE number_key IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_search_texts_compact ON search_texts(text_compact, song_id);
-CREATE INDEX IF NOT EXISTS idx_search_tokens_song ON search_tokens(song_id);`;
+CREATE INDEX IF NOT EXISTS idx_search_texts_compact ON search_texts(text_compact, song_id);`;
+
+/**
+ * Legacy indexes this schema no longer creates but that older databases may
+ * still carry. `createSongDatabase` drops each so a database opened by current
+ * code converges on the canonical schema (and reclaims the space on its next
+ * VACUUM) regardless of which build wrote it.
+ */
+const SONG_LEGACY_INDEX_DROP_SQL = 'DROP INDEX IF EXISTS idx_search_tokens_song;';
 
 /**
  * The canonical schema for the self-hosted SQLite search database
@@ -43,10 +50,18 @@ CREATE INDEX IF NOT EXISTS idx_search_tokens_song ON search_tokens(song_id);`;
  * No `idx_search_tokens_lookup(kind, token, song_id)` or
  * `idx_search_texts_song(song_id)`: both were left-prefixes of their table's
  * primary key (`(kind, token, song_id, field)` and `(song_id, field,
- * text_compact)`), so the PK already serves every lookup they covered. The
- * retained `idx_search_tokens_song(song_id)` is NOT a PK prefix (the PK leads
- * with `kind`), so it stays to serve the per-song token sweeps in the delta
- * patcher's stat recalculation.
+ * text_compact)`), so the PK already serves every lookup they covered.
+ *
+ * No `idx_search_tokens_song(song_id)` either (removed 2026-07, I4): it was
+ * NOT a PK prefix (the `search_tokens` PK leads with `kind`), but the only
+ * consumers were the delta patcher's per-song token sweeps, and it was the
+ * single largest serving-artifact object (~41% of the DB, dominating the
+ * `search_tokens` table it hung off). Serving search, full import, and df
+ * recalculation all read via the PK `(kind, token, …)` prefix and never touched
+ * it. The delta patcher now sweeps set-based over all touched songs in one pass
+ * (`collectTokenKeysForSongs` / `deleteSearchTokensForSongs`), which is faster
+ * than the old per-song loop even without the index and needs no `song_id`
+ * index at all — so the whole 41% is reclaimed with no serving regression.
  */
 export const SONG_SCHEMA_SQL = `${SONG_TABLE_SCHEMA_SQL}
 ${SONG_INDEX_SCHEMA_SQL}`;
@@ -78,6 +93,7 @@ export function createSongDatabase(db: SongDatabase): void {
   );
   ensureSearchTokensHintFields(db);
   db.exec(SONG_INDEX_SCHEMA_SQL);
+  db.exec(SONG_LEGACY_INDEX_DROP_SQL);
 }
 
 /**

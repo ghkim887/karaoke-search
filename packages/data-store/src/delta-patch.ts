@@ -9,7 +9,8 @@ import type { SongDatabase } from './schema.js';
 import {
   GRAM1_DF_CAP,
   KARAOKE_PROVIDERS,
-  collectTokenKeysForSong,
+  collectTokenKeysForSongs,
+  deleteSearchTokensForSongs,
   groupResolvedHints,
   pruneHighDfGram1Tokens,
   recalculateAffectedTokenStats,
@@ -423,10 +424,20 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec('BEGIN');
   try {
+    // Collect the touched songs' OLD token keys in one set-based sweep before
+    // deleting them (see collectTokenKeysForSongs), then drop their tokens in a
+    // single set-based DELETE. `search_tokens` has no `song_id` index, so this
+    // one-pass shape is what keeps the sweep cheap (I4) — the old per-song loop
+    // would be one full scan per song without that index.
+    collectTokenKeysForSongs(db, options.delta.touchedIds, affectedTokenKeys);
+    deleteSearchTokensForSongs(db, options.delta.touchedIds);
+
+    // The remaining child tables are `WITHOUT ROWID` with a `song_id`-leading
+    // primary key, so a per-song delete already probes by PK — no index gap and
+    // no benefit from batching. Keep them per-song alongside the conditional
+    // `songs` delete for removed ids.
     for (const songId of options.delta.touchedIds) {
-      collectTokenKeysForSong(db, songId, affectedTokenKeys);
       statements.deleteSearchHints.run(songId);
-      statements.deleteSearchTokens.run(songId);
       statements.deleteSearchTexts.run(songId);
       statements.deleteNumbers.run(songId);
       statements.deleteAliases.run(songId);
@@ -445,8 +456,14 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
         throw new Error(`Missing candidate sort order for ${songId}`);
       }
       writeSongRecordRows(statements, record, sortOrder, hintsBySongId.get(songId) ?? []);
-      collectTokenKeysForSong(db, songId, affectedTokenKeys);
     }
+
+    // Collect the NEW token keys in one set-based sweep after re-inserting.
+    // Removed songs have no rows now, so they contribute nothing — making this
+    // union over all touched ids identical to the old per-re-inserted-song
+    // collect, and keeping affectedTokenKeys (which the gram1 prune consumes)
+    // byte-for-byte equivalent to the previous per-song accumulation.
+    collectTokenKeysForSongs(db, options.delta.touchedIds, affectedTokenKeys);
 
     // Preserve exact candidate export order even when the delta removed rows and
     // shifted many untouched records. This is cheap relative to token rebuilds.

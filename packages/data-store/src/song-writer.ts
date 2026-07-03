@@ -24,7 +24,6 @@ export interface SongWriteStatements {
   deleteNumbers: PreparedStatement;
   deleteAliases: PreparedStatement;
   deleteSearchTexts: PreparedStatement;
-  deleteSearchTokens: PreparedStatement;
   deleteSearchHints: PreparedStatement;
   insertNumber: PreparedStatement;
   insertAlias: PreparedStatement;
@@ -68,7 +67,6 @@ export function prepareSongWriteStatements(db: SongDatabase): SongWriteStatement
     deleteNumbers: db.prepare('DELETE FROM karaoke_numbers WHERE song_id = ?'),
     deleteAliases: db.prepare('DELETE FROM artist_aliases WHERE song_id = ?'),
     deleteSearchTexts: db.prepare('DELETE FROM search_texts WHERE song_id = ?'),
-    deleteSearchTokens: db.prepare('DELETE FROM search_tokens WHERE song_id = ?'),
     deleteSearchHints: db.prepare('DELETE FROM search_hints WHERE song_id = ?'),
     insertNumber: db.prepare(
       'INSERT INTO karaoke_numbers (song_id, provider, number, number_key) VALUES (?, ?, ?, ?)',
