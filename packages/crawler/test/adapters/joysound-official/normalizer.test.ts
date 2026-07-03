@@ -161,6 +161,59 @@ describe('normalizeJoysoundRecord — invariants (no Korean fields)', () => {
   });
 });
 
+describe('normalizeJoysoundRecord — title_ruby (songNameRuby passthrough)', () => {
+  it('threads detail.songNameRuby into title_ruby', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem(),
+      detail: detail({ songNameRuby: 'よるにかける' }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.title_ruby).toBe('よるにかける');
+  });
+
+  it('omits title_ruby when no detail is supplied', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem(),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec).not.toHaveProperty('title_ruby');
+  });
+
+  it('omits title_ruby when detail.songNameRuby is null', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem(),
+      detail: detail({ songNameRuby: null }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec).not.toHaveProperty('title_ruby');
+  });
+
+  it('omits title_ruby when detail.songNameRuby is empty/whitespace', () => {
+    for (const ruby of ['', '   ']) {
+      const rec = normalizeJoysoundRecord({
+        listItem: listItem(),
+        detail: detail({ songNameRuby: ruby }),
+        sourceUrl: SOURCE_URL,
+        crawledAt: CRAWLED_AT,
+      });
+      expect(rec).not.toHaveProperty('title_ruby');
+    }
+  });
+
+  it('keeps a ruby identical to the title', () => {
+    const rec = normalizeJoysoundRecord({
+      listItem: listItem({ songName: 'レモン' }),
+      detail: detail({ songName: 'レモン', songNameRuby: 'レモン' }),
+      sourceUrl: SOURCE_URL,
+      crawledAt: CRAWLED_AT,
+    });
+    expect(rec.title_ruby).toBe('レモン');
+  });
+});
+
 describe('normalizeJoysoundRecord — A1 artistNameForeign → artist_aliases', () => {
   // Hangul native artist name (built from code points to keep CJK literals minimal).
   const HANGUL_ARTIST = String.fromCodePoint(0xb3d9, 0xbc29, 0xc2e0, 0xae30); // native Hangul act

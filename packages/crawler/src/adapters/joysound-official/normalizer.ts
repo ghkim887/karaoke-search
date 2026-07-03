@@ -71,8 +71,15 @@ export function normalizeJoysoundNumber(raw: string): string {
  *    to the listing cell.
  *  - `title_ko` / `artist_ko` are ALWAYS null. The JOYSOUND surface text
  *    is Japanese; Korean translations belong to the blog / TJ
- *    transliteration paths. Threading detail ruby data here would lie
- *    about provenance and contaminate the merger's KO_CHAIN.
+ *    transliteration paths. Threading detail ruby data into the KO fields
+ *    would lie about provenance and contaminate the merger's KO_CHAIN.
+ *  - `title_ruby` = the detail's `songNameRuby` (katakana reading of the
+ *    title) when present. This is its own additive metadata field — unlike
+ *    the KO fields it carries no provenance claim — so it is safe to persist
+ *    here. `detail.songNameRuby` is already `'' → null` coerced by the detail
+ *    parser; we trim and omit the field for null/empty so unknown readings
+ *    stay absent (schema prefers absence). A reading identical to the title
+ *    is valid and kept.
  */
 export function normalizeJoysoundRecord(args: NormalizeArgs): SongRecord {
   const { listItem, detail, sourceUrl, crawledAt } = args;
@@ -87,6 +94,7 @@ export function normalizeJoysoundRecord(args: NormalizeArgs): SongRecord {
   const titlePrimary = detail?.songName ?? listItem.songName;
   const artistPrimary = detail?.artistName ?? listItem.artistName;
   const artistAliases = buildArtistAliases(artistPrimary, detail);
+  const titleRuby = detail?.songNameRuby?.trim();
 
   const record: SongRecord = {
     id: `joysound-${listItem.naviGroupId}`,
@@ -103,6 +111,8 @@ export function normalizeJoysoundRecord(args: NormalizeArgs): SongRecord {
       joysound: normalizeJoysoundNumber(listItem.selSongNo),
     },
     crawled_at: crawledAt,
+    // Omit for null/empty ruby so unknown readings stay absent.
+    ...(titleRuby ? { title_ruby: titleRuby } : {}),
   };
   validateSongRecord(record);
   return record;

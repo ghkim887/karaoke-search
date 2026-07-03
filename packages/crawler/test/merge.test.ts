@@ -2440,3 +2440,62 @@ describe('mergeRecords — cross-record artist_ko propagation', () => {
     expect(records.find((r) => r.id === 'joysound-700500')?.artist_ko).toBe('오자키 유타카');
   });
 });
+
+describe('mergeRecords — title_ruby (carried from the title donor)', () => {
+  it('keeps title_ruby on a JOYSOUND-only singleton (title donor is the joysound record)', () => {
+    const js = record({
+      id: 'joysound-622657',
+      source_url: 'https://www.joysound.com/web/search/song/622657',
+      title_primary: '○',
+      artist_primary: 'いきものがかり',
+      karaoke_numbers: { tj: null, ky: null, joysound: '622657' },
+      title_ruby: 'マル',
+    });
+    const { records } = mergeRecords([js]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.title_ruby).toBe('マル');
+    // Emitted as the last key (schema-canonical trailing position).
+    expect(Object.keys(records[0] ?? {}).at(-1)).toBe('title_ruby');
+  });
+
+  it('carries the JOYSOUND ruby onto the merged record when the joysound side also wins the title', () => {
+    // Tier A union by shared joysound#; TJ has no title, so the title (and its
+    // ruby) come from the joysound record.
+    const js = record({
+      id: 'joysound-631234',
+      source_url: 'https://www.joysound.com/web/search/song/631234',
+      title_primary: 'アイドル',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: null, ky: null, joysound: '631234' },
+      title_ruby: 'アイドル',
+    });
+    const { records } = mergeRecords([js]);
+    expect(records[0]?.title_ruby).toBe('アイドル');
+  });
+
+  it('drops the JOYSOUND ruby when a higher-priority source donates the title', () => {
+    // Shared TJ# clusters a TJ title-owner with a JOYSOUND ruby-carrier. The TJ
+    // record wins the title (TITLE_ARTIST_CHAIN puts joysound last), so the
+    // JOYSOUND reading — which reads the JOYSOUND surface, possibly a
+    // dash/spacing variant — is intentionally not grafted onto the TJ title.
+    const tj = record({
+      id: 'tj-68923',
+      source_url: 'https://tj.test/68923',
+      title_primary: '群青',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: '68923', ky: null, joysound: null },
+    });
+    const js = record({
+      id: 'joysound-500001',
+      source_url: 'https://www.joysound.com/web/search/song/500001',
+      title_primary: '群 青',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: '68923', ky: null, joysound: '500001' },
+      title_ruby: 'グンジョウ',
+    });
+    const { records } = mergeRecords([tj, js]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.title_primary).toBe('群青');
+    expect(records[0]).not.toHaveProperty('title_ruby');
+  });
+});

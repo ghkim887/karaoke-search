@@ -130,6 +130,18 @@ const songRecordSchemaInner = Type.Object(
      * below). 'low' confidence rows are surfaced in scripts/data/llm-review.csv.
      */
     title_ko_confidence: Type.Optional(StringEnum(['high', 'medium', 'low'])),
+    /**
+     * Katakana reading of `title_primary`, sourced from JOYSOUND's per-song
+     * `songNameRuby` detail field. Pure additive metadata — no serving path
+     * (sqlite build, worker, web) reads it yet; it exists so future crawls and
+     * the ruby backfill can persist the reading for later search enrichment
+     * (R4 Stage 2). `Optional(Nullable)` mirrors `title_ko`'s Nullable helper
+     * while staying absent by default: unknown → the key is omitted (crawler /
+     * backfill convention), and an explicit `null` is also tolerated. Empty
+     * strings are rejected (`minLength: 1`); a ruby identical to the title is
+     * valid data and kept.
+     */
+    title_ruby: Type.Optional(Nullable({ minLength: 1 })),
   },
   {
     additionalProperties: false,

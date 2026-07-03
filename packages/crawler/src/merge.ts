@@ -1063,6 +1063,28 @@ function mergeArtistAliases(
  *
  * Returns `null` when the cluster has no KO signal at all (all fields absent).
  */
+/**
+ * Pick the cluster member whose `title_primary` was selected by
+ * `pickByOwnership` walking `TITLE_ARTIST_CHAIN`, so `title_ruby` (the katakana
+ * reading OF that title) stays paired with the exact title it reads rather than
+ * being grafted onto a differently-rendered twin (e.g. a TJ dash-variant).
+ * `title_primary` is non-null by schema, so the first cluster member matching
+ * the highest-priority present slug is exactly the record `pickByOwnership`
+ * returns the title from. Only JOYSOUND records carry `title_ruby` today, and
+ * they sit last in the chain — so a mixed cluster whose title comes from
+ * TJ/blog intentionally drops the JOYSOUND reading (it would mismatch the
+ * winning title); a JOYSOUND-only cluster keeps it. Returns `null` only for an
+ * empty cluster (callers guard length).
+ */
+function pickTitleDonor(cluster: SongRecord[]): SongRecord | null {
+  for (const slug of TITLE_ARTIST_CHAIN) {
+    for (const r of cluster) {
+      if (sourceSlug(r) === slug) return r;
+    }
+  }
+  return cluster[0] ?? null;
+}
+
 function pickKoDonor(cluster: SongRecord[], koChain: readonly string[]): SongRecord | null {
   // Pass 1: record whose title_ko was selected.
   for (const slug of koChain) {
@@ -1523,6 +1545,9 @@ function mergeCluster(
   // title_ko_source === 'llm-translated') because both fields travel together
   // from a donor that already satisfied the constraint.
   const koDonor = pickKoDonor(cluster, KO_CHAIN);
+  // Additive: carry the katakana reading from whichever record donated
+  // title_primary, so a future crawl's JOYSOUND ruby survives the merge.
+  const titleRuby = pickTitleDonor(cluster)?.title_ruby;
   const merged: SongRecord = {
     id: pickByPriority(cluster, (r) => r.id),
     source_url: pickByPriority(cluster, (r) => r.source_url),
@@ -1543,6 +1568,8 @@ function mergeCluster(
     karaoke_numbers: mergeKaraokeNumbers(cluster, softClusterKey, conflicts),
     crawled_at: latestCrawledAt(cluster),
     ...optionalKoFields(koDonor),
+    // Emitted last (schema prefers absence for unknown readings).
+    ...(titleRuby ? { title_ruby: titleRuby } : {}),
   };
 
   // Emit the forming tier's soft-merge marker (one per cluster). Tier B has no
