@@ -143,9 +143,11 @@ function makeWorkerDb(database: SongDatabase): SearchDatabase {
   };
 }
 
-/** Path A: MiniSearch offline fallback exactly as results.ts assembles it. */
+/** Path A: MiniSearch offline fallback exactly as results.ts assembles it —
+ *  including the vendor scope `resolveBrowseCandidates` passes into
+ *  `searchLocalIndex` (number-recall vendor filter). */
 function webTopIds(query: string, vendors: SearchVendor[], limit: number): string[] {
-  const hits = searchLocalIndex(index, query);
+  const hits = searchLocalIndex(index, query, { vendors: new Set(vendors) });
   const records: SongRecord[] = [];
   for (const hit of hits) {
     const record = byId.get(String(hit.id));

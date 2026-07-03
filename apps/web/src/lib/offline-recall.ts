@@ -42,10 +42,13 @@ export interface OfflineRecallIndex {
    */
   matchNumberQuery(query: string, scope?: ReadonlySet<KaraokeProvider>): string[] | null;
   /**
-   * Ranked record ids for an all-choseong Hangul-initials query (≥ 2 jamo), or
+   * Ranked record ids for a Hangul-initials query — one composed only of
+   * choseong (standalone consonants) and whitespace, yielding ≥ 2 initials — or
    * `null` when `query` is not that shape (caller falls through to the text
    * path). This is a REPLACEMENT path: MiniSearch returns nothing for a jamo
-   * query, so there is no existing text result to preserve.
+   * query, so there is no existing text result to preserve. Interior spaces are
+   * collapsed into a single initial token, matching the worker's
+   * `makeHangulInitials(query)` `initial` token (`"ㅂㅇ ㄷㄹ"` == `"ㅂㅇㄷㄹ"`).
    */
   matchInitialsQuery(query: string): string[] | null;
 }
@@ -67,7 +70,8 @@ const WEIGHT_ALIAS = 2;
 
 // Hangul choseong (leading-consonant) code-point range. A standalone-consonant
 // query (typed as compatibility jamo ㄱ-ㅎ) NFKC-folds into this range, so an
-// "all initials" query is exactly one whose normalized form is all choseong.
+// "all initials" query is one whose normalized form is choseong + whitespace
+// (interior spaces let a user separate words, e.g. "ㅂㅇ ㄷㄹ").
 const HANGUL_CHOSEONG_START = 0x1100;
 const HANGUL_CHOSEONG_END = 0x1112;
 
@@ -103,9 +107,14 @@ function trimLeadingZeroes(value: string): string {
   return value.replace(/^0+/u, '') || '0';
 }
 
-/** Whether `value` is composed entirely of Hangul choseong code points. */
-function isAllChoseong(value: string): boolean {
+/** Whether `value` is composed only of Hangul choseong code points and
+ *  whitespace (and contains at least one choseong). */
+function isChoseongQuery(value: string): boolean {
+  let hasChoseong = false;
   for (const character of value) {
+    if (/\s/u.test(character)) {
+      continue;
+    }
     const codePoint = character.codePointAt(0);
     if (
       codePoint === undefined ||
@@ -114,8 +123,9 @@ function isAllChoseong(value: string): boolean {
     ) {
       return false;
     }
+    hasChoseong = true;
   }
-  return true;
+  return hasChoseong;
 }
 
 /** First index `i` where `accessor(sorted[i]) >= target` (lower bound). */
@@ -261,12 +271,12 @@ export function buildOfflineRecallIndex(records: readonly SongRecord[]): Offline
 
     matchInitialsQuery(query) {
       const normalized = normalizeSearchText(query).trim();
-      // Fire ONLY for an all-choseong query (standalone consonants), never for
-      // Hangul syllables — a syllable query keeps its byte-identical text path.
-      // The token is derived like the worker's `makeHangulInitials(query)`
-      // `initial` token (choseong → compatibility jamo, matching the indexed
-      // field initials), sliced to the shared prefix-token cap.
-      if (normalized.length === 0 || !isAllChoseong(normalized)) {
+      // Fire ONLY for a choseong(+whitespace) query (standalone consonants),
+      // never for Hangul syllables or mixed scripts — those keep their
+      // byte-identical text path. The token is derived like the worker's
+      // `makeHangulInitials(query)` `initial` token (choseong → compatibility
+      // jamo, interior spaces dropped), sliced to the shared prefix-token cap.
+      if (!isChoseongQuery(normalized)) {
         return null;
       }
       const token = makeHangulInitials(normalized).slice(0, MAX_PREFIX_TOKEN_CHARS);

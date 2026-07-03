@@ -114,6 +114,21 @@ describe('offline-recall: Hangul-initials queries', () => {
     expect(index.matchInitialsQuery('ㅎㄹㅎ')).toEqual(['other']);
   });
 
+  it('collapses interior spaces into one initial token ("ㅂㅇ ㄷㄹ" == "ㅂㅇㄷㄹ")', () => {
+    const index = buildOfflineRecallIndex([
+      makeRecord('yoru', { title_ko: '밤을 달리다' }), // -> ㅂㅇㄷㄹㄷ
+    ]);
+    // A spaced choseong query must match identically to the concatenated form,
+    // converging with the worker (whose makeHangulInitials drops the space).
+    expect(index.matchInitialsQuery('ㅂㅇ ㄷㄹ')).toEqual(['yoru']);
+    expect(index.matchInitialsQuery('ㅂㅇ ㄷㄹ')).toEqual(index.matchInitialsQuery('ㅂㅇㄷㄹ'));
+  });
+
+  it('does not fire for a mixed choseong + Latin query (keeps the text path)', () => {
+    const index = buildOfflineRecallIndex([makeRecord('a', { title_ko: '밤을 달리다' })]);
+    expect(index.matchInitialsQuery('ㅂㅇ dr')).toBeNull();
+  });
+
   it('ranks a title-field match above an artist-only match', () => {
     const index = buildOfflineRecallIndex([
       makeRecord('artistMatch', { artist_ko: '나다라' }),
