@@ -7,7 +7,7 @@ invariants, gotchas, and policy decisions see
 
 - Live site: <https://karaokedb.pages.dev/> (Cloudflare Pages, Astro
   `base: '/'`). GitHub Pages is intentionally disabled.
-- License: AGPL-3.0-or-later.
+- License: MIT.
 - Toolchain: pnpm workspaces (always invoke as `corepack pnpm` — plain `pnpm`
   is not guaranteed on PATH, especially on Windows hosts), TypeScript,
   Biome, Vitest, Playwright, plus Python 3.11 for some data scripts.
