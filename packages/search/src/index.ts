@@ -7,6 +7,28 @@ export interface KaraokeNumberQuery {
   number: string;
 }
 
+/**
+ * The kinds of rows in the `search_tokens` index. The builder writes tokens of
+ * each kind and the query worker looks them up with an exact `(kind, token)`
+ * JOIN, so this union is a shared contract: both sides MUST agree or matches
+ * silently drop.
+ */
+export type SearchTokenKind = 'term' | 'prefix' | 'gram1' | 'gram2' | 'gram3' | 'initial';
+
+/**
+ * Per-provider bit set in a row's `provider_mask`, letting a search filter by
+ * karaoke provider. Written into the index by the builder and combined into a
+ * filter mask by the query worker; the two MUST use identical bits.
+ */
+export const PROVIDER_MASKS: Record<KaraokeProvider, number> = { tj: 1, ky: 2, joysound: 4 };
+
+/**
+ * Upper bound (in characters) on the prefix and initial tokens the index
+ * builder emits and the query worker requests. Both sides MUST use the same
+ * bound or the exact-match prefix JOIN loses recall on longer inputs.
+ */
+export const MAX_PREFIX_TOKEN_CHARS = 12;
+
 const SEARCH_WORD_PATTERN = /[\p{Letter}\p{Number}\p{Mark}]+/gu;
 const KARAOKE_PROVIDER_PATTERN = /^(tj|ky|joysound)[\s:_-]*(\d[\d\s:_-]*)$/u;
 const KARAOKE_NUMBER_PATTERN = /^\d[\d\s:_-]*$/u;
@@ -112,15 +134,54 @@ export function normalizeKaraokeNumber(value: string): string {
  */
 const EXPANSION_VARIANT_LIMIT = 3;
 
-const HIRAGANA_PATTERN = /[぀-ゟ]/u;
-// Full-width katakana block (incl. the ー long-vowel mark) plus the phonetic
-// extensions; half/full-width forms are folded to this block by NFKC first.
-const KATAKANA_PATTERN = /[゠-ヿㇰ-ㇿ]/u;
-// Any Han ideograph, including supplementary-plane extensions (e.g. 𠮟,
-// U+20B9F) that the BMP-only ranges missed. Any kanji disqualifies a query
-// from transliteration — we never generate kanji readings.
-const KANJI_PATTERN = /\p{Script=Han}/u;
+/**
+ * Shared script-detection predicates — the single source for kana / Han /
+ * Hangul / Latin discrimination consumed by this module AND the crawler
+ * adapters (blog-whitelist trim, JP-likely rescue, JOYSOUND alias echo). They
+ * historically lived as hand-copied per-adapter regexes with divergent ranges;
+ * unified here (T1-3) to the widest correct range so a single string classifies
+ * the same everywhere.
+ *
+ * `KANA_PATTERN` spans every kana form that appears in source text: the
+ * Hiragana (U+3040–309F) and Katakana (U+30A0–30FF) blocks, the Katakana
+ * Phonetic Extensions (U+31F0–31FF), and the half-width Katakana block
+ * (U+FF66–FF9F, incl. the ｰ prolonged mark and ﾞ ﾟ sound marks). The half-width
+ * forms matter only for callers that test raw (pre-NFKC) catalog text — callers
+ * that normalize first never see them, and NFKC folds them into the blocks, so
+ * their behaviour is unchanged.
+ */
+const KANA_PATTERN = /[぀-ゟ゠-ヿㇰ-ㇿｦ-ﾟ]/u;
+const KANA_ONLY_PATTERN = /^[぀-ゟ゠-ヿㇰ-ㇿｦ-ﾟ]+$/u;
+// Any Han ideograph, including CJK extensions and supplementary-plane forms
+// (e.g. 𠮟, U+20B9F) that BMP-only ranges miss.
+const HAN_PATTERN = /\p{Script=Han}/u;
+const HANGUL_PATTERN = /\p{Script=Hangul}/u;
 const LATIN_LETTER_PATTERN = /[A-Za-z]/u;
+
+/** Whether `value` contains any hiragana or katakana (any width). */
+export function hasKana(value: string): boolean {
+  return KANA_PATTERN.test(value);
+}
+
+/** Whether `value` is non-empty and composed ENTIRELY of kana (any width). */
+export function isKanaOnly(value: string): boolean {
+  return KANA_ONLY_PATTERN.test(value);
+}
+
+/** Whether `value` contains any Han ideograph (incl. extensions / supplementary plane). */
+export function hasHan(value: string): boolean {
+  return HAN_PATTERN.test(value);
+}
+
+/** Whether `value` contains any Hangul (syllables, jamo, or compatibility jamo). */
+export function hasHangul(value: string): boolean {
+  return HANGUL_PATTERN.test(value);
+}
+
+/** Whether `value` contains any A–Z / a–z Latin letter. */
+export function hasLatinLetter(value: string): boolean {
+  return LATIN_LETTER_PATTERN.test(value);
+}
 
 /**
  * Expand a free-text search query into safe transliteration variants for
@@ -166,18 +227,17 @@ export function expandSearchQuery(query: string): string[] {
   // Detect on the NFKC form so width variants (half-width kana, full-width
   // Latin) classify the same way they index.
   const detect = original.normalize('NFKC');
-  if (KANJI_PATTERN.test(detect)) {
+  if (hasHan(detect)) {
     return variants;
   }
 
-  const hasHiragana = HIRAGANA_PATTERN.test(detect);
-  const hasKatakana = KATAKANA_PATTERN.test(detect);
-  const hasLatin = LATIN_LETTER_PATTERN.test(detect);
+  const kana = hasKana(detect);
+  const latin = hasLatinLetter(detect);
 
-  if ((hasHiragana || hasKatakana) && !hasLatin) {
+  if (kana && !latin) {
     // Kana query → romaji recall variant (safe pure transliteration).
     push(toRomaji(original));
-  } else if (hasLatin && !hasHiragana && !hasKatakana) {
+  } else if (latin && !kana) {
     // Latin/romaji query → kana recall variants.
     push(toHiragana(original));
     push(toKatakana(original));
@@ -203,13 +263,10 @@ export function deriveKanaRomaji(value: string): string | null {
   }
 
   const detect = trimmed.normalize('NFKC');
-  if (KANJI_PATTERN.test(detect)) {
+  if (hasHan(detect)) {
     return null;
   }
-  const hasHiragana = HIRAGANA_PATTERN.test(detect);
-  const hasKatakana = KATAKANA_PATTERN.test(detect);
-  const hasLatin = LATIN_LETTER_PATTERN.test(detect);
-  if ((hasHiragana || hasKatakana) && !hasLatin) {
+  if (hasKana(detect) && !hasLatinLetter(detect)) {
     const romaji = toRomaji(trimmed).trim();
     return romaji.length > 0 ? romaji : null;
   }

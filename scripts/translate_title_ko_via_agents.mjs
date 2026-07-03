@@ -15,12 +15,20 @@
  * Claude Code session — see scripts/title_ko_stage2_howto.md.
  */
 
-import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { writeJsonAtomic, writeTextAtomic } from './lib/atomic-write.mjs';
+import {
+  chunkRecords,
+  listChunkFiles,
+  parseFlag,
+  writeChunkInputs as writeChunkInputFiles,
+  writeCsvWithBom,
+} from './lib/agent-chunks.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
 import { writeCorpusAtomic } from './lib/corpus.mjs';
-import { csvEscape } from './lib/csv.mjs';
+
+// Re-exported for the .test.mjs suite (identical impl now lives in the lib).
+export { chunkRecords };
 
 const CJK_RE = /[぀-ゟ゠-ヿ一-鿿]/;
 
@@ -39,28 +47,12 @@ export function filterTranslatableRecords(records) {
 }
 
 /**
- * Deterministic split of `records` into consecutive chunks of `size`,
- * preserving order. Last chunk may be smaller than `size`.
- */
-export function chunkRecords(records, size) {
-  if (records.length === 0) return [];
-  const chunks = [];
-  for (let i = 0; i < records.length; i += size) {
-    chunks.push(records.slice(i, i + size));
-  }
-  return chunks;
-}
-
-/**
  * Write each chunk to <out_dir>/llm-translations-chunk-NN-input.json
  * (zero-padded NN, two digits). Atomic per-file write via .tmp + rename.
  */
 export function writeChunkInputs(outDir, chunks) {
-  mkdirSync(outDir, { recursive: true });
-  chunks.forEach((chunk, idx) => {
-    const nn = String(idx).padStart(2, '0');
-    const finalPath = join(outDir, `llm-translations-chunk-${nn}-input.json`);
-    writeJsonAtomic(finalPath, chunk);
+  writeChunkInputFiles(outDir, chunks, (nn) => `llm-translations-chunk-${nn}-input.json`, {
+    ensureDir: true,
   });
 }
 
@@ -100,9 +92,7 @@ const VALID_CONFIDENCE = new Set(['high', 'medium', 'low']);
  */
 export function loadAndValidateChunkOutputs(chunksDir) {
   const map = new Map();
-  const files = readdirSync(chunksDir)
-    .filter((f) => /^llm-translations-chunk-\d+\.json$/.test(f))
-    .sort();
+  const files = listChunkFiles(chunksDir, /^llm-translations-chunk-\d+\.json$/);
   for (const f of files) {
     const path = join(chunksDir, f);
     const arr = JSON.parse(readFileSync(path, 'utf-8'));
@@ -209,18 +199,14 @@ export function applyDecisionsToCorpus(records, decisions) {
  * High-confidence decisions are excluded (they don't need review).
  */
 export function writeReviewCsv(path, decisions) {
-  const lines = ['id,title_primary,title_ko,confidence,reasoning'];
+  const rows = [['id', 'title_primary', 'title_ko', 'confidence', 'reasoning']];
   for (const d of decisions.values()) {
     if (d.confidence === 'high') continue;
-    lines.push(
-      [d.id, d.title_primary, d.title_ko ?? '', d.confidence, d.reasoning ?? '']
-        .map(csvEscape)
-        .join(','),
-    );
+    rows.push([d.id, d.title_primary, d.title_ko ?? '', d.confidence, d.reasoning ?? '']);
   }
-  // UTF-8 BOM prefix so Excel on Korean Windows (default CP949 codepage) opens
-  // the file decoded as UTF-8 instead of mojibake.
-  writeTextAtomic(path, `﻿${lines.join('\n')}\n`);
+  // writeCsvWithBom emits a UTF-8 BOM so Excel on Korean Windows (default CP949
+  // codepage) opens the file decoded as UTF-8 instead of mojibake.
+  writeCsvWithBom(path, rows);
 }
 
 /**
@@ -241,7 +227,7 @@ export function runMerge({ corpusPath, chunksDir, reviewCsvPath }) {
   };
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   const cmd = process.argv[2];
   if (cmd === 'prep') {
     const corpusPath = process.argv[3];
@@ -258,8 +244,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   } else if (cmd === 'merge') {
     const corpusPath = process.argv[3];
     const chunksDir = process.argv[4];
-    const reviewIdx = process.argv.indexOf('--review-csv');
-    const reviewCsvPath = reviewIdx >= 0 ? process.argv[reviewIdx + 1] : undefined;
+    const reviewCsvPath = parseFlag(process.argv, '--review-csv');
     if (!corpusPath || !chunksDir) {
       console.error('usage: merge <corpus.json> <chunks_dir> [--review-csv <path>]');
       process.exit(2);

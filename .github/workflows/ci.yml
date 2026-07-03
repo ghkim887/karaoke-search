@@ -22,6 +22,36 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: Dead-code / unused-dependency scan (knip)
+        # Required gate: knip's exit code fails the build on any unused file,
+        # export or dependency across the workspace (report is now clean).
+        # continue-on-error was dropped once the report was reviewed and trusted
+        # (T5-A); the step already preserves knip's exit code via PIPESTATUS +
+        # `exit "$knip_exit"`, so removing continue-on-error alone promotes it.
+        # The full report is still copied to the job summary so findings are
+        # visible without opening raw logs. knip's built-in vitest / playwright /
+        # astro / typescript plugins already recognise the per-package
+        # vitest.config.ts, playwright.config.ts, astro.config.mjs and
+        # tsconfig.typecheck.json files, so knip.json needs no bespoke entry
+        # globs for them. apps/web/functions/**/*.js are declared as knip entry
+        # points in knip.json — they are the Cloudflare Pages Functions live
+        # production entry (karaokedb.pages.dev /api + /healthz) and so are
+        # unreachable from the import graph, which would otherwise flag them as
+        # unused files.
+        run: |
+          report="$RUNNER_TEMP/knip-report.txt"
+          set +e
+          pnpm exec knip --no-progress 2>&1 | tee "$report"
+          knip_exit=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "### knip report"
+            echo ""
+            echo '```'
+            cat "$report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$knip_exit"
       - name: Verify all sidecars are in sync
         # The JSON sidecars below are auto-generated from their TS sources during
         # `pnpm build` (above). After the build, each sidecar must be
@@ -72,16 +102,22 @@ jobs:
         run: pnpm --filter @karaoke/worker sqlite:build
 
   e2e:
-    # Playwright smoke suite on every PR. Without this, a UI-breaking PR merges
-    # green and is only caught post-merge by deploy.yml's required e2e gate —
-    # which then blocks ALL Pages deploys. Runs in parallel with `verify` (no
-    # `needs:` — independent jobs, no shared outputs) and builds in FALLBACK
-    # mode (no PUBLIC_KARAOKE_API_BASE_URL) so PR CI exercises the offline
-    # MiniSearch path and never depends on a live search API. Mirrors deploy.yml's
-    # e2e job step-for-step. PR-only: on a main push deploy.yml runs the
-    # identical fallback e2e as the required deploy gate, so running it here
-    # too would duplicate the same suite on the same commit.
-    if: github.event_name == 'pull_request'
+    # Playwright smoke + axe-core a11y suite. Builds the web app in FALLBACK
+    # mode (no PUBLIC_KARAOKE_API_BASE_URL) so CI exercises the offline
+    # MiniSearch path and never depends on a live search API, serves the build
+    # over `astro preview`, and runs the Playwright specs against it with
+    # E2E_BASE_URL set (the specs self-skip when it is unset, so the injected
+    # base URL is what makes both the search smoke and the axe a11y gate
+    # actually execute). Runs in parallel with `verify` (no `needs:` —
+    # independent jobs, no shared outputs).
+    #
+    # This is the ONLY e2e gate. The Cloudflare deploy path and its deploy.yml —
+    # which previously ran an identical fallback e2e as the required deploy gate,
+    # so this job used to be scoped to pull_request only to avoid duplicating it
+    # on a main push — were removed on 2026-06-13. With no deploy.yml, the job
+    # must run on pushes to main as well, otherwise the merge/squash commit that
+    # actually lands on main would ship with no e2e coverage at all.
+    # ci-pipeline-pins.test.ts pins the continued absence of deploy.yml.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

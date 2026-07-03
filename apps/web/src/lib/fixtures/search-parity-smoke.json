@@ -1,0 +1,101 @@
+{
+  "_readme": "Relevance smoke fixture for the search-parity gate (T4-2). Each entry pairs an unambiguous query (an exact title/artist string, or its Korean rendering, from the committed corpus) with the expected canonical record id. The gate asserts expectId appears in the TOP 3 results of BOTH the client MiniSearch path and the worker SQLite path. These are curated from real corpus records (verified, not guessed) so a ranking regression that buries an obvious match fails loudly on whichever path regressed. Consumed by search-parity.golden.test.ts; independent of the divergence snapshot.",
+  "cases": [
+    {
+      "id": "smoke-yoruni",
+      "query": "夜に駆ける",
+      "expectId": "blog-99-1",
+      "note": "YOASOBI — 夜に駆ける. Exact JP title must top both paths."
+    },
+    {
+      "id": "smoke-gurenge",
+      "query": "紅蓮華",
+      "expectId": "blog-153-1",
+      "note": "LiSA — 紅蓮華(鬼滅の刃 OP). Canonical release over remixes/TV-size."
+    },
+    {
+      "id": "smoke-ussewa",
+      "query": "うっせぇわ",
+      "expectId": "blog-135-2",
+      "note": "Ado — うっせぇわ. Original over the Giga Remix."
+    },
+    {
+      "id": "smoke-lemon",
+      "query": "Lemon",
+      "expectId": "blog-101-2",
+      "note": "米津玄師 — Lemon(ドラマ'アンナチュラル' OST). Latin title recall."
+    },
+    {
+      "id": "smoke-byoshin",
+      "query": "秒針を噛む",
+      "expectId": "blog-105-0",
+      "note": "ずっと真夜中でいいのに。 — 秒針を噛む."
+    },
+    {
+      "id": "smoke-dokidoki",
+      "query": "ドキドキ",
+      "expectId": "blog-749-5",
+      "note": "JUDY AND MARY — ドキドキ. Katakana title."
+    },
+    {
+      "id": "smoke-cherry",
+      "query": "チェリー",
+      "expectId": "blog-226-0",
+      "note": "スピッツ — チェリー. Katakana loanword title."
+    },
+    {
+      "id": "smoke-robinson",
+      "query": "ロビンソン",
+      "expectId": "blog-226-2",
+      "note": "スピッツ — ロビンソン. Distinctive katakana title."
+    },
+    {
+      "id": "smoke-hongryeonhwa",
+      "query": "홍련화",
+      "expectId": "blog-153-1",
+      "note": "紅蓮華 by Korean title_ko '홍련화'."
+    },
+    {
+      "id": "smoke-bameul",
+      "query": "밤을 달리다",
+      "expectId": "blog-99-1",
+      "note": "夜に駆ける by Korean title_ko '밤을 달리다'."
+    },
+    {
+      "id": "smoke-sikkeureowo",
+      "query": "시끄러워",
+      "expectId": "blog-135-2",
+      "note": "うっせぇわ by Korean title_ko '시끄러워'."
+    },
+    {
+      "id": "smoke-yoasobi",
+      "query": "YOASOBI",
+      "expectId": "blog-99-5",
+      "note": "Artist YOASOBI top record; artist-field recall."
+    },
+    {
+      "id": "smoke-zutomayo",
+      "query": "ZUTOMAYO",
+      "expectId": "blog-105-31",
+      "note": "Alias ZUTOMAYO -> ずっと真夜中でいいのに。 top record."
+    },
+    {
+      "id": "smoke-yonezu",
+      "query": "米津玄師",
+      "expectId": "blog-101-27",
+      "note": "Kanji artist 米津玄師 top record."
+    },
+    {
+      "id": "smoke-yonezu-ko",
+      "query": "요네즈 켄시",
+      "expectId": "blog-101-27",
+      "note": "Korean artist_ko 요네즈 켄시 -> 米津玄師 top record."
+    },
+    {
+      "id": "smoke-hikari",
+      "query": "光",
+      "expectId": "blog-301-13",
+      "note": "宇多田ヒカル — 光 (title_primary '光'). Single-kanji exact."
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { t } from '../lib/i18n.js';
+
 interface SearchBoxProps {
   /** Controlled value — what the input displays. */
   value: string;
@@ -17,7 +19,7 @@ export function SearchBox({ value, onInput, disabled = false }: SearchBoxProps) 
   const handleInput = (e: Event) => {
     onInput((e.currentTarget as HTMLInputElement).value);
   };
-  const placeholder = disabled ? '검색 인덱스 로딩 중… / Loading search index…' : '곡명/가수명';
+  const placeholder = disabled ? t.loadingIndex : t.searchPlaceholder;
 
   return (
     <div class="search-input-wrap">
@@ -37,7 +39,7 @@ export function SearchBox({ value, onInput, disabled = false }: SearchBoxProps) 
       <input
         class="search-input"
         type="search"
-        aria-label="가라오케 검색"
+        aria-label={t.searchInputLabel}
         placeholder={placeholder}
         autocomplete="off"
         spellcheck={false}

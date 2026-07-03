@@ -1,3 +1,4 @@
+import { hasKana, hasLatinLetter } from '@karaoke/search';
 import { splitArtistCollab } from '../../clustering.js';
 import { isInChineseDropList } from '../tj-media-direct/chineseArtistDropList.js';
 import { isInDropList } from '../tj-media-direct/koreanArtistDropList.js';
@@ -107,24 +108,35 @@ const WESTERN_ACT_COMPONENTS = new Set<string>([
   'レディーガガ',
 ]);
 
-/** Hiragana (U+3040–U+309F). */
-const RE_HIRAGANA = /[぀-ゟ]/;
-/** Katakana including half-width (U+30A0–U+30FF, U+FF66–U+FF9F). */
-const RE_KATAKANA = /[゠-ヿｦ-ﾟ]/;
+// Kana detection is single-sourced from `@karaoke/search` `hasKana` (T5-D).
+// The former local `RE_HIRAGANA`/`RE_KATAKANA` union (hiragana U+3040–309F,
+// full-width katakana U+30A0–30FF, half-width katakana U+FF66–FF9F) missed the
+// Katakana Phonetic Extensions block (U+31F0–31FF, e.g. ㇰ ㇿ) that the shared
+// predicate includes; adopting it only WIDENS kana recall (see below), never
+// narrows it.
 /**
  * Han ideographs (CJK Unified, U+3400–U+9FFF). Used ONLY to disambiguate which
  * fall-through DROP reason a record gets (`drop-han-only` vs `drop-ascii-only`
  * vs `drop-no-signal`) — Han alone never admits, because Han-only fields are
  * ambiguous with the Chinese catalog rows in the JOYSOUND source.
+ *
+ * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHan`
+ * (`\p{Script=Han}`). That swap changes admit/drop-adjacent reasons — it adds
+ * CJK-compat / supplementary-plane Han and drops the Yijing-hexagram block —
+ * so it waits until the golden gate has soaked one crawl cycle. See
+ * docs/OPEN-QUESTIONS.md §"JOYSOUND classifier safe-predicate unification".
  */
 const RE_HAN = /[㐀-鿿]/u;
-/** Any A–Z / a–z Latin letter — distinguishes Latin-only drops. */
-const RE_ASCII_LETTER = /[A-Za-z]/;
 /**
  * Hangul, for the authoritative foreign-name detail signal: Hangul Syllables
  * (U+AC00–U+D7A3), Hangul Jamo (U+1100–U+11FF), and Hangul Compatibility Jamo
  * (U+3130–U+318F). Any Hangul code point in a populated foreign-name field
  * marks the entry KOREAN.
+ *
+ * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHangul`
+ * (`\p{Script=Hangul}`), which additionally covers half-width Hangul and the
+ * Jamo Extended-A/B blocks. That widens the foreign-Korean DROP directly, so it
+ * waits for the golden-gate soak (see the RE_HAN note / OPEN-QUESTIONS).
  */
 const RE_HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/u;
 /**
@@ -133,14 +145,19 @@ const RE_HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/u;
  * (U+F900–U+FAFF). Broader than `RE_HAN` (which intentionally omits the
  * compatibility block for the listing-only fall-through diagnostic). A
  * foreign-name field with Han AND no kana marks the entry CHINESE.
+ *
+ * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHan`
+ * (`\p{Script=Han}`), which adds supplementary-plane Han the BMP range misses.
+ * That changes the foreign-Chinese DROP directly, so it waits for the
+ * golden-gate soak (see the RE_HAN note / OPEN-QUESTIONS).
  */
 const RE_HAN_FOREIGN = /[㐀-䶿一-鿿豈-﫿]/u;
-/**
- * Kana (hiragana U+3040–U+309F + katakana U+30A0–U+30FF) for the foreign-name
- * signal. A foreign-name field containing kana is a Japanese-title echo, NOT a
- * foreign signal — it suppresses the Chinese determination.
- */
-const RE_KANA = /[぀-ヿ]/u;
+// The foreign-name kana echo test is single-sourced from `@karaoke/search`
+// `hasKana` (T5-D). The former local `RE_KANA` (`[぀-ヿ]`, hiragana + full-width
+// katakana blocks only) missed half-width and phonetic-extension kana; the
+// shared predicate suppresses those Japanese-title echoes too, so a Han
+// foreign-name whose only kana is half-width/phonetic-ext is no longer misread
+// as Chinese (JP recall ↑, genuine-JP dropout structurally impossible).
 /**
  * Dotted-pinyin romanization shape used by JOYSOUND's `*ForeignSearch` fields
  * for CHINESE entries (e.g. `wu.lai.`, `zhang.xue.you.`). One or more lowercase
@@ -163,16 +180,8 @@ function matchesAny(haystack: string, patterns: readonly RegExp[]): boolean {
   return patterns.some((re) => re.test(haystack));
 }
 
-function hasKanaScript(s: string): boolean {
-  return RE_HIRAGANA.test(s) || RE_KATAKANA.test(s);
-}
-
 function hasHanScript(s: string): boolean {
   return RE_HAN.test(s);
-}
-
-function hasAsciiLetter(s: string): boolean {
-  return RE_ASCII_LETTER.test(s);
 }
 
 /**
@@ -185,7 +194,7 @@ function hasAsciiLetter(s: string): boolean {
  * live probe the separation was perfect (0 false positives on genuine-JP
  * controls). Inspect BOTH foreign-name fields:
  *  - contains Hangul (`RE_HANGUL`) → `'korean'`.
- *  - else contains Han (`RE_HAN_FOREIGN`) AND no kana (`RE_KANA`) → `'chinese'`.
+ *  - else contains Han (`RE_HAN_FOREIGN`) AND no kana (`hasKana`) → `'chinese'`.
  *    The no-kana clause matters because a foreign-name field can be a kana
  *    echo of a Japanese title; that is NOT a foreign signal.
  *  - else (C1, 2026-06-09) if a `*ForeignSearch` romanization field is
@@ -207,7 +216,7 @@ function foreignNameSignal(detail: JoysoundDetail): 'korean' | 'chinese' | null 
     if (RE_HANGUL.test(f)) return 'korean';
   }
   for (const f of fields) {
-    if (RE_HAN_FOREIGN.test(f) && !RE_KANA.test(f)) return 'chinese';
+    if (RE_HAN_FOREIGN.test(f) && !hasKana(f)) return 'chinese';
   }
   // C1: dotted-pinyin romanization is a corroborating chinese tell. Checked
   // AFTER the Hangul/Han rules above (never overrides korean) and only matches
@@ -374,7 +383,9 @@ type PositiveSignalKind = 'vocaloid' | 'anime' | 'jpop' | null;
  *   NOT in the list (catches live-action films too).
  *
  * JPop:
- *   kana (hiragana / katakana) appears in songName / artistName. CJK
+ *   kana (hiragana / full-width or half-width katakana / Katakana Phonetic
+ *   Extensions, via `@karaoke/search` `hasKana`) appears in songName /
+ *   artistName. CJK
  *   ideographs alone are deliberately not enough: the JOYSOUND catalog is
  *   broad, and Han-only title/artist fields are ambiguous with Chinese catalog
  *   rows. `songNameRuby` is deliberately excluded from admission surfaces
@@ -537,7 +548,7 @@ export function classifyJoysoundRecordWithReason({
   //    genuinely-JP collab rows this drops (e.g. SLASH feat.稲葉浩志) are an
   //    accepted precision-first cost, recoverable via the curated ALLOW list.
   const han = hasHanScript(titleArtist);
-  const ascii = hasAsciiLetter(titleArtist);
+  const ascii = hasLatinLetter(titleArtist);
   if (
     detail &&
     (han || ascii) &&
@@ -569,6 +580,6 @@ function positiveSignalKind(parts: {
     return 'vocaloid';
   }
   if (containsAny(parts.surface, ANIME_TOKENS)) return 'anime';
-  if (hasKanaScript(parts.titleArtist)) return 'jpop';
+  if (hasKana(parts.titleArtist)) return 'jpop';
   return null;
 }

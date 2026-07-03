@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { RE_HAN, RE_HANGUL, RE_HIRAGANA, RE_KATAKANA } from './normalize.js';
+import { hasHan, hasHangul, hasKana } from '@karaoke/search';
 
 /**
  * Resolve to the on-disk blog corpus the rescue path reads at construction time.
@@ -75,9 +75,9 @@ export interface BlogWhitelistRecord {
  */
 export function shouldAdmitArtistToWhitelist(artist: string | null | undefined): boolean {
   if (!artist) return false;
-  if (RE_HIRAGANA.test(artist) || RE_KATAKANA.test(artist)) return true;
-  if (RE_HAN.test(artist)) return false;
-  if (RE_HANGUL.test(artist)) return false;
+  if (hasKana(artist)) return true;
+  if (hasHan(artist)) return false;
+  if (hasHangul(artist)) return false;
   return true;
 }
 
@@ -122,7 +122,7 @@ function isDirectAcceptedCorpusRecord(rec: BlogWhitelistRecord): boolean {
  */
 function shouldAdmitDirectOriginRecord(rec: BlogWhitelistRecord): boolean {
   const title = rec.title_primary;
-  if (typeof title === 'string' && (RE_HIRAGANA.test(title) || RE_KATAKANA.test(title))) {
+  if (typeof title === 'string' && hasKana(title)) {
     return true;
   }
   return false;

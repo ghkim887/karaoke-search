@@ -7,9 +7,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "postbuild": "node scripts/check-bundle-size.mjs",
+    "build:icons": "node scripts/build-pwa-icons.mjs",
     "preview": "astro preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:offline": "playwright test -c playwright.offline.config.ts",
     "typecheck": "astro check && tsc --noEmit"
   },
   "dependencies": {
@@ -23,10 +25,20 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@axe-core/playwright": "^4.11.2",
+    "@karaoke/data-store": "workspace:*",
+    "@karaoke/worker": "workspace:*",
     "@playwright/test": "^1.60.0",
     "@types/node": "^24.12.4",
+    "@vite-pwa/astro": "^1.2.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.8"
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^2.1.8",
+    "workbox-cacheable-response": "^7.4.1",
+    "workbox-core": "^7.4.1",
+    "workbox-expiration": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1"
   }
 }

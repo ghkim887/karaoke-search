@@ -29,7 +29,7 @@
 //   conflictsPath defaults to /tmp/merge-conflicts.json (the crawl.yml path).
 
 import { existsSync, readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { isCliInvocation } from './lib/cli.mjs';
 
 export const DEFAULT_CONFLICTS_PATH = '/tmp/merge-conflicts.json';
 
@@ -60,7 +60,7 @@ export function composePrBody(conflictsPath = DEFAULT_CONFLICTS_PATH) {
   return body;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   try {
     process.stdout.write(composePrBody(process.argv[2] ?? DEFAULT_CONFLICTS_PATH));
   } catch (err) {

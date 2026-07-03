@@ -30,9 +30,10 @@
 // identical to the pre-refactor top-level script.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { isCliInvocation } from './lib/cli.mjs';
 import { writeCorpusAtomic } from './lib/corpus.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -368,20 +369,6 @@ async function main() {
   process.exit(exitCode);
 }
 
-function isCliInvocation() {
-  if (!process.argv[1]) return false;
-  // Node realpaths the ESM main module, so when the script is invoked through
-  // a symlinked path `import.meta.url` would NOT equal pathToFileURL(argv[1])
-  // and a plain URL comparison would silently no-op (exit 0 without running).
-  // Compare realpaths instead; fall back to the URL comparison if realpathSync
-  // fails (e.g. argv[1] not on disk).
-  try {
-    return fileURLToPath(import.meta.url) === realpathSync(process.argv[1]);
-  } catch {
-    return import.meta.url === pathToFileURL(process.argv[1]).href;
-  }
-}
-
-if (isCliInvocation()) {
+if (isCliInvocation(import.meta.url)) {
   await main();
 }

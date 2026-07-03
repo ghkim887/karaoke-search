@@ -7,7 +7,7 @@ import {
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { handleRequest } from '../src/index.js';
-import { SqliteD1Database } from '../src/sqlite-adapter.js';
+import { SqliteSearchDatabase } from '../src/sqlite-adapter.js';
 
 const openDatabases: SongDatabase[] = [];
 
@@ -30,18 +30,18 @@ afterEach(() => {
   }
 });
 
-describe('SqliteD1Database', () => {
-  it('adapts node:sqlite databases to the Worker D1 search handler', async () => {
+describe('SqliteSearchDatabase', () => {
+  it('adapts node:sqlite databases to the Worker search handler', async () => {
     const sqlite = openSongDatabase(':memory:');
     openDatabases.push(sqlite);
     createSongDatabase(sqlite);
     importSongs(sqlite, FIXTURE_RECORDS);
-    const db = new SqliteD1Database(sqlite);
+    const db = new SqliteSearchDatabase(sqlite);
 
     const response = await handleRequest(
       new Request('https://api.example.test/api/search?q=68748'),
       {
-        DB: db,
+        db,
       },
     );
 
@@ -55,14 +55,14 @@ describe('SqliteD1Database', () => {
     createSongDatabase(sqlite);
     importSongs(sqlite, FIXTURE_RECORDS);
     const statements: string[] = [];
-    const db = new SqliteD1Database(sqlite, {
+    const db = new SqliteSearchDatabase(sqlite, {
       inspectStatement: (sql) => statements.push(sql),
     });
 
     const response = await handleRequest(
       new Request('https://api.example.test/api/search?q=68748'),
       {
-        DB: db,
+        db,
       },
     );
 

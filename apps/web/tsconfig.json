@@ -3,8 +3,16 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "types": ["astro/client", "node"]
+    "types": ["astro/client", "node"],
+    "baseUrl": "../..",
+    "paths": {
+      "@karaoke/schema": ["packages/schema/src/index.ts"],
+      "@karaoke/search": ["packages/search/src/index.ts"],
+      "@karaoke/data-store": ["packages/data-store/src/index.ts"],
+      "@karaoke/worker": ["apps/worker/src/index.ts"]
+    }
   },
   "include": ["src/**/*", "tests/**/*"],
-  "references": [{ "path": "../../packages/schema" }]
+  "comment:exclude": "src/sw.ts is a WebWorker module (bundled by vite-plugin-pwa via esbuild). It mixes the WebWorker lib with the app's DOM lib and is excluded from the app typecheck to avoid a global-scope lib conflict; it is not part of the app's module graph.",
+  "exclude": ["src/sw.ts"]
 }

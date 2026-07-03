@@ -1,4 +1,5 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { isPlainObject } from './normalize.js';
 
@@ -36,8 +37,8 @@ import { isPlainObject } from './normalize.js';
  * `normalizeForMatch` from `./normalize.ts` so matching is consistent across
  * the per-artist scanner, the parser's filter, and any future consumer.
  *
- * Atomic writes: write to `<file>.tmp`, then rename. Mirrors the
- * `scripts/ingest_anisong_pdf.py` pattern.
+ * Atomic writes: write to a per-writer unique `<file>.<pid>.<uuid>.tmp`, then
+ * rename. Mirrors the `scripts/ingest_anisong_pdf.py` pattern.
  *
  * 90-day staleness: entries with `lastSeen` older than 90 days are treated
  * as missing by the freshness helpers so they get re-fetched. Catalog-mutation
@@ -241,15 +242,20 @@ export async function loadCache(path: string): Promise<SearchSongCache> {
 }
 
 /**
- * Atomically save the cache to disk. Writes to `<path>.tmp` then renames,
- * preventing partial-write corruption on crash mid-write.
+ * Atomically save the cache to disk. Writes to a per-writer unique
+ * `<path>.<pid>.<uuid>.tmp` then renames, preventing partial-write corruption
+ * on crash mid-write and tmp collisions between concurrent writers.
  *
  * The `extras` bag is spread BEFORE the owned fields so an unexpected key
  * collision in `extras` cannot overwrite a real owned field.
  */
 export async function saveCache(path: string, cache: SearchSongCache): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  const tmp = `${path}.tmp`;
+  // Unique tmp name per write: a shared `${path}.tmp` lets two crawler
+  // processes (or overlapping writers) targeting the same cache file clobber
+  // each other's tmp and rename a torn file into place. Namespacing by pid + a
+  // random token makes each writer's tmp private; the rename stays atomic.
+  const tmp = `${path}.${process.pid}.${randomUUID()}.tmp`;
   // Build the on-disk shape. Drop `bootstrappedAt` from the output when it's
   // undefined so PR-1-shape caches don't suddenly grow a `null` field.
   const out: Record<string, unknown> = {
@@ -263,8 +269,18 @@ export async function saveCache(path: string, cache: SearchSongCache): Promise<v
     out.bootstrappedAt = cache.bootstrappedAt;
   }
   const text = `${JSON.stringify(out, null, 2)}\n`;
-  await writeFile(tmp, text, 'utf8');
-  await rename(tmp, path);
+  try {
+    await writeFile(tmp, text, 'utf8');
+    await rename(tmp, path);
+  } catch (err) {
+    // Best-effort cleanup: a failed writeFile or rename leaves the unique tmp
+    // behind (the rename is what removes it on success). The pid+UUID namespace
+    // means an interrupted save would otherwise accumulate orphan `.tmp` files
+    // next to the cache. Swallow any cleanup error — the original failure is
+    // what matters and is rethrown.
+    await rm(tmp, { force: true }).catch(() => {});
+    throw err;
+  }
 }
 
 /**

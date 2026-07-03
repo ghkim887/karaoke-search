@@ -21,7 +21,7 @@ invariants, gotchas, and policy decisions see
 | `packages/schema` | `@karaoke/schema` | Universal `SongRecord` type + Ajv validator. Both crawler and web depend on the compiled `dist/` output (build before runtime imports). |
 | `packages/search` | `@karaoke/search` | Shared search-text primitives: normalization, tokenization, character n-grams, Hangul-initials expansion, karaoke-number query parsing. Consumed by the worker and the data store so index-time and query-time text processing cannot drift. |
 | `packages/crawler` | `@karaoke/crawler` | Pluggable adapter pipeline (`Crawler` interface yields `SongRecord`), per-host rate-limited/cached HTTP client, artist-alias resolution, and the three-tier record merger. CLI at `dist/cli.js` after build. |
-| `packages/data-store` | `@karaoke/data-store` | SQLite store: schema (`D1_SCHEMA_SQL` — name historical), corpus import/export, and the derived search-index table builder. |
+| `packages/data-store` | `@karaoke/data-store` | SQLite store: schema (`SONG_SCHEMA_SQL`), corpus import/export, and the derived search-index table builder. |
 | `scripts/` | `@karaoke/scripts` | Post-crawl data pipeline, validation, PDF ingest, title_ko backfill tooling, and their Vitest + Python unittest suites. `corepack pnpm --filter @karaoke/scripts test` runs the JS tests. |
 
 ## Data flow (end to end)

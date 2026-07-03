@@ -1,8 +1,8 @@
 import type { SongRecord } from '@karaoke/schema';
-import { expandSearchQuery } from '@karaoke/search';
+import { type KaraokeProvider, compactSearchText, expandSearchQuery } from '@karaoke/search';
 import MiniSearch, { type SearchResult } from 'minisearch';
-import { normalize } from './normalize.js';
-import { fetchWithRetry } from './retry.js';
+import { type OfflineRecallIndex, buildOfflineRecallIndex } from './offline-recall.js';
+import { fetchWithRetry, fetchWithTransientRetry } from './retry.js';
 
 /**
  * Fields indexed by MiniSearch. Keep in sync with the boost map below.
@@ -41,31 +41,73 @@ export interface IndexBundle {
 }
 
 /**
+ * Side-index of the number + Hangul-initials recall data, keyed by the
+ * MiniSearch instance `buildIndex` returns. A `WeakMap` keeps `searchLocalIndex`
+ * signature-compatible for every existing caller (and the parity gate) while
+ * letting it reach the auxiliary structures the text index cannot cover, and it
+ * is collected automatically once the index is dropped. See {@link
+ * OfflineRecallIndex}.
+ */
+const recallByIndex = new WeakMap<MiniSearch<SongRecord>, OfflineRecallIndex>();
+
+/**
  * Build a MiniSearch index from `records`. Field values that are `null` are
  * tolerated by MiniSearch and skipped during indexing.
+ *
+ * A companion {@link OfflineRecallIndex} (karaoke-number + Hangul-initials
+ * recall) is built from the same records and associated with the returned index
+ * so `searchLocalIndex` can serve those query shapes offline (T6-1).
  */
 export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
   const index = new MiniSearch<SongRecord>({
     idField: 'id',
     fields: [...SEARCH_FIELDS],
     storeFields: ['id'],
-    processTerm: (term, _fieldName) => normalize(term),
+    processTerm: (term, _fieldName) => compactSearchText(term),
     searchOptions: {
       boost: { ...SEARCH_BOOSTS },
       // spec asks for fuzzy distance 1; MiniSearch fuzzy is a ratio of term length, so 0.2 ≈ 1 edit per 5 chars.
       fuzzy: 0.2,
       prefix: true,
-      processTerm: (term) => normalize(term),
+      processTerm: (term) => compactSearchText(term),
     },
   });
   index.addAll(records);
+  recallByIndex.set(index, buildOfflineRecallIndex(records));
   return index;
+}
+
+/** Options for {@link searchLocalIndex}. */
+export interface LocalSearchOptions {
+  /** Restricts karaoke-number matches to these providers (vendor-chip scoping,
+   *  mirroring the worker's `kn.provider IN (...)` filter). Ignored by the text
+   *  and initials paths. Omit to match numbers on any provider. */
+  vendors?: ReadonlySet<KaraokeProvider>;
+}
+
+/** Wrap ranked record ids as MiniSearch-shaped results. Only `id` is consumed
+ *  downstream; the remaining fields satisfy the `SearchResult` contract. The
+ *  ids are already in rank order, so the descending `score` is informational. */
+function toSearchResults(ids: readonly string[]): SearchResult[] {
+  return ids.map((id, rank) => ({
+    id,
+    score: ids.length - rank,
+    terms: [],
+    queryTerms: [],
+    match: {},
+  }));
 }
 
 /**
  * Query a local MiniSearch index with safe romaji↔kana expansion so the offline
  * fallback can match kana title/artist/alias text from a romaji query (and vice
  * versa), mirroring the worker `/api/search` behaviour.
+ *
+ * Two query shapes the text index cannot cover are served from the companion
+ * {@link OfflineRecallIndex} BEFORE the text path (T6-1): karaoke-number queries
+ * and all-choseong Hangul-initials queries. Both mirror the worker's number /
+ * initial semantics. Every OTHER query is unaffected — it flows through the
+ * unchanged text path below, so existing text results are byte-for-byte stable.
  *
  * The original query is searched first and its hits keep their MiniSearch rank;
  * variant ("expansion-only") hits are appended after, so original-query hits are
@@ -74,7 +116,23 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
  *
  * Expansion is SEARCH RECALL ONLY — it never affects indexing or canonical data.
  */
-export function searchLocalIndex(index: MiniSearch<SongRecord>, query: string): SearchResult[] {
+export function searchLocalIndex(
+  index: MiniSearch<SongRecord>,
+  query: string,
+  options?: LocalSearchOptions,
+): SearchResult[] {
+  const recall = recallByIndex.get(index);
+  if (recall !== undefined) {
+    const numberIds = recall.matchNumberQuery(query, options?.vendors);
+    if (numberIds !== null) {
+      return toSearchResults(numberIds);
+    }
+    const initialIds = recall.matchInitialsQuery(query);
+    if (initialIds !== null) {
+      return toSearchResults(initialIds);
+    }
+  }
+
   const variants = expandSearchQuery(query);
   if (variants.length <= 1) {
     return index.search(query);
@@ -169,8 +227,13 @@ export async function searchApi(baseUrl: string, options: ApiSearchOptions): Pro
   if (vendors.length > 0) {
     url.searchParams.set('vendor', vendors.join(','));
   }
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const response = await fetchImpl(url.toString());
+  // Browse search is interactive (debounced): cap at 2 attempts so a single
+  // transient blip is absorbed without stalling the "검색 중" state, and a
+  // superseded query is not held open through a long backoff chain.
+  const response = await fetchWithTransientRetry(url.toString(), undefined, {
+    fetchImpl: options.fetchImpl,
+    maxAttempts: 2,
+  });
   if (!response.ok) {
     throw new Error(`Search API failed: HTTP ${response.status}`);
   }
@@ -203,7 +266,10 @@ export async function fetchSongsByIds(
     batches.map(async (batch) => {
       const url = new URL('api/songs', base);
       url.searchParams.set('ids', batch.join(','));
-      const response = await fetchImpl(url.toString());
+      // Favorites hydration is not per-keystroke (fires on favorite-set change),
+      // so the default 3-attempt policy applies — more headroom for transient
+      // failures than the interactive Browse path.
+      const response = await fetchWithTransientRetry(url.toString(), undefined, { fetchImpl });
       if (!response.ok) {
         throw new Error(`Songs API failed: HTTP ${response.status}`);
       }

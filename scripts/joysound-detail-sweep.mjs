@@ -34,36 +34,19 @@
  * Usage:
  *   node scripts/joysound-detail-sweep.mjs <listing-rows.jsonl> <out-decision-log.jsonl> <corpus-songs.json> [--limit N]
  */
-import {
-  createReadStream,
-  createWriteStream,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  truncateSync,
-} from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, truncateSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { createInterface } from 'node:readline';
-import { pathToFileURL } from 'node:url';
+import { isCliInvocation } from './lib/cli.mjs';
+import { loadJoysoundClassifier, loadJoysoundDetailParser } from './lib/joysound-dist.mjs';
+import { buildKnownJapaneseArtistPredicate } from './lib/joysound-jp-artist.mjs';
+import { streamJsonl } from './lib/jsonl.mjs';
+import { endStream, writeLineBackpressured } from './lib/stream.mjs';
 
-const DIST_DIAGNOSTIC = new URL(
-  '../packages/crawler/dist/adapters/joysound-official/diagnostic.js',
-  import.meta.url,
-);
-const DIST_DETAIL = new URL(
-  '../packages/crawler/dist/adapters/joysound-official/detail.js',
-  import.meta.url,
-);
-const DIST_CLUSTERING = new URL('../packages/crawler/dist/clustering.js', import.meta.url);
-const DIST_KOREAN_DROP = new URL(
-  '../packages/crawler/dist/adapters/tj-media-direct/koreanArtistDropList.js',
-  import.meta.url,
-);
-const DIST_CHINESE_DROP = new URL(
-  '../packages/crawler/dist/adapters/tj-media-direct/chineseArtistDropList.js',
-  import.meta.url,
-);
+// Re-exported so `joysound-replay-classifier.mjs` (and callers pre-dating the
+// lib extraction) can rebuild the EXACT predicate this sweep classified with;
+// the canonical implementation lives in scripts/lib/joysound-jp-artist.mjs.
+export { buildKnownJapaneseArtistPredicate };
 
 const UA = 'karaoke-search-crawler/0.1 (+https://github.com/ghkim887/karaoke-search)';
 const DETAIL_BASE = 'https://www.joysound.com/apis/v1/ise/fetchContentsDetail';
@@ -72,21 +55,6 @@ const JITTER_MS = Number(process.env.JOYSOUND_DETAIL_JITTER_MS ?? 80);
 const MAX_RETRIES = Number(process.env.JOYSOUND_DETAIL_MAX_RETRIES ?? 3);
 const BODY_SIZE_LIMIT = 50 * 1024 * 1024;
 const DEFAULT_PROGRESS_EVERY = 200;
-
-/**
- * Generic bucket names that must NOT seed the known-Japanese-artist set — a
- * handful of real JP rows would otherwise make `Various Artists` look Japanese
- * and admit every OST/BGM row filed under the same bucket. Mirrors
- * `joysound-diagnostic-sweep.mjs` / the TJ filter chain.
- */
-const GENERIC_ARTIST_KEYS = new Set([
-  'variousartists',
-  'variousartist',
-  'various',
-  'unknown',
-  'unknownartist',
-  'オムニバス',
-]);
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -142,50 +110,6 @@ export function compactDetail(detail) {
     out[key] = value;
   }
   return out;
-}
-
-/**
- * Build the normalized known-Japanese-artist predicate from a corpus file.
- * Returns `undefined` when no corpus path was supplied so the classifier's
- * `admit-jp-artist` recall path stays off (production-equivalent behavior).
- * Mirrors `joysound-diagnostic-sweep.mjs` exactly.
- *
- * Exported so `joysound-replay-classifier.mjs` rebuilds the EXACT predicate
- * this sweep classified with (same corpus → same set → same `admit-jp-artist`
- * verdicts on replay).
- */
-export async function buildKnownJapaneseArtistPredicate(corpusPath) {
-  if (!corpusPath) return undefined;
-
-  const { normalizeForMatch, splitArtistCollab } = await import(DIST_CLUSTERING.href);
-  const { isInDropList } = await import(DIST_KOREAN_DROP.href);
-  const { isInChineseDropList } = await import(DIST_CHINESE_DROP.href);
-
-  const isDropListForeign = (artist) =>
-    splitArtistCollab(artist).some((component) => {
-      const key = normalizeForMatch(component);
-      return key !== '' && (isInDropList(key) || isInChineseDropList(key));
-    });
-
-  const records = JSON.parse(readFileSync(corpusPath, 'utf8'));
-  if (!Array.isArray(records)) {
-    throw new Error(`[joysound-detail-sweep] corpus ${corpusPath} is not a JSON array`);
-  }
-
-  const set = new Set();
-  for (const record of records) {
-    const artist = typeof record?.artist_primary === 'string' ? record.artist_primary : '';
-    if (artist === '') continue;
-    const key = normalizeForMatch(artist);
-    if (key === '' || GENERIC_ARTIST_KEYS.has(key)) continue;
-    if (isDropListForeign(artist)) continue;
-    set.add(key);
-  }
-
-  console.log(
-    `[joysound-detail-sweep] built known-Japanese-artist set (${set.size} artists) from ${corpusPath}`,
-  );
-  return (artist) => set.has(normalizeForMatch(artist));
 }
 
 /** Cap a fetch body at BODY_SIZE_LIMIT so a pathological response can't OOM. */
@@ -250,23 +174,14 @@ async function readUniqueRows(inPath, limit) {
   const rows = [];
   let total = 0;
   let parseErrors = 0;
-  const rl = createInterface({
-    input: createReadStream(inPath, { encoding: 'utf8' }),
-    crlfDelay: Number.POSITIVE_INFINITY,
-  });
-  for await (const line of rl) {
-    const trimmed = line.trim();
-    if (trimmed === '') continue;
+  const onParseError = (err) => {
     total += 1;
-    let row;
-    try {
-      row = JSON.parse(trimmed);
-    } catch (err) {
-      parseErrors += 1;
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[joysound-detail-sweep] skipping unparseable listing line ${total}: ${msg}`);
-      continue;
-    }
+    parseErrors += 1;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[joysound-detail-sweep] skipping unparseable listing line ${total}: ${msg}`);
+  };
+  for await (const row of streamJsonl(inPath, { onParseError })) {
+    total += 1;
     const key = rowKey(row);
     if (seen.has(key)) continue;
     seen.add(key);
@@ -364,17 +279,11 @@ export async function runDetailSweep({
   limit,
   progressEvery = DEFAULT_PROGRESS_EVERY,
 }) {
-  let buildJoysoundDecision;
-  try {
-    ({ buildJoysoundDecision } = await import(DIST_DIAGNOSTIC.href));
-  } catch (err) {
-    console.error(
-      `[joysound-detail-sweep] failed to import built classifier from ${DIST_DIAGNOSTIC.href}.\nRun \`corepack pnpm --filter @karaoke/crawler build\` first.`,
-    );
-    throw err;
-  }
+  const { buildJoysoundDecision } = await loadJoysoundClassifier('joysound-detail-sweep');
 
-  const isKnownJapaneseArtist = await buildKnownJapaneseArtistPredicate(corpusPath);
+  const isKnownJapaneseArtist = await buildKnownJapaneseArtistPredicate(corpusPath, {
+    label: 'joysound-detail-sweep',
+  });
 
   // 1. Dedup the listing rows (and apply --limit) before any fetch.
   const { rows, total, uniqueRows, parseErrors } = await readUniqueRows(inPath, limit);
@@ -439,11 +348,7 @@ export async function runDetailSweep({
     );
   };
 
-  const appendRecord = async (record) => {
-    if (!output.write(`${JSON.stringify(record)}\n`)) {
-      await new Promise((r) => output.once('drain', r));
-    }
-  };
+  const appendRecord = (record) => writeLineBackpressured(output, `${JSON.stringify(record)}\n`);
 
   try {
     for (const row of pending) {
@@ -499,9 +404,7 @@ export async function runDetailSweep({
       }
     }
   } finally {
-    await new Promise((resolve, reject) => {
-      output.end((err) => (err ? reject(err) : resolve()));
-    });
+    await endStream(output);
   }
 
   stats.finishedAt = new Date().toISOString();
@@ -546,13 +449,13 @@ async function main() {
     process.exit(2);
   }
 
-  const { parseJoysoundDetail } = await import(DIST_DETAIL.href);
+  const { parseJoysoundDetail } = await loadJoysoundDetailParser();
   const fetchDetailImpl = makeRealFetchDetail(parseJoysoundDetail);
 
   await runDetailSweep({ inPath, outPath, corpusPath, fetchDetailImpl, limit });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliInvocation(import.meta.url)) {
   main().catch((err) => {
     console.error(err);
     process.exit(1);

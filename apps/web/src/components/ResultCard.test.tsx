@@ -51,6 +51,51 @@ describe('ResultCard favorite-star', () => {
   });
 });
 
+describe('ResultCard number-badge a11y (copy)', () => {
+  let host: HTMLElement;
+  afterEach(() => {
+    if (host?.parentNode) host.parentNode.removeChild(host);
+    vi.restoreAllMocks();
+  });
+
+  it('gives each number badge a bilingual copy aria-label', () => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={sample} isFavorite={false} onToggleFavorite={() => {}} />, host);
+    const tj = host.querySelector<HTMLButtonElement>('[data-testid="badge-tj"]');
+    expect(tj?.getAttribute('aria-label')).toBe('TJ 번호 복사 / Copy TJ number');
+  });
+
+  it('announces the copy via an aria-live status region after a successful clipboard write', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    render(<ResultCard record={sample} isFavorite={false} onToggleFavorite={() => {}} />, host);
+
+    // Live region starts empty (present but silent).
+    const region = host.querySelector<HTMLElement>('[data-testid="copy-status"]');
+    expect(region).not.toBeNull();
+    expect(region?.getAttribute('aria-live')).toBe('polite');
+    expect(region?.textContent).toBe('');
+
+    const tj = host.querySelector<HTMLButtonElement>('[data-testid="badge-tj"]');
+    tj?.click();
+    // Let the clipboard promise + Preact re-render settle.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(writeText).toHaveBeenCalledWith('12345');
+    const filled = host.querySelector<HTMLElement>('[data-testid="copy-status"]');
+    expect(filled?.textContent).toBe('복사됨 / Copied');
+    // The visual toast is hidden from assistive tech (no double announcement).
+    const toast = host.querySelector<HTMLElement>('.badge-toast');
+    expect(toast?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
 describe('ResultCard artist_aliases display (spec 2026-05-04)', () => {
   let host: HTMLElement;
   afterEach(() => {

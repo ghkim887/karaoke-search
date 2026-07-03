@@ -1,4 +1,5 @@
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
+import { isKanaOnly } from '@karaoke/search';
 import type { JoysoundDetail, JoysoundListItem } from './types.js';
 
 export interface NormalizeArgs {
@@ -7,15 +8,6 @@ export interface NormalizeArgs {
   sourceUrl: string;
   crawledAt: string;
 }
-
-/**
- * Kana (hiragana U+3040–U+309F + katakana U+30A0–U+30FF + half-width katakana
- * U+FF66–U+FF9F). A `artistNameForeign` consisting ONLY of kana is a Japanese-
- * title echo, NOT a cross-script alias — see {@link buildArtistAliases}.
- */
-const RE_KANA = /[぀-ヿｦ-ﾟ]/u;
-/** Any non-kana code point — used to test "is the string PURELY kana". */
-const RE_NON_KANA = /[^぀-ヿｦ-ﾟ]/u;
 
 /**
  * A1 (2026-06-09): build the optional `artist_aliases` array from the detail's
@@ -40,8 +32,9 @@ function buildArtistAliases(artistPrimary: string, detail?: JoysoundDetail): str
   const foreign = detail?.artistNameForeign?.trim();
   if (foreign === undefined || foreign === '') return undefined;
   if (foreign === artistPrimary) return undefined;
-  // Pure-kana echo: contains kana AND no non-kana code points.
-  if (RE_KANA.test(foreign) && !RE_NON_KANA.test(foreign)) return undefined;
+  // Pure-kana echo (a kana-only foreign name is a JP-title echo, not a
+  // cross-script alias).
+  if (isKanaOnly(foreign)) return undefined;
   return [foreign];
 }
 

@@ -1,15 +1,14 @@
 import { type SongDatabase, openSongDatabase } from '@karaoke/data-store';
-import type { D1DatabaseLike, D1PreparedStatementLike, D1Result } from './index.js';
+import type { PreparedStatementLike, QueryResult, SearchDatabase } from './index.js';
 
 type SqliteValue = string | number | null;
 type SqliteStatement = ReturnType<SongDatabase['prepare']>;
 
-export interface SqliteD1Options {
+export interface SqliteDatabaseOptions {
   inspectStatement?: (sql: string, parameters: readonly SqliteValue[]) => void;
-  enforceD1SuffixLikePatternLimit?: boolean;
 }
 
-export interface OpenSqliteD1Options extends SqliteD1Options {
+export interface OpenSqliteDatabaseOptions extends SqliteDatabaseOptions {
   /**
    * Enables SQLite query-only mode for this connection. This is the default for
    * the self-host API because the HTTP server should only serve a prebuilt DB.
@@ -17,13 +16,13 @@ export interface OpenSqliteD1Options extends SqliteD1Options {
   queryOnly?: boolean;
 }
 
-export class SqliteD1Database implements D1DatabaseLike {
+export class SqliteSearchDatabase implements SearchDatabase {
   constructor(
     private readonly db: SongDatabase,
-    private readonly options: SqliteD1Options = {},
+    private readonly options: SqliteDatabaseOptions = {},
   ) {}
 
-  prepare(sql: string): D1PreparedStatementLike {
+  prepare(sql: string): PreparedStatementLike {
     const statement = this.db.prepare(sql);
     return this.boundStatement(statement, []);
   }
@@ -35,40 +34,24 @@ export class SqliteD1Database implements D1DatabaseLike {
   private boundStatement(
     statement: SqliteStatement,
     parameters: readonly SqliteValue[],
-  ): D1PreparedStatementLike {
+  ): PreparedStatementLike {
     return {
       bind: (...values: SqliteValue[]) => this.boundStatement(statement, values),
-      all: async <T = Record<string, unknown>>(): Promise<D1Result<T>> => {
+      all: async <T = Record<string, unknown>>(): Promise<QueryResult<T>> => {
         this.options.inspectStatement?.(statement.sourceSQL, parameters);
-        this.assertD1SuffixLikePatterns(parameters);
         return { results: statement.all(...parameters) as T[] };
       },
     };
   }
-
-  private assertD1SuffixLikePatterns(parameters: readonly SqliteValue[]): void {
-    if (this.options.enforceD1SuffixLikePatternLimit !== true) {
-      return;
-    }
-    for (const parameter of parameters) {
-      if (
-        typeof parameter === 'string' &&
-        parameter.endsWith('%') &&
-        new TextEncoder().encode(parameter).length > 50
-      ) {
-        throw new Error('D1 LIKE/GLOB pattern limit exceeded');
-      }
-    }
-  }
 }
 
-export function openSqliteD1Database(
+export function openSqliteSearchDatabase(
   path: string,
-  options: OpenSqliteD1Options = {},
-): SqliteD1Database {
+  options: OpenSqliteDatabaseOptions = {},
+): SqliteSearchDatabase {
   const db = openSongDatabase(path);
   if (options.queryOnly !== false) {
     db.exec('PRAGMA query_only = ON');
   }
-  return new SqliteD1Database(db, options);
+  return new SqliteSearchDatabase(db, options);
 }

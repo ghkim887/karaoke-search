@@ -196,13 +196,13 @@ The search API lives in `apps/worker` as a plain Node HTTP server over a SQLite 
 Build the SQLite search database from the committed corpus, then serve it:
 
 ```bash
-# Build apps/worker/.wrangler/sqlite/songs.sqlite from apps/web/public/data/songs.json
-# (the output directory name is historical; it is ignored scratch space).
+# Build apps/worker/.build/sqlite/songs.sqlite from apps/web/public/data/songs.json
+# (the output directory is gitignored scratch space).
 corepack pnpm --filter @karaoke/worker run sqlite:build
 
 # Compile and start the API server.
 corepack pnpm --filter @karaoke/worker build
-KARAOKE_SQLITE_DB_PATH=apps/worker/.wrangler/sqlite/songs.sqlite corepack pnpm --filter @karaoke/worker run serve:node
+KARAOKE_SQLITE_DB_PATH=apps/worker/.build/sqlite/songs.sqlite corepack pnpm --filter @karaoke/worker run serve:node
 ```
 
 `sqlite:build` accepts `--input`/`--output` overrides. Server environment variables:

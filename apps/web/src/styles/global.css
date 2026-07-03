@@ -107,7 +107,10 @@ header.site-header {
            and Body Semibold 600) so the active/inactive contrast reads. */
   font-size: var(--rui-text-body);
   font-weight: 500;
-  padding: 10px 4px;
+  /* Horizontal padding widened from 4px → 12px to grow the pointer/touch hit
+     area toward a ~44px target for the short labels ("검색"/"즐겨찾기") without
+     changing the tab-bar height (vertical padding unchanged). */
+  padding: 10px 12px;
   background: transparent;
   color: var(--rui-fg-muted);
   border: 0;
@@ -692,6 +695,23 @@ main.results .error {
   border: 0;
 }
 
+/* Offline-fallback hint (T4-6). A quiet, low-emphasis pill on the surface
+   token — it must inform without competing with results or reading as an
+   error. Muted foreground + Body Small sizing keep it subordinate to the
+   result cards below it. */
+.fallback-notice {
+  margin: 0.75rem 0 0 0;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--rui-radius-pill);
+  background: var(--rui-surface);
+  color: var(--rui-fg-muted);
+  font-family: var(--rui-font-body);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  letter-spacing: 0.16px;
+  text-align: center;
+}
+
 .error-state {
   margin-top: 1rem;
   padding: 1rem 1.25rem;
@@ -717,6 +737,46 @@ main.results .error {
   line-height: 1.5;
   letter-spacing: 0.24px;
   color: var(--rui-fg-muted);
+}
+
+/* Retry CTA in the API error path (ErrorState with onRetry). The error card
+         sits on --rui-surface, so the retry uses the DESIGN.md §4 Primary Dark
+         Pill treatment (via the shared --rui-pill-primary-* tokens) to read as
+         the clear, single actionable affordance. Sizing matches the §4 pill
+         spec: 14px 32px padding, 9999px radius, Body Semibold text. inline-flex
+         centering + min-height: 44px guarantees the mobile touch target even if
+         padding is later trimmed. Hover opacity 0.85 and the focus-visible ring
+         follow the same conventions as .chip / .badge-number. */
+.error-state-retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: 14px 32px;
+  font-family: var(--rui-font-body);
+  /* DESIGN.md §3 Body Semibold — 16px / 600 / 1.5 / 0.16px */
+  font-size: var(--rui-text-body);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.16px;
+  color: var(--rui-pill-primary-fg);
+  background: var(--rui-pill-primary-bg);
+  border: 0;
+  border-radius: var(--rui-radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 120ms ease;
+}
+
+.error-state-retry:hover {
+  /* DESIGN.md §4 — pill hover is opacity 0.85. */
+  opacity: 0.85;
+}
+
+.error-state-retry:focus-visible {
+  outline: none;
+  box-shadow: var(--rui-focus-ring);
 }
 
 /* Footer — three-row layout: brand label, bilingual disclaimer, metadata.
@@ -838,5 +898,27 @@ footer.site-footer {
 
   .site-footer-meta {
     font-size: 11px;
+  }
+}
+
+/* Reduced-motion — honor `prefers-reduced-motion: reduce`. Appended at the
+   very end so the load-bearing rule order above is untouched (see file
+   header). The only continuous animation is the loading-dot ellipsis pulse;
+   it is replaced with a static, fully-visible ellipsis. The universal rule
+   collapses the remaining short micro-interaction transitions (color / border
+   / background / opacity) to an instant swap so nothing animates for users who
+   opt out. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchWithRetry } from './retry.js';
+import { fetchWithRetry, fetchWithTransientRetry } from './retry.js';
 
 function makeResponse(status: number, headers: Record<string, string> = {}): Response {
   return new Response(null, { status, headers });
@@ -171,5 +171,74 @@ describe('fetchWithRetry', () => {
 
     const res = await promise;
     expect(res.ok).toBe(true);
+  });
+});
+
+describe('fetchWithTransientRetry', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it('returns immediately on 2xx', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(makeResponse(200));
+    const res = await fetchWithTransientRetry('https://api.test/x', undefined, { fetchImpl });
+    expect(res.ok).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a non-transient non-ok (400) WITHOUT retrying', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(makeResponse(400));
+    const res = await fetchWithTransientRetry('https://api.test/x', undefined, {
+      fetchImpl,
+      maxAttempts: 3,
+    });
+    // Handed back to the caller unretried so it can emit its own HTTP 400 error.
+    expect(res.status).toBe(400);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a transient 503 then returns the eventual 200', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(makeResponse(503))
+      .mockResolvedValue(makeResponse(200));
+    const promise = fetchWithTransientRetry('https://api.test/x', undefined, {
+      fetchImpl,
+      maxAttempts: 2,
+    });
+    await vi.runAllTimersAsync();
+    const res = await promise;
+    expect(res.ok).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns the last transient response after exhausting attempts (does not throw)', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(makeResponse(503));
+    const promise = fetchWithTransientRetry('https://api.test/x', undefined, {
+      fetchImpl,
+      maxAttempts: 2,
+    });
+    await vi.runAllTimersAsync();
+    const res = await promise;
+    expect(res.status).toBe(503);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws after exhausting attempts when every attempt is a network error', async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new TypeError('network error'));
+    const promise = fetchWithTransientRetry('https://api.test/x', undefined, {
+      fetchImpl,
+      maxAttempts: 2,
+    });
+    const assertion = expect(promise).rejects.toThrow('fetch failed after retry:');
+    await vi.runAllTimersAsync();
+    await assertion;
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

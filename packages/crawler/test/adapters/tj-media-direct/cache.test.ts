@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -176,6 +176,60 @@ describe('saveCache', () => {
     const reloaded = await loadCache(path);
     expect(reloaded.artistNationalityMap.yoasobi?.code).toBe('JPN');
     expect(reloaded.artistNationalityMap.yoasobi?.votes.JPN).toBe(5);
+  });
+
+  it('concurrent writers never leave a torn cache file (unique tmp per write)', async () => {
+    // A shared `${path}.tmp` lets overlapping writers write the SAME tmp file
+    // simultaneously, so a rename can publish a half-written interleave of two
+    // payloads. The pid+uuid tmp name makes each writer's tmp private, so the
+    // file that lands is always exactly one writer's complete, valid payload.
+    //
+    // Note: on Windows two renames onto the same existing path can race to
+    // EPERM for the loser — that's a platform rename quirk (shared by http.ts),
+    // NOT a tmp collision, so we tolerate it here. The invariant under test is
+    // "whatever lands is complete and parseable", which unique tmp guarantees.
+    const path = join(dir, 'cache.json');
+    const makeCache = (title: string) => {
+      const c = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+      c.proEnrichmentMap['1'] = {
+        nationalcode: 'JPN',
+        sortTitleKo: title,
+        sortSongKo: null,
+        subTitle: null,
+        publishdate: null,
+        lastSeen: '2026-04-29T00:00:00.000Z',
+      };
+      return c;
+    };
+    const tolerateRenameRace = (p: Promise<void>) =>
+      p.catch((err: NodeJS.ErrnoException) => {
+        if (err.code === 'EPERM' || err.code === 'ENOENT') return; // Windows rename race
+        throw err;
+      });
+    await Promise.all([
+      tolerateRenameRace(saveCache(path, makeCache('a'))),
+      tolerateRenameRace(saveCache(path, makeCache('b'))),
+      tolerateRenameRace(saveCache(path, makeCache('c'))),
+    ]);
+    // At least one rename won, so the file exists, parses cleanly, and carries a
+    // complete entry — never a truncated interleave of two writers' payloads.
+    const reloaded = await loadCache(path);
+    expect(['a', 'b', 'c']).toContain(reloaded.proEnrichmentMap['1']?.sortTitleKo);
+    expect(reloaded.version).toBe(CACHE_VERSION);
+  });
+
+  it('removes the unique tmp file (best-effort) when the atomic rename fails', async () => {
+    // Force rename(tmp, path) to fail by making the destination a directory —
+    // a file cannot be renamed onto a directory on any platform. The unique
+    // pid+uuid tmp must be cleaned up so an interrupted save leaves no orphan.
+    const path = join(dir, 'cache-collision');
+    await mkdir(path);
+    const cache = emptyCache(new Date('2026-04-29T00:00:00.000Z'));
+
+    await expect(saveCache(path, cache)).rejects.toThrow();
+
+    const leftovers = (await readdir(dir)).filter((name) => name.includes('.tmp'));
+    expect(leftovers).toEqual([]);
   });
 
   it('does not let extras shadow the PR-1 fields', async () => {

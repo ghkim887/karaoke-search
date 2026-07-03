@@ -47,6 +47,7 @@
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -82,7 +83,9 @@ async function main() {
   console.log(`wrote ${keys.length} drop-list keys to ${OUT_PATH}`);
 }
 
-main().catch((err) => {
-  console.error('export-drop-list failed:', err);
-  process.exit(1);
-});
+if (isCliInvocation(import.meta.url)) {
+  main().catch((err) => {
+    console.error('export-drop-list failed:', err);
+    process.exit(1);
+  });
+}

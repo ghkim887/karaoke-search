@@ -38,6 +38,7 @@
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
+import { isCliInvocation } from './lib/cli.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
@@ -76,7 +77,9 @@ async function main() {
   console.log(`  splitterFlags:   ${SPLIT_RE_FLAGS}`);
 }
 
-main().catch((err) => {
-  console.error('export-clustering-rules failed:', err);
-  process.exit(1);
-});
+if (isCliInvocation(import.meta.url)) {
+  main().catch((err) => {
+    console.error('export-clustering-rules failed:', err);
+    process.exit(1);
+  });
+}

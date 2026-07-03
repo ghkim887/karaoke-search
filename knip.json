@@ -6,13 +6,15 @@
       "entry": [],
       "project": []
     },
-    "apps/web": {},
+    "apps/web": {
+      "entry": ["src/sw.ts", "functions/**/*.js"]
+    },
     "apps/worker": {},
     "packages/*": {},
     "scripts": {
       "entry": ["*.mjs"],
       "project": ["**/*.mjs"],
-      "ignoreDependencies": ["@karaoke/crawler", "@karaoke/schema"]
+      "ignoreDependencies": ["@karaoke/crawler"]
     }
   }
 }
