@@ -163,6 +163,12 @@ export function writeSongRecordRows(
   });
 
   const providerMask = karaokeProviderMask(record.karaoke_numbers);
+  // Tokens the song's canonical (title/artist) fields emit. The reading fields
+  // dedup against this set (per-song only — another song's tokens must never
+  // suppress this song's reading), so a redundant ruby (JOYSOUND supplies a
+  // songNameRuby even for kana titles that already equal it) adds nothing and
+  // never double-counts a canonical match.
+  const canonicalTokenKeys = new Set<string>();
   for (const input of searchTextInputs(record)) {
     const textCompact = compactSearchText(input.value);
     if (textCompact.length === 0) {
@@ -176,32 +182,41 @@ export function writeSongRecordRows(
       input.weight,
       providerMask,
     );
-    writeSearchTokens(statements, {
-      songId: record.id,
-      field: input.field,
-      value: input.value,
-      textCompact,
-      weight: input.weight,
-      providerMask,
-    });
+    writeSearchTokens(
+      statements,
+      {
+        songId: record.id,
+        field: input.field,
+        value: input.value,
+        textCompact,
+        weight: input.weight,
+        providerMask,
+      },
+      { collect: canonicalTokenKeys },
+    );
   }
 
   // Reading fields (R4) are TOKEN-ONLY: emit search_tokens but no search_texts
   // row, so reading matches stay in the worker's token tier and never displace
-  // an exact title/artist match. See readingTokenInputs / READING_FIELDS.
+  // an exact title/artist match. Deduped against canonicalTokenKeys so a
+  // reading only contributes tokens the canonical fields lacked.
   for (const input of readingTokenInputs(record)) {
     const textCompact = compactSearchText(input.value);
     if (textCompact.length === 0) {
       continue;
     }
-    writeSearchTokens(statements, {
-      songId: record.id,
-      field: input.field,
-      value: input.value,
-      textCompact,
-      weight: input.weight,
-      providerMask,
-    });
+    writeSearchTokens(
+      statements,
+      {
+        songId: record.id,
+        field: input.field,
+        value: input.value,
+        textCompact,
+        weight: input.weight,
+        providerMask,
+      },
+      { skip: canonicalTokenKeys },
+    );
   }
 
   for (const hint of hints) {
@@ -226,10 +241,39 @@ export function writeSongRecordRows(
   }
 }
 
-function writeSearchTokens(statements: SongWriteStatements, input: SearchTokenInput): void {
+/**
+ * Options for cross-field token dedup within a single song (R4).
+ *
+ *   - `collect`: record each written `(kind, token)` key here (the canonical
+ *     fields populate this).
+ *   - `skip`: do NOT write a `(kind, token)` already present here (the reading
+ *     fields pass the canonical set so a reading never re-emits a token the
+ *     song's own title/artist already produced).
+ */
+interface WriteSearchTokenOptions {
+  collect?: Set<string>;
+  skip?: ReadonlySet<string>;
+}
+
+function crossFieldTokenKey(kind: SearchTokenRow['kind'], token: string): string {
+  return `${kind} ${token}`;
+}
+
+function writeSearchTokens(
+  statements: SongWriteStatements,
+  input: SearchTokenInput,
+  options: WriteSearchTokenOptions = {},
+): void {
   const rows: SearchTokenRow[] = [];
   addSearchTokens(rows, new Set<string>(), input);
   for (const row of rows) {
+    const key = crossFieldTokenKey(row.kind, row.token);
+    // A reading token the song's canonical fields already emit is dropped: the
+    // canonical row (higher weight) stays, so a reading can only ADD recall for
+    // tokens the title/artist lacked, never inflate an existing match's score.
+    if (options.skip?.has(key)) {
+      continue;
+    }
     statements.insertSearchToken.run(
       row.kind,
       row.token,
@@ -238,5 +282,6 @@ function writeSearchTokens(statements: SongWriteStatements, input: SearchTokenIn
       row.weight,
       row.providerMask,
     );
+    options.collect?.add(key);
   }
 }

@@ -134,6 +134,65 @@ describe('title_ruby search indexing (R4)', () => {
       .get() as { c: number };
     expect(count.c).toBe(0);
   });
+});
+
+/**
+ * Cross-field dedup (R4 a′+): a reading never re-emits a (kind, token) the
+ * song's own canonical title/artist fields already produced, so a redundant
+ * ruby cannot double-count a canonical match.
+ */
+describe('title_ruby cross-field token dedup', () => {
+  function makeRuby(id: string, title: string, ruby: string): SongRecord {
+    return {
+      id,
+      source_url: `https://example.com/${id}`,
+      title_primary: title,
+      title_ko: null,
+      artist_primary: 'Artist',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: id.replace(/\D/g, '') || '1' },
+      crawled_at: '2026-02-01T00:00:00.000Z',
+      title_ruby: ruby,
+    };
+  }
+
+  function fieldTokenCount(db: SongDatabase, field: string): number {
+    return (
+      db.prepare('SELECT COUNT(*) AS c FROM search_tokens WHERE field = ?').get(field) as {
+        c: number;
+      }
+    ).c;
+  }
+
+  it('kana title whose ruby equals it: kana title_ruby fully deduped, but romaji/hangul remain (novel)', () => {
+    const db = openMemoryDb();
+    importSongs(db, [makeRuby('joysound-201', 'マル', 'マル')]);
+    // Every kana token the ruby would emit is already produced by title_primary
+    // 'マル' → the kana reading field contributes nothing (no double-count).
+    expect(fieldTokenCount(db, 'title_ruby')).toBe(0);
+    // Romaji + hangul are derived scripts the kana title never produced, so they
+    // are novel recall and kept (a kana title becomes findable by maru / 마루).
+    expect(tokenExists(db, 'term', 'maru', 'title_ruby_romaji')).toBe(true);
+    expect(tokenExists(db, 'term', '마루', 'title_ruby_hangul')).toBe(true);
+  });
+
+  it('kanji title: reading shares nothing with the title, so full reading tokens are kept', () => {
+    const db = openMemoryDb();
+    importSongs(db, [makeRuby('joysound-202', '丸', 'マル')]);
+    expect(tokenExists(db, 'term', 'マル', 'title_ruby')).toBe(true);
+    expect(tokenExists(db, 'gram2', 'マル', 'title_ruby')).toBe(true);
+    expect(tokenExists(db, 'term', 'maru', 'title_ruby_romaji')).toBe(true);
+  });
+
+  it('partial overlap: only the tokens the title lacks survive on the kana reading field', () => {
+    const db = openMemoryDb();
+    // title 'マル' emits gram2 'マル'; ruby 'マルコ' emits term 'マルコ' (novel) plus
+    // gram2 'マル' (overlaps title → deduped) and gram2 'ルコ' (novel → kept).
+    importSongs(db, [makeRuby('joysound-203', 'マル', 'マルコ')]);
+    expect(tokenExists(db, 'term', 'マルコ', 'title_ruby')).toBe(true);
+    expect(tokenExists(db, 'gram2', 'ルコ', 'title_ruby')).toBe(true);
+    expect(tokenExists(db, 'gram2', 'マル', 'title_ruby')).toBe(false);
+  });
 
   it('round-trips title_ruby through the songs table on export', () => {
     const db = openMemoryDb();
