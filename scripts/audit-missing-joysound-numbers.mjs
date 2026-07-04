@@ -381,22 +381,48 @@ export function findCandidates(song, index, deps, artistIdIndex = null) {
   }
   candidates.sort(compareCandidates);
 
-  // Tier from the FULL sorted set — never the slice (see the docblock).
+  // Tier AND the artistId signals are decided on the FULL sorted set, never the
+  // emitted slice — a matching (or conflicting) candidate can rank below the
+  // top-5 cutoff (a rename match has zero key-overlap and sorts last), so
+  // summarizing on the slice would silently under-report it.
   const tier = tierForSong(candidates);
+  const artistIdMatchAny = candidates.some((c) => c.artist_id_match === 'true');
+  const artistIdConflictAny =
+    songArtistIds.size > 0 &&
+    candidates.some((c) => c.candidate_artist_id !== '' && c.artist_id_match === 'false');
 
-  let emitted = candidates.slice(0, MAX_CANDIDATES_PER_SONG);
-  // Reserve a slot for the best artist-overlap candidate so a tier-A song
-  // always carries its actionable merge target into the CSV, even when
-  // zero-overlap exact-title covers filled the slice. `bestOverlap` is a
-  // reference into `candidates`, so `emitted.includes` is an identity check.
+  // Reserve slots so the actionable candidates always reach the CSV even when a
+  // title-collision flood fills the top ranks: the best artist-key-overlap
+  // candidate (a tier-A merge target) and the best artistId-match candidate
+  // (which can have ZERO key overlap — the rename shape — and would otherwise
+  // sort last and be sliced off). Entries are references into `candidates`, so
+  // `includes` is an identity check.
+  const reserved = [];
   const bestOverlap = candidates.find((c) => c.overlapCount > 0);
-  if (bestOverlap && !emitted.includes(bestOverlap)) {
-    emitted = [...emitted.slice(0, MAX_CANDIDATES_PER_SONG - 1), bestOverlap];
+  if (bestOverlap) reserved.push(bestOverlap);
+  const bestMatch = candidates.find((c) => c.artist_id_match === 'true');
+  if (bestMatch && !reserved.includes(bestMatch)) reserved.push(bestMatch);
+
+  const emitted = candidates.slice(0, MAX_CANDIDATES_PER_SONG);
+  for (const r of reserved) {
+    if (emitted.includes(r)) continue;
+    // Replace the lowest-ranked emitted row that is not itself reserved, so the
+    // total stays <= MAX and no reserved candidate is evicted by another.
+    for (let i = emitted.length - 1; i >= 0; i -= 1) {
+      if (!reserved.includes(emitted[i])) {
+        emitted[i] = r;
+        break;
+      }
+    }
   }
+  emitted.sort(compareCandidates);
+
   return {
     tier,
     candidates: emitted,
     song_artist_ids: artistIdIndex ? [...songArtistIds].sort().join(' ') : '',
+    artist_id_match_any: artistIdMatchAny,
+    artist_id_conflict_any: artistIdConflictAny,
   };
 }
 
@@ -457,7 +483,8 @@ export function auditCorpus(corpus, deps, artistIdIndex = null) {
 
   const results = [];
   for (const song of affected) {
-    const { tier, candidates, song_artist_ids } = findCandidates(song, index, deps, artistIdIndex);
+    const { tier, candidates, song_artist_ids, artist_id_match_any, artist_id_conflict_any } =
+      findCandidates(song, index, deps, artistIdIndex);
     const k = song.karaoke_numbers ?? {};
     results.push({
       tier,
@@ -467,6 +494,8 @@ export function auditCorpus(corpus, deps, artistIdIndex = null) {
       tj_number: hasNumber(k.tj) ? k.tj : '',
       ky_number: hasNumber(k.ky) ? k.ky : '',
       song_artist_ids,
+      artist_id_match_any,
+      artist_id_conflict_any,
       candidates,
     });
   }
@@ -482,24 +511,32 @@ export function auditCorpus(corpus, deps, artistIdIndex = null) {
 function summarize(results, { affected, pool, artistIdIndexPresent = false }) {
   const byTier = { A: 0, B: 0, C: 0 };
   const byMatchKind = { 'exact-title': 0, 'stripped-title': 0 };
-  // Songs with >=1 candidate whose artistId matches — the high-confidence
-  // rename set, counted per tier (bTierWithArtistIdMatch is the headline).
+  // Per-song artistId signals (see the file header), decided on the full
+  // candidate set (not the emitted slice):
+  //   match    — >=1 candidate confirmed same-artist. Dominated by tier A, a
+  //              cross-check on pairs that already share an artist key.
+  //   conflict — >=1 candidate resolves to a DIFFERENT artistId (same title,
+  //              different artist). The tier-B "reject fast" disambiguation set.
   const artistIdMatchByTier = { A: 0, B: 0, C: 0 };
+  const artistIdConflictByTier = { A: 0, B: 0, C: 0 };
   let candidateRows = 0;
   let songsWithZeroCandidates = 0;
   let songsWithArtistIdMatch = 0;
+  let songsWithArtistIdConflict = 0;
   for (const r of results) {
     byTier[r.tier] += 1;
     if (r.candidates.length === 0) songsWithZeroCandidates += 1;
-    let songHasMatch = false;
     for (const c of r.candidates) {
       candidateRows += 1;
       byMatchKind[c.match_kind] += 1;
-      if (c.artist_id_match === 'true') songHasMatch = true;
     }
-    if (songHasMatch) {
+    if (r.artist_id_match_any) {
       artistIdMatchByTier[r.tier] += 1;
       songsWithArtistIdMatch += 1;
+    }
+    if (r.artist_id_conflict_any) {
+      artistIdConflictByTier[r.tier] += 1;
+      songsWithArtistIdConflict += 1;
     }
   }
   return {
@@ -513,6 +550,8 @@ function summarize(results, { affected, pool, artistIdIndexPresent = false }) {
     artistIdMatchByTier,
     songsWithArtistIdMatch,
     bTierWithArtistIdMatch: artistIdMatchByTier.B,
+    artistIdConflictByTier,
+    songsWithArtistIdConflict,
   };
 }
 
@@ -616,6 +655,9 @@ export async function runAudit({
   if (summary.artistIdIndex.present) {
     log.log(
       `artistId match  songs=${summary.songsWithArtistIdMatch}  (B-tier=${summary.bTierWithArtistIdMatch}, A=${summary.artistIdMatchByTier.A}, C=${summary.artistIdMatchByTier.C})`,
+    );
+    log.log(
+      `artistId resolve-differ (reject set)  songs=${summary.songsWithArtistIdConflict}  (B-tier=${summary.artistIdConflictByTier.B})`,
     );
   }
   log.log(`wrote ${csvPath}`);

@@ -225,6 +225,8 @@ describe('findCandidates / auditCorpus tiering end to end', () => {
       tier: 'C',
       candidates: [],
       song_artist_ids: '',
+      artist_id_match_any: false,
+      artist_id_conflict_any: false,
     });
   });
 
@@ -319,6 +321,53 @@ describe('artistId signal (R4-4)', () => {
     expect(row.candidates[0].artist_id_match).toBe('false');
     expect(row.song_artist_ids).toBe('A1');
     expect(summary.bTierWithArtistIdMatch).toBe(0);
+    // Both ids resolved and differ -> the tier-B "reject fast" set.
+    expect(summary.songsWithArtistIdConflict).toBe(1);
+    expect(summary.artistIdConflictByTier.B).toBe(1);
+  });
+
+  it('reserves a slot (and counts the match) when a >5-candidate flood would slice off a zero-overlap artistId match', () => {
+    // Regression for the sliced-signal gap: a rename-shape match has zero
+    // artist-key overlap, so it sorts last and — without a reserved slot — is
+    // dropped by the top-5 slice, hiding it from the CSV and the summary count.
+    const affected = {
+      id: 'tj-flood2',
+      title_primary: 'Solo(TV OP)',
+      artist_primary: 'New Name',
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+    };
+    // Six exact-title covers by unrelated artists, none in the index.
+    const covers = Array.from({ length: 6 }, (_, i) => ({
+      id: `joy-cover-${i}`,
+      title_primary: 'Solo(TV OP)',
+      artist_primary: `Cover ${i}`,
+      karaoke_numbers: { tj: null, ky: null, joysound: `${100 + i}` },
+    }));
+    // The rename target: matches only after decoration strip (stripped-title),
+    // different surface (zero overlap), but its joysound# resolves to A1.
+    const target = {
+      id: 'joysound-t',
+      title_primary: 'Solo',
+      artist_primary: 'Old Name',
+      karaoke_numbers: { tj: null, ky: null, joysound: '999' },
+    };
+    const idx = {
+      joysoundNumberToArtistId: new Map([['999', 'A1']]),
+      artistNameToArtistIds: new Map([
+        ['newname', new Set(['A1'])],
+        ['oldname', new Set(['A1'])],
+      ]),
+    };
+    const { results, summary } = auditCorpus([affected, ...covers, target], fakeDeps, idx);
+    const [row] = results;
+    expect(row.tier).toBe('B'); // no artist-key overlap anywhere
+    expect(row.candidates).toHaveLength(5);
+    const kept = row.candidates.find((c) => c.candidate_id === 'joysound-t');
+    expect(kept).toBeDefined();
+    expect(kept.artist_id_match).toBe('true');
+    // Counted on the FULL set, so the slice cannot hide it.
+    expect(summary.songsWithArtistIdMatch).toBe(1);
+    expect(summary.bTierWithArtistIdMatch).toBe(1);
   });
 
   it('leaves the columns blank (not false) when no index is supplied', () => {
