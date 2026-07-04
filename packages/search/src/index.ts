@@ -1,5 +1,7 @@
 import { toHiragana, toKatakana, toRomaji } from 'wanakana';
 
+export { kanaToHangul, kanaToRomaji } from './transliterate.js';
+
 export type KaraokeProvider = 'tj' | 'ky' | 'joysound';
 
 export interface KaraokeNumberQuery {

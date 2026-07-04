@@ -1,5 +1,11 @@
 import type { SongRecord } from '@karaoke/schema';
-import { type KaraokeProvider, compactSearchText, expandSearchQuery } from '@karaoke/search';
+import {
+  type KaraokeProvider,
+  compactSearchText,
+  expandSearchQuery,
+  kanaToHangul,
+  kanaToRomaji,
+} from '@karaoke/search';
 import MiniSearch, { type SearchResult } from 'minisearch';
 import { type OfflineRecallIndex, buildOfflineRecallIndex } from './offline-recall.js';
 import { fetchWithRetry, fetchWithTransientRetry } from './retry.js';
@@ -18,6 +24,13 @@ const SEARCH_FIELDS = [
   'artist_primary',
   'artist_aliases',
   'artist_ko',
+  // Reading-search enrichment (R4): the katakana ruby plus its deterministic
+  // romaji + hangul transliterations, so the offline path gains the same
+  // reading recall as the worker on the ruby-carrying subset. These are DERIVED
+  // fields (not properties on SongRecord) computed by `extractRubyField` below.
+  'title_ruby',
+  'title_ruby_romaji',
+  'title_ruby_hangul',
 ] as const;
 
 /**
@@ -32,7 +45,51 @@ const SEARCH_BOOSTS = {
   artist_primary: 2,
   artist_aliases: 2,
   artist_ko: 2,
+  // Reading fields are secondary renderings, boosted below the primary title
+  // (3) to mirror the server weight decision (ruby weight 3 < title weight 5):
+  // reading matches add recall without displacing a real-title match.
+  title_ruby: 2,
+  title_ruby_romaji: 2,
+  title_ruby_hangul: 2,
 } as const;
+
+/**
+ * Compute a derived reading field for MiniSearch. `title_ruby` is the raw
+ * katakana reading (may be absent/null); the romaji and hangul fields are its
+ * deterministic transliterations via the SAME `@karaoke/search` functions the
+ * server index uses (single source of truth). Returns `''` when there is no
+ * ruby, which MiniSearch indexes as empty (no tokens).
+ */
+function extractRubyField(record: SongRecord, fieldName: string): string {
+  const ruby = record.title_ruby ?? '';
+  if (ruby.length === 0) {
+    return '';
+  }
+  if (fieldName === 'title_ruby_romaji') {
+    return kanaToRomaji(ruby);
+  }
+  if (fieldName === 'title_ruby_hangul') {
+    return kanaToHangul(ruby);
+  }
+  return ruby;
+}
+
+const RUBY_FIELDS: ReadonlySet<string> = new Set([
+  'title_ruby',
+  'title_ruby_romaji',
+  'title_ruby_hangul',
+]);
+
+/**
+ * MiniSearch's own default field accessor, reused verbatim for every
+ * non-reading field so their extraction (including the `artist_aliases` array
+ * handling the existing config relies on) is byte-for-byte unchanged; only the
+ * derived reading fields take the custom path.
+ */
+const defaultExtractField = MiniSearch.getDefault('extractField') as (
+  document: SongRecord,
+  fieldName: string,
+) => string;
 
 /** Return type of `loadIndex`. Bundles the search index with an id→record map. */
 export interface IndexBundle {
@@ -63,6 +120,10 @@ export function buildIndex(records: SongRecord[]): MiniSearch<SongRecord> {
     idField: 'id',
     fields: [...SEARCH_FIELDS],
     storeFields: ['id'],
+    extractField: (document, fieldName) =>
+      RUBY_FIELDS.has(fieldName)
+        ? extractRubyField(document, fieldName)
+        : defaultExtractField(document, fieldName),
     processTerm: (term, _fieldName) => compactSearchText(term),
     searchOptions: {
       boost: { ...SEARCH_BOOSTS },

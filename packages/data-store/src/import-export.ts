@@ -90,6 +90,7 @@ export const SONG_COLUMNS = [
   'media_context_ko',
   'title_ko_source',
   'title_ko_confidence',
+  'title_ruby',
 ] as const;
 
 /**
@@ -143,6 +144,7 @@ export function exportSongs(db: SongDatabase): SongRecord[] {
       ...(row.media_context_ko !== null ? { media_context_ko: row.media_context_ko } : {}),
       ...(row.title_ko_source !== null ? { title_ko_source: row.title_ko_source } : {}),
       ...(row.title_ko_confidence !== null ? { title_ko_confidence: row.title_ko_confidence } : {}),
+      ...(row.title_ruby !== null ? { title_ruby: row.title_ruby } : {}),
     };
 
     validateSongRecord(record);
@@ -273,6 +275,7 @@ export interface StoredSongRow {
   media_context_ko: string | null;
   title_ko_source: TitleKoSource | null;
   title_ko_confidence: TitleKoConfidence | null;
+  title_ruby: string | null;
 }
 
 /**
