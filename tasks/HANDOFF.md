@@ -1,32 +1,92 @@
-# 세션 핸드오프 — JOYSOUND 머지 + Cloudflare 제거 (2026-06-13)
+# 세션 핸드오프 — 로드맵 R1/R2/R4 배송 + v21 라이브 (2026-07-04)
 
-다음 세션이 stale 요약이 아니라 디스크/git의 실제 상태에서 이어가도록 작성. 모든 사실은 이 세션 종료 시점 system-of-record 기준.
+다음 세션이 stale 요약이 아니라 디스크/git/서버의 실제 상태에서 이어가도록 작성.
+직전 버전(2026-06-13, Cloudflare 제거 직후)은 전부 이행 완료로 대체됨.
 
 ## Active goal
-JOYSOUND 263k 풀카탈로그를 프로덕션에 올리기. **코드는 전부 main에 머지 완료 + Cloudflare 경로 완전 제거** — 남은 건 데이터 Release 발행과 셀프호스트(hermes) 배포뿐.
+
+로드맵(docs/ROADMAP.md R1–R5) 순차 배송. 이번 세션까지로 **R1(감사+확정쌍),
+R2(i18n+라이선스+footer), R4-1(ruby 3문자 검색)이 main+라이브에 반영 완료**.
+다음 타깃은 백로그 섹션 참조 — 단, 상당수가 "다음 주간 크롤 1회 소킹"에 게이트됨.
 
 ## Current state of record
-- **Repo/path**: `C:\Users\kmend\Desktop\karaoke`
-- **Branch/HEAD**: `main` @ `5cb5d3b` == origin/main. 워킹 트리 **클린**. 워크트리는 메인 체크아웃 1개뿐.
-- **브랜치**: 로컬·원격 모두 `main` + `feat/joysound-audit-harness`(오너가 보존 선택, draft **PR #15** open)만 남음. 그 외 전부 정리됨(머지 3개 원격 삭제, 폐기물 d1-search-index-hardening·prune-dead-code·백업 2개 삭제, stale crawl **PR #17 closed** + 브랜치 삭제).
-- **Cloudflare: 계정 리소스까지 삭제 완료** — D1 `karaoke-songs`(2b0c76a1, 420MB) 삭제, 워커 `karaoke-search-api` 삭제(workers.dev 404 확인). repo에 wrangler/miniflare 의존 0.
-- **라이브 사이트**: GitHub Pages, **오프라인 MiniSearch 폴백 모드**(25.8k 번들)로 배포됨 — 배포 자산에 workers.dev 참조 0건 확인. 셀프호스트가 뜨기 전까지 의도된 상태.
-- **Key artifacts**: 후보 코퍼스 `.tmp_review/joysound-detail-sweep-20260610/songs-candidate.json` — **263,222 records**, 101,173,840 bytes, 2026-06-13 00:53 (폴드 적용 dist로 빌드된 최종본). 드라이런 매니페스트의 263,230은 **폴드 이전 수치 + stale baseline(48f393c)** — 실발행 때 재계산 필수.
 
-## Completed evidence (이 세션)
-1. **머저 dash-fold** `050cdfd`: Tier B/C 키 폴딩 + same-source 게이트. author-reviewer 2라운드 APPROVE; 델타 게이트 2회 — 커밋 코퍼스엔 바이트 동일 no-op, 263k 후보 통제 재빌드에서 폴드 기인 융합 **정확히 8건 전수 검수 전부 정상**(역분리 0). 크롤러 669 tests green.
-2. **PR #39 머지** (main `95db1b0`): JOYSOUND 스윕 22커밋 (洋楽 veto 분류기, 오버라이드 173/2, D1 스트리밍(→#40에서 삭제됨), 워커/웹 API-first, 스윕·리플레이·빌더 스크립트, dash-fold). CI green.
-3. **PR #40 머지** (main `5cb5d3b`): `refactor!: remove the Cloudflare Workers + D1 deploy path` (30파일 +271/−2709). author-reviewer 2라운드(1차에서 pre-#39 베이스 블로커 발견→리베이스+스트리밍 export 삭제 확장) APPROVE. **CI 코퍼스 게이트 = `pnpm --filter @karaoke/worker sqlite:build`** (`validateSongCorpus` 동일 엄격성 + 신규 0-record fail-fast; 25,842곡/392MB로 실검증). 메타핀 테스트 `apps/worker/test/ci-pipeline-pins.test.ts`. 머지 후 Pages 배포 green.
-4. 로컬 CLAUDE.md(untracked) + 메모리(`project_joysound_crawl_and_pr3`) 갱신됨.
+- **main**: `74e818e` == origin/main. 오늘 PR #71–#79 아홉 건 전부 머지
+  (전부 author-reviewer 독립 에이전트 검수 통과 후).
+- **서빙 DB**: hermes-host `db/current -> releases/data-2026-07-04-v21-title-ruby`
+  (songs.sqlite 1,940,869,120 B = 1.81 GiB, VACUUMed, SHA256SUMS 있음).
+  롤백용 previous = v20(1.09 GiB). v19는 프룬됨. 디스크 28%.
+  v21 = enriched corpus(236,224곡 title_ruby) + v11 힌트 2종으로 서버에서
+  런북대로 빌드. `/api/meta` → `{"dbUpdatedAt":"2026-06-18"}` (max crawled_at).
+- **라이브 웹**: karaokedb.pages.dev — main 기준 수동 wrangler 배포 완료.
+  한/영/일 스위처(헤더 🌐 드롭다운, ko 기본), MIT footer, 실시간 DB 날짜
+  (/api/meta 페치, 실패 시 빌드 시점 max crawled_at 폴백), PWA/폰트 서브셋.
+- **서버 repo**: /srv/nas/karaoke/app == main 74e818e, 서비스 재시작·검증 완료.
+  로컬 편집으로 tasks/todo-tier0-refactor-20260702.md만 dirty(운영 로그, 유지).
+- **작업 클론**: 이 세션의 scratchpad(세션 종료 시 소멸 가능)에 있었음 —
+  다음 세션은 새로 `git clone --filter=blob:none
+  https://github.com/ghkim887/karaoke-search` 후 워크트리(wt-*) 패턴 재사용.
+  Z:\karaoke는 라이브 NAS 마운트(코드 작업 금지, 조회/데이터 전송용).
+
+## Completed evidence (2026-07-04 세션)
+
+1. **#71 ROADMAP.md**: R1–R5 다섯 항목 + 스코핑 실측(378곡/커버리지/크기).
+2. **#72 MIT 재라이선스 + footer 날짜**: AGPL→MIT 전면, git-date 기계 삭제,
+   워커 `GET /api/meta`(max crawled_at, per-DB memo) + 프록시 allowlist +meta.
+3. **#75 UI i18n**: ko/en/ja 카탈로그(타입 강제), 헤더 드롭다운(menu-button
+   패턴), 모듈 스토어+CustomEvent 브리지, ResizeObserver --header-height 동기화.
+   ko 기본 렌더 byte-identical(드리프트 가드 테스트). 리뷰 2라운드
+   (하이드레이션 aria-label 버그 실브라우저 검증, knip).
+4. **#73 R1 감사 CLI** `scripts/audit-missing-joysound-numbers.mjs`:
+   378곡 → A:39/B:190/C:149. 리뷰가 티어-온-슬라이스 블로커 적발(A 10곡 복원).
+5. **#76 확정 병합쌍 26건**: tier E 65→84, F 138→145(+extra-provider 1).
+   오너 승인 31건 중 5건은 메커니즘상 표현 불가(아래 백로그). **다음 크롤 때 적용**.
+6. **#77 빌드 가드**: PUBLIC_KARAOKE_API_BASE_URL config-load 검증 + postbuild
+   오염 시그니처 스캔. 배경: 이날 새벽 Git Bash MSYS 경로 변환이 env `/`를
+   `C:/Program Files/Git`으로 바꿔 라이브 검색이 오프라인 폴백으로 강등됐던
+   실사고(PowerShell 재빌드·재배포로 복구).
+7. **#78 title_ruby Stage 1**: 스키마 optional 필드, 크롤러 passthrough
+   (title-donor 규칙: 제목 이긴 레코드의 ruby만), 백필 스크립트
+   (236,224/236,433 적용, 8버킷 전수 정합), baseline songs.json +255.
+8. **#79 ruby 검색 Stage 2**: kana→romaji/hangul 결정적 변환(@karaoke/search,
+   174 테이블 핀 테스트), reading 3필드 weight 3 token-only, romaji는
+   term+prefix만(ASCII gram은 쿼리 불가능한 죽은 토큰), **per-song 크로스필드
+   dedup**(중복 ruby 이중 가산 차단). 전량(307k) 배터리: 17/22 byte-identical,
+   5건은 reading형 쿼리의 의도된 recall(오너 수용). 25k 패리티 골든 불변.
+9. **v21 배포**: 프리스왑 배터리(:8788 vs live, 12/15 identical + 의도된 3건)
+   → 심링크 스왑 → 재시작 → 공개 체인 검증(마루/maru/우타) → 프룬.
 
 ## Open items
-- **Blockers (오너 입력 필요)**:
-  1. **hermes-host 리눅스 계정명** (Tailscale 100.84.84.57) — 셀프호스트 배포의 유일한 블로커. 배포 후 `deploy.yml`에 `PUBLIC_KARAOKE_API_BASE_URL`을 **브라우저 도달 가능 URL**(Tailscale Funnel 등 공개 노출 필요)로 설정해야 API 모드 복귀.
-  2. **데이터 Release 발행 승인**: `gh release create data/<날짜>` + full-corpus.json(101MB) → `gh workflow run full-corpus.yml -f release_tag=… -f baseline_commit=5cb5d3b` → 매니페스트 PR 머지. **매니페스트는 263,222로 재계산** (드라이런 수치/baseline 모두 stale).
-- **Risks**: 후보를 머저로 재실행하면 폴드 무관 2차-패스 dupe 21건이 추가 융합됨(main에도 있는 기존 동작) — 발행 파이프라인에 리플레이 1회 끼우면 자연 해소, 안 끼우면 263,222 그대로도 무해.
-- **Deferred**: OPM/무장르 잔여 꼬리(≤1k) 큐레이션; WS-B 프론트 폴리시; `D1DatabaseLike`/`D1_SCHEMA_SQL` 이름 정리(코스메틱, OPEN-QUESTIONS에 등재); `.tmp_review` 2GB 아카이브-후-삭제; `tasks/todo-structural-improvements.md`의 구조 백로그.
-- **Stale/superseded**: 이 파일의 직전 버전(2026-06-12, "커밋 안 됨" 상태 서술) — 전부 머지로 해소됨. `feat/joysound-audit-harness`(PR #15 draft)는 main의 detail-sweep 감사 툴링과 기능 중복 — 재개하려면 먼저 main 대비 가치 재평가.
+
+- **크롤 소킹 게이트(다음 주간 crawl.yml 후 확인할 것)**:
+  1. 병합쌍 26건이 실제 적용됐는지(대상 곡들이 joysound 번호 획득).
+  2. 크롤러 ruby persistence — 신규/전체 곡에 title_ruby가 corpus로 들어오는지
+     (백필 미커버 70,389곡이 여기서 채워짐). baseline songs.json 재생성 시
+     오프라인 서브셋 ruby 커버리지(현 255곡)도 증가.
+  3. classifier Phase-1 골든 게이트 첫 실전 소킹 → 통과 시 Phase 2 해제
+     (OPEN-QUESTIONS §7).
+- **백로그(오너 지시 대기, 우선순위 제안 순)**:
+  1. R1 B티어 190곡 리뷰 배치(개명/보컬로이드 크레딧/표기 변형) + **머저
+     메커니즘 확장** — 표현 불가 5쌍(tj-25103, tj-27098: 후보가 자체 TJ 번호
+     보유 / blog-1184-1·3, blog-487-11: 대상이 tj+ky 복수 번호)을 다룰 수 있게.
+  2. lyricist/composer/tieupNames 인덱싱 — 원천 데이터는 NAS
+     runs/data-2026-06-14-.../joysound-detail-decision-log.jsonl(147MB)에 있음
+     (이 세션의 슬림 추출본은 scratchpad라 소멸 — 같은 방식으로 재추출).
+  3. R3 오프라인 전체 팩(opt-in sqlite-wasm+OPFS) / R5 ky/dam 준비(ROADMAP 참조).
+- **오너 결정 보류(건드리지 말 것)**: OPEN-QUESTIONS §8 오프사이트 백업
+  (공개 릴리스 업로드는 명시 승인 필요), §9 워치독 알림 채널, ko UI를
+  한국어 단독으로 바꿀지(현행 ko=이중언어 유지가 승인된 상태), reading 필드
+  gram3 추가 트림(−140 MiB, 정밀도 소폭 하락 — 제안했으나 미답, 기본 유지).
+- **영구 규칙(메모리에도 있음)**: 권한/시크릿 느슨함은 의도(수정 금지),
+  release 디렉터리 in-place 수정 금지(db/current는 심링크), 보존 = current+1,
+  웹 빌드/wrangler는 PowerShell에서(MSYS env 오염), 에이전트 게이트 목록은
+  CI 미러(biome/-r typecheck/-r test/-r build/knip 고정), Pages 배포 후
+  실브라우저 검증 필수(curl로는 폴백 강등이 안 보임).
 
 ## Next first action
-1. 오너에게서 hermes 계정명 받기 → `docs/superpowers/runbooks/2026-06-09-joysound-deploy.md` §3-4 순서로 셀프호스트 배포 (`sqlite:build`를 후보 코퍼스로, `serve:node`).
-2. 또는 데이터 먼저: `node scripts/publish-full-corpus.mjs` 경로로 Release 발행 (매니페스트 재계산 포함 — 후보 파일 그대로 쓰되 카운트/sha/baseline을 5cb5d3b 기준으로).
+
+1. 주간 크롤 완료 대기 → 위 "크롤 소킹 게이트" 3종 확인(병합쌍 적용·ruby
+   유입·골든 게이트). 문제없으면 새 corpus로 v22 릴리스 사이클(런북:
+   README-ops "Release promotion runbook", 힌트 jsonl 포함 필수).
+2. 또는 오너가 백로그 항목을 지시하면 해당 항목부터 — 코드 작업은 전부
+   로컬 클론 + 워크트리 + author/reviewer 독립 에이전트 + CI 미러 게이트로.
