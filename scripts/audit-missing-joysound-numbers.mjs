@@ -47,12 +47,37 @@
  *   audit-missing-joysound-summary.json counts per tier / match_kind, plus the
  *                                       zero-candidate (tier C) count.
  *
+ * artistId signal (Roadmap R4-4) — optional, additive
+ * ---------------------------------------------------
+ * JOYSOUND assigns a stable `artistId`. The corpus discards it, but the
+ * retained detail-sweep logs keep it; the companion
+ * `build-joysound-artist-id-index.mjs` distils those into a small index
+ * ({ joysoundNumberToArtistId, artistNameToArtistIds }). Pass it via
+ * `--artist-id-index <file>` and each candidate row gains three columns:
+ *   candidate_artist_id  the candidate's JOYSOUND artistId (by its joysound#)
+ *   song_artist_ids      artistId(s) the affected song's artist maps to
+ *   artist_id_match      true when they intersect (same artist by JOYSOUND's id)
+ *
+ * What this is FOR (measured against the live corpus, 2026-07-04): the match is
+ * a DISAMBIGUATION aid for the tier-B review, not a rename auto-promoter. It
+ * fired on 23 tier-A songs (a second, independent same-artist confirmation) and
+ * ZERO tier-B — a rename's whole difficulty is that the affected song carries
+ * the OLD/variant surface (関ジャニ∞), which JOYSOUND, indexing only its
+ * canonical name (SUPER EIGHT), never lists, so that surface resolves to no
+ * artistId. The tier-B value is the inverse: where BOTH ids resolve and DIFFER
+ * (a same-title / different-artist collision — the bulk of tier B), a reviewer
+ * can reject the pair fast; genuine renames stay in the unresolved residue for
+ * a future, different bridge (e.g. the JOYSOUND record's own TJ/KY numbers).
+ * This is PURELY additive: the A/B/C tiers are unchanged, and WITHOUT the flag
+ * the three columns are emitted empty and the audit behaves exactly as before.
+ *
  * Usage
  * -----
- *   node scripts/audit-missing-joysound-numbers.mjs <full-corpus.json> [--out <dir>]
+ *   node scripts/audit-missing-joysound-numbers.mjs <full-corpus.json> \
+ *     [--out <dir>] [--artist-id-index <file>]
  */
 
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeCsvWithBom } from './lib/agent-chunks.mjs';
@@ -84,14 +109,18 @@ export const CSV_HEADER = [
   'candidate_artist',
   'match_kind',
   'artist_overlap_keys',
+  // R4-4 artistId signal (empty unless --artist-id-index is supplied).
+  'candidate_artist_id',
+  'song_artist_ids',
+  'artist_id_match',
 ];
 
 export const USAGE =
-  'usage: node scripts/audit-missing-joysound-numbers.mjs <full-corpus.json> [--out <dir>]';
+  'usage: node scripts/audit-missing-joysound-numbers.mjs <full-corpus.json> [--out <dir>] [--artist-id-index <file>]';
 
 /** Parse CLI args. Throws on unknown flags, missing values, or missing corpus. */
 export function parseArgs(argv) {
-  const parsed = { corpusPath: null, outDir: null, help: false };
+  const parsed = { corpusPath: null, outDir: null, artistIdIndexPath: null, help: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') {
@@ -100,6 +129,11 @@ export function parseArgs(argv) {
       const value = argv[i + 1];
       if (!value) throw new Error('--out requires a directory value');
       parsed.outDir = value;
+      i += 1;
+    } else if (arg === '--artist-id-index') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('--artist-id-index requires a file value');
+      parsed.artistIdIndexPath = value;
       i += 1;
     } else if (arg.startsWith('--')) {
       throw new Error(`unknown argument: ${arg}`);
@@ -281,13 +315,25 @@ function compareCandidates(a, b) {
  *     can never be sliced off (it ranks at the top of its group), so this only
  *     ever rescues the stripped-title-overlap case that motivated the fix.
  */
-export function findCandidates(song, index, deps) {
+export function findCandidates(song, index, deps, artistIdIndex = null) {
   const { normalizeForMatch } = deps;
   const title = typeof song.title_primary === 'string' ? song.title_primary : '';
   const exactKey = normalizeForMatch(title);
   const strippedKey = normalizeForMatch(stripDecorations(title));
   const songId = song.id == null ? '' : String(song.id);
   const songArtistKeys = artistKeySet(song, deps);
+
+  // R4-4: the artistId(s) this song's artist surfaces map to in JOYSOUND (via
+  // the optional index). Reuses `songArtistKeys` so the lookup keys match the
+  // index's `normalizeForMatch(splitArtistCollab(...))` build exactly. Empty
+  // (and every artistId field stays blank) when no index was supplied.
+  const songArtistIds = new Set();
+  if (artistIdIndex) {
+    for (const key of songArtistKeys) {
+      const ids = artistIdIndex.artistNameToArtistIds.get(key);
+      if (ids) for (const id of ids) songArtistIds.add(id);
+    }
+  }
 
   // id -> match_kind, exact-title taking precedence over stripped-title.
   const byId = new Map();
@@ -310,6 +356,17 @@ export function findCandidates(song, index, deps) {
   const candidates = [];
   for (const { entry, matchKind } of byId.values()) {
     const overlap = [...songArtistKeys].filter((k) => entry.artistKeys.has(k)).sort();
+    // artistId of the candidate, keyed by its joysound number (not its id — a
+    // merged record's id can be a higher-priority source's). Blank when no
+    // index, or when the number/artist isn't covered by the sweep logs.
+    const candidateArtistId = artistIdIndex
+      ? (artistIdIndex.joysoundNumberToArtistId.get(entry.joysound) ?? '')
+      : '';
+    const artistIdMatch = artistIdIndex
+      ? candidateArtistId !== '' && songArtistIds.has(candidateArtistId)
+        ? 'true'
+        : 'false'
+      : '';
     candidates.push({
       candidate_id: entry.id,
       candidate_joysound_number: entry.joysound,
@@ -318,23 +375,55 @@ export function findCandidates(song, index, deps) {
       match_kind: matchKind,
       artist_overlap_keys: overlap,
       overlapCount: overlap.length,
+      candidate_artist_id: candidateArtistId,
+      artist_id_match: artistIdMatch,
     });
   }
   candidates.sort(compareCandidates);
 
-  // Tier from the FULL sorted set — never the slice (see the docblock).
+  // Tier AND the artistId signals are decided on the FULL sorted set, never the
+  // emitted slice — a matching (or conflicting) candidate can rank below the
+  // top-5 cutoff (a rename match has zero key-overlap and sorts last), so
+  // summarizing on the slice would silently under-report it.
   const tier = tierForSong(candidates);
+  const artistIdMatchAny = candidates.some((c) => c.artist_id_match === 'true');
+  const artistIdConflictAny =
+    songArtistIds.size > 0 &&
+    candidates.some((c) => c.candidate_artist_id !== '' && c.artist_id_match === 'false');
 
-  let emitted = candidates.slice(0, MAX_CANDIDATES_PER_SONG);
-  // Reserve a slot for the best artist-overlap candidate so a tier-A song
-  // always carries its actionable merge target into the CSV, even when
-  // zero-overlap exact-title covers filled the slice. `bestOverlap` is a
-  // reference into `candidates`, so `emitted.includes` is an identity check.
+  // Reserve slots so the actionable candidates always reach the CSV even when a
+  // title-collision flood fills the top ranks: the best artist-key-overlap
+  // candidate (a tier-A merge target) and the best artistId-match candidate
+  // (which can have ZERO key overlap — the rename shape — and would otherwise
+  // sort last and be sliced off). Entries are references into `candidates`, so
+  // `includes` is an identity check.
+  const reserved = [];
   const bestOverlap = candidates.find((c) => c.overlapCount > 0);
-  if (bestOverlap && !emitted.includes(bestOverlap)) {
-    emitted = [...emitted.slice(0, MAX_CANDIDATES_PER_SONG - 1), bestOverlap];
+  if (bestOverlap) reserved.push(bestOverlap);
+  const bestMatch = candidates.find((c) => c.artist_id_match === 'true');
+  if (bestMatch && !reserved.includes(bestMatch)) reserved.push(bestMatch);
+
+  const emitted = candidates.slice(0, MAX_CANDIDATES_PER_SONG);
+  for (const r of reserved) {
+    if (emitted.includes(r)) continue;
+    // Replace the lowest-ranked emitted row that is not itself reserved, so the
+    // total stays <= MAX and no reserved candidate is evicted by another.
+    for (let i = emitted.length - 1; i >= 0; i -= 1) {
+      if (!reserved.includes(emitted[i])) {
+        emitted[i] = r;
+        break;
+      }
+    }
   }
-  return { tier, candidates: emitted };
+  emitted.sort(compareCandidates);
+
+  return {
+    tier,
+    candidates: emitted,
+    song_artist_ids: artistIdIndex ? [...songArtistIds].sort().join(' ') : '',
+    artist_id_match_any: artistIdMatchAny,
+    artist_id_conflict_any: artistIdConflictAny,
+  };
 }
 
 /**
@@ -357,8 +446,11 @@ export function buildCsvRows(results) {
   const rows = [CSV_HEADER];
   for (const r of results) {
     const base = [r.tier, r.song_id, r.title_primary, r.artist_primary, r.tj_number, r.ky_number];
+    // song-level artistId column (same for every candidate row of this song).
+    const songArtistIds = r.song_artist_ids ?? '';
     if (r.candidates.length === 0) {
-      rows.push([...base, '', '', '', '', '', '']);
+      // 6 empty candidate cols + candidate_artist_id + song_artist_ids + artist_id_match.
+      rows.push([...base, '', '', '', '', '', '', '', songArtistIds, '']);
       continue;
     }
     for (const c of r.candidates) {
@@ -370,6 +462,9 @@ export function buildCsvRows(results) {
         c.candidate_artist,
         c.match_kind,
         c.artist_overlap_keys.join(' '),
+        c.candidate_artist_id ?? '',
+        songArtistIds,
+        c.artist_id_match ?? '',
       ]);
     }
   }
@@ -381,14 +476,15 @@ export function buildCsvRows(results) {
  * (the clustering primitives). Returns `{ results, summary }` — results in
  * corpus order (stable), summary with per-tier / per-match_kind counts.
  */
-export function auditCorpus(corpus, deps) {
+export function auditCorpus(corpus, deps, artistIdIndex = null) {
   const affected = corpus.filter(isAffected);
   const pool = corpus.filter(hasJoysound);
   const index = buildJoysoundIndex(pool, deps);
 
   const results = [];
   for (const song of affected) {
-    const { tier, candidates } = findCandidates(song, index, deps);
+    const { tier, candidates, song_artist_ids, artist_id_match_any, artist_id_conflict_any } =
+      findCandidates(song, index, deps, artistIdIndex);
     const k = song.karaoke_numbers ?? {};
     results.push({
       tier,
@@ -397,25 +493,50 @@ export function auditCorpus(corpus, deps) {
       artist_primary: typeof song.artist_primary === 'string' ? song.artist_primary : '',
       tj_number: hasNumber(k.tj) ? k.tj : '',
       ky_number: hasNumber(k.ky) ? k.ky : '',
+      song_artist_ids,
+      artist_id_match_any,
+      artist_id_conflict_any,
       candidates,
     });
   }
 
-  const summary = summarize(results, { affected: affected.length, pool: pool.length });
+  const summary = summarize(results, {
+    affected: affected.length,
+    pool: pool.length,
+    artistIdIndexPresent: artistIdIndex !== null,
+  });
   return { results, summary };
 }
 
-function summarize(results, { affected, pool }) {
+function summarize(results, { affected, pool, artistIdIndexPresent = false }) {
   const byTier = { A: 0, B: 0, C: 0 };
   const byMatchKind = { 'exact-title': 0, 'stripped-title': 0 };
+  // Per-song artistId signals (see the file header), decided on the full
+  // candidate set (not the emitted slice):
+  //   match    — >=1 candidate confirmed same-artist. Dominated by tier A, a
+  //              cross-check on pairs that already share an artist key.
+  //   conflict — >=1 candidate resolves to a DIFFERENT artistId (same title,
+  //              different artist). The tier-B "reject fast" disambiguation set.
+  const artistIdMatchByTier = { A: 0, B: 0, C: 0 };
+  const artistIdConflictByTier = { A: 0, B: 0, C: 0 };
   let candidateRows = 0;
   let songsWithZeroCandidates = 0;
+  let songsWithArtistIdMatch = 0;
+  let songsWithArtistIdConflict = 0;
   for (const r of results) {
     byTier[r.tier] += 1;
     if (r.candidates.length === 0) songsWithZeroCandidates += 1;
     for (const c of r.candidates) {
       candidateRows += 1;
       byMatchKind[c.match_kind] += 1;
+    }
+    if (r.artist_id_match_any) {
+      artistIdMatchByTier[r.tier] += 1;
+      songsWithArtistIdMatch += 1;
+    }
+    if (r.artist_id_conflict_any) {
+      artistIdConflictByTier[r.tier] += 1;
+      songsWithArtistIdConflict += 1;
     }
   }
   return {
@@ -425,6 +546,12 @@ function summarize(results, { affected, pool }) {
     byMatchKind,
     candidateRows,
     songsWithZeroCandidates,
+    artistIdIndex: { present: artistIdIndexPresent },
+    artistIdMatchByTier,
+    songsWithArtistIdMatch,
+    bTierWithArtistIdMatch: artistIdMatchByTier.B,
+    artistIdConflictByTier,
+    songsWithArtistIdConflict,
   };
 }
 
@@ -445,11 +572,39 @@ export async function loadClusteringDeps() {
 }
 
 /**
+ * Load the JOYSOUND artistId index produced by
+ * `build-joysound-artist-id-index.mjs` into lookup structures:
+ *   joysoundNumberToArtistId  Map<joysound# (dashless), artistId>
+ *   artistNameToArtistIds     Map<normalized artist key, Set<artistId>>
+ * Throws on a malformed file (missing either object).
+ */
+export function loadArtistIdIndex(path) {
+  const raw = JSON.parse(readFileSync(path, 'utf8'));
+  if (raw?.joysoundNumberToArtistId == null || raw?.artistNameToArtistIds == null) {
+    throw new Error(
+      `artist-id index is missing joysoundNumberToArtistId / artistNameToArtistIds: ${path}`,
+    );
+  }
+  const joysoundNumberToArtistId = new Map(Object.entries(raw.joysoundNumberToArtistId));
+  const artistNameToArtistIds = new Map(
+    Object.entries(raw.artistNameToArtistIds).map(([key, ids]) => [key, new Set(ids)]),
+  );
+  return { joysoundNumberToArtistId, artistNameToArtistIds };
+}
+
+/**
  * Orchestrate: load corpus, run the audit, write the CSV + summary JSON.
  * `deps` is a test seam (defaults to the real clustering dist import).
  * Returns 0 on success, 2 on a missing prerequisite (corpus or dist).
  */
-export async function runAudit({ corpusPath, outDir, deps = null, log = console }) {
+export async function runAudit({
+  corpusPath,
+  outDir,
+  artistIdIndexPath = null,
+  deps = null,
+  artistIdIndex = null,
+  log = console,
+}) {
   const resolvedCorpus = resolve(corpusPath);
   if (!existsSync(resolvedCorpus)) {
     log.error(`ERROR: missing corpus at ${resolvedCorpus}`);
@@ -465,11 +620,24 @@ export async function runAudit({ corpusPath, outDir, deps = null, log = console 
     }
   }
 
+  // Optional artistId signal. `artistIdIndex` is a test seam (prebuilt index);
+  // otherwise load it from --artist-id-index when given. A missing file is a
+  // hard error (the caller asked for the signal), not a silent no-op.
+  let index = artistIdIndex;
+  if (index === null && artistIdIndexPath) {
+    const resolvedIndex = resolve(artistIdIndexPath);
+    if (!existsSync(resolvedIndex)) {
+      log.error(`ERROR: missing artist-id index at ${resolvedIndex}`);
+      return 2;
+    }
+    index = loadArtistIdIndex(resolvedIndex);
+  }
+
   const resolvedOut = resolve(outDir ?? DEFAULT_OUT_DIR);
   mkdirSync(resolvedOut, { recursive: true });
 
   const corpus = loadCorpus(resolvedCorpus);
-  const { results, summary } = auditCorpus(corpus, clusteringDeps);
+  const { results, summary } = auditCorpus(corpus, clusteringDeps, index);
 
   const csvPath = resolve(resolvedOut, CSV_NAME);
   const summaryPath = resolve(resolvedOut, SUMMARY_NAME);
@@ -484,6 +652,14 @@ export async function runAudit({ corpusPath, outDir, deps = null, log = console 
   log.log(
     `candidate rows: ${summary.candidateRows}  zero-candidate songs: ${summary.songsWithZeroCandidates}`,
   );
+  if (summary.artistIdIndex.present) {
+    log.log(
+      `artistId match  songs=${summary.songsWithArtistIdMatch}  (B-tier=${summary.bTierWithArtistIdMatch}, A=${summary.artistIdMatchByTier.A}, C=${summary.artistIdMatchByTier.C})`,
+    );
+    log.log(
+      `artistId resolve-differ (reject set)  songs=${summary.songsWithArtistIdConflict}  (B-tier=${summary.artistIdConflictByTier.B})`,
+    );
+  }
   log.log(`wrote ${csvPath}`);
   log.log(`wrote ${summaryPath}`);
   return 0;
@@ -503,7 +679,11 @@ async function main() {
     console.log(USAGE);
     return;
   }
-  process.exitCode = await runAudit({ corpusPath: args.corpusPath, outDir: args.outDir });
+  process.exitCode = await runAudit({
+    corpusPath: args.corpusPath,
+    outDir: args.outDir,
+    artistIdIndexPath: args.artistIdIndexPath,
+  });
 }
 
 if (isCliInvocation(import.meta.url)) {

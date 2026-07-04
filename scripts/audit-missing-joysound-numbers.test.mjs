@@ -221,7 +221,13 @@ describe('findCandidates / auditCorpus tiering end to end', () => {
       ]),
       stripped: new Map(),
     };
-    expect(findCandidates(song, index, fakeDeps)).toEqual({ tier: 'C', candidates: [] });
+    expect(findCandidates(song, index, fakeDeps)).toEqual({
+      tier: 'C',
+      candidates: [],
+      song_artist_ids: '',
+      artist_id_match_any: false,
+      artist_id_conflict_any: false,
+    });
   });
 
   it('tiers on the FULL match set and keeps the overlap candidate when covers flood the slice', () => {
@@ -265,6 +271,123 @@ describe('findCandidates / auditCorpus tiering end to end', () => {
   });
 });
 
+describe('artistId signal (R4-4)', () => {
+  // A tier-B case: same song, DIFFERENT artist surface strings (a rename), so
+  // there is zero artist-key overlap — but both surfaces map to one JOYSOUND
+  // artistId, which the signal must catch.
+  const corpus = [
+    {
+      id: 'tj-r',
+      title_primary: 'Home',
+      artist_primary: 'New Name',
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+    },
+    {
+      id: 'joysound-166186',
+      title_primary: 'Home',
+      artist_primary: 'Old Name',
+      karaoke_numbers: { tj: null, ky: null, joysound: '100' },
+    },
+  ];
+  // fakeDeps.normalizeForMatch = strip whitespace + lowercase.
+  const artistIdIndex = {
+    joysoundNumberToArtistId: new Map([['100', 'A1']]),
+    artistNameToArtistIds: new Map([
+      ['oldname', new Set(['A1'])],
+      ['newname', new Set(['A1'])],
+    ]),
+  };
+
+  it('flags a same-artistId rename (tier stays B, artist_id_match true)', () => {
+    const { results, summary } = auditCorpus(corpus, fakeDeps, artistIdIndex);
+    const [row] = results;
+    expect(row.tier).toBe('B'); // surfaces differ -> no artist-key overlap
+    expect(row.song_artist_ids).toBe('A1');
+    expect(row.candidates[0].candidate_artist_id).toBe('A1');
+    expect(row.candidates[0].artist_id_match).toBe('true');
+    expect(summary.artistIdIndex.present).toBe(true);
+    expect(summary.bTierWithArtistIdMatch).toBe(1);
+    expect(summary.songsWithArtistIdMatch).toBe(1);
+  });
+
+  it('reports no match when the artistIds differ, and false (not empty) with an index present', () => {
+    const differing = {
+      joysoundNumberToArtistId: new Map([['100', 'DIFFERENT']]),
+      artistNameToArtistIds: new Map([['newname', new Set(['A1'])]]),
+    };
+    const { results, summary } = auditCorpus(corpus, fakeDeps, differing);
+    const [row] = results;
+    expect(row.candidates[0].candidate_artist_id).toBe('DIFFERENT');
+    expect(row.candidates[0].artist_id_match).toBe('false');
+    expect(row.song_artist_ids).toBe('A1');
+    expect(summary.bTierWithArtistIdMatch).toBe(0);
+    // Both ids resolved and differ -> the tier-B "reject fast" set.
+    expect(summary.songsWithArtistIdConflict).toBe(1);
+    expect(summary.artistIdConflictByTier.B).toBe(1);
+  });
+
+  it('reserves a slot (and counts the match) when a >5-candidate flood would slice off a zero-overlap artistId match', () => {
+    // Regression for the sliced-signal gap: a rename-shape match has zero
+    // artist-key overlap, so it sorts last and — without a reserved slot — is
+    // dropped by the top-5 slice, hiding it from the CSV and the summary count.
+    const affected = {
+      id: 'tj-flood2',
+      title_primary: 'Solo(TV OP)',
+      artist_primary: 'New Name',
+      karaoke_numbers: { tj: '1', ky: null, joysound: null },
+    };
+    // Six exact-title covers by unrelated artists, none in the index.
+    const covers = Array.from({ length: 6 }, (_, i) => ({
+      id: `joy-cover-${i}`,
+      title_primary: 'Solo(TV OP)',
+      artist_primary: `Cover ${i}`,
+      karaoke_numbers: { tj: null, ky: null, joysound: `${100 + i}` },
+    }));
+    // The rename target: matches only after decoration strip (stripped-title),
+    // different surface (zero overlap), but its joysound# resolves to A1.
+    const target = {
+      id: 'joysound-t',
+      title_primary: 'Solo',
+      artist_primary: 'Old Name',
+      karaoke_numbers: { tj: null, ky: null, joysound: '999' },
+    };
+    const idx = {
+      joysoundNumberToArtistId: new Map([['999', 'A1']]),
+      artistNameToArtistIds: new Map([
+        ['newname', new Set(['A1'])],
+        ['oldname', new Set(['A1'])],
+      ]),
+    };
+    const { results, summary } = auditCorpus([affected, ...covers, target], fakeDeps, idx);
+    const [row] = results;
+    expect(row.tier).toBe('B'); // no artist-key overlap anywhere
+    expect(row.candidates).toHaveLength(5);
+    const kept = row.candidates.find((c) => c.candidate_id === 'joysound-t');
+    expect(kept).toBeDefined();
+    expect(kept.artist_id_match).toBe('true');
+    // Counted on the FULL set, so the slice cannot hide it.
+    expect(summary.songsWithArtistIdMatch).toBe(1);
+    expect(summary.bTierWithArtistIdMatch).toBe(1);
+  });
+
+  it('leaves the columns blank (not false) when no index is supplied', () => {
+    const { results, summary } = auditCorpus(corpus, fakeDeps);
+    const [row] = results;
+    expect(row.song_artist_ids).toBe('');
+    expect(row.candidates[0].candidate_artist_id).toBe('');
+    expect(row.candidates[0].artist_id_match).toBe('');
+    expect(summary.artistIdIndex.present).toBe(false);
+    expect(summary.bTierWithArtistIdMatch).toBe(0);
+  });
+
+  it('serialises the artistId columns into the CSV cells', () => {
+    const { results } = auditCorpus(corpus, fakeDeps, artistIdIndex);
+    const rows = buildCsvRows(results);
+    // data row: candidate_artist_id, song_artist_ids, artist_id_match tail.
+    expect(rows[1].slice(12)).toEqual(['A1', 'A1', 'true']);
+  });
+});
+
 describe('buildCsvRows + csvEscape (fields with commas/quotes)', () => {
   it('serialises a candidate row and escapes commas and quotes on write', () => {
     const results = [
@@ -301,9 +424,14 @@ describe('buildCsvRows + csvEscape (fields with commas/quotes)', () => {
       'candidate_artist',
       'match_kind',
       'artist_overlap_keys',
+      'candidate_artist_id',
+      'song_artist_ids',
+      'artist_id_match',
     ]);
     // overlap keys are space-joined in the cell.
     expect(rows[1][11]).toBe('x y');
+    // Without an artistId index, the three R4-4 columns are emitted empty.
+    expect(rows[1].slice(12)).toEqual(['', '', '']);
     // The serialised line must quote the comma/quote-bearing fields.
     const line = rows[1].map(csvEscape).join(',');
     expect(line).toContain('"A, ""B"""');
@@ -323,9 +451,25 @@ describe('buildCsvRows + csvEscape (fields with commas/quotes)', () => {
         candidates: [],
       },
     ]);
-    // header + exactly one data row of 12 columns, trailing 6 empty.
+    // header + exactly one data row of 15 columns, trailing 9 empty.
     expect(rows).toHaveLength(2);
-    expect(rows[1]).toEqual(['C', 'tj-9', 'Gap', 'Solo', '9', '', '', '', '', '', '', '']);
+    expect(rows[1]).toEqual([
+      'C',
+      'tj-9',
+      'Gap',
+      'Solo',
+      '9',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ]);
   });
 });
 
@@ -334,6 +478,16 @@ describe('parseArgs', () => {
     expect(parseArgs(['corpus.json', '--out', 'dir'])).toEqual({
       corpusPath: 'corpus.json',
       outDir: 'dir',
+      artistIdIndexPath: null,
+      help: false,
+    });
+  });
+
+  it('accepts --artist-id-index', () => {
+    expect(parseArgs(['corpus.json', '--artist-id-index', 'idx.json'])).toEqual({
+      corpusPath: 'corpus.json',
+      outDir: null,
+      artistIdIndexPath: 'idx.json',
       help: false,
     });
   });
@@ -345,5 +499,8 @@ describe('parseArgs', () => {
   it('rejects unknown flags and extra positionals', () => {
     expect(() => parseArgs(['a.json', '--nope'])).toThrow(/unknown argument/);
     expect(() => parseArgs(['a.json', 'b.json'])).toThrow(/unexpected extra argument/);
+    expect(() => parseArgs(['a.json', '--artist-id-index'])).toThrow(
+      /--artist-id-index requires a file value/,
+    );
   });
 });
