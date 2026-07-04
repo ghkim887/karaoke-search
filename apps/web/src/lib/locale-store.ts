@@ -125,16 +125,14 @@ function applyChrome(locale: Locale): void {
 }
 
 /**
- * Footer disclaimer visibility. `ko` preserves today's two-line bilingual
- * form (Korean + English lines both shown); `en`/`ja` show only their single
- * line. Driven by the `data-disclaimer` locale marker on each span.
+ * Footer disclaimer visibility: each locale shows only its own single line
+ * (`ko` shows the Korean line only). Driven by the `data-disclaimer` locale
+ * marker on each span.
  */
 function applyDisclaimer(locale: Locale): void {
   const spans = document.querySelectorAll<HTMLElement>('[data-disclaimer]');
   for (const span of spans) {
-    const spanLocale = span.dataset.disclaimer;
-    const visible = spanLocale === locale || (locale === 'ko' && spanLocale === 'en');
-    span.hidden = !visible;
+    span.hidden = span.dataset.disclaimer !== locale;
   }
 }
 

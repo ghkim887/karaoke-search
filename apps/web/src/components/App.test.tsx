@@ -21,9 +21,8 @@ describe('App loading state', () => {
     // Format-shape assertion — a comma-grouped count in the build-time label.
     // Catches future regressions in the toLocaleString formatting without
     // pinning a literal that drifts as the corpus grows.
-    expect(loading?.textContent).toMatch(/Building \d{1,3}(,\d{3})*-song index/);
+    expect(loading?.textContent).toMatch(/\d{1,3}(,\d{3})*곡 검색 인덱스 빌드 중/);
     expect(loading?.textContent).toMatch(/26,401곡 검색 인덱스 빌드 중/);
-    expect(loading?.textContent).toMatch(/Building 26,401-song index/);
     // Three loading-dot spans inside the loading paragraph.
     expect(loading?.querySelectorAll('.loading-dot').length).toBe(3);
   });
@@ -47,7 +46,7 @@ describe('App loading-state mitigation', () => {
     const input = host.querySelector<HTMLInputElement>('.search-input');
     expect(input).not.toBeNull();
     expect(input?.disabled).toBe(true);
-    expect(input?.placeholder).toMatch(/Loading search index/);
+    expect(input?.placeholder).toMatch(/검색 인덱스 로딩 중/);
   });
 });
 

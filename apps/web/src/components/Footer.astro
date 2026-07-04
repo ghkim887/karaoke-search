@@ -18,12 +18,13 @@ const dbDate = maxCrawledDate(records.map((record) => record.crawled_at));
 <footer class="site-footer">
   <div class="site-footer-brand" lang="en">KARAOKE SEARCH</div>
   {/* All three disclaimer translations are rendered; `applyChrome()` toggles
-      their visibility by locale. The Korean default preserves today's two-line
-      bilingual form (ko + en shown); en/ja collapse to their single line. Text
-      comes from the i18n catalog (single source of truth). */}
+      their visibility by locale so each locale shows only its own line. The
+      Korean default (server render) shows only the Korean line; the en/ja spans
+      start hidden and are revealed when that locale is selected. Text comes from
+      the i18n catalog (single source of truth). */}
   <p class="site-footer-disclaimer">
     <span class="site-footer-disclaimer-ko" data-disclaimer="ko">{t('ko', 'disclaimer')}</span>
-    <span class="site-footer-disclaimer-en" lang="en" data-disclaimer="en">{t('en', 'disclaimer')}</span>
+    <span class="site-footer-disclaimer-en" lang="en" data-disclaimer="en" hidden>{t('en', 'disclaimer')}</span>
     <span class="site-footer-disclaimer-ja" lang="ja" data-disclaimer="ja" hidden>{t('ja', 'disclaimer')}</span>
   </p>
   <div class="site-footer-meta">

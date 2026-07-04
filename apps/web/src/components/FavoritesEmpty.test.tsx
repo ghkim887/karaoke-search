@@ -9,13 +9,12 @@ describe('FavoritesEmpty', () => {
     if (host?.parentNode) host.parentNode.removeChild(host);
   });
 
-  it('renders the bilingual placeholder text (Korean + English) in a single paragraph', () => {
+  it('renders the Korean placeholder text in a single paragraph', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     render(<FavoritesEmpty />, host);
     const text = host.querySelector('.favorites-empty')?.textContent ?? '';
-    expect(text).toContain('즐겨찾기가 아직 없어요');
-    expect(text).toContain('No favorites yet — tap ★ on a result to add one');
+    expect(text).toContain('즐겨찾기가 아직 없어요 — 결과 카드의 ★ 버튼으로 추가하세요.');
   });
 
   it('mentions the ★ glyph in the instruction', () => {
