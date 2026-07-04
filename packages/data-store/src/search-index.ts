@@ -20,32 +20,43 @@ type TitleKoConfidence = NonNullable<SongRecord['title_ko_confidence']>;
 
 export const KARAOKE_PROVIDERS = ['tj', 'ky', 'joysound'] as const;
 
-/**
- * SEARCH-ONLY weight for the three `title_ruby`-derived fields (the katakana
- * reading and its deterministic romaji + hangul transliterations).
- *
- * Placed at the secondary/alternate-rendering tier (3, same as `artist_ko`),
- * strictly BELOW the primary title tier (`title_primary` / `title_ko` at 5).
- * A reading is an alternate rendering of a title, not the title itself, so an
- * exact match on a real primary/Korean title (which also lands in the exact
- * `search_texts` tier — see the worker's `MATCH_TIER_EXACT_TEXT`) must still
- * outrank a song matched only through another song's reading. Kept above the
- * `artist_alias` (2) and search-hint (1) tiers because a ruby is authoritative
- * JOYSOUND catalog data, not a heuristic hint. Reading matches are strictly
- * additive recall: a kanji title becomes findable by its reading typed in kana,
- * romaji, or hangul without displacing any exact-title result.
- */
-const RUBY_FIELD_WEIGHT = 3;
 const SEARCH_TEXT_FIELDS = [
   { field: 'title_primary', weight: 5 },
   { field: 'title_ko', weight: 5 },
   { field: 'artist_primary', weight: 3 },
   { field: 'artist_ko', weight: 3 },
   { field: 'artist_alias', weight: 2 },
-  { field: 'title_ruby', weight: RUBY_FIELD_WEIGHT },
-  { field: 'title_ruby_romaji', weight: RUBY_FIELD_WEIGHT },
-  { field: 'title_ruby_hangul', weight: RUBY_FIELD_WEIGHT },
 ] as const;
+
+/**
+ * SEARCH-ONLY reading fields (R4): the katakana `title_ruby` plus its
+ * deterministic romaji and hangul transliterations. These are TOKEN-ONLY — they
+ * emit `search_tokens` rows but NO `search_texts` row, so they never enter the
+ * worker's exact-text tier (`MATCH_TIER_EXACT_TEXT`). That is deliberate: a
+ * reading is an alternate rendering, not the title, so a song matched only
+ * through its (or another song's) reading must never outrank a real exact
+ * title/artist match — reading matches stay in the lower token tier, i.e.
+ * strictly additive recall at lower ranks. This mirrors the search-hint pattern
+ * (also token-only) while weighting a bit higher, since a ruby is authoritative
+ * JOYSOUND catalog data rather than a heuristic hint.
+ */
+const READING_FIELDS = ['title_ruby', 'title_ruby_romaji', 'title_ruby_hangul'] as const;
+
+/**
+ * Token weight for the reading fields — the secondary/alternate-rendering tier
+ * (3, same as `artist_ko`), below the primary title tier (5) and above the
+ * `artist_alias` (2) / search-hint (1) tiers.
+ */
+const RUBY_FIELD_WEIGHT = 3;
+
+/**
+ * The reading field whose text is Latin romaji. It is pure ASCII, and the worker
+ * only emits `gram1`/`gram2`/`gram3` QUERY tokens for non-ASCII queries (see
+ * apps/worker `buildSearchQueryTokens`), so any ASCII n-gram INDEX token it
+ * produced could never be matched. This field therefore indexes term+prefix
+ * only — dropping ~6M dead gram rows on the full corpus at zero recall cost.
+ */
+const ROMAJI_READING_FIELD = 'title_ruby_romaji';
 
 /**
  * SEARCH-ONLY hint weight for tokens derived from `search_hints` rows. Kept
@@ -65,13 +76,21 @@ const DEFAULT_HINT_CONFIDENCE: HintConfidence = 'medium';
 const DERIVED_KANA_ROMAJI_SOURCE = 'derived_kana_romaji';
 
 type SearchField = (typeof SEARCH_TEXT_FIELDS)[number]['field'];
+type ReadingField = (typeof READING_FIELDS)[number];
 type HintField = (typeof HINT_FIELDS)[number];
 type HintTokenField = (typeof HINT_TOKEN_FIELD_BY_HINT_FIELD)[HintField];
-type SearchTokenField = SearchField | HintTokenField;
+type SearchTokenField = SearchField | ReadingField | HintTokenField;
 type HintConfidence = NonNullable<TitleKoConfidence>;
 
 export interface SearchTextInput {
   field: SearchField;
+  value: string;
+  weight: number;
+}
+
+/** A token-only reading source (R4): produces search_tokens rows, no search_texts. */
+export interface ReadingTokenInput {
+  field: ReadingField;
   value: string;
   weight: number;
 }
@@ -178,32 +197,34 @@ export function searchTextInputs(record: SongRecord): SearchTextInput[] {
     inputs.push({ field: 'artist_alias', value: alias, weight: searchFieldWeight('artist_alias') });
   }
 
-  // Reading-search enrichment (R4): index the katakana ruby plus its
-  // deterministic romaji and hangul transliterations so a kanji title becomes
-  // findable by its reading in kana, Latin, or Hangul. Derived transliterations
-  // are SEARCH-ONLY and never mutate canonical data; empty results (e.g. a ruby
-  // with no kana) are skipped so no zero-content field is indexed.
-  const ruby = record.title_ruby ?? null;
-  if (ruby !== null && ruby.length > 0) {
-    inputs.push({ field: 'title_ruby', value: ruby, weight: searchFieldWeight('title_ruby') });
-    const romaji = kanaToRomaji(ruby);
-    if (romaji.length > 0) {
-      inputs.push({
-        field: 'title_ruby_romaji',
-        value: romaji,
-        weight: searchFieldWeight('title_ruby_romaji'),
-      });
-    }
-    const hangul = kanaToHangul(ruby);
-    if (hangul.length > 0) {
-      inputs.push({
-        field: 'title_ruby_hangul',
-        value: hangul,
-        weight: searchFieldWeight('title_ruby_hangul'),
-      });
-    }
-  }
+  return inputs;
+}
 
+/**
+ * Reading-search enrichment (R4): the katakana ruby plus its deterministic
+ * romaji and hangul transliterations, so a kanji title becomes findable by its
+ * reading typed in kana, Latin, or Hangul. TOKEN-ONLY (see {@link
+ * READING_FIELDS}) — the caller writes these to `search_tokens` but never to
+ * `search_texts`. Derived transliterations are SEARCH-ONLY and never mutate
+ * canonical data; empty results (e.g. a ruby with no readable kana) are skipped
+ * so no zero-content field is indexed.
+ */
+export function readingTokenInputs(record: SongRecord): ReadingTokenInput[] {
+  const ruby = record.title_ruby ?? null;
+  if (ruby === null || ruby.length === 0) {
+    return [];
+  }
+  const inputs: ReadingTokenInput[] = [
+    { field: 'title_ruby', value: ruby, weight: RUBY_FIELD_WEIGHT },
+  ];
+  const romaji = kanaToRomaji(ruby);
+  if (romaji.length > 0) {
+    inputs.push({ field: 'title_ruby_romaji', value: romaji, weight: RUBY_FIELD_WEIGHT });
+  }
+  const hangul = kanaToHangul(ruby);
+  if (hangul.length > 0) {
+    inputs.push({ field: 'title_ruby_hangul', value: hangul, weight: RUBY_FIELD_WEIGHT });
+  }
   return inputs;
 }
 
@@ -220,14 +241,19 @@ export function addSearchTokens(
   }
   addPrefixTokens(rows, seen, input, input.textCompact, 'prefix');
 
-  for (const gram of makeNonAsciiCharacterUnigrams(input.textCompact)) {
-    addSearchToken(rows, seen, input, 'gram1', gram);
-  }
-  for (const gram of makeCharacterNgrams(input.textCompact, 2)) {
-    addSearchToken(rows, seen, input, 'gram2', gram);
-  }
-  for (const gram of makeCharacterNgrams(input.textCompact, 3)) {
-    addSearchToken(rows, seen, input, 'gram3', gram);
+  // The romaji reading field is pure ASCII; the worker never emits ASCII n-gram
+  // query tokens (see ROMAJI_READING_FIELD), so its grams would be dead weight.
+  // Every other field keeps the full gram1/gram2/gram3 substring recall.
+  if (input.field !== ROMAJI_READING_FIELD) {
+    for (const gram of makeNonAsciiCharacterUnigrams(input.textCompact)) {
+      addSearchToken(rows, seen, input, 'gram1', gram);
+    }
+    for (const gram of makeCharacterNgrams(input.textCompact, 2)) {
+      addSearchToken(rows, seen, input, 'gram2', gram);
+    }
+    for (const gram of makeCharacterNgrams(input.textCompact, 3)) {
+      addSearchToken(rows, seen, input, 'gram3', gram);
+    }
   }
 
   // Hangul choseong-initials recall is intentionally NOT derived from the
@@ -238,14 +264,14 @@ export function addSearchTokens(
   // on the worker path but not the offline path, splitting the two engines'
   // results (a search-parity top-1 regression). Readings still contribute the
   // symmetric term/prefix/gram recall both paths share.
-  if (!isRubyField(input.field)) {
+  if (!isReadingField(input.field)) {
     const initials = makeHangulInitials(input.value);
     addPrefixTokens(rows, seen, input, initials, 'initial');
   }
 }
 
-function isRubyField(field: SearchTokenField): boolean {
-  return field === 'title_ruby' || field === 'title_ruby_romaji' || field === 'title_ruby_hangul';
+function isReadingField(field: SearchTokenField): field is ReadingField {
+  return (READING_FIELDS as readonly string[]).includes(field);
 }
 
 function addPrefixTokens(

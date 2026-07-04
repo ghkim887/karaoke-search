@@ -72,38 +72,67 @@ function tokenExists(db: SongDatabase, kind: string, token: string, field: strin
   return row !== undefined;
 }
 
+function tokenKinds(db: SongDatabase, field: string): string[] {
+  return (
+    db
+      .prepare('SELECT DISTINCT kind FROM search_tokens WHERE field = ? ORDER BY kind')
+      .all(field) as unknown as Array<{ kind: string }>
+  ).map((row) => row.kind);
+}
+
+function tokenWeight(db: SongDatabase, field: string): number | undefined {
+  const row = db.prepare('SELECT DISTINCT weight FROM search_tokens WHERE field = ?').get(field) as
+    | { weight: number }
+    | undefined;
+  return row?.weight;
+}
+
 describe('title_ruby search indexing (R4)', () => {
-  it('indexes the ruby plus its romaji and hangul transliterations as weight-3 search_texts', () => {
+  it('indexes reading fields as TOKEN-ONLY (weight 3) — never in the search_texts exact tier', () => {
     const db = openMemoryDb();
     importSongs(db, [MARU]);
 
-    const rubyRows = searchTextRows(db, MARU.id).filter((row) =>
+    // No reading field enters search_texts (the worker exact-text tier), so a
+    // reading match can never outrank a real exact title/artist match.
+    const rubyTextRows = searchTextRows(db, MARU.id).filter((row) =>
       row.field.startsWith('title_ruby'),
     );
-    expect(rubyRows).toEqual([
-      { field: 'title_ruby', text_norm: 'マル', text_compact: 'マル', weight: 3 },
-      { field: 'title_ruby_hangul', text_norm: '마루', text_compact: '마루', weight: 3 },
-      { field: 'title_ruby_romaji', text_norm: 'maru', text_compact: 'maru', weight: 3 },
-    ]);
+    expect(rubyTextRows).toEqual([]);
+
+    // But each reading field IS present in search_tokens at weight 3.
+    expect(tokenWeight(db, 'title_ruby')).toBe(3);
+    expect(tokenWeight(db, 'title_ruby_romaji')).toBe(3);
+    expect(tokenWeight(db, 'title_ruby_hangul')).toBe(3);
+    expect(tokenExists(db, 'term', 'maru', 'title_ruby_romaji')).toBe(true);
+    expect(tokenExists(db, 'term', 'マル', 'title_ruby')).toBe(true);
+    expect(tokenExists(db, 'term', '마루', 'title_ruby_hangul')).toBe(true);
   });
 
-  it('emits reading tokens the worker query paths look up (romaji term, hangul gram, kana gram)', () => {
+  it('romaji field emits term+prefix only (no dead ASCII grams); kana/hangul keep grams', () => {
     const db = openMemoryDb();
     importSongs(db, [MARU]);
 
-    expect(tokenExists(db, 'term', 'maru', 'title_ruby_romaji')).toBe(true);
-    expect(tokenExists(db, 'prefix', 'ma', 'title_ruby_romaji')).toBe(true);
-    expect(tokenExists(db, 'gram2', '마루', 'title_ruby_hangul')).toBe(true);
+    // Romaji is ASCII; the worker never emits ASCII gram query tokens, so grams
+    // would be dead weight — assert they are absent.
+    expect(tokenKinds(db, 'title_ruby_romaji')).toEqual(['prefix', 'term']);
+    // Katakana + hangul readings keep substring (gram) recall.
     expect(tokenExists(db, 'gram2', 'マル', 'title_ruby')).toBe(true);
+    expect(tokenExists(db, 'gram2', '마루', 'title_ruby_hangul')).toBe(true);
   });
 
-  it('indexes no reading fields for a record without a ruby', () => {
+  it('emits no choseong initial tokens for any reading field (parity with offline layer)', () => {
+    const db = openMemoryDb();
+    importSongs(db, [MARU]);
+    expect(tokenKinds(db, 'title_ruby_hangul')).not.toContain('initial');
+  });
+
+  it('indexes no reading tokens for a record without a ruby', () => {
     const db = openMemoryDb();
     importSongs(db, [NO_RUBY]);
-    const rubyRows = searchTextRows(db, NO_RUBY.id).filter((row) =>
-      row.field.startsWith('title_ruby'),
-    );
-    expect(rubyRows).toEqual([]);
+    const count = db
+      .prepare("SELECT COUNT(*) AS c FROM search_tokens WHERE field LIKE 'title_ruby%'")
+      .get() as { c: number };
+    expect(count.c).toBe(0);
   });
 
   it('round-trips title_ruby through the songs table on export', () => {

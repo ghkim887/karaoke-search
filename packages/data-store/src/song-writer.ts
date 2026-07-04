@@ -6,6 +6,7 @@ import {
   addSearchTokens,
   karaokeNumberKey,
   karaokeProviderMask,
+  readingTokenInputs,
   searchTextInputs,
 } from './search-index.js';
 import type { ResolvedSearchHint, SearchTokenInput, SearchTokenRow } from './search-index.js';
@@ -175,6 +176,24 @@ export function writeSongRecordRows(
       input.weight,
       providerMask,
     );
+    writeSearchTokens(statements, {
+      songId: record.id,
+      field: input.field,
+      value: input.value,
+      textCompact,
+      weight: input.weight,
+      providerMask,
+    });
+  }
+
+  // Reading fields (R4) are TOKEN-ONLY: emit search_tokens but no search_texts
+  // row, so reading matches stay in the worker's token tier and never displace
+  // an exact title/artist match. See readingTokenInputs / READING_FIELDS.
+  for (const input of readingTokenInputs(record)) {
+    const textCompact = compactSearchText(input.value);
+    if (textCompact.length === 0) {
+      continue;
+    }
     writeSearchTokens(statements, {
       songId: record.id,
       field: input.field,
