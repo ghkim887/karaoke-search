@@ -39,7 +39,7 @@ describe('t() lookup and interpolation', () => {
   });
 
   it('interpolates the result-count parameter', () => {
-    expect(t('ko', 'resultCount', 3)).toBe('3건 / 3 results');
+    expect(t('ko', 'resultCount', 3)).toBe('3건');
     expect(t('en', 'resultCount', 3)).toBe('3 results');
     expect(t('ja', 'resultCount', 3)).toBe('3件');
   });
@@ -55,11 +55,12 @@ describe('t() lookup and interpolation', () => {
   });
 });
 
-// Drift guard (R2 spec gate): the `ko` locale must reproduce, byte-for-byte,
-// every string the app rendered BEFORE the switcher landed. If a future edit
-// changes a Korean string this fails, forcing an intentional review — the
-// default (locale = ko) render must stay identical to today.
-describe('ko catalog is byte-identical to the pre-switcher strings', () => {
+// Korean-only guard: the `ko` locale is the default, server-rendered chrome and
+// every user-facing string must be Korean-only. The single intentional
+// exception is `appSubtitle` ("Karaoke Search"), a fixed English brand tagline.
+// If a future edit reintroduces English into a ko chrome string this fails,
+// forcing an intentional review.
+describe('ko catalog is Korean-only chrome (brand appSubtitle aside)', () => {
   type StaticKey = Exclude<MessageKey, 'copyNumberLabel' | 'resultCount' | 'buildingIndex'>;
   const expected: Record<StaticKey, string> = {
     appTitle: '일본 노래 검색기',
@@ -67,26 +68,24 @@ describe('ko catalog is byte-identical to the pre-switcher strings', () => {
     langMenuLabel: '언어',
     tabBrowse: '검색',
     tabFavorites: '즐겨찾기',
-    searchInputLabel: '가라오케 검색 / Karaoke search',
-    viewModeLabel: '결과 보기 모드 / Result view mode',
-    vendorFilterLegend: '머신 필터 / Machine filter',
-    favoriteLabel: '즐겨찾기 / Favorite',
-    copiedAnnouncement: '복사됨 / Copied',
+    searchInputLabel: '가라오케 검색',
+    viewModeLabel: '결과 보기 모드',
+    vendorFilterLegend: '머신 필터',
+    favoriteLabel: '즐겨찾기',
+    copiedAnnouncement: '복사됨',
     searchPlaceholder: '곡명/가수명',
     copiedToast: '복사됨',
-    searching: '검색 중 / Searching',
-    errorOccurred: '오류가 발생했습니다 / An error occurred',
-    loadingIndex: '검색 인덱스 로딩 중… / Loading search index…',
-    loadDataFailed:
-      '데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. / Failed to load data. Please try again shortly.',
-    favoritesLoadFailed: "즐겨찾기를 불러오지 못했습니다 / Couldn't load favorites",
-    offlineFallback: '오프라인 · 저장된 목록에서 검색 중 / Offline · searching saved list',
-    searchRequestFailed: '검색 요청이 실패했습니다 / The search request failed',
-    retry: '다시 시도 / Retry',
-    notYet: '아직 없음 / Not yet',
-    favoritesEmpty:
-      '즐겨찾기가 아직 없어요 — 결과 카드의 ★ 버튼으로 추가하세요. / No favorites yet — tap ★ on a result to add one.',
-    noMatches: '검색 결과가 없습니다 / No matches',
+    searching: '검색 중',
+    errorOccurred: '오류가 발생했습니다',
+    loadingIndex: '검색 인덱스 로딩 중…',
+    loadDataFailed: '데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    favoritesLoadFailed: '즐겨찾기를 불러오지 못했습니다',
+    offlineFallback: '오프라인 · 저장된 목록에서 검색 중',
+    searchRequestFailed: '검색 요청이 실패했습니다',
+    retry: '다시 시도',
+    notYet: '아직 없음',
+    favoritesEmpty: '즐겨찾기가 아직 없어요 — 결과 카드의 ★ 버튼으로 추가하세요.',
+    noMatches: '검색 결과가 없습니다',
     disclaimer: '본 검색 결과는 참고용이며 실제 노래방 기기와 다를 수 있습니다.',
     dbUpdatedLabel: 'DB 업데이트',
     reportIssue: '문제 보고 ↗',
@@ -98,11 +97,9 @@ describe('ko catalog is byte-identical to the pre-switcher strings', () => {
     });
   }
 
-  it('ko interpolated strings match the prior bilingual forms', () => {
-    expect(t('ko', 'copyNumberLabel', 'TJ')).toBe('TJ 번호 복사 / Copy TJ number');
-    expect(t('ko', 'resultCount', 12)).toBe('12건 / 12 results');
-    expect(t('ko', 'buildingIndex', '26,401')).toBe(
-      '26,401곡 검색 인덱스 빌드 중 / Building 26,401-song index',
-    );
+  it('ko interpolated strings are Korean-only', () => {
+    expect(t('ko', 'copyNumberLabel', 'TJ')).toBe('TJ 번호 복사');
+    expect(t('ko', 'resultCount', 12)).toBe('12건');
+    expect(t('ko', 'buildingIndex', '26,401')).toBe('26,401곡 검색 인덱스 빌드 중');
   });
 });

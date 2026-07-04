@@ -58,12 +58,12 @@ describe('ResultCard number-badge a11y (copy)', () => {
     vi.restoreAllMocks();
   });
 
-  it('gives each number badge a bilingual copy aria-label', () => {
+  it('gives each number badge a Korean copy aria-label', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     render(<ResultCard record={sample} isFavorite={false} onToggleFavorite={() => {}} />, host);
     const tj = host.querySelector<HTMLButtonElement>('[data-testid="badge-tj"]');
-    expect(tj?.getAttribute('aria-label')).toBe('TJ 번호 복사 / Copy TJ number');
+    expect(tj?.getAttribute('aria-label')).toBe('TJ 번호 복사');
   });
 
   it('announces the copy via an aria-live status region after a successful clipboard write', async () => {
@@ -89,7 +89,7 @@ describe('ResultCard number-badge a11y (copy)', () => {
 
     expect(writeText).toHaveBeenCalledWith('12345');
     const filled = host.querySelector<HTMLElement>('[data-testid="copy-status"]');
-    expect(filled?.textContent).toBe('복사됨 / Copied');
+    expect(filled?.textContent).toBe('복사됨');
     // The visual toast is hidden from assistive tech (no double announcement).
     const toast = host.querySelector<HTMLElement>('.badge-toast');
     expect(toast?.getAttribute('aria-hidden')).toBe('true');

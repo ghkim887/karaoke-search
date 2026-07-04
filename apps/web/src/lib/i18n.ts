@@ -3,13 +3,11 @@
  * Japanese). This is chrome i18n only — song DATA fields (`title_ko` etc.) are
  * out of scope (see docs/ROADMAP.md §R2).
  *
- * Behaviour preservation (R2 spec §6): the Korean catalog is a byte-for-byte
- * re-expression of the previous single-locale `t` object. The strings that were
- * bilingual (`한국어 / English`) BEFORE this change stay bilingual under the `ko`
- * locale — `ko` is "the current UI, unchanged", not a Korean-only rewrite — so
- * the default render (locale = ko) is identical to today and the existing
- * component tests pass unmodified. Selecting `en` or `ja` swaps to a clean
- * single-language rendering.
+ * The `ko` catalog is Korean-only chrome: every user-facing string is Korean,
+ * with no bilingual `한국어 / English` fragments. The one intentional exception is
+ * `appSubtitle` ("Karaoke Search"), kept in English as a fixed brand tagline
+ * (it pairs with the footer "KARAOKE SEARCH" wordmark). `en` and `ja` are
+ * single-language catalogs in their own right.
  *
  * `Messages` is a closed interface: every locale object is annotated with it,
  * so a key missing from ANY locale is a compile error, and interpolated entries
@@ -30,13 +28,6 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 /** Narrow an arbitrary value to a supported {@link Locale}. */
 export function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
-}
-
-/** Join a Korean and an English fragment with the canonical ` / ` separator.
- *  Used only by the `ko` catalog to reproduce the prior bilingual literals
- *  exactly. */
-function bilingual(ko: string, en: string): string {
-  return `${ko} / ${en}`;
 }
 
 /**
@@ -100,10 +91,8 @@ export type MessageKey = keyof Messages;
 type Params<K extends MessageKey> = Messages[K] extends (...args: infer P) => string ? P : [];
 
 /**
- * Korean catalog — the source of truth. Every value here reproduces the exact
- * string rendered by the app today (bilingual where it was bilingual,
- * Korean-only where it was Korean-only), so `t('ko', …)` is byte-identical to
- * the former inline literals.
+ * Korean catalog — Korean-only chrome (the default locale). The one English
+ * value is `appSubtitle`, an intentional brand tagline (see the file header).
  */
 const ko: Messages = {
   appTitle: '일본 노래 검색기',
@@ -113,41 +102,31 @@ const ko: Messages = {
   tabBrowse: '검색',
   tabFavorites: '즐겨찾기',
 
-  searchInputLabel: bilingual('가라오케 검색', 'Karaoke search'),
-  viewModeLabel: bilingual('결과 보기 모드', 'Result view mode'),
-  vendorFilterLegend: bilingual('머신 필터', 'Machine filter'),
-  favoriteLabel: bilingual('즐겨찾기', 'Favorite'),
-  copyNumberLabel: (label) => bilingual(`${label} 번호 복사`, `Copy ${label} number`),
-  copiedAnnouncement: bilingual('복사됨', 'Copied'),
+  searchInputLabel: '가라오케 검색',
+  viewModeLabel: '결과 보기 모드',
+  vendorFilterLegend: '머신 필터',
+  favoriteLabel: '즐겨찾기',
+  copyNumberLabel: (label) => `${label} 번호 복사`,
+  copiedAnnouncement: '복사됨',
 
   searchPlaceholder: '곡명/가수명',
   copiedToast: '복사됨',
 
-  searching: bilingual('검색 중', 'Searching'),
-  errorOccurred: bilingual('오류가 발생했습니다', 'An error occurred'),
-  resultCount: (n) => bilingual(`${n}건`, `${n} results`),
+  searching: '검색 중',
+  errorOccurred: '오류가 발생했습니다',
+  resultCount: (n) => `${n}건`,
 
-  buildingIndex: (count) =>
-    bilingual(`${count}곡 검색 인덱스 빌드 중`, `Building ${count}-song index`),
-  loadingIndex: bilingual('검색 인덱스 로딩 중…', 'Loading search index…'),
+  buildingIndex: (count) => `${count}곡 검색 인덱스 빌드 중`,
+  loadingIndex: '검색 인덱스 로딩 중…',
 
-  loadDataFailed: bilingual(
-    '데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
-    'Failed to load data. Please try again shortly.',
-  ),
-  favoritesLoadFailed: bilingual('즐겨찾기를 불러오지 못했습니다', "Couldn't load favorites"),
-  offlineFallback: bilingual(
-    '오프라인 · 저장된 목록에서 검색 중',
-    'Offline · searching saved list',
-  ),
-  searchRequestFailed: bilingual('검색 요청이 실패했습니다', 'The search request failed'),
-  retry: bilingual('다시 시도', 'Retry'),
-  notYet: bilingual('아직 없음', 'Not yet'),
-  favoritesEmpty: bilingual(
-    '즐겨찾기가 아직 없어요 — 결과 카드의 ★ 버튼으로 추가하세요.',
-    'No favorites yet — tap ★ on a result to add one.',
-  ),
-  noMatches: bilingual('검색 결과가 없습니다', 'No matches'),
+  loadDataFailed: '데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  favoritesLoadFailed: '즐겨찾기를 불러오지 못했습니다',
+  offlineFallback: '오프라인 · 저장된 목록에서 검색 중',
+  searchRequestFailed: '검색 요청이 실패했습니다',
+  retry: '다시 시도',
+  notYet: '아직 없음',
+  favoritesEmpty: '즐겨찾기가 아직 없어요 — 결과 카드의 ★ 버튼으로 추가하세요.',
+  noMatches: '검색 결과가 없습니다',
 
   disclaimer: '본 검색 결과는 참고용이며 실제 노래방 기기와 다를 수 있습니다.',
   dbUpdatedLabel: 'DB 업데이트',

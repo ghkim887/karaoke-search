@@ -872,7 +872,7 @@ main.results .error {
   box-shadow: var(--rui-focus-ring);
 }
 
-/* Footer — three-row layout: brand label, bilingual disclaimer, metadata.
+/* Footer — three-row layout: brand label, localized disclaimer, metadata.
          Mobile-first sizing with a tablet+ bump at the 720px breakpoint. Each
          metadata item is `white-space: nowrap` so individual tokens never break
          mid-word; the row wraps at bullet-separator boundaries via flex-wrap. */
@@ -908,8 +908,9 @@ footer.site-footer {
   flex-shrink: 0;
 }
 
-/* Row 2 — bilingual disclaimer. Korean line + English line stacked,
-         constrained to 60ch on wide screens so the line length stays readable. */
+/* Row 2 — localized disclaimer. One line per locale (only the active locale's
+         span is shown), constrained to 60ch on wide screens so the line length
+         stays readable. */
 .site-footer-disclaimer {
   margin: 12px 0 0;
   max-width: 60ch;
