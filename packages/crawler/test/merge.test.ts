@@ -2014,6 +2014,28 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.karaoke_numbers).toEqual({ tj: '28511', ky: null, joysound: '15420' });
   });
+
+  it('lands the JOYSOUND number for a batch-2 angle-tag pair (tj-26849 ↔ GREEN〈Original mix〉/浜崎あゆみ)', () => {
+    const tjOnly = record({
+      id: 'tj-26849',
+      source_url: 'https://tj.test/26849',
+      title_primary: 'GREEN',
+      artist_primary: '浜崎あゆみ',
+      karaoke_numbers: { tj: '26849', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-69852',
+      source_url: 'https://www.joysound.com/web/search/song/69852',
+      title_primary: 'GREEN〈Original mix〉',
+      artist_primary: '浜崎あゆみ',
+      karaoke_numbers: { tj: null, ky: null, joysound: '69852' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '26849', ky: null, joysound: '69852' });
+  });
 });
 
 // ---------------------------------------------------------------------
