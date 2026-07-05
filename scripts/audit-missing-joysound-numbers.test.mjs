@@ -43,6 +43,14 @@ describe('stripDecorations', () => {
     expect(stripDecorations('Title(A)(B)')).toBe('Title');
   });
 
+  it('peels a trailing 〈...〉 version tag (JOYSOUND Days〈Original mix〉 case)', () => {
+    expect(stripDecorations('Days〈Original mix〉')).toBe('Days');
+  });
+
+  it('peels a trailing 《...》 annotation tag', () => {
+    expect(stripDecorations('STAY GOLD《本人映像》')).toBe('STAY GOLD');
+  });
+
   it('collapses internal whitespace runs', () => {
     // TJ emits `抱 擁` where JOYSOUND has `抱擁`.
     expect(stripDecorations('抱  擁')).toBe('抱 擁');

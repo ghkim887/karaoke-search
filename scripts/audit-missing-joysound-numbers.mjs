@@ -149,10 +149,12 @@ export function parseArgs(argv) {
   return parsed;
 }
 
-// A trailing parenthesized segment, half-width `(...)` or full-width `（...）`.
-// Anchored at end (after optional trailing space) so only *trailing* tie-up
-// decorations are peeled — a leading/mid-title paren is part of the title.
-const TRAILING_PAREN_RE = /[（(][^（）()]*[）)]\s*$/;
+// A trailing bracketed segment: half-width `(...)`, full-width `（...）`, or the
+// angle brackets JOYSOUND uses for version/annotation tags — `〈...〉`
+// (`Days〈Original mix〉`, where TJ has plain `Days`) and `《...》` (`《本人映像》`).
+// Anchored at end (after optional trailing space) so only *trailing* decorations
+// are peeled — a leading/mid-title bracket is part of the title.
+const TRAILING_PAREN_RE = /[（(〈《][^（）()〈〉《》]*[）)〉》]\s*$/;
 
 // Curly quote folds. `normalizeForMatch` (NFKC) does NOT unify curly quotes
 // with their ASCII forms, so a title punctuated with a typographic apostrophe
