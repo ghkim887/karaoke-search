@@ -2036,6 +2036,51 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.karaoke_numbers).toEqual({ tj: '26849', ky: null, joysound: '69852' });
   });
+
+  // --- R1 B-tier review batch (2026-07-05) ---
+  it('lands the JOYSOUND number for a B-tier rename pair (tj-25869 関ジャニ∞ ↔ 浪花いろは節/SUPER EIGHT)', () => {
+    const tjOnly = record({
+      id: 'tj-25869',
+      source_url: 'https://tj.test/25869',
+      title_primary: '浪花いろは節',
+      artist_primary: '関ジャニ∞',
+      karaoke_numbers: { tj: '25869', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-32579',
+      source_url: 'https://www.joysound.com/web/search/song/32579',
+      title_primary: '浪花いろは節',
+      artist_primary: 'SUPER EIGHT',
+      karaoke_numbers: { tj: null, ky: null, joysound: '32579' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25869', ky: null, joysound: '32579' });
+  });
+
+  it('lands the JOYSOUND number for a B-tier Tier F romaji pair (tjpdf-28389 ↔ 絶望ビリー/Maximum The Hormone)', () => {
+    const tjOnly = record({
+      id: 'tjpdf-28389',
+      source_url: 'https://tj.test/pdf/28389',
+      title_primary: '絶望ビリー',
+      artist_primary: 'マキシマム ザ ホルモン',
+      karaoke_numbers: { tj: '28389', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-163185',
+      source_url: 'https://www.joysound.com/web/search/song/163185',
+      title_primary: '絶望ビリー',
+      artist_primary: 'Maximum The Hormone',
+      karaoke_numbers: { tj: null, ky: null, joysound: '163185' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '28389', ky: null, joysound: '163185' });
+  });
 });
 
 // ---------------------------------------------------------------------
