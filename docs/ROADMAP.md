@@ -32,6 +32,12 @@ numbers; that is expected, not a defect.)
   (`Don’t say “lazy”(けいおん! ED)`) and odd spacing (`抱 擁`) that break
   exact-title clustering.
 
+**Status (2026-07-05): ✅ DONE** — audit CLI (#73) + full tier-A/B/C human/web
+review (#76/#84–#88) → `reviewedMergePairs` Tier E = 191 / Tier F = 161
+(applied at the next crawl). ~10 residual confirmed pairs need the
+merger-mechanism extension (see the R1 follow-up subsection below). Original
+work item below.
+
 **Work item:** scripted audit of all 378 — for each, search JOYSOUND-numbered
 songs by normalized title, emit candidate pairs with artist-similarity
 signals; route through the existing `reviewedMergePairs` human-review flow.
@@ -83,7 +89,14 @@ presentation variants, "Various Artists" placeholders).
 
 ## R2. UI language separation (Korean / English / Japanese)
 
-The web UI is currently Korean-only (inline strings in
+**Status: ✅ DONE.** Shipped the ko/en/ja chrome switcher (#75 — persisted
+module store + header dropdown) and then, per owner decision, made the `ko`
+chrome Korean-only (#81 — dropped the bilingual `한국어 / English` fragments;
+deployed to karaokedb.pages.dev + real-browser verified). Only `appSubtitle`
+("Karaoke Search") and the footer `KARAOKE SEARCH` wordmark stay English as a
+fixed brand. Original scope below.
+
+The web UI was Korean-only (inline strings in
 `apps/web/src/components/`). Work item: extract UI strings to locale
 resources, add a language switcher (persisted), provide ko/en/ja
 translations. Touches: component strings, search placeholders, error
@@ -134,21 +147,30 @@ corpus keeps only what today's search uses.
 
 **Work items, in value order:**
 
-1. **Ruby → search tokens.** Promote `title_ruby` into the corpus schema
-   (pure additive field), backfill from the existing decision logs, index it
-   in `search_texts`. Unlocks searching kanji titles by reading ("マル" →
-   ○), and — because kana→romaji and kana→hangul transliteration are
-   deterministic — Latin-alphabet and Hangul phonetic search for Japanese
-   titles ("마루" finding ○ needs no LLM, unlike title_ko).
-2. **Tie-up names → media context.** `tieupNames` extends `media_context_ko`
-   coverage with authoritative Japanese tie-up titles (search "けいおん" and
-   find its OP/ED songs).
-3. **Lyricist/composer search** — a new searchable facet, cheap since the
-   data is already captured.
-4. **artistId/naviGroupId as merge keys** — JOYSOUND's own stable artist IDs
-   strengthen the R1 cluster-merge audit (two entries sharing `artistId`
-   with different artist surface strings are the rename case, mechanically
-   detectable).
+1. **Ruby → search tokens.** ✅ **DONE (#78 Stage 1 + #79 Stage 2).** Promoted
+   `title_ruby` into the corpus schema (pure additive field), backfilled from
+   the decision logs, indexed in `search_texts`. Unlocks searching kanji titles
+   by reading ("マル" → ○), and — because kana→romaji and kana→hangul
+   transliteration are deterministic — Latin-alphabet and Hangul phonetic search
+   for Japanese titles ("마루" finding ○ needs no LLM, unlike title_ko).
+   (Crawl-soak: ruby persistence for the ~70k backfill-uncovered songs is
+   confirmed at the next weekly crawl.)
+2. **Tie-up names → media context.** ⚪ **Open.** `tieupNames` extends
+   `media_context_ko` coverage with authoritative Japanese tie-up titles
+   (search "けいおん" and find its OP/ED songs).
+3. **Lyricist/composer search** — ⚪ **Open.** A new searchable facet, cheap
+   since the data is already captured.
+4. **artistId/naviGroupId as merge keys** — 🟡 **Partial (#82).** Shipped as an
+   R1-audit disambiguation SIGNAL (`build-joysound-artist-id-index.mjs` distils
+   the detail logs; the audit takes `--artist-id-index`), NOT corpus
+   persistence. Measured finding: the *match* direction confirms same-artist
+   pairs, but the *reject* direction over-fires (~29 % false-reject on the
+   reject set — JOYSOUND assigns one act multiple artistIds), so it needs a
+   human/web pass, not blind trust. Corpus persistence for automatic future
+   merges ("Option B") is deferred. Original intent: JOYSOUND's own stable
+   artist IDs strengthen the R1 cluster-merge audit (two entries sharing
+   `artistId` with different artist surface strings are the rename case,
+   mechanically detectable).
 
 All of these are behavior-preserving ADDITIONS (new fields, new tokens);
 next crawl cycles should persist these detail fields into the corpus instead
