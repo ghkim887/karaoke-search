@@ -1969,6 +1969,51 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
 
     expect(records).toHaveLength(2);
   });
+
+  // --- R1 audit batch 2 (2026-07-05 tier-A web-review) ---
+  it('lands the JOYSOUND number for a new Tier E pair (tj-25219 ↔ DEPARTURES/globe)', () => {
+    const tjOnly = record({
+      id: 'tj-25219',
+      source_url: 'https://tj.test/25219',
+      title_primary: 'Departures',
+      artist_primary: 'globe',
+      karaoke_numbers: { tj: '25219', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-681847',
+      source_url: 'https://www.joysound.com/web/search/song/681847',
+      title_primary: 'DEPARTURES (20th edit)',
+      artist_primary: 'globe',
+      karaoke_numbers: { tj: null, ky: null, joysound: '681847' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25219', ky: null, joysound: '681847' });
+  });
+
+  it('lands the JOYSOUND number for a new Tier F pair (tjpdf-28511 ↔ 2人/ともさかりえ)', () => {
+    const tjOnly = record({
+      id: 'tjpdf-28511',
+      source_url: 'https://tj.test/pdf/28511',
+      title_primary: '2人',
+      artist_primary: 'ともさか りえ',
+      karaoke_numbers: { tj: '28511', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-15420',
+      source_url: 'https://www.joysound.com/web/search/song/15420',
+      title_primary: '2人(ふたり)',
+      artist_primary: 'ともさかりえ',
+      karaoke_numbers: { tj: null, ky: null, joysound: '15420' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '28511', ky: null, joysound: '15420' });
+  });
 });
 
 // ---------------------------------------------------------------------

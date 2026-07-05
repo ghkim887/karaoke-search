@@ -44,7 +44,9 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['25017', '495453'], // おもかげ / milet & Aimer & 幾田りら ↔ おもかげ(produced by Vaundy) / milet×Aimer×幾田りら
   ['25031', '492355'], // 六幻 / 林勇 ↔ 佐野万次郎(CV:林勇)
   ['25134', '492356'], // Rusted Fist / 新祐樹 ↔ 花垣武道(CV:新祐樹)
+  ['25219', '681847'], // Departures / globe ↔ DEPARTURES (20th edit) / globe (R1 tier-A 2026-07-05)
   ['25257', '36852'], // For フルーツバスケット / 岡崎律子 外 ↔ 岡崎律子
+  ['25258', '16476'], // 勇者王誕生(神話 Ver.) / 遠藤正明 ↔ 勇者王誕生 / 遠藤正明 (R1 tier-A 2026-07-05)
   ['25283', '53411'], // Let Me Be With You / Round table ↔ ROUND TABLE featuring Nino
   ['25372', '26946'], // 御旗のもとに / 巴里華撃団 ↔ 日高のり子ほか (巴里華撃団)
   ['25468', '27700'], // もっと!モット!ときめき / 金月真美 ↔ 金月真美(藤崎詩織)
@@ -79,8 +81,10 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['26731', '166809'], // 人として軸がぶれている / 大槻ケンヂと絶望少女達 ↔ 大槻ケンヂと絶望少女達(...)
   ['26745', '60710'], // Like an angel / 石川智晶 ↔ 石川智晶(石川知亜紀)
   ['26770', '13283'], // SEVENTH MOON / Fire bomber ↔ Fire Bomber featuring BASARA NEKKI
+  ['26851', '69851'], // Days / 浜崎あゆみ ↔ Days〈Original mix〉 / 浜崎あゆみ (R1 tier-A 2026-07-05, angle-tag surfaced)
   ['26929', '135661'], // 本日、満開ワタシ色 / 桂ヒナギクwith白皇学院生徒会三人娘 ↔ 桂ヒナギク with ...
   ['26961', '162935'], // STORMBRINGER / JAM Project ↔ JAM Project(...)
+  ['27386', '198978'], // 上を向いて歩こう / 徳永英明 ↔ 上を向いて歩こう(Strings Ver.) / 徳永英明 (R1 tier-A 2026-07-05)
   ['27655', '94213'], // ミライボウル / ももいろクローバーZ ↔ ももいろクローバー
   ['27800', '728174'], // Cutie Panther / BiBi ↔ BiBi ～... from μ's～
   ['27806', '93640'], // Pledge / ガゼット ↔ PLEDGE / the GazettE
@@ -130,7 +134,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 84;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 88;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
@@ -342,9 +346,12 @@ const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
   ['tj', '28603', '733701'], // snowdrop(春奈るな Ver.) / 春奈るな ↔ snowdrop / 春奈るな
   ['tj', '68007', '57864'], // wind / Akeboshi ↔ wind(ワインド) / Akeboshi
   ['tj', '68342', '487541'], // 再会 / LiSA,Uru(produced by Ayase) ↔ 再会 (produced by Ayase) / LiSA
+  // --- R1 audit batch 2 (2026-07-05 tier-A web-review) ---
+  ['tj', '28511', '15420'], // 2人 / ともさか りえ ↔ 2人(ふたり) / ともさかりえ (tjpdf-28511)
+  ['tj', '68746', '147267'], // とても痛い痛がりたい(カバー) / EZFG(Feat.灯油) ↔ とても痛い痛がりたい / EZFG (tjpdf-68746)
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 145;
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 147;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
   ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
