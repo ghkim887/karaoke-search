@@ -2104,6 +2104,29 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.karaoke_numbers).toEqual({ tj: '52758', ky: null, joysound: '1006' });
   });
+
+  // --- R1 C-tier review (2026-07-05): title-rendering recovery ---
+  it('lands the JOYSOUND number for a C-tier kyūjitai title recovery (tj-6659 歸る ↔ 帰る/島和彦)', () => {
+    const tjOnly = record({
+      id: 'tj-6659',
+      source_url: 'https://tj.test/6659',
+      title_primary: '雨の夜あなたは歸る',
+      artist_primary: '島和彦',
+      karaoke_numbers: { tj: '6659', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-19047',
+      source_url: 'https://www.joysound.com/web/search/song/19047',
+      title_primary: '雨の夜あなたは帰る',
+      artist_primary: '島和彦',
+      karaoke_numbers: { tj: null, ky: null, joysound: '19047' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '6659', ky: null, joysound: '19047' });
+  });
 });
 
 // ---------------------------------------------------------------------

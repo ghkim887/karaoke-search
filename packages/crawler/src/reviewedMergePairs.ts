@@ -217,6 +217,20 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['68285', '485792'], // tj-68285: CV=character split (BanG Dream)
   ['68292', '485111'], // tj-68292: CV=character split
   ['68772', '438536'], // tj-68772: romaji KizunaAI=キズナアイ feat 中田ヤスタカ
+  // --- R1 C-tier review (2026-07-05): title-rendering recoveries (kyūjitai / romaji↔kana / subtitle / tag) ---
+  ['25369', '14947'], // tj-25369: romaji Ultra Relax=ウルトラ リラックス
+  ['25761', '37498'], // tj-25761: ハッスルマッスル=HUSTLE MUSCLE
+  ['28005', '680953'], // tj-28005: SIX SAME FACES 今夜も/は最高 (も/は typo, base ver)
+  ['28165', '28419'], // tj-28165: アドバンス・アドベンチャー (=～Advance Adventure～ subtitle)
+  ['28891', '426706'], // tj-28891: Viator=ウィアートル (romaji↔katakana, Maquia theme)
+  ['52879', '146104'], // tj-52879: ミラクルショッピング=Miracle Shopping
+  ['6144', '634427'], // tj-6144: 酔っぱらっちゃった → 酔っぱらっちゃった2025 (re-recording)
+  ['6166', '107742'], // tj-6166: 靑春時代=青春時代 (kyūjitai; reformed-lineup credit)
+  ['6422', '240'], // tj-6422: 小麥ちゃん=小麦ちゃん ～それからの麦畑～ (kyūjitai+subtitle)
+  ['6659', '19047'], // tj-6659: 雨の夜あなたは歸る=帰る (kyūjitai)
+  ['6827', '719'], // tj-6827: 會津の小鐵=会津の小鉄 (kyūjitai)
+  ['68380', '488127'], // tj-68380: ALMIGHTY～仮面の約束 feat.川上洋平 (OST tag; full ver)
+  ['6861', '16877'], // tj-6861: スタミナ=STAMINA (katakana↔romaji)
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -226,7 +240,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 178;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 191;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
@@ -450,9 +464,16 @@ const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
   ['tj', '28516', '13847'], // tjpdf-28516: ささきいさお=佐々木功
   ['tj', '28637', '177103'], // tjpdf-28637: romaji ナイトメア=NIGHTMARE
   ['tj', '28930', '431014'], // tjpdf-28930: typo 摩天狼=麻天狼 (ヒプマイ)
+  // --- R1 C-tier review (2026-07-05): tjpdf title-rendering recoveries ---
+  ['tj', '27864', '171476'], // tjpdf-27864: リンゴ日和 truncation (～The Wolf Whistling Song～)
+  ['tj', '28212', '731713'], // tjpdf-28212: ジョジョ～その血の運命(さだめ)～ reading gloss
+  ['tj', '28213', '671697'], // tjpdf-28213: ジョジョ その血の記憶 truncation (～end of THE WORLD～)
+  ['tj', '29906', '5407'], // tjpdf-29906: 風の谷のナウシカ (Korean prefix junk in TJ title)
+  ['tj', '29910', '59651'], // tjpdf-29910: I,I,You&愛=I，I，You&I (愛=ai pun)
+  ['tj', '68430', '489807'], // tjpdf-68430: ぐだふわエブリデー (garbled anime-tag prefix)
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 155;
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 161;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
   ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
