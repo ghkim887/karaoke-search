@@ -2081,6 +2081,29 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.karaoke_numbers).toEqual({ tj: '28389', ky: null, joysound: '163185' });
   });
+
+  // --- R1 reject-set audit (2026-07-05): artistId false-reject recovery ---
+  it('lands the JOYSOUND number for an artistId false-reject recovery (tj-52758 RATS&STAR ↔ め組のひと/ラッツ&スター)', () => {
+    const tjOnly = record({
+      id: 'tj-52758',
+      source_url: 'https://tj.test/52758',
+      title_primary: 'め組のひと',
+      artist_primary: 'RATS&STAR',
+      karaoke_numbers: { tj: '52758', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-1006',
+      source_url: 'https://www.joysound.com/web/search/song/1006',
+      title_primary: 'め組のひと',
+      artist_primary: 'ラッツ&スター',
+      karaoke_numbers: { tj: null, ky: null, joysound: '1006' },
+    });
+
+    const { records } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '52758', ky: null, joysound: '1006' });
+  });
 });
 
 // ---------------------------------------------------------------------

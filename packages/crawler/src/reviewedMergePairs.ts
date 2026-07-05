@@ -202,6 +202,21 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['6828', '2520'], // tj-6828: kanji typo 安部里律子=安倍理津子
   ['6864', '20847'], // tj-6864: センチメンタル・バス=SENTIMENTAL BUS
   ['6896', '14763'], // tj-6896: romaji Pocket Biscuits=ポケットビスケッツ
+  // --- R1 reject-set audit (2026-07-05): artistId false-rejects recovered (JP/EN name, rename, char-VA, romaji) ---
+  ['25543', '21147'], // tj-25543: グミ=日向めぐみ (debut stage name); Catch You Catch Me
+  ['25857', '53433'], // tj-25857: char-VA 越前リョーマ(皆川純子); RISING
+  ['25988', '67500'], // tj-25988: manzo=萬Ｚ(量産型) latin/kanji
+  ['26577', '35176'], // tj-26577: fictional band BAD LUCK=コタニキンヤ
+  ['26754', '164310'], // tj-26754: char SUN(瀬戸燦)=桃井はるこ
+  ['27316', '915749'], // tj-27316: rename 安倍里葎子→安倍理津子
+  ['27317', '199621'], // tj-27317: rename 安倍里葎子→安倍理津子
+  ['27520', '14096'], // tj-27520: romaji RATS&STAR=ラッツ&スター (夢で逢えたら)
+  ['52758', '1006'], // tj-52758: romaji RATS&STAR=ラッツ&スター (め組のひと)
+  ['6646', '2683'], // tj-6646: ザ・ドリフターズ=ドリフターズ (The- prefix)
+  ['68188', '685066'], // tj-68188: CV=character split (アイマス)
+  ['68285', '485792'], // tj-68285: CV=character split (BanG Dream)
+  ['68292', '485111'], // tj-68292: CV=character split
+  ['68772', '438536'], // tj-68772: romaji KizunaAI=キズナアイ feat 中田ヤスタカ
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -211,7 +226,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 164;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 178;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
