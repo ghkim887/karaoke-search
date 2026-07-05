@@ -41,6 +41,46 @@ residue and should be tagged as such, not force-merged. Do this BEFORE R5
 (KY/DAM expansion) — the same artist-variant merge weaknesses will multiply
 with every new provider.
 
+### R1 follow-up — merger-mechanism extension (open, 2026-07-05)
+
+The R1 audit was fully reviewed across all three tiers (A/B/C) over PRs
+#76/#84–#88; ~120 reviewed pairs are now in `reviewedMergePairs.ts`
+(Tier E = 191, Tier F = 161, applied at the next crawl). **~10 confirmed
+merges remain UN-encodable** because the current allowlist data shapes —
+Tier E `[tj, joysound]` and Tier F `[vendor, number, joysound]` — can only
+express "one affected vendor number ↔ one JOYSOUND number". Two shapes fall
+outside that and are deliberately left out (see the comments in
+`reviewedMergePairs.ts`):
+
+1. **Candidate carries its own conflicting TJ number.** The JOYSOUND-bearing
+   record also has a `tj` cell of its own, so a Tier-E `[tj, joysound]` merge
+   would union two *different* TJ numbers onto one song (a conflict).
+   Affected: `tj-25103`↔joy17108 (cand tj-6579), `tj-27098`↔joy91999
+   (cand blog-523-9), `tjpdf-28268`↔joy162483 (cand tj 26737),
+   `tjpdf-28871`↔joy448383 (cand tj 68196), `tjpdf-28879`↔joy443948
+   (cand tj 68160).
+2. **Affected song has BOTH `tj` and `ky` (both-vendor target).** Neither
+   Tier E nor Tier F (single vendor:number key) can attach *both* numbers to
+   one JOYSOUND number. Affected: `blog-1184-1` (aLIEz, tj28007+ky43845→316353),
+   `blog-1184-3` (&Z→670815), `blog-487-11` (アストロノーツ→723196),
+   `blog-163-90` (天使と悪魔, 世界の終わり=SEKAI NO OWARI→93423),
+   `blog-428-4` (パンダヒーロー, ハチ/GUMI→145546).
+
+A partial escape hatch already exists — `REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS`
+maps an explicit `(vendor,number,joysound)` triple to ONE extra provider cell
+(used for `tj-68342` 再会 + ky44631). It is not general: it doesn't cover the
+candidate-own-TJ conflict, and it only permits a single extra cell.
+
+**Work item (not yet built — documented for a later session):** extend the
+merger so these are expressible, e.g. (a) a reviewed rule that lets an affected
+record absorb a JOYSOUND number from a candidate that carries its own
+conflicting TJ (dropping/relocating the candidate's TJ deliberately), and
+(b) a multi-number reviewed-pair shape (or generalized `ALLOWED_JOY_SIDE_EXTRA_PROVIDERS`)
+that attaches a both-vendor (tj+ky) affected record to one JOYSOUND number.
+Keep it exact-pair-reviewed (no broad artist rule). Also holds ~7 owner-decision
+version-ambiguous pairs (STILL EN/JP, BLACK DIAMOND major/indies, ねねね
+presentation variants, "Various Artists" placeholders).
+
 ## R2. UI language separation (Korean / English / Japanese)
 
 The web UI is currently Korean-only (inline strings in
