@@ -43,12 +43,14 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['6981', '11726'], // 時 代 / 嵐 ↔ 時代(ジダイ) / 嵐
   ['25017', '495453'], // おもかげ / milet & Aimer & 幾田りら ↔ おもかげ(produced by Vaundy) / milet×Aimer×幾田りら
   ['25031', '492355'], // 六幻 / 林勇 ↔ 佐野万次郎(CV:林勇)
+  ['25036', '66685'], // Endless sorrow / 浜崎あゆみ ↔ Endless sorrow〈A Agressive Mix〉 / 浜崎あゆみ (R1 tier-A batch2 2026-07-05)
   ['25134', '492356'], // Rusted Fist / 新祐樹 ↔ 花垣武道(CV:新祐樹)
   ['25219', '681847'], // Departures / globe ↔ DEPARTURES (20th edit) / globe (R1 tier-A 2026-07-05)
   ['25257', '36852'], // For フルーツバスケット / 岡崎律子 外 ↔ 岡崎律子
   ['25258', '16476'], // 勇者王誕生(神話 Ver.) / 遠藤正明 ↔ 勇者王誕生 / 遠藤正明 (R1 tier-A 2026-07-05)
   ['25283', '53411'], // Let Me Be With You / Round table ↔ ROUND TABLE featuring Nino
   ['25372', '26946'], // 御旗のもとに / 巴里華撃団 ↔ 日高のり子ほか (巴里華撃団)
+  ['25398', '22323'], // クリスマス タイム / ZARD ↔ クリスマス タイム〈ZARD Version〉 / ZARD (R1 tier-A batch2 2026-07-05)
   ['25468', '27700'], // もっと!モット!ときめき / 金月真美 ↔ 金月真美(藤崎詩織)
   ['25533', '28584'], // さくら / 森山直太朗 ↔ さくら(独唱) / 森山直太朗
   ['25542', '36509'], // storm / JAM Project ↔ JAM Project featuring 水木一郎&影山ヒロノブ
@@ -77,10 +79,13 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['26601', '163329'], // 明日は明日の 君が生まれる / AKB48 ↔ Chocolove from AKB48
   ['26633', '57892'], // 愛しいかけら / メロキュア ↔ メロキュア(岡崎律子/日向めぐみ)
   ['26655', '31939'], // Now or Never / CHEMISTRY ↔ CHEMISTRY meets m-flo
+  ['26674', '168603'], // メグメル / eufonius ↔ メグメル〈cuckool mix 2007〉 / eufonius (R1 tier-A batch2 2026-07-05)
   ['26701', '163798'], // アンインストール / 石川智晶 ↔ 石川智晶(石川知亜紀)
   ['26731', '166809'], // 人として軸がぶれている / 大槻ケンヂと絶望少女達 ↔ 大槻ケンヂと絶望少女達(...)
   ['26745', '60710'], // Like an angel / 石川智晶 ↔ 石川智晶(石川知亜紀)
   ['26770', '13283'], // SEVENTH MOON / Fire bomber ↔ Fire Bomber featuring BASARA NEKKI
+  ['26838', '713387'], // 牙狼~SAVIOR IN THE DARK~(New Ver.) / JAM Project ↔ 牙狼～SAVIOR IN THE DARK～《パチカラ》 / JAM Project (R1 tier-A batch2 2026-07-05)
+  ['26849', '69852'], // GREEN / 浜崎あゆみ ↔ GREEN〈Original mix〉 / 浜崎あゆみ (R1 tier-A batch2 2026-07-05, angle-tag surfaced)
   ['26851', '69851'], // Days / 浜崎あゆみ ↔ Days〈Original mix〉 / 浜崎あゆみ (R1 tier-A 2026-07-05, angle-tag surfaced)
   ['26929', '135661'], // 本日、満開ワタシ色 / 桂ヒナギクwith白皇学院生徒会三人娘 ↔ 桂ヒナギク with ...
   ['26961', '162935'], // STORMBRINGER / JAM Project ↔ JAM Project(...)
@@ -120,6 +125,7 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['68382', '443457'], // サニードロップ / 山下七海 ↔ 大槻唯(CV:山下七海)
   ['68384', '488132'], // うやむや(YouTube Ver.) / SixTONES ↔ うやむや / SixTONES
   ['68443', '693032'], // イシュカン・コミュニケーション / ちょろゴンず ↔ ちょろゴンず(...)
+  ['68474', '819429'], // In Hell We Live, Lament / Mili(Feat.KIHOW) ↔ In Hell We Live，Lament《本人映像》 / Mili (R1 tier-A batch2 2026-07-05)
   ['68576', '493580'], // I Believe / 狩野翔 ↔ 松野千冬(CV:狩野翔)
   ['68734', '493581'], // Rest In Rampage / 水中雅章 ↔ 場地圭介(CV:水中雅章)
   ['68825', '618291'], // サインはＢ -アイ Solo Ver.- / Ｂ小町アイ ↔ B小町 アイ (CV:高橋李依)
@@ -134,7 +140,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 88;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 94;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
@@ -349,9 +355,10 @@ const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
   // --- R1 audit batch 2 (2026-07-05 tier-A web-review) ---
   ['tj', '28511', '15420'], // 2人 / ともさか りえ ↔ 2人(ふたり) / ともさかりえ (tjpdf-28511)
   ['tj', '68746', '147267'], // とても痛い痛がりたい(カバー) / EZFG(Feat.灯油) ↔ とても痛い痛がりたい / EZFG (tjpdf-68746)
+  ['tj', '28478', '22844'], // 勇気100% / Ya-Ya-yah ↔ 勇気100%〈2002〉 / Ya-Ya-yah (tjpdf-28478, R1 tier-A batch2)
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 147;
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 148;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
   ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
