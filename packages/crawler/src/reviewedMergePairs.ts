@@ -131,6 +131,77 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['68825', '618291'], // サインはＢ -アイ Solo Ver.- / Ｂ小町アイ ↔ B小町 アイ (CV:高橋李依)
   ['68889', '487547'], // Life Is Beautiful / The Cat's Whiskers ↔ Life Is Beautiful / The Cat's Whiskers
   ['68890', '487548'], // FRE△KOUT / BAE ↔ FRE△KOUT / BAE
+  // --- R1 B-tier review batch (2026-07-05, 6-agent web review: rename/kanji/romaji/VA-credit) ---
+  ['25232', '14786'], // tj-25232: char-VA 横山智佐=真宮寺さくら+帝国歌劇団
+  ['25302', '11899'], // tj-25302: kanji typo 井出泰影=井出泰彰
+  ['25364', '57888'], // tj-25364: romaji Trio matic=とりおまてぃっく
+  ['25554', '14631'], // tj-25554: kanji 松澤由実=松澤由美
+  ['25834', '61720'], // tj-25834: romaji スクービードゥー=Scoobie Do
+  ['25869', '32579'], // tj-25869: rename 関ジャニ∞=SUPER EIGHT
+  ['25905', '39031'], // tj-25905: VA-expand エンジェル隊
+  ['26037', '10276'], // tj-26037: rename 関ジャニ∞=SUPER EIGHT (コント tag)
+  ['26169', '20299'], // tj-26169: rename ENDLICHERI☆ENDLICHERI=ENDRECHERI
+  ['26171', '55886'], // tj-26171: group 関智一外7人=最白-トレブラン-
+  ['26187', '10699'], // tj-26187: rename 関ジャニ∞=SUPER EIGHT
+  ['26204', '21123'], // tj-26204: rename 関ジャニ∞=SUPER EIGHT
+  ['26210', '21099'], // tj-26210: rename ENDLICHERI=ENDRECHERI
+  ['26253', '126158'], // tj-26253: romaji ナイトメア=NIGHTMARE
+  ['26292', '126679'], // tj-26292: romaji ナイトメア=NIGHTMARE
+  ['26352', '23469'], // tj-26352: rename ENDLICHERI=ENDRECHERI
+  ['26376', '10823'], // tj-26376: romaji The Baby Stars=ザ・ベイビースターズ
+  ['26407', '123586'], // tj-26407: char-VA 渋谷有利(櫻井孝宏), 桜井=櫻井
+  ['26442', '24538'], // tj-26442: rename 関ジャニ∞=SUPER EIGHT
+  ['26543', '163339'], // tj-26543: romaji ナイトメア=NIGHTMARE
+  ['26616', '14062'], // tj-26616: kanji 花澤加繪=花沢加絵
+  ['26666', '25722'], // tj-26666: rename 関ジャニ∞=SUPER EIGHT
+  ['26908', '91142'], // tj-26908: same 桜高軽音部 (K-ON!)
+  ['27002', '91908'], // tj-27002: rename 関ジャニ∞=SUPER EIGHT
+  ['27074', '92724'], // tj-27074: rename 関ジャニ∞=SUPER EIGHT
+  ['27142', '93032'], // tj-27142: rename 関ジャニ∞=SUPER EIGHT
+  ['27180', '94466'], // tj-27180: rename 関ジャニ∞=SUPER EIGHT
+  ['27185', '94522'], // tj-27185: rename 関ジャニ∞=SUPER EIGHT (マイホーム)
+  ['27195', '94629'], // tj-27195: rename 関ジャニ∞=SUPER EIGHT
+  ['27216', '28989'], // tj-27216: rename 関ジャニ∞=SUPER EIGHT
+  ['27274', '94467'], // tj-27274: rename 関ジャニ∞=SUPER EIGHT
+  ['27323', '197255'], // tj-27323: rename 関ジャニ∞=SUPER EIGHT
+  ['27336', '147662'], // tj-27336: MUCC=ムック
+  ['27351', '31429'], // tj-27351: rename 関ジャニ∞=SUPER EIGHT
+  ['27435', '32989'], // tj-27435: rename 関ジャニ∞=SUPER EIGHT
+  ['27446', '119059'], // tj-27446: rename 関ジャニ∞=SUPER EIGHT
+  ['27491', '58627'], // tj-27491: kanji typo 石原洵子=石原詢子
+  ['27531', '20748'], // tj-27531: rename 関ジャニ∞=SUPER EIGHT
+  ['27589', '731111'], // tj-27589: char-VA 阿良々木月火(井口裕香)
+  ['27598', '119659'], // tj-27598: rename 関ジャニ∞=SUPER EIGHT
+  ['27633', '101672'], // tj-27633: μ's=ラブライブ! franchise credit
+  ['27673', '119908'], // tj-27673: rename 関ジャニ∞=SUPER EIGHT
+  ['27882', '174548'], // tj-27882: kanji 朴璐美=朴路美 char-VA
+  ['28450', '146870'], // tj-28450: VA-expand 765PRO ALLSTARS
+  ['28949', '684973'], // tj-28949: KING OF PRISM movie CV cast
+  ['28998', '424125'], // tj-28998: 315 STARS unit-expand
+  ['52800', '613071'], // tj-52800: romaji DAZBEE=ダズビー
+  ['6151', '2337'], // tj-6151: 李 成愛=李成愛(イ・ソンエ)
+  ['6191', '353'], // tj-6191: duo 五木ひろし/木の実ナナ connector
+  ['6247', '3438'], // tj-6247: kanji 森繁久彌=森繁久弥
+  ['6289', '2459'], // tj-6289: romaji バブルガムブラザーズ=Bubble Gum Brothers
+  ['6298', '12593'], // tj-6298: kanji 松坂晶子=松阪晶子
+  ['6322', '2349'], // tj-6322: 李 成愛=李成愛(イ・ソンエ)
+  ['6323', '1447'], // tj-6323: 李 成愛=李成愛(イ・ソンエ)
+  ['6379', '27017'], // tj-6379: kanji 鶴岡雅儀=鶴岡雅義
+  ['6464', '27004'], // tj-6464: kanji 新川二朗=新川二郎
+  ['6505', '27174'], // tj-6505: kanji 菊池章子=菊地章子
+  ['6560', '4184'], // tj-6560: kanji 澤田=沢田知可子
+  ['6654', '1410'], // tj-6654: kanji 眞木=真木由布子
+  ['6679', '2120'], // tj-6679: kanji 箱崎晋一朗=箱崎晋一郎
+  ['6685', '1638'], // tj-6685: kanji 長澤薰=長沢薫 (duo order)
+  ['6695', '13184'], // tj-6695: kanji 黑澤=黒沢年男
+  ['6723', '915'], // tj-6723: kanji 寺尾聰=寺尾聡
+  ['6760', '60223'], // tj-6760: romaji ザ・ブロード・サイド・フォー=THE BROADSIDE FOUR
+  ['68170', '446013'], // tj-68170: char-VA expand (アイマス)
+  ['68171', '444966'], // tj-68171: VA-expand Bad Ass Temple (ヒプマイ)
+  ['6822', '20980'], // tj-6822: 安室奈美惠=奈美恵 feat IMAJIN
+  ['6828', '2520'], // tj-6828: kanji typo 安部里律子=安倍理津子
+  ['6864', '20847'], // tj-6864: センチメンタル・バス=SENTIMENTAL BUS
+  ['6896', '14763'], // tj-6896: romaji Pocket Biscuits=ポケットビスケッツ
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -140,7 +211,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 94;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 164;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
@@ -356,9 +427,17 @@ const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
   ['tj', '28511', '15420'], // 2人 / ともさか りえ ↔ 2人(ふたり) / ともさかりえ (tjpdf-28511)
   ['tj', '68746', '147267'], // とても痛い痛がりたい(カバー) / EZFG(Feat.灯油) ↔ とても痛い痛がりたい / EZFG (tjpdf-68746)
   ['tj', '28478', '22844'], // 勇気100% / Ya-Ya-yah ↔ 勇気100%〈2002〉 / Ya-Ya-yah (tjpdf-28478, R1 tier-A batch2)
+  // --- R1 B-tier review batch (2026-07-05, 6-agent web review) — tjpdf single-vendor targets ---
+  ['tj', '27866', '175340'], // tjpdf-27866: romaji ナイトメア=NIGHTMARE
+  ['tj', '28042', '167103'], // tjpdf-28042: romaji ナイトメア=NIGHTMARE
+  ['tj', '28225', '135171'], // tjpdf-28225: 藤咲かりん=miko (IOSYS)
+  ['tj', '28389', '163185'], // tjpdf-28389: romaji マキシマムザホルモン=Maximum The Hormone
+  ['tj', '28516', '13847'], // tjpdf-28516: ささきいさお=佐々木功
+  ['tj', '28637', '177103'], // tjpdf-28637: romaji ナイトメア=NIGHTMARE
+  ['tj', '28930', '431014'], // tjpdf-28930: typo 摩天狼=麻天狼 (ヒプマイ)
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 148;
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 155;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
   ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
