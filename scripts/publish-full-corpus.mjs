@@ -51,6 +51,7 @@ export const USAGE = [
   '  --baseline-commit <sha>   git sha the corpus was composed against (default: git rev-parse HEAD)',
   '  --decision-log <path>     include this file’s sha256 as decisionLogSha',
   '  --sqlite-out <path>       also build the SQLite DB via apps/worker/scripts/build-sqlite-db.mjs',
+  '  --search-hints <path>     search-only hint sidecar (repeatable); indexed into title_hint/artist_hint tokens',
   '  --help                    show this message',
   '',
   'exit codes: 0 ok · 1 validation/build failure · 2 bad arguments or missing input',
@@ -60,7 +61,7 @@ export const USAGE = [
  * @param {string[]} argv
  * @returns {{ inputPath: string|null, url: string|null, manifestOut: string,
  *             baselineCommit: string|null, decisionLogPath: string|null,
- *             sqliteOut: string|null, help: boolean }}
+ *             sqliteOut: string|null, searchHintPaths: string[], help: boolean }}
  */
 export function parseArgs(argv) {
   const parsed = {
@@ -70,6 +71,7 @@ export function parseArgs(argv) {
     baselineCommit: null,
     decisionLogPath: null,
     sqliteOut: null,
+    searchHintPaths: [],
     help: false,
   };
   const valueFlags = new Map([
@@ -84,6 +86,16 @@ export function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--help') {
       parsed.help = true;
+      continue;
+    }
+    // Repeatable, so not a single-value flag in the valueFlags map.
+    if (arg === '--search-hints') {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith('--')) {
+        throw new Error(`${arg} requires a value`);
+      }
+      parsed.searchHintPaths.push(value);
+      i += 1;
       continue;
     }
     const key = valueFlags.get(arg);
@@ -188,6 +200,7 @@ function validateRecords(records, validate, log) {
  * @param {string|null} [opts.baselineCommit] - default: git rev-parse HEAD
  * @param {string|null} [opts.decisionLogPath]
  * @param {string|null} [opts.sqliteOut]
+ * @param {string[]} [opts.searchHintPaths] - search-only hint sidecars, materialized into hint tokens
  * @param {{ log: Function, error: Function }} [opts.log]
  * @param {Function} [opts.validate] - injectable for tests; default loadValidator()
  * @param {Function} [opts.buildSqlite] - injectable for tests; default worker build-sqlite-db.mjs
@@ -266,7 +279,11 @@ export async function runPublishFullCorpus(opts) {
     try {
       const buildSqlite =
         opts.buildSqlite ?? (await import(pathToFileURL(BUILD_SQLITE_PATH).href)).buildSqliteDb;
-      const result = await buildSqlite({ inputPath: opts.inputPath, outputPath: opts.sqliteOut });
+      const result = await buildSqlite({
+        inputPath: opts.inputPath,
+        outputPath: opts.sqliteOut,
+        searchHintPaths: opts.searchHintPaths ?? [],
+      });
       log.log(`SQLite DB:    ${opts.sqliteOut} (${result.bytes} bytes)`);
     } catch (err) {
       log.error(`SQLite build failed: ${err.message}`);
