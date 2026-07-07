@@ -1,6 +1,7 @@
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openSongDatabase } from '@karaoke/data-store';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { buildSqliteDb, parseBuildSqliteArgs } from '../scripts/build-sqlite-db.mjs';
@@ -173,7 +174,7 @@ describe('build-sqlite-db VACUUM', () => {
 });
 
 describe('build-sqlite-db --search-hints', () => {
-  it('indexes JOYSOUND ruby hints from a decision-log sidecar', async () => {
+  it('indexes JOYSOUND ruby hints from a decision-log sidecar into title_hint tokens', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-hints-'));
     const inputPath = join(dir, 'songs.json');
     const hintsPath = join(dir, 'hints.jsonl');
@@ -194,21 +195,81 @@ describe('build-sqlite-db --search-hints', () => {
 
     const db = openSongDatabase(outputPath);
     try {
-      const ruby = db
+      // The search_hints table was retired 2026-07-08; hints now live only in
+      // the search_tokens hint fields. The kana ruby yields kana grams...
+      const kanaGram = db
         .prepare(
-          `SELECT text_norm FROM search_hints
-          WHERE song_id = 'joysound-190001' AND source = 'joysound_songNameRuby'`,
+          `SELECT 1 FROM search_tokens
+          WHERE song_id = 'joysound-190001' AND field = 'title_hint'
+            AND kind = 'gram2' AND token = 'よる'`,
         )
         .get();
-      expect(ruby).toEqual({ text_norm: 'よるにかける' });
-      // The kana ruby also yields a derived romaji hint (P3).
-      const derived = db
+      expect(kanaGram).toBeDefined();
+      // ...and a derived romaji term (P3), both under title_hint.
+      const romajiTerm = db
         .prepare(
-          `SELECT text_norm FROM search_hints
-          WHERE song_id = 'joysound-190001' AND source = 'derived_kana_romaji'`,
+          `SELECT 1 FROM search_tokens
+          WHERE song_id = 'joysound-190001' AND field = 'title_hint'
+            AND kind = 'term' AND token = 'yorunikakeru'`,
         )
         .get();
-      expect(derived).toEqual({ text_norm: 'yorunikakeru' });
+      expect(romajiTerm).toBeDefined();
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe('build-sqlite-db release-hint guard', () => {
+  // The release build materializes the committed curated sidecar into hint
+  // tokens; this guards against silently re-unwiring hints (the original prod
+  // bug) and against the retired dead schema resurfacing.
+  const CURATED_HINTS = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../../data/search-hints.jsonl',
+  );
+
+  const IDOLMASTER_RECORD = {
+    id: 'tj-26670',
+    source_url: 'https://example.com/tj/26670',
+    title_primary: 'GO MY WAY!',
+    title_ko: null,
+    artist_primary: 'THE IDOLM@STER',
+    artist_ko: null,
+    karaoke_numbers: { tj: '26670', ky: null, joysound: null },
+    crawled_at: '2026-02-01T00:00:00.000Z',
+  };
+
+  it('materializes artist_hint tokens from the curated sidecar; dead schema stays retired', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'karaoke-build-curated-'));
+    const inputPath = join(dir, 'songs.json');
+    const outputPath = join(dir, 'songs.sqlite');
+    writeFileSync(inputPath, `${JSON.stringify([IDOLMASTER_RECORD], null, 2)}\n`, 'utf8');
+
+    await buildSqliteDb({ inputPath, outputPath, searchHintPaths: [CURATED_HINTS] });
+
+    const db = openSongDatabase(outputPath);
+    try {
+      const hintTokens = db
+        .prepare(
+          `SELECT COUNT(*) AS count FROM search_tokens
+          WHERE song_id = 'tj-26670' AND field = 'artist_hint'`,
+        )
+        .get();
+      expect(Number(hintTokens.count)).toBeGreaterThan(0);
+
+      const hintTables = db
+        .prepare(
+          `SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'search_hints'`,
+        )
+        .get();
+      expect(Number(hintTables.count)).toBe(0);
+
+      const columns = db
+        .prepare('PRAGMA table_info(search_texts)')
+        .all()
+        .map((row) => row.name);
+      expect(columns).not.toContain('text_norm');
     } finally {
       db.close();
     }

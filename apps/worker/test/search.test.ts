@@ -890,6 +890,41 @@ describe('worker meta API', () => {
   });
 });
 
+describe('worker serve projection', () => {
+  // A ruby-bearing record: title_ruby feeds only the build-time reading-search
+  // token index, never a serve response.
+  const RUBY_RECORD: SongRecord = {
+    id: 'ruby-serve-1',
+    source_url: 'https://example.com/ruby-serve',
+    title_primary: '丸',
+    title_ko: null,
+    artist_primary: 'Ruby Serve Artist',
+    artist_ko: null,
+    karaoke_numbers: { tj: '90001', ky: null, joysound: null },
+    crawled_at: '2026-02-01T00:00:00.000Z',
+    title_ruby: 'マル',
+  };
+
+  it('omits title_ruby from serve responses and the serve projection SQL', async () => {
+    const statements: string[] = [];
+    const db = createSearchDatabaseWithSongs([RUBY_RECORD], {
+      inspectStatement: (sql) => statements.push(sql),
+    });
+
+    // The karaoke-number query exercises a serve projection site.
+    const byNumber = await fetchJson(db, '/api/search?q=90001');
+    expect(byNumber.items.map((song) => song.id)).toEqual(['ruby-serve-1']);
+
+    // title_ruby must never appear in a hydrated serve record...
+    expect(byNumber.items[0]).not.toHaveProperty('title_ruby');
+
+    // ...and the serve projection must not even fetch the column.
+    const serveSql = statements.find((sql) => /\bsongs s\b/.test(sql));
+    expect(serveSql).toBeDefined();
+    expect(serveSql).not.toMatch(/title_ruby/);
+  });
+});
+
 async function fetchJson(db: SearchDatabase, path: string): Promise<SearchResponseBody> {
   const response = await handleRequest(new Request(`https://karaoke.example${path}`), { db });
   expect(response.status).toBe(200);

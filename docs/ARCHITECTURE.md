@@ -146,6 +146,18 @@ self-hosting is the only serving path. Cloudflare Pages serves the static app
 and exposes same-origin `/api/*` via Pages Functions that proxy to the
 configured self-hosted API origin.
 
+## Search-only hint channel
+
+The search-only hint channel carries alternate strings (e.g. character / CV
+artist credits) that must improve recall WITHOUT appearing in display — unlike
+`artist_aliases`, which renders in `ResultCard`. Source of truth: the committed
+`data/search-hints.jsonl` sidecar. Each line (`{song_id, field, text, source,
+confidence}`) is materialized into `search_tokens` (`title_hint` /
+`artist_hint`) at build time and never into `search_texts` or the exported
+`SongRecord`, so a hint only ever adds low-weight token recall. Wired into the
+release build via `scripts/publish-full-corpus.mjs --search-hints`. To add a
+hint: append a line to `data/search-hints.jsonl`.
+
 ## CI workflows (`.github/workflows/`)
 
 All third-party actions are pinned by 40-char SHA with the tag in a trailing

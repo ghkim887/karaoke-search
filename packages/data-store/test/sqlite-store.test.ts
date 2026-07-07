@@ -214,7 +214,6 @@ describe('SQLite song store', () => {
     expect(searchTextColumns.map((column) => column.name)).toEqual([
       'song_id',
       'field',
-      'text_norm',
       'text_compact',
       'weight',
       'provider_mask',
@@ -592,7 +591,6 @@ function dumpSearchDatabase(db: SongDatabase): string {
     'SELECT * FROM search_texts ORDER BY song_id, field, text_compact',
     'SELECT * FROM search_tokens ORDER BY kind, token, song_id, field',
     'SELECT * FROM search_token_stats ORDER BY kind, token',
-    'SELECT * FROM search_hints ORDER BY song_id, field, source, text_compact',
     'SELECT tbl, idx, stat FROM sqlite_stat1 ORDER BY tbl, idx',
   ];
   return queries.map((sql) => JSON.stringify(db.prepare(sql).all())).join('\n');

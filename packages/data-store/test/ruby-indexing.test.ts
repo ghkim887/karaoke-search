@@ -50,7 +50,6 @@ const NO_RUBY: SongRecord = {
 
 interface SearchTextRow {
   field: string;
-  text_norm: string;
   text_compact: string;
   weight: number;
 }
@@ -58,7 +57,7 @@ interface SearchTextRow {
 function searchTextRows(db: SongDatabase, songId: string): SearchTextRow[] {
   return db
     .prepare(
-      'SELECT field, text_norm, text_compact, weight FROM search_texts WHERE song_id = ? ORDER BY field',
+      'SELECT field, text_compact, weight FROM search_texts WHERE song_id = ? ORDER BY field',
     )
     .all(songId) as unknown as SearchTextRow[];
 }

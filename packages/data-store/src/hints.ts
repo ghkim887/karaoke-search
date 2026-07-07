@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
  * A single SEARCH-ONLY hint: an alternate string (e.g. a JOYSOUND `songNameRuby`
  * reading or a derived romanization) that should improve recall for a song
  * WITHOUT being part of the canonical {@link SongRecord}. Hints feed only the
- * `search_hints` / `search_tokens` tables and never crawler/admit/drop logic.
+ * `search_tokens` hint fields (`title_hint`/`artist_hint`) and never
+ * crawler/admit/drop logic.
  */
 export interface SearchHintInput {
   /** Canonical song id the hint applies to. Unknown ids are ignored. */

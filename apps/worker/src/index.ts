@@ -1,5 +1,5 @@
 import type { AliasRow, KaraokeNumberRow, StoredSongRow } from '@karaoke/data-store';
-import { songColumnsProjection } from '@karaoke/data-store';
+import { songServeColumnsProjection } from '@karaoke/data-store';
 import type { KaraokeNumbers, SongRecord } from '@karaoke/schema';
 import type { SearchTokenKind } from '@karaoke/search';
 import {
@@ -119,7 +119,7 @@ export async function handleSongsByIdRequest(
   const rows = await allRows<StoredSongRow>(
     db
       .prepare(
-        `SELECT ${songColumnsProjection('s')}
+        `SELECT ${songServeColumnsProjection('s')}
         FROM songs s
         WHERE s.id IN (${placeholders})`,
       )
@@ -191,7 +191,7 @@ async function findFilteredRows(
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const statement = db
     .prepare(
-      `SELECT ${songColumnsProjection('s')}
+      `SELECT ${songServeColumnsProjection('s')}
       FROM songs s
       ${whereSql}
       ORDER BY s.sort_order ASC, s.id ASC
@@ -269,7 +269,7 @@ async function findIndexedCandidateRows(
         FROM candidates
         GROUP BY song_id
       )
-      SELECT ${songColumnsProjection('s')}
+      SELECT ${songServeColumnsProjection('s')}
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
       ORDER BY r.match_tier DESC, r.score DESC, s.sort_order ASC, s.id ASC
@@ -340,7 +340,7 @@ async function findKaraokeNumberCandidateRows(
         FROM candidates
         GROUP BY song_id
       )
-      SELECT ${songColumnsProjection('s')}
+      SELECT ${songServeColumnsProjection('s')}
       FROM ranked r
       JOIN songs s ON s.id = r.song_id
       ORDER BY r.score DESC, s.sort_order ASC, s.id ASC

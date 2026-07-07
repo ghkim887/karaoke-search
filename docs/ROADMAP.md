@@ -277,6 +277,23 @@ a `{id, title_primary, title_ko}` row to
 pipeline run applies it. Unblocked by: owner review time (incremental — any
 subset helps).
 
+### Search-engine dead-schema retirement (RESOLVED 2026-07-08 — by removal)
+
+A 2026-07-07 audit found serve-dead search schema: `text_norm` (on both
+`search_texts` and `search_hints`), the entire `search_hints` table, and the
+`title_ruby` serve projection were written on import but never read at
+serve/export/rebuild (recall materializes through `search_tokens`). Retired: the
+`search_texts.text_norm` column and the `search_hints` table are dropped from
+`SONG_SCHEMA_SQL` (with legacy-convergence guards for delta patches on older
+databases), and the worker's serve projection stops fetching `title_ruby`
+(`title_ruby` still round-trips through the export projection and the corpus).
+The search-only hint channel is KEPT and properly wired: the 16 curated
+artist-search hints now live in the committed `data/search-hints.jsonl` and
+materialize into `search_tokens(title_hint/artist_hint)` at build via
+`publish-full-corpus.mjs --search-hints` (see ARCHITECTURE "Search-only hint
+channel"). Recall is unchanged — the search-parity golden/baseline regenerate to
+a no-op.
+
 ### D1 free-tier 500 MB vs the JOYSOUND-scale corpus (RESOLVED 2026-06-13 — by removal)
 
 Resolved by removing the Cloudflare deploy path entirely: the owner decided

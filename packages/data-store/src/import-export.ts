@@ -38,9 +38,7 @@ export function importSongs(
 
   db.exec('BEGIN');
   try {
-    db.exec(
-      'DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts; DELETE FROM search_hints',
-    );
+    db.exec('DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts');
     db.exec('DELETE FROM temp_import_song_ids');
 
     records.forEach((record, index) => {
@@ -75,8 +73,9 @@ export function importSongs(
 
 /**
  * The `songs` columns that hydrate a {@link SongRecord}, in projection order.
- * Single source of truth for every SELECT that materializes a
- * {@link StoredSongRow} (data-store exports and the worker's query paths).
+ * The EXPORT column set — includes `title_ruby`, which round-trips through the
+ * corpus (`exportSongs` re-emits it and the delta patcher's base-match check
+ * relies on it). Serve surfaces use {@link SONG_SERVE_COLUMNS} instead.
  */
 export const SONG_COLUMNS = [
   'id',
@@ -94,14 +93,36 @@ export const SONG_COLUMNS = [
 ] as const;
 
 /**
- * Builds the `SELECT` projection for {@link SONG_COLUMNS}. Pass a table alias
- * (e.g. `'s'`) to prefix each column for multi-table joins; omit it for a
- * single-table query. Both packages call this so their projections can never
- * drift out of sync.
+ * The SERVE column set: {@link SONG_COLUMNS} minus `title_ruby`. No serve
+ * surface reads `title_ruby` — the worker's `StoredSongRow`/`hydrateSongs`
+ * never touch it (it feeds only the reading-search token index at build) — so
+ * the serving queries stop fetching it. Export keeps the full set.
+ */
+export const SONG_SERVE_COLUMNS = SONG_COLUMNS.filter(
+  (column) => column !== 'title_ruby',
+) as readonly (typeof SONG_COLUMNS)[number][];
+
+function columnsProjection(columns: readonly string[], alias?: string): string {
+  const prefix = alias === undefined ? '' : `${alias}.`;
+  return columns.map((column) => `${prefix}${column}`).join(', ');
+}
+
+/**
+ * Builds the `SELECT` projection for {@link SONG_COLUMNS} (the export set). Pass
+ * a table alias (e.g. `'s'`) to prefix each column for multi-table joins; omit
+ * it for a single-table query. Both packages call this so their projections can
+ * never drift out of sync.
  */
 export function songColumnsProjection(alias?: string): string {
-  const prefix = alias === undefined ? '' : `${alias}.`;
-  return SONG_COLUMNS.map((column) => `${prefix}${column}`).join(', ');
+  return columnsProjection(SONG_COLUMNS, alias);
+}
+
+/**
+ * Builds the `SELECT` projection for {@link SONG_SERVE_COLUMNS} (the serve set,
+ * without `title_ruby`). Same alias contract as {@link songColumnsProjection}.
+ */
+export function songServeColumnsProjection(alias?: string): string {
+  return columnsProjection(SONG_SERVE_COLUMNS, alias);
 }
 
 export function exportSongs(db: SongDatabase): SongRecord[] {

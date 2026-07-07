@@ -59,7 +59,7 @@ const RUBY_FIELD_WEIGHT = 3;
 const ROMAJI_READING_FIELD = 'title_ruby_romaji';
 
 /**
- * SEARCH-ONLY hint weight for tokens derived from `search_hints` rows. Kept
+ * SEARCH-ONLY hint weight for tokens derived from search-hint sidecar rows. Kept
  * strictly below every canonical field weight (artist_alias is the lowest at 2)
  * so a hint match can improve recall but never outranks a canonical match, and
  * hints never receive the `search_texts` exact-compact boost at all. Search
@@ -113,7 +113,7 @@ export interface SearchTokenRow {
   providerMask: number;
 }
 
-/** A normalized, corpus-validated hint ready to be written to `search_hints`. */
+/** A normalized, corpus-validated hint ready to be materialized into hint tokens. */
 export interface ResolvedSearchHint {
   songId: string;
   field: HintField;
@@ -360,13 +360,13 @@ export function karaokeNumberKey(number: string | null): string | null {
 }
 
 /**
- * Normalize raw {@link SearchHintInput} rows into the rows materialized into
- * `search_hints` (and, during import, the token index).
+ * Normalize raw {@link SearchHintInput} rows into the hints materialized into
+ * the `search_tokens` hint fields (`title_hint`/`artist_hint`) during import.
  *
  * Hints for unknown song ids, unknown fields, or values that compact to nothing
  * are dropped silently — a hint sidecar is advisory recall data, never a hard
  * input, so a malformed row must never fail an import. Rows are deduplicated by
- * `(songId, field, source, text_compact)` (the `search_hints` primary key).
+ * `(songId, field, source, text_compact)`.
  */
 export function resolveSearchHints(
   inputs: readonly SearchHintInput[],

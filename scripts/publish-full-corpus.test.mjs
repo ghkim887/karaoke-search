@@ -77,8 +77,23 @@ describe('parseArgs', () => {
       baselineCommit: FAKE_SHA,
       decisionLogPath: 'log.ndjson',
       sqliteOut: 'c.sqlite',
+      searchHintPaths: [],
       help: false,
     });
+  });
+
+  it('collects repeatable --search-hints paths', () => {
+    const parsed = parseArgs([
+      '--input',
+      'c.json',
+      '--url',
+      'PENDING',
+      '--search-hints',
+      'a.jsonl',
+      '--search-hints',
+      'b.jsonl',
+    ]);
+    expect(parsed.searchHintPaths).toEqual(['a.jsonl', 'b.jsonl']);
   });
 
   it('rejects unknown flags and missing values', () => {
@@ -221,7 +236,7 @@ describe('runPublishFullCorpus', () => {
       },
     });
     expect(code).toBe(0);
-    expect(calls).toEqual([{ inputPath: corpusPath, outputPath: sqlitePath }]);
+    expect(calls).toEqual([{ inputPath: corpusPath, outputPath: sqlitePath, searchHintPaths: [] }]);
   });
 
   it('a failing SQLite build fails the publish (manifest already written is fine — it is still valid)', async () => {
