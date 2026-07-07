@@ -2,8 +2,8 @@
 
 Durable invariants, gotchas, and policy decisions a contributor must know
 before changing this codebase. Structural overview lives in
-[ARCHITECTURE.md](ARCHITECTURE.md); undecided items in
-[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).
+[ARCHITECTURE.md](ARCHITECTURE.md); undecided items in the
+[Open questions](ROADMAP.md#open-questions) section of ROADMAP.md.
 
 Historical note: the original `docs/superpowers/specs/*` design documents
 were pruned 2026-05-06. Code comments that used to cite them now point here.

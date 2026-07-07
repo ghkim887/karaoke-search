@@ -83,7 +83,7 @@ R2(i18n+라이선스+footer+ko 한국어 단독), R4-1(ruby 검색), R4-4(artist
      NAS runs/data-2026-06-14-.../joysound-detail-decision-log.jsonl 150MB).
   2. R4-4 Option B(artistId를 코퍼스 스키마에 영속화 → 미래 자동 병합) — 보류됨.
   3. R3 오프라인 전체 팩 / R5 ky·dam 준비(ROADMAP 참조).
-- **오너 결정 보류**: OPEN-QUESTIONS §8 오프사이트 백업, §9 워치독 알림 채널,
+- **오너 결정 보류**: ROADMAP.md Open-questions — 오프사이트 백업, 워치독 알림 채널,
   reading 필드 gram3 트림. **ko 한국어 단독화는 해소됨(#81 배송)**.
 - **영구 규칙**: 권한/시크릿 느슨함 의도(수정 금지), release 디렉터리 in-place
   수정 금지(db/current 심링크), 보존 = current+1, 웹 빌드/wrangler는

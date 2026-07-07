@@ -124,7 +124,7 @@ const WESTERN_ACT_COMPONENTS = new Set<string>([
  * (`\p{Script=Han}`). That swap changes admit/drop-adjacent reasons — it adds
  * CJK-compat / supplementary-plane Han and drops the Yijing-hexagram block —
  * so it waits until the golden gate has soaked one crawl cycle. See
- * docs/OPEN-QUESTIONS.md §"JOYSOUND classifier safe-predicate unification".
+ * docs/ROADMAP.md §"JOYSOUND classifier safe-predicate unification".
  */
 const RE_HAN = /[㐀-鿿]/u;
 /**
@@ -136,7 +136,7 @@ const RE_HAN = /[㐀-鿿]/u;
  * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHangul`
  * (`\p{Script=Hangul}`), which additionally covers half-width Hangul and the
  * Jamo Extended-A/B blocks. That widens the foreign-Korean DROP directly, so it
- * waits for the golden-gate soak (see the RE_HAN note / OPEN-QUESTIONS).
+ * waits for the golden-gate soak (see the RE_HAN note / ROADMAP).
  */
 const RE_HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/u;
 /**
@@ -149,7 +149,7 @@ const RE_HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/u;
  * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHan`
  * (`\p{Script=Han}`), which adds supplementary-plane Han the BMP range misses.
  * That changes the foreign-Chinese DROP directly, so it waits for the
- * golden-gate soak (see the RE_HAN note / OPEN-QUESTIONS).
+ * golden-gate soak (see the RE_HAN note / ROADMAP).
  */
 const RE_HAN_FOREIGN = /[㐀-䶿一-鿿豈-﫿]/u;
 // The foreign-name kana echo test is single-sourced from `@karaoke/search`

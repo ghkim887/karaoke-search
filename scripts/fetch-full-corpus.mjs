@@ -2,7 +2,7 @@
 /**
  * fetch-full-corpus.mjs — download the full corpus described by the tracked
  * manifest and verify it before it ever reaches its destination path (PR-1
- * of the post-JOYSOUND data topology — see docs/OPEN-QUESTIONS.md item 1).
+ * of the post-JOYSOUND data topology — see docs/ROADMAP.md item 1).
  *
  * Shared consumer for local dev and the self-host SQLite build: each of
  * them takes the verified JSON this script produces.
