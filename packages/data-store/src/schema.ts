@@ -14,10 +14,9 @@ function sqlite(): SqliteModule {
 const SONG_TABLE_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, sort_order INTEGER NOT NULL, source_url TEXT NOT NULL, title_primary TEXT NOT NULL, title_ko TEXT, artist_primary TEXT NOT NULL, artist_ko TEXT, artist_aliases_present INTEGER NOT NULL DEFAULT 0 CHECK (artist_aliases_present IN (0, 1)), crawled_at TEXT NOT NULL, media_context_ko TEXT, title_ko_source TEXT, title_ko_confidence TEXT, title_ruby TEXT);
 CREATE TABLE IF NOT EXISTS karaoke_numbers (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, provider TEXT NOT NULL CHECK (provider IN ('tj', 'ky', 'joysound')), number TEXT, number_key TEXT, PRIMARY KEY (song_id, provider)) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS artist_aliases (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, position INTEGER NOT NULL, alias TEXT NOT NULL, PRIMARY KEY (song_id, position)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact)) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS search_texts (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias')), text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (song_id, field, text_compact)) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS search_tokens (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram1', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title_primary', 'title_ko', 'artist_primary', 'artist_ko', 'artist_alias', 'title_hint', 'artist_hint', 'title_ruby', 'title_ruby_romaji', 'title_ruby_hangul')), weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, PRIMARY KEY (kind, token, song_id, field)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram1', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS search_hints (song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE, field TEXT NOT NULL CHECK (field IN ('title', 'artist')), source TEXT NOT NULL, text_norm TEXT NOT NULL, text_compact TEXT NOT NULL, weight INTEGER NOT NULL, provider_mask INTEGER NOT NULL, confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low')), PRIMARY KEY (song_id, field, source, text_compact)) WITHOUT ROWID;`;
+CREATE TABLE IF NOT EXISTS search_token_stats (kind TEXT NOT NULL CHECK (kind IN ('term', 'prefix', 'gram1', 'gram2', 'gram3', 'initial')), token TEXT NOT NULL, df INTEGER NOT NULL, idf_scaled INTEGER NOT NULL, PRIMARY KEY (kind, token)) WITHOUT ROWID;`;
 
 const SONG_INDEX_SCHEMA_SQL = `CREATE INDEX IF NOT EXISTS idx_songs_sort_order ON songs(sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_karaoke_numbers_provider_number ON karaoke_numbers(provider, number) WHERE number IS NOT NULL;
@@ -40,8 +39,8 @@ const SONG_LEGACY_INDEX_DROP_SQL = 'DROP INDEX IF EXISTS idx_search_tokens_song;
  * the self-hosted SQLite search database.
  *
  * Physical layout: every derived/child table (`karaoke_numbers`,
- * `artist_aliases`, `search_texts`, `search_tokens`, `search_token_stats`,
- * `search_hints`) is `WITHOUT ROWID`. Each has a narrow natural composite key
+ * `artist_aliases`, `search_texts`, `search_tokens`, `search_token_stats`) is
+ * `WITHOUT ROWID`. Each has a narrow natural composite key
  * and no autoincrement identity, so clustering rows on the primary key drops
  * the implicit `rowid` plus the separate PK b-tree that a rowid table would
  * keep — the dominant `search_tokens`/`search_texts` tables stop paying for
@@ -95,18 +94,18 @@ export function createSongDatabase(db: SongDatabase): void {
   // Reading fields (R4) are token-only, so only `search_tokens` gains them.
   ensureSearchTableFields(db, 'search_tokens', "'title_ruby'");
   ensureSearchTokensHintFields(db);
+  // Retire dead schema on legacy databases (2026-07-08): the search-only
+  // `search_hints` table and the `search_texts.text_norm` column were written
+  // but never read at serve/export/rebuild (recall materializes through
+  // `search_tokens`). Both are fully derived and rebuilt on every import, so
+  // dropping them here loses no durable data and lets a delta patch on an
+  // older served DB avoid the removed NOT-NULL `text_norm` column.
+  db.exec('DROP TABLE IF EXISTS search_hints');
+  ensureSearchTextsNoTextNorm(db);
   db.exec(SONG_INDEX_SCHEMA_SQL);
   db.exec(SONG_LEGACY_INDEX_DROP_SQL);
 }
 
-/**
- * Upgrade a legacy database whose `search_tokens.field` CHECK predates the
- * search-hint fields. SQLite cannot widen a CHECK in place, but `search_tokens`
- * is fully derived and rebuilt on every {@link importSongs}, so dropping and
- * recreating it from the current schema loses nothing. The re-exec of
- * {@link SONG_TABLE_SCHEMA_SQL} recreates only the dropped table (the rest use
- * `IF NOT EXISTS`) and also backfills `search_hints` on older databases.
- */
 /**
  * Widen a fully-derived search table's `field` CHECK to a newer field set.
  * SQLite cannot ALTER a CHECK in place, but `search_texts`/`search_tokens` are
@@ -137,6 +136,25 @@ function ensureSearchTokensHintFields(db: SongDatabase): void {
   ) {
     db.exec('DROP TABLE IF EXISTS search_tokens');
     db.exec(SONG_TABLE_SCHEMA_SQL);
+  }
+}
+
+/**
+ * Retire the dead `search_texts.text_norm` column on a legacy database. The
+ * column was written but never read (recall lives in `search_tokens`), and
+ * `search_texts` is fully rebuilt on every {@link importSongs} and cleared
+ * per-song by the delta patcher, so dropping and recreating the table from the
+ * current schema loses no durable data. The re-exec of {@link
+ * SONG_TABLE_SCHEMA_SQL} recreates only the dropped table (the rest use
+ * `IF NOT EXISTS`).
+ */
+function ensureSearchTextsNoTextNorm(db: SongDatabase): void {
+  const row = db
+    .prepare(`SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'search_texts'`)
+    .get() as { sql?: string } | undefined;
+  if (row?.sql?.includes('text_norm')) {
+    db.exec('DROP TABLE IF EXISTS search_texts');
+    db.exec(SONG_TABLE_SCHEMA_SQL); // recreates only the dropped table (others are IF NOT EXISTS)
   }
 }
 

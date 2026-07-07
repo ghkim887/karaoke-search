@@ -1,6 +1,7 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -12,6 +13,7 @@ import {
   openSongDatabase,
   parseSearchHintFile,
 } from '../src/index.js';
+import { resolveSearchHints } from '../src/search-index.js';
 
 const openDatabases: Array<{ close(): void }> = [];
 
@@ -47,64 +49,53 @@ const YORU_RECORD: SongRecord = {
   crawled_at: '2026-02-01T00:00:00.000Z',
 };
 
-describe('P1 search_hints sidecar foundation', () => {
-  it('creates a search_hints table with provenance columns', () => {
+describe('P1 search-hint token foundation', () => {
+  it('does not create a search_hints table and omits text_norm from search_texts', () => {
     const db = openMemoryDb();
     createSongDatabase(db);
 
-    const tables = db
-      .prepare(`SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'search_hints'`)
-      .all() as unknown as Array<{ name: string }>;
-    expect(tables.map((row) => row.name)).toEqual(['search_hints']);
+    // The search-only `search_hints` table was retired 2026-07-08 (never read at
+    // serve/export/rebuild); recall lives in the `search_tokens` hint fields.
+    const hintTables = db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'search_hints'`,
+      )
+      .get() as unknown as { count: number };
+    expect(hintTables.count).toBe(0);
 
-    const columns = db.prepare('PRAGMA table_info(search_hints)').all() as unknown as Array<{
+    // `search_texts.text_norm` was retired alongside it (write-only column).
+    const columns = db.prepare('PRAGMA table_info(search_texts)').all() as unknown as Array<{
       name: string;
     }>;
-    expect(columns.map((column) => column.name)).toEqual([
-      'song_id',
-      'field',
-      'source',
-      'text_norm',
-      'text_compact',
-      'weight',
-      'provider_mask',
-      'confidence',
-    ]);
+    expect(columns.map((column) => column.name)).not.toContain('text_norm');
   });
 
-  it('stores supplied hints in search_hints with provenance preserved', () => {
-    const db = openMemoryDb();
-    createSongDatabase(db);
+  it('resolves supplied hints with provenance preserved', () => {
+    // Provenance (source/confidence) now lives in the resolved hint feeding the
+    // token index, not a persisted table. resolveSearchHints owns that shape.
+    const resolved = resolveSearchHints(
+      [
+        {
+          songId: 'joysound-190001',
+          field: 'title',
+          text: 'よるにかける',
+          source: 'joysound_songNameRuby',
+          confidence: 'high',
+        },
+      ],
+      [YORU_RECORD],
+    );
 
-    const hints: SearchHintInput[] = [
-      {
-        songId: 'joysound-190001',
-        field: 'title',
-        text: 'よるにかける',
-        source: 'joysound_songNameRuby',
-        confidence: 'high',
-      },
-    ];
-    importSongs(db, [YORU_RECORD], { searchHints: hints });
-
-    const rows = db
-      .prepare(
-        `SELECT song_id, field, source, text_norm, text_compact, provider_mask, confidence
-        FROM search_hints
-        WHERE source = 'joysound_songNameRuby'`,
-      )
-      .all() as unknown as Array<Record<string, unknown>>;
-    expect(rows).toEqual([
-      {
-        song_id: 'joysound-190001',
-        field: 'title',
-        source: 'joysound_songNameRuby',
-        text_norm: 'よるにかける',
-        text_compact: 'よるにかける',
-        provider_mask: 4,
-        confidence: 'high',
-      },
-    ]);
+    expect(resolved.find((hint) => hint.source === 'joysound_songNameRuby')).toEqual({
+      songId: 'joysound-190001',
+      field: 'title',
+      source: 'joysound_songNameRuby',
+      textNorm: 'よるにかける',
+      textCompact: 'よるにかける',
+      weight: 1,
+      providerMask: 4,
+      confidence: 'high',
+    });
   });
 
   it('indexes hint tokens into search_tokens under a hint field at a low weight', () => {
@@ -170,15 +161,17 @@ describe('P1 search_hints sidecar foundation', () => {
     expect(JSON.stringify(exported)).toBe(JSON.stringify([YORU_RECORD]));
   });
 
-  it('imports normally with no hints and leaves search_hints empty', () => {
+  it('imports normally with no hints and writes no hint tokens', () => {
     const db = openMemoryDb();
     createSongDatabase(db);
 
     importSongs(db, [YORU_RECORD]);
 
-    const count = db.prepare('SELECT COUNT(*) AS count FROM search_hints').get() as unknown as {
-      count: number;
-    };
+    const count = db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM search_tokens WHERE field IN ('title_hint', 'artist_hint')`,
+      )
+      .get() as unknown as { count: number };
     expect(count.count).toBe(0);
     expect(exportSongs(db)).toEqual([YORU_RECORD]);
   });
@@ -199,8 +192,15 @@ describe('P1 search_hints sidecar foundation', () => {
 
     createSongDatabase(db);
 
-    // The upgrade must add search_hints and relax the search_tokens CHECK so a
-    // *_hint token can be written without a constraint failure.
+    // Legacy convergence must relax the search_tokens CHECK (so a *_hint token
+    // writes without a constraint failure) AND retire the dead
+    // search_texts.text_norm column (so the 5-column insert path is not silently
+    // IGNOREd against a NOT-NULL text_norm on the old table).
+    const searchTextsColumns = db
+      .prepare('PRAGMA table_info(search_texts)')
+      .all() as unknown as Array<{ name: string }>;
+    expect(searchTextsColumns.map((column) => column.name)).not.toContain('text_norm');
+
     expect(() =>
       importSongs(db, [YORU_RECORD], {
         searchHints: [
@@ -219,6 +219,13 @@ describe('P1 search_hints sidecar foundation', () => {
       .prepare(`SELECT COUNT(*) AS count FROM search_tokens WHERE field = 'title_hint'`)
       .get() as unknown as { count: number };
     expect(hintTokenCount.count).toBeGreaterThan(0);
+
+    // The canonical title still populates search_texts (proves the 5-column
+    // insert succeeded, not silently IGNOREd against a legacy text_norm column).
+    const searchTextCount = db
+      .prepare(`SELECT COUNT(*) AS count FROM search_texts WHERE song_id = 'joysound-190001'`)
+      .get() as unknown as { count: number };
+    expect(searchTextCount.count).toBeGreaterThan(0);
   });
 });
 
@@ -361,13 +368,46 @@ describe('P2 hint sidecar parsing', () => {
 
     expect(parseSearchHintFile(path)).toEqual([]);
   });
+
+  it('parses the committed curated search-hints sidecar', () => {
+    const testDir = dirname(fileURLToPath(import.meta.url));
+    const hints = parseSearchHintFile(resolve(testDir, '../../../data/search-hints.jsonl'));
+    expect(hints.length).toBe(16);
+    expect(hints.every((h) => h.field === 'artist')).toBe(true);
+    expect(hints.some((h) => h.songId === 'tj-26670' && h.text.includes('高槻やよい'))).toBe(true);
+  });
 });
 
 describe('P3 derived kana→romaji hints', () => {
   it('derives a romaji hint from a kana ruby hint with its own provenance', () => {
+    // Provenance/derivation now lives in the resolved hints (the token source),
+    // not a persisted table.
+    const resolved = resolveSearchHints(
+      [
+        {
+          songId: 'joysound-190001',
+          field: 'title',
+          text: 'よるにかける',
+          source: 'joysound_songNameRuby',
+          confidence: 'high',
+        },
+      ],
+      [YORU_RECORD],
+    );
+    const bySource = new Map(resolved.map((hint) => [hint.source, hint]));
+    // Derived romaji inherits the parent hint's confidence.
+    expect(bySource.get('derived_kana_romaji')).toMatchObject({
+      textNorm: 'yorunikakeru',
+      confidence: 'high',
+    });
+    expect(bySource.get('joysound_songNameRuby')).toMatchObject({
+      textNorm: 'よるにかける',
+      confidence: 'high',
+    });
+
+    // The derived romaji must be tokenized so a romaji query can match it.
     const db = openMemoryDb();
     createSongDatabase(db);
-
     importSongs(db, [YORU_RECORD], {
       searchHints: [
         {
@@ -379,22 +419,6 @@ describe('P3 derived kana→romaji hints', () => {
         },
       ],
     });
-
-    const rows = db
-      .prepare(
-        `SELECT source, text_norm, confidence
-        FROM search_hints
-        WHERE song_id = 'joysound-190001' AND field = 'title'
-        ORDER BY source ASC`,
-      )
-      .all() as unknown as Array<{ source: string; text_norm: string; confidence: string }>;
-    expect(rows).toEqual([
-      // Derived romaji inherits the parent hint's confidence.
-      { source: 'derived_kana_romaji', text_norm: 'yorunikakeru', confidence: 'high' },
-      { source: 'joysound_songNameRuby', text_norm: 'よるにかける', confidence: 'high' },
-    ]);
-
-    // The derived romaji must be tokenized so a romaji query can match it.
     const romajiTerm = db
       .prepare(
         `SELECT 1 FROM search_tokens
@@ -406,13 +430,10 @@ describe('P3 derived kana→romaji hints', () => {
   });
 
   it('deduplicates normalized romaji equivalents across kana hints', () => {
-    const db = openMemoryDb();
-    createSongDatabase(db);
-
     // Hiragana + katakana spellings of the same reading romanize identically;
-    // only one derived romaji row should result.
-    importSongs(db, [YORU_RECORD], {
-      searchHints: [
+    // only one derived romaji hint should result.
+    const resolved = resolveSearchHints(
+      [
         {
           songId: 'joysound-190001',
           field: 'title',
@@ -428,23 +449,16 @@ describe('P3 derived kana→romaji hints', () => {
           confidence: 'medium',
         },
       ],
-    });
+      [YORU_RECORD],
+    );
 
-    const derived = db
-      .prepare(
-        `SELECT text_norm FROM search_hints
-        WHERE song_id = 'joysound-190001' AND source = 'derived_kana_romaji'`,
-      )
-      .all() as unknown as Array<{ text_norm: string }>;
-    expect(derived).toEqual([{ text_norm: 'yorunikakeru' }]);
+    const derived = resolved.filter((hint) => hint.source === 'derived_kana_romaji');
+    expect(derived.map((hint) => hint.textNorm)).toEqual(['yorunikakeru']);
   });
 
   it('does not derive romaji from a romaji or kanji hint', () => {
-    const db = openMemoryDb();
-    createSongDatabase(db);
-
-    importSongs(db, [YORU_RECORD], {
-      searchHints: [
+    const resolved = resolveSearchHints(
+      [
         {
           songId: 'joysound-190001',
           field: 'artist',
@@ -453,12 +467,10 @@ describe('P3 derived kana→romaji hints', () => {
           confidence: 'high',
         },
       ],
-    });
+      [YORU_RECORD],
+    );
 
-    const derived = db
-      .prepare(`SELECT COUNT(*) AS count FROM search_hints WHERE source = 'derived_kana_romaji'`)
-      .get() as unknown as { count: number };
-    expect(derived.count).toBe(0);
+    expect(resolved.some((hint) => hint.source === 'derived_kana_romaji')).toBe(false);
   });
 });
 
@@ -494,23 +506,30 @@ describe('P2 importSongsJson with hint sidecars', () => {
 
     const db = openSongDatabase(dbPath);
     openDatabases.push(db);
-    const rows = db.prepare('SELECT DISTINCT song_id FROM search_hints').all() as unknown as Array<{
-      song_id: string;
-    }>;
-    // The unknown song id contributes nothing; only the known song is indexed.
+    const rows = db
+      .prepare(`SELECT DISTINCT song_id FROM search_tokens WHERE field = 'title_hint'`)
+      .all() as unknown as Array<{ song_id: string }>;
+    // The unknown song id contributes no tokens; only the known song is indexed.
     expect(rows).toEqual([{ song_id: 'joysound-190001' }]);
 
-    const sources = db
+    // The kana ruby's grams and its derived romaji term (P3) are both indexed
+    // under the title_hint field so kana and romaji queries can match.
+    const kanaGram = db
       .prepare(
-        `SELECT source, text_norm FROM search_hints
-        WHERE song_id = 'joysound-190001' ORDER BY source ASC`,
+        `SELECT 1 FROM search_tokens
+        WHERE song_id = 'joysound-190001' AND field = 'title_hint'
+          AND kind = 'gram2' AND token = 'よる'`,
       )
-      .all() as unknown as Array<{ source: string; text_norm: string }>;
-    // The kana ruby plus its derived romaji (P3).
-    expect(sources).toEqual([
-      { source: 'derived_kana_romaji', text_norm: 'yorunikakeru' },
-      { source: 'joysound_songNameRuby', text_norm: 'よるにかける' },
-    ]);
+      .get();
+    const romajiTerm = db
+      .prepare(
+        `SELECT 1 FROM search_tokens
+        WHERE song_id = 'joysound-190001' AND field = 'title_hint'
+          AND kind = 'term' AND token = 'yorunikakeru'`,
+      )
+      .get();
+    expect(kanaGram).toBeDefined();
+    expect(romajiTerm).toBeDefined();
   });
 
   it('still builds normally when no sidecar is provided', () => {
@@ -523,9 +542,11 @@ describe('P2 importSongsJson with hint sidecars', () => {
 
     const db = openSongDatabase(dbPath);
     openDatabases.push(db);
-    const count = db.prepare('SELECT COUNT(*) AS count FROM search_hints').get() as unknown as {
-      count: number;
-    };
+    const count = db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM search_tokens WHERE field IN ('title_hint', 'artist_hint')`,
+      )
+      .get() as unknown as { count: number };
     expect(count.count).toBe(0);
   });
 });

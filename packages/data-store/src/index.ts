@@ -10,12 +10,14 @@ export type { SearchHintInput } from './hints.js';
 
 export {
   SONG_COLUMNS,
+  SONG_SERVE_COLUMNS,
   exportSongs,
   exportSongsJson,
   importSongs,
   importSongsJson,
   readSongRecordsJson,
   songColumnsProjection,
+  songServeColumnsProjection,
 } from './import-export.js';
 export type {
   AliasRow,

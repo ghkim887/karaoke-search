@@ -437,7 +437,6 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
     // no benefit from batching. Keep them per-song alongside the conditional
     // `songs` delete for removed ids.
     for (const songId of options.delta.touchedIds) {
-      statements.deleteSearchHints.run(songId);
       statements.deleteSearchTexts.run(songId);
       statements.deleteNumbers.run(songId);
       statements.deleteAliases.run(songId);
