@@ -3,7 +3,7 @@
  * publish-full-corpus.mjs — validate a composed full corpus and emit the
  * tracked manifest that describes it (PR-1 of the post-JOYSOUND data
  * topology: corpus lives outside git as a release asset; git tracks only
- * this manifest — see docs/OPEN-QUESTIONS.md item 1).
+ * this manifest — see docs/ROADMAP.md item 1).
  *
  * INPUT-DECOUPLED by design: corpus composition happens elsewhere (the
  * JOYSOUND candidate builder on its feature branch); this script takes any

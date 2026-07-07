@@ -34,7 +34,7 @@ import type {
  *     match can never be LOST — dropout is structurally impossible) and that the
  *     only strings on which they differ are the documented widening zones.
  *
- * See docs/OPEN-QUESTIONS.md §"JOYSOUND classifier safe-predicate unification".
+ * See docs/ROADMAP.md §"JOYSOUND classifier safe-predicate unification".
  */
 
 function listItem(over: Partial<JoysoundListItem>): JoysoundListItem {

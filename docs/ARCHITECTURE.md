@@ -2,8 +2,8 @@
 
 Current-state structural map of the karaoke-search monorepo. For durable
 invariants, gotchas, and policy decisions see
-[PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md); for live undecided items see
-[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).
+[PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md); for live undecided items see the
+[Open questions](ROADMAP.md#open-questions) section of ROADMAP.md.
 
 - Live site: <https://karaokedb.pages.dev/> (Cloudflare Pages, Astro
   `base: '/'`). GitHub Pages is intentionally disabled.
@@ -89,7 +89,8 @@ the manifest from the actual bytes (trust-no-one: CI never accepts an
 uploaded manifest). `ci.yml` additionally shape-validates the tracked
 manifest on every PR via `scripts/verify-manifest.mjs` (no download; no-op
 until the first manifest lands). The first actual publish/import is still
-ahead (see [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) item 1).
+ahead (see the post-JOYSOUND data-topology item in the
+[Open questions](ROADMAP.md#open-questions) section).
 
 #### Publishing a full-corpus release (operator runbook)
 
@@ -190,4 +191,4 @@ A `joysound-official` adapter + full-catalog sweep exists on a feature branch
 on that branch) but **no `joysound-*` records are in the corpus yet** — the
 existing JOYSOUND vendor numbers are blog-sourced. The ~291k-row full-catalog
 merge is blocked on the data-topology decision and owner checkpoints tracked
-in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).
+in the [Open questions](ROADMAP.md#open-questions) section of ROADMAP.md.

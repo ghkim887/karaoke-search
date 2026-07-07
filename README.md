@@ -21,7 +21,7 @@ No account is required. Favorites are stored only in your browser.
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — workspace map, end-to-end data flow, the two search paths, CI workflows.
 - [docs/PROJECT-KNOWLEDGE.md](docs/PROJECT-KNOWLEDGE.md) — durable invariants, gotchas, and policy decisions contributors must know.
-- [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) — live undecided items and what unblocks each.
+- [docs/ROADMAP.md](docs/ROADMAP.md) — owner-prioritized future work, plus the Open questions section of live undecided items and what unblocks each.
 
 ## Current data snapshot
 

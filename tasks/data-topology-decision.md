@@ -1,6 +1,6 @@
 # Post-JOYSOUND Data Topology — 결정 문서
 
-작성: 2026-06-10 (detail sweep 진행 중 기준). 대상: docs/OPEN-QUESTIONS.md §1.
+작성: 2026-06-10 (detail sweep 진행 중 기준). 대상: docs/ROADMAP.md Open-questions section (post-JOYSOUND data topology).
 모든 수치는 이 repo에서 직접 측정/검증했고, 추정치는 [추정]으로 표시함. 검증 내역은 맨 아래 부록.
 
 ## TL;DR — 권고안
@@ -23,7 +23,7 @@ JOYSOUND listing-sweep candidate (`.tmp_review/joysound-sweep-2026-06-09/songs-c
 | 클라이언트 offline UX | wire gzip 9.58 MB는 견딜 만함. **그러나 JSON.parse 85 MB + MiniSearch 221k×5필드 build = heap 316 MB / RSS 485 MB / 5.7s (desktop Node 측정)** | 폰에서 3–5x 느림 → 20–30s 멈춤 + ~0.5 GB 메모리 → 모바일 탭 kill 수준 [추정]. **wholesale offline 모델은 이 규모에서 사망.** |
 | git clone/history 성장 | 현 이력: songs.json blob 35개, 비압축 382 MiB → pack 15.34 MiB (~25:1, 측정) | 85 MB 주간 스냅샷이면 같은 비율로도 pack +~3.4 MB/주 ≈ **+175 MB/년** [추정]. `crawled_at`이 매 crawl 전 record 재작성되는 것도 확인 — delta가 깨끗하지 않음. |
 | PR CI (`d1:verify-sql`) | ci.yml이 **모든 PR마다** committed corpus에서 D1 SQL export + 전 record Ajv 검증. 236k 규모 dry-run 측정 **946 MB SQL** | 깨지진 않음(WS-A streaming으로 OOM 해결 증명) — 그러나 PR마다 ~1 GB 디스크 쓰기 + 221k 검증 + 85 MB blob checkout. 비용만 늘고 가치는 그대로. |
-| D1 free tier | 500 MB DB cap vs 946 MB SQL import | import 후 `wrangler d1 info --remote`로 측정 (deploy-time check, OPEN-QUESTIONS §6). 초과 가능성 높음 [추정] → self-host 탈출구는 이미 존재 (`node-server.ts`, 008d453). |
+| D1 free tier | 500 MB DB cap vs 946 MB SQL import | import 후 `wrangler d1 info --remote`로 측정 (deploy-time check, ROADMAP.md Open-questions). 초과 가능성 높음 [추정] → self-host 탈출구는 이미 존재 (`node-server.ts`, 008d453). |
 
 핵심 반전: **다운로드 용량(9.6 MB gzip)은 문제가 아니다. 브라우저 메모리/CPU가 문제다.** 따라서 "full corpus를 계속 번들"하는 선택지는 git 한계 이전에 UX에서 먼저 죽는다.
 
@@ -67,12 +67,12 @@ A 단독은 권고하지 않음: top-N subset을 뽑을 인기도/재생수 데�
    - 신규 `full-corpus.yml` (workflow_dispatch): compose → `gh release create data/<date>-<run_id>` (asset: full corpus JSON [+ sqlite + decision-log]) → manifest commit PR. weekly `crawl.yml`은 **변경 없음** (baseline 경로 그대로 — 리뷰 스토리 보존의 핵심).
    - `ci.yml`: 변경 없음 (`d1:verify-sql`은 tracked baseline 대상 유지). manifest sha 검증 step만 추가(저렴).
 3. **PR-3 (deploy — 결정 후):**
-   - `deploy.yml` e2e FALLBACK-mode build (OPEN-QUESTIONS §4 — e2e는 `f260f53` 이후 required gate라 API-first 배포 **이전/동시** 필수).
+   - `deploy.yml` e2e FALLBACK-mode build (ROADMAP.md Open-questions — e2e는 `f260f53` 이후 required gate라 API-first 배포 **이전/동시** 필수).
    - 첫 release 발행 → 수동 D1 import (`KARAOKE_D1_REMOTE_OK=1`, ~2k+ chunks, 비원자적 — 모니터링) → `wrangler d1 info`로 500 MB 측정 → 초과 시 self-host 전환 → worker/web deploy.
-4. **후속:** D1 incremental import(주간 946 MB 전체 재import는 지속 불가 — full corpus 갱신 주기를 분기/월간 dispatch로 시작), OPEN-QUESTIONS §1 종결 문서화.
+4. **후속:** D1 incremental import(주간 946 MB 전체 재import는 지속 불가 — full corpus 갱신 주기를 분기/월간 dispatch로 시작), ROADMAP.md Open-questions (post-JOYSOUND data topology) 종결 문서화.
 
 **결정 전에 준비 가능:** PR-1 전체, manifest 스키마, 테스트 tag로 release dry-run, 이 문서.
-**결정을 기다려야 하는 것:** workflow 변경(PR-2/3), 실제 release 발행, D1 import, OPEN-QUESTIONS 갱신.
+**결정을 기다려야 하는 것:** workflow 변경(PR-2/3), 실제 release 발행, D1 import, ROADMAP.md Open-questions 갱신.
 
 ## 5. Decision checklist (owner가 답할 yes/no)
 
