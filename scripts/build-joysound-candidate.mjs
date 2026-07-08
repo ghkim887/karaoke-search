@@ -24,8 +24,9 @@
 // rebuilt classifier, the decision log may record those 3 selSongNos as
 // admits (stale dist) or drops — either way they must NOT enter the corpus,
 // so this builder EXCLUDES any admit on them (`excludeCheckpoint1Admits`)
-// and fails fast unless the log contains exactly one row per number (guards
-// against running with the wrong or already-scrubbed log).
+// before any downstream stage. A current sweep on a from-corpus listing no
+// longer lists the 3 at all (they were removed from the overrides and dropped
+// from the corpus), which is fine — nothing to exclude.
 //
 // Heap: parses ~12 MB corpus + ~291k decision rows; run with
 //   node --max-old-space-size=8192 scripts/build-joysound-candidate.mjs
@@ -199,30 +200,26 @@ export const CHECKPOINT1_EXCLUDED_SEL_SONG_NOS = ['148140', '153397', '735357'];
  * building and before `resolveExistingNumberConflicts` sees them. Rows are
  * matched on the normalized (selSongNoRaw-preferred, hyphen-stripped) number.
  *
- * FAIL-FAST: throws unless `checkpoint1Decisions` (every decision-log row
- * matching a SUSPECT number, ANY decision — collected by `readJsonlAdmits`)
- * covers each of the 3 numbers exactly once. Absent or duplicated rows mean
- * the wrong (or already-scrubbed) decision log — abort, do not silently
- * no-op (see tasks/checkpoint1-screening.md). The 20260610 log records all 3
- * as `drop`/`foreign-korean` (excluded admits = 0); a log written entirely by
- * the stale 175-entry classifier would record them as admits (excluded = 3).
- * Both are valid — the invariant is that none of the 3 survives as an admit.
+ * INVARIANT: none of the 3 SUSPECT numbers may survive as an admit. This holds
+ * regardless of how the decision log looks, so all of these PASS:
+ *   - ABSENT   — a current sweep on a from-corpus listing no longer lists the 3
+ *                (they were removed from reviewedJoysoundOverrides.ts and
+ *                dropped from the corpus); nothing to exclude (excluded = 0).
+ *   - as DROP  — the real 20260610 log records all 3 as `drop`/`foreign-korean`,
+ *                so they never reach the admit set (excluded = 0).
+ *   - as ADMIT — a log written by the stale 175-entry classifier records them
+ *                as admits; those rows are excluded here (excluded = 3).
+ * `checkpoint1Decisions` (every decision-log row matching a SUSPECT number, ANY
+ * decision — collected by `readJsonlAdmits`) is used only to report
+ * `droppedInLog`; it no longer gates the guard. FAIL-FAST only if a SUSPECT
+ * admit somehow survives exclusion (number-key matching is broken) — see
+ * tasks/checkpoint1-screening.md.
  *
  * @param {Record<string, unknown>[]} admits  decision-log admit rows
- * @param {{ selSongNo: string, decision: string }[]} checkpoint1Decisions
+ * @param {{ selSongNo: string, decision: string }[]} [checkpoint1Decisions]
  * @returns {{ kept: Record<string, unknown>[], excluded: Record<string, unknown>[], droppedInLog: number }}
  */
 export function excludeCheckpoint1Admits(admits, checkpoint1Decisions) {
-  const seen = (checkpoint1Decisions ?? []).map((d) => String(d?.selSongNo ?? '')).sort();
-  const expected = [...CHECKPOINT1_EXCLUDED_SEL_SONG_NOS].sort();
-  const covered =
-    seen.length === expected.length && seen.every((value, i) => value === expected[i]);
-  if (!covered) {
-    throw new Error(
-      `[build-joysound-candidate] CHECKPOINT-1 guard: expected the decision log to contain exactly one row per SUSPECT selSongNo [${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')}] but found [${seen.join(', ')}]. The decision log is likely the wrong (or already-scrubbed) sweep — see tasks/checkpoint1-screening.md.`,
-    );
-  }
-
   const targets = new Set(CHECKPOINT1_EXCLUDED_SEL_SONG_NOS);
   const kept = [];
   const excluded = [];
@@ -230,7 +227,17 @@ export function excludeCheckpoint1Admits(admits, checkpoint1Decisions) {
     if (targets.has(admitNumberKey(entry))) excluded.push(entry);
     else kept.push(entry);
   }
-  const droppedInLog = checkpoint1Decisions.filter((d) => d.decision !== 'admit').length;
+  // The loop above removes every admit on a SUSPECT number by construction, so
+  // `kept` must contain none of them. If one survived, number-key matching is
+  // broken — abort rather than let an owner-removed Korean-language song
+  // (re-)enter the corpus (see tasks/checkpoint1-screening.md).
+  const survived = kept.filter((entry) => targets.has(admitNumberKey(entry)));
+  if (survived.length > 0) {
+    throw new Error(
+      `[build-joysound-candidate] CHECKPOINT-1 guard: ${survived.length} SUSPECT admit(s) survived exclusion (selSongNos [${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')}]) — number-key matching is broken; see tasks/checkpoint1-screening.md.`,
+    );
+  }
+  const droppedInLog = (checkpoint1Decisions ?? []).filter((d) => d.decision !== 'admit').length;
   return { kept, excluded, droppedInLog };
 }
 
@@ -662,8 +669,8 @@ async function main() {
   );
 
   // CHECKPOINT-1: drop any admit on the 3 owner-removed SUSPECT numbers before
-  // ANY downstream stage (record building AND conflict resolution). Throws
-  // unless the log contains exactly one row per number — see
+  // ANY downstream stage (record building AND conflict resolution). A current
+  // sweep that no longer lists them is fine (nothing to exclude) — see
   // tasks/checkpoint1-screening.md.
   const {
     kept: admits,
