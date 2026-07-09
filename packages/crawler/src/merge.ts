@@ -1655,6 +1655,11 @@ function mergeCluster(
  *      null-handling, see Fix A.1 in the sort comparator below).
  *   2) `normalize(title_primary)` ascending — locale-stable string compare.
  *   3) `id` ascending.
+ * Cluster MEMBER order is fixed by the SAME comparator before each cluster is
+ * merged (see the materialize loop below), so equal-SOURCE_RANK ownership /
+ * priority tiebreaks pick an input-order-independent survivor rather than
+ * whichever record arrived first (audit 2026-07-09). This does not change WHICH
+ * records collapse — only which member of an equal-rank tie wins.
  *
  * Conflict warnings (Tier B vendor-number disagreements + Tier C/D/E/F/G cluster
  * fires + Tier D blocked vendor-number disagreements) are returned in
@@ -1712,6 +1717,21 @@ export function mergeRecords(records: SongRecord[]): MergeResult {
   for (const [root, idxs] of clusters) {
     // biome-ignore lint/style/noNonNullAssertion: idx in bounds
     const cluster = idxs.map((i) => records[i]!);
+    // Impose a deterministic, input-order-independent member order before
+    // merging. `collectClusters` returns members in ascending original-index
+    // order, so every equal-SOURCE_RANK tiebreak that walks the cluster
+    // (pickByPriority, pickByOwnership, mergeKaraokeNumbers, pickTitleDonor,
+    // pickKoDonor, mergeArtistAliases, latestCrawledAt) used to resolve to
+    // whichever record happened to arrive first — an upstream ordering change
+    // would then flip the survivor and produce spurious corpus diffs. Sorting by
+    // the same total order used for the final corpus sort (`compareMergedRecords`
+    // — tj asc nulls-last, then normalize(title), then id) fixes the survivor.
+    // Output is preserved on the committed corpus: it is already globally sorted
+    // by this comparator, so a cluster's members are already in this order and
+    // the sort is a no-op there; only reordered inputs (e.g. a future upstream
+    // change) now converge to the same result. See the audit note in the
+    // Determinism section of mergeRecords' docblock.
+    cluster.sort(compareMergedRecords);
     merged.push(mergeCluster(cluster, membershipByRoot.get(root), conflicts));
   }
 

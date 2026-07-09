@@ -2657,3 +2657,89 @@ describe('mergeRecords — title_ruby (carried from the title donor)', () => {
     expect(records[0]).not.toHaveProperty('title_ruby');
   });
 });
+
+// ---------------------------------------------------------------------
+// Tier B same-source survivor determinism (commutativity)
+//
+// Audit 2026-07-09: two same-source records with identical normalized
+// title+artist but different tj# collapse via Tier B (partitions.size === 1),
+// and the equal-SOURCE_RANK ownership/priority tiebreaks used to fall to input
+// order — so `mergeRecords([A,B])` and `mergeRecords([B,A])` picked DIFFERENT
+// survivors. The merger now sorts each cluster's members by `compareMergedRecords`
+// before merging, so the survivor is fixed regardless of input order.
+//
+// (The owner HELD whether such same-source records should collapse at all; this
+// suite pins ONLY that the collapse is order-independent, not that it happens.)
+// ---------------------------------------------------------------------
+describe('mergeRecords — Tier B same-source survivor determinism', () => {
+  it('picks the same survivor for [A,B] and [B,A] (audit repro: same-source, same key, different tj#)', () => {
+    const lo = record({
+      id: 'tj-1000',
+      source_url: 'https://tj.test/1000',
+      title_primary: 'SameSong',
+      artist_primary: 'SameArtist',
+      karaoke_numbers: { tj: '1000', ky: null, joysound: null },
+    });
+    const hi = record({
+      id: 'tj-2000',
+      source_url: 'https://tj.test/2000',
+      title_primary: 'SameSong',
+      artist_primary: 'SameArtist',
+      karaoke_numbers: { tj: '2000', ky: null, joysound: null },
+    });
+
+    const forward = mergeRecords([lo, hi]);
+    const backward = mergeRecords([hi, lo]);
+
+    // Both orders collapse the same-source twins into one record.
+    expect(forward.records).toHaveLength(1);
+    expect(backward.records).toHaveLength(1);
+
+    // Commutative: byte-identical merged record output regardless of input order.
+    expect(JSON.stringify(forward.records)).toBe(JSON.stringify(backward.records));
+    // This cluster's conflict is emitted from mergeKaraokeNumbers over the
+    // now-sorted cluster, so its reporting is order-independent too. (This is
+    // NOT a global guarantee — e.g. Tier D BLOCKED-conflict rows are still
+    // reported in input order; only the record SURVIVOR is fully determinized.)
+    expect(JSON.stringify(forward.conflicts)).toBe(JSON.stringify(backward.conflicts));
+
+    // Survivor pinned by compareMergedRecords: the lower tj# ('1000') sorts
+    // first, so its id / source_url / tj win the equal-rank tiebreak.
+    const m = forward.records[0];
+    if (!m) throw new Error('no record');
+    expect(m.id).toBe('tj-1000');
+    expect(m.source_url).toBe('https://tj.test/1000');
+    expect(m.karaoke_numbers.tj).toBe('1000');
+
+    // The tj# disagreement is still surfaced as a conflict (winner = survivor).
+    const tjConflicts = forward.conflicts.filter((c) => c.field === 'tj');
+    expect(tjConflicts).toHaveLength(1);
+    expect(tjConflicts[0]?.winner).toBe('1000');
+    expect(tjConflicts[0]?.values.map((v) => v.value).sort()).toEqual(['1000', '2000']);
+  });
+
+  it('survivor does not depend on which tj# is numerically/lexically smaller vs input position', () => {
+    // Same shape, but the FIRST-in-input record carries the HIGHER tj#. Pre-fix,
+    // input-order tiebreak would let it win; the deterministic rule still picks
+    // the lower-tj survivor.
+    const hiFirst = record({
+      id: 'tj-2000',
+      source_url: 'https://tj.test/2000',
+      title_primary: 'OtherSong',
+      artist_primary: 'OtherArtist',
+      karaoke_numbers: { tj: '2000', ky: null, joysound: null },
+    });
+    const loSecond = record({
+      id: 'tj-1000',
+      source_url: 'https://tj.test/1000',
+      title_primary: 'OtherSong',
+      artist_primary: 'OtherArtist',
+      karaoke_numbers: { tj: '1000', ky: null, joysound: null },
+    });
+
+    const { records } = mergeRecords([hiFirst, loSecond]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('tj-1000');
+    expect(records[0]?.karaoke_numbers.tj).toBe('1000');
+  });
+});
