@@ -37,6 +37,17 @@ export interface ApplySongDeltaPatchArgs {
   /**
    * `affected` updates df/idf for tokens touched by changed songs only. `all`
    * fully refreshes `search_token_stats` without rebuilding per-song tokens.
+   *
+   * idf-drift (accepted approximation — audit 2026-07-09): idf is derived from
+   * the GLOBAL song count, so any delta that changes the corpus size (a net add
+   * or remove) staleifies the idf of every UNTOUCHED token — `affected` mode
+   * only recomputes the tokens the delta itself touched and leaves the rest
+   * keyed to the pre-delta document count. Measured on a representative delta:
+   * 112 of 148 tokens diverged from a full rebuild, with the ranking effect
+   * limited to near-tie reordering. This drift is ACCEPTED to keep delta patches
+   * cheap. Pass `tokenStatMode: 'all'` to refresh every token's stat and avoid
+   * it; a full import / release build always recomputes all stats and is the
+   * authoritative source of idf.
    */
   tokenStatMode?: DeltaPatchTokenStatMode;
   /** Produce a manifest without mutating the DB. */
