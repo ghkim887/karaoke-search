@@ -19,7 +19,7 @@ export interface ApiBrowseState {
 /** The selected vendors as a stable, sorted `SearchVendor[]` for the API
  *  `vendors` union param. Empty when no vendor chip is active. */
 export function selectedVendorsForApi(selectedVendors: ReadonlySet<Vendor>): SearchVendor[] {
-  return Array.from(selectedVendors).sort() as SearchVendor[];
+  return Array.from(selectedVendors).sort();
 }
 
 /** Stable identity for an API browse request: the debounced query plus the
