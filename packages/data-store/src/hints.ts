@@ -6,6 +6,11 @@ import { readFileSync } from 'node:fs';
  * WITHOUT being part of the canonical {@link SongRecord}. Hints feed only the
  * `search_tokens` hint fields (`title_hint`/`artist_hint`) and never
  * crawler/admit/drop logic.
+ *
+ * A full import materializes every resolved hint. A delta patch only
+ * materializes hints for the songs it touches, so a hint targeting a song the
+ * delta did not touch is not applied until the next full import/release build
+ * (the delta patcher warns when this happens — see `applySongDeltaPatch`).
  */
 export interface SearchHintInput {
   /** Canonical song id the hint applies to. Unknown ids are ignored. */

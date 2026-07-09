@@ -27,6 +27,16 @@ export interface ApplySongDeltaPatchArgs {
   db: SongDatabase;
   baseRecords: readonly SongRecord[];
   candidateRecords: readonly SongRecord[];
+  /**
+   * SEARCH-ONLY recall hints. Resolved against the FULL candidate corpus, but on
+   * the normal touched-only delta path only hints whose target song is in the
+   * delta's touched set are materialized into `search_tokens` — a hint for an
+   * untouched song is silently NOT applied by a delta patch (a full import /
+   * release build applies it). The patcher emits one non-fatal stderr warning
+   * when it resolves hints for untouched songs (see `warnHintsForUntouchedSongs`).
+   * (The legacy-migration rebuild path re-derives every song, so it materializes
+   * all resolved hints.)
+   */
   searchHints?: readonly SearchHintInput[];
   /** Validate that the SQLite DB currently exports exactly to `baseRecords`. Defaults to true. */
   checkDbMatchesBase?: boolean;
@@ -37,6 +47,17 @@ export interface ApplySongDeltaPatchArgs {
   /**
    * `affected` updates df/idf for tokens touched by changed songs only. `all`
    * fully refreshes `search_token_stats` without rebuilding per-song tokens.
+   *
+   * idf-drift (accepted approximation — audit 2026-07-09): idf is derived from
+   * the GLOBAL song count, so any delta that changes the corpus size (a net add
+   * or remove) staleifies the idf of every UNTOUCHED token — `affected` mode
+   * only recomputes the tokens the delta itself touched and leaves the rest
+   * keyed to the pre-delta document count. Measured on a representative delta:
+   * 112 of 148 tokens diverged from a full rebuild, with the ranking effect
+   * limited to near-tie reordering. This drift is ACCEPTED to keep delta patches
+   * cheap. Pass `tokenStatMode: 'all'` to refresh every token's stat and avoid
+   * it; a full import / release build always recomputes all stats and is the
+   * authoritative source of idf.
    */
   tokenStatMode?: DeltaPatchTokenStatMode;
   /** Produce a manifest without mutating the DB. */
@@ -417,6 +438,11 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
   const sortOrderById = new Map(
     options.candidateRecords.map((record, index) => [record.id, index]),
   );
+  // Hints resolve against the full candidate corpus, but the touched-only path
+  // below only writes hint tokens for touched songs (see writeSongRecordRows
+  // calls). A hint for an untouched song is therefore not materialized by this
+  // patch — warn (non-fatally) once so the operator knows a full build is needed
+  // to apply it. The rebuild-all path materializes every song, so it warns not.
   const hintsBySongId = groupResolvedHints(
     resolveSearchHints(options.searchHints, options.candidateRecords),
   );
@@ -438,6 +464,10 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
       db.exec('COMMIT');
       return result;
     }
+
+    // Touched-only path: warn about hints for songs this delta does not touch —
+    // they are resolved above but never materialized here (non-fatal).
+    warnHintsForUntouchedSongs(hintsBySongId, options.delta.touchedIds);
 
     // Collect the touched songs' OLD token keys in one set-based sweep before
     // deleting them (see collectTokenKeysForSongs), then drop their tokens in a
@@ -558,4 +588,30 @@ function rebuildAllDerivedRows(
 
 function formatRatio(value: number): string {
   return Number.isFinite(value) ? value.toFixed(6) : String(value);
+}
+
+/**
+ * Non-fatal guard for the touched-only delta path (audit 2026-07-09). Search
+ * hints are resolved against the full candidate corpus, but this path only
+ * materializes hint tokens for TOUCHED songs — so a hint whose target song is
+ * untouched by the delta is silently dropped (a full import/release build would
+ * apply it). Emit ONE stderr warning naming how many untouched songs carry
+ * resolved hints plus up to three sample ids. Never throws; does not change
+ * materialization behavior. `hintsBySongId` keys are already corpus-validated
+ * song ids (`resolveSearchHints` drops unknown ids), so an untouched key is a
+ * real candidate song this delta simply did not revisit.
+ */
+function warnHintsForUntouchedSongs(
+  hintsBySongId: Map<string, ResolvedSearchHint[]>,
+  touchedIds: readonly string[],
+): void {
+  const touched = new Set(touchedIds);
+  const untouched = [...hintsBySongId.keys()].filter((songId) => !touched.has(songId)).sort();
+  if (untouched.length === 0) {
+    return;
+  }
+  const sample = untouched.slice(0, 3).join(', ');
+  console.warn(
+    `[delta-patch] WARNING: search hints target ${untouched.length} song(s) not in this delta's touched set (e.g. ${sample}); hints for untouched songs are not materialized by a delta patch; run a full import/release build to apply them`,
+  );
 }
