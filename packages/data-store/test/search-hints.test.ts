@@ -474,6 +474,88 @@ describe('P3 derived kana→romaji hints', () => {
   });
 });
 
+describe('hint fields exclude server-only Hangul initials (parity invariant)', () => {
+  // The offline web engine (offline-recall.ts) derives Hangul choseong initials
+  // from canonical title/artist text ONLY — never from hint or reading fields.
+  // If the server indexed hint-field initials, a choseong query would gain
+  // worker-only recall the offline path can't reproduce, splitting the two
+  // engines (a search-parity regression). Hint fields are server-only exactly
+  // like reading fields, so they must be excluded the same way.
+  it('does not emit Hangul choseong initial tokens for a hint field', () => {
+    const db = openMemoryDb();
+    createSongDatabase(db);
+
+    // A Korean reading supplied as a title hint — the only shape that can reach
+    // the initial path (makeHangulInitials extracts choseong from Hangul only).
+    importSongs(db, [YORU_RECORD], {
+      searchHints: [
+        {
+          songId: 'joysound-190001',
+          field: 'title',
+          text: '요루니카케루',
+          source: 'manual_ko',
+          confidence: 'medium',
+        },
+      ],
+    });
+
+    const initials = db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM search_tokens
+        WHERE song_id = 'joysound-190001' AND field = 'title_hint' AND kind = 'initial'`,
+      )
+      .get() as unknown as { count: number };
+    expect(initials.count).toBe(0);
+
+    // The hint still contributes its term/prefix/gram recall — only the
+    // server-only initials are withheld.
+    const nonInitial = db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM search_tokens
+        WHERE song_id = 'joysound-190001' AND field = 'title_hint' AND kind <> 'initial'`,
+      )
+      .get() as unknown as { count: number };
+    expect(nonInitial.count).toBeGreaterThan(0);
+  });
+
+  it('leaves Japanese/ASCII hint tokens unchanged (they never produced initials)', () => {
+    // makeHangulInitials yields nothing for Japanese/ASCII text, so the
+    // committed (Japanese/ASCII-only) sidecar produced no hint initials before
+    // this fix either — the exclusion is a no-op for real data.
+    const db = openMemoryDb();
+    createSongDatabase(db);
+
+    importSongs(db, [YORU_RECORD], {
+      searchHints: [
+        {
+          songId: 'joysound-190001',
+          field: 'title',
+          text: 'よるにかける',
+          source: 'joysound_songNameRuby',
+          confidence: 'high',
+        },
+      ],
+    });
+
+    const initials = db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM search_tokens WHERE field = 'title_hint' AND kind = 'initial'`,
+      )
+      .get() as unknown as { count: number };
+    expect(initials.count).toBe(0);
+
+    // The kana grams that carry recall are still present (unchanged behavior).
+    const gram = db
+      .prepare(
+        `SELECT 1 FROM search_tokens
+        WHERE song_id = 'joysound-190001' AND field = 'title_hint'
+          AND kind = 'gram2' AND token = 'よる'`,
+      )
+      .get();
+    expect(gram).toBeDefined();
+  });
+});
+
 describe('P2 importSongsJson with hint sidecars', () => {
   it('indexes hints from a sidecar file and ignores unknown song ids', () => {
     const dir = mkdtempSync(join(tmpdir(), 'karaoke-hints-build-'));

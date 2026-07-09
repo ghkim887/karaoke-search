@@ -258,14 +258,14 @@ export function addSearchTokens(
   }
 
   // Hangul choseong-initials recall is intentionally NOT derived from the
-  // reading fields. A ruby's hangul transliteration is a phonetic Japanese
-  // reading, and the web offline choseong layer (offline-recall.ts) computes
-  // initials from canonical title/artist text only — never from readings. If
-  // the server indexed ruby-hangul initials, a choseong query would gain recall
-  // on the worker path but not the offline path, splitting the two engines'
-  // results (a search-parity top-1 regression). Readings still contribute the
-  // symmetric term/prefix/gram recall both paths share.
-  if (!isReadingField(input.field)) {
+  // reading OR hint fields. Both are SEARCH-ONLY, server-side sources, and the
+  // web offline choseong layer (offline-recall.ts) computes initials from
+  // canonical title/artist text only — never from readings or hints. If the
+  // server indexed initials for these fields, a choseong query would gain
+  // recall on the worker path but not the offline path, splitting the two
+  // engines' results (a search-parity top-1 regression). Both still contribute
+  // the symmetric term/prefix/gram recall the two paths share.
+  if (!isReadingField(input.field) && !isHintTokenField(input.field)) {
     const initials = makeHangulInitials(input.value);
     addPrefixTokens(rows, seen, input, initials, 'initial');
   }
@@ -273,6 +273,10 @@ export function addSearchTokens(
 
 function isReadingField(field: SearchTokenField): field is ReadingField {
   return (READING_FIELDS as readonly string[]).includes(field);
+}
+
+function isHintTokenField(field: SearchTokenField): field is HintTokenField {
+  return (Object.values(HINT_TOKEN_FIELD_BY_HINT_FIELD) as string[]).includes(field);
 }
 
 function addPrefixTokens(
