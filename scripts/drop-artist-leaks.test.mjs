@@ -161,6 +161,43 @@ describe('runDropArtistLeaks', () => {
     expect([...CATALOG_ANOMALY_IDS].sort()).toEqual(['tj-71365', 'tj-72638']);
   });
 
+  it('korean: keeps a drop-listed artist whose TJ is reviewed-song-allow-listed, drops the non-allowed one', async () => {
+    // Mirrors the crawl chain (reviewed-song-allow step 2 before drop-list-reject
+    // step 3): BOYNEXTDOOR is on the Korean drop list, but its genuine Japanese
+    // release tj 52990 ("Count To Love") is curated into REVIEWED_TJ_SONG_ALLOW.
+    // The allow-listed row survives; the ordinary BOYNEXTDOOR row drops.
+    const allowed = {
+      ...record('tj-52990', 'BOYNEXTDOOR', 'Count To Love'),
+      karaoke_numbers: { tj: '52990', ky: null, joysound: null },
+    };
+    const dropped = {
+      ...record('tj-43349', 'BOYNEXTDOOR', 'Nice Guy'),
+      karaoke_numbers: { tj: '43349', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, allowed, dropped]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'tj-52990']);
+  });
+
+  it('reviewed-song-allow is honored in the chinese pass too (uniform across --list modes)', async () => {
+    // reviewed-song-allow is TJ-number-level and list-agnostic. A Chinese-drop-listed
+    // act (BEYOND) whose TJ is reviewed-allow (27069) survives the chinese pass,
+    // proving the allow gate is wired into both list modes.
+    const allowed = {
+      ...record('tj-27069', 'BEYOND', '大地'),
+      karaoke_numbers: { tj: '27069', ky: null, joysound: null },
+    };
+    const dropped = {
+      ...record('tj-70170', 'BEYOND', '海闊天空'),
+      karaoke_numbers: { tj: '70170', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, allowed, dropped]);
+    const code = await runDropArtistLeaks({ list: 'chinese', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'tj-27069']);
+  });
+
   it('no-op run does NOT rewrite the file (bytes + mtime preserved)', async () => {
     writeCorpus(corpusPath, SURVIVORS);
     const bytesBefore = readFileSync(corpusPath);
