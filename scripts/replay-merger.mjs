@@ -33,6 +33,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { stableStringify } from './lib/canonical-json.mjs';
 import { isCliInvocation } from './lib/cli.mjs';
 import { writeCorpusAtomic } from './lib/corpus.mjs';
 
@@ -75,24 +76,6 @@ const defaultMergeJsPath = resolve(repoRoot, 'packages/crawler/dist/merge.js');
 const mergeTsPath = resolve(repoRoot, 'packages/crawler/src/merge.ts');
 const defaultAliasesJsPath = resolve(repoRoot, 'packages/crawler/dist/aliases.js');
 const aliasesTsPath = resolve(repoRoot, 'packages/crawler/src/aliases.ts');
-
-/**
- * Stable, key-order-independent JSON serialization. Object keys are sorted
- * recursively so two records that differ ONLY in key order serialize
- * identically. Used by the delta-0 write gate to detect genuine same-id
- * content changes (e.g. cross-record artist_ko propagation, alias rewrites)
- * without mistaking a benign field-order difference for a change.
- */
-function canonicalJson(value) {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value)
-      .sort()
-      .map((k) => `${JSON.stringify(k)}:${canonicalJson(value[k])}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value) ?? 'null';
-}
 
 // --- Step 1 (CLI shim only): build crawler if dist is missing or stale ---
 function needsBuild() {
@@ -219,7 +202,7 @@ export async function runReplay(options = {}) {
   let changedRecordCount = 0;
   for (const r of after) {
     const b = beforeById.get(r.id);
-    if (b && canonicalJson(b) !== canonicalJson(r)) changedRecordCount += 1;
+    if (b && stableStringify(b) !== stableStringify(r)) changedRecordCount += 1;
   }
 
   const tierCConflicts = conflicts.filter((c) => c.field === 'tier_c_merge');
