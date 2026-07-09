@@ -423,6 +423,8 @@ entries (see PROJECT-KNOWLEDGE, drop lists).
   per-artist admit so genuinely-Korean rows self-reject without a hand-maintained drop-list
   entry. Filter order is load-bearing (`assertPhaseOrder` at module load), so this needs design —
   e.g. a new KOR-pro-reject step placed among steps 0–3, NOT a reorder of the admit steps.
+  **HELD (2026-07-10, owner): do not start without an explicit owner go**, and in any case not
+  before the #97 crawl gate has soaked at least one weekly crawl.
 - **Search-parity baseline regeneration policy.** The weekly crawl changes corpus identity by
   design, but `apps/web/src/lib/search-parity.golden.test.ts` pins a sha256 + record count and
   regenerates ONLY by hand (`UPDATE_PARITY_SNAPSHOT=1` + a human jaccard-diff review). So every
@@ -474,9 +476,11 @@ are DROP→ADMIT flips, so genuine-JP dropout is structurally impossible. A full
 flips** in either direction for all three predicates — the widening is latent
 for today's catalog and only affects future rows carrying those code points.
 
-**Phase 2 (deferred — proceed after the golden gate has soaked one crawl
-cycle):** unify the remaining three predicates, which sit on ADMIT/DROP-critical
-paths whose real JOYSOUND foreign-name distribution is not yet validated:
+**Phase 2 (deferred — HELD 2026-07-10, owner: do not start without an explicit
+owner go; technical precondition unchanged — proceed only after the golden gate
+has soaked one crawl cycle):** unify the remaining three predicates, which sit
+on ADMIT/DROP-critical paths whose real JOYSOUND foreign-name distribution is
+not yet validated:
 - `RE_HANGUL` → `hasHangul` (`\p{Script=Hangul}`): adds half-width Hangul and
   Jamo Extended-A/B → widens the `foreign-korean` DROP directly;
 - `RE_HAN_FOREIGN` → `hasHan` (`\p{Script=Han}`): adds supplementary-plane Han →
