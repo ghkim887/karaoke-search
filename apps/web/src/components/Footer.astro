@@ -85,6 +85,8 @@ const dbDate = maxCrawledDate(records.map((record) => record.crawled_at));
         if (!response.ok) return;
         const data = (await response.json()) as { dbUpdatedAt?: unknown };
         const value = typeof data.dbUpdatedAt === 'string' ? data.dbUpdatedAt : '';
+        // This YYYY-MM-DD shape is the worker's /api/meta contract; it is pinned
+        // worker-side in apps/worker/test/meta-contract.test.ts so the two can't drift.
         if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
         dateEl.textContent = value;
         // Reveal the token if the build-time corpus had no date but the live DB
