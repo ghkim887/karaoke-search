@@ -34,7 +34,16 @@
  * Usage:
  *   node scripts/joysound-detail-sweep.mjs <listing-rows.jsonl> <out-decision-log.jsonl> <corpus-songs.json> [--limit N]
  */
-import { createWriteStream, existsSync, mkdirSync, readFileSync, truncateSync } from 'node:fs';
+import {
+  closeSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readSync,
+  statSync,
+  truncateSync,
+} from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { isCliInvocation } from './lib/cli.mjs';
@@ -192,15 +201,44 @@ async function readUniqueRows(inPath, limit) {
 }
 
 /**
+ * Byte offset of the FINAL `\n` in `outPath` (0-based), or -1 when the file has
+ * none, plus the file size. Reads only backward tail chunks — never the whole
+ * file, which at fullCatalog scale is multiple GB and blows past V8's ~512MB
+ * string cap. A `\n` (0x0A) byte can never occur inside a multibyte UTF-8
+ * sequence, so scanning raw bytes for it is exact regardless of the log's text.
+ */
+function scanNewlineBounds(outPath) {
+  const fileSize = statSync(outPath).size;
+  if (fileSize === 0) return { fileSize: 0, lastNewlineByteOffset: -1 };
+  const buf = Buffer.allocUnsafe(Math.min(64 * 1024, fileSize));
+  const fd = openSync(outPath, 'r');
+  try {
+    let pos = fileSize;
+    while (pos > 0) {
+      const readStart = Math.max(0, pos - buf.length);
+      const bytesRead = readSync(fd, buf, 0, pos - readStart, readStart);
+      for (let i = bytesRead - 1; i >= 0; i -= 1) {
+        if (buf[i] === 0x0a) return { fileSize, lastNewlineByteOffset: readStart + i };
+      }
+      pos = readStart;
+    }
+    return { fileSize, lastNewlineByteOffset: -1 };
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/**
  * Read the existing out-decision-log (if present) and return the set of
  * `naviGroupId`s already decided. Resume mechanism: those rows are skipped and
  * the file is APPENDED, never rewritten — so a crash mid-run loses at most the
- * in-flight row, not the whole log.
+ * in-flight row, not the whole log. The log grows to multiple GB, so both the
+ * torn-line scan and the skip-set scan STREAM the file (never a whole-file
+ * `readFileSync`, which throws past V8's ~512MB string cap).
  */
-function readResumeSkipSet(outPath) {
+export async function readResumeSkipSet(outPath) {
   const skip = new Set();
   if (!existsSync(outPath)) return skip;
-  const raw = readFileSync(outPath, 'utf8');
   // A crash mid-append can leave a TORN final line: a fragment with no trailing
   // newline. We must NOT weld the next appended record onto it — append mode
   // (`flags:'a'`) opens at the very end of the fragment, so without a guard the
@@ -211,41 +249,35 @@ function readResumeSkipSet(outPath) {
   // re-appended cleanly (the fragment is excluded from the skip-set scan below).
   // Truncation is O(1) (a length set, not a rewrite), so it stays cheap on the
   // multi-GB resume log.
-  if (raw.length > 0 && !raw.endsWith('\n')) {
-    const lastNewline = raw.lastIndexOf('\n');
-    // Byte length of the kept prefix (everything through the last newline; 0
-    // when the whole file is one torn line). The log is ASCII-safe JSON but
-    // JOYSOUND titles are UTF-8, so measure BYTES.
-    const keepBytes = Buffer.byteLength(raw.slice(0, lastNewline + 1), 'utf8');
+  const { fileSize, lastNewlineByteOffset } = scanNewlineBounds(outPath);
+  const endsWithNewline = fileSize > 0 && lastNewlineByteOffset === fileSize - 1;
+  if (fileSize > 0 && !endsWithNewline) {
+    // Byte offset through the last newline (0 when the whole file is one torn
+    // line). The log is ASCII-safe JSON but JOYSOUND titles are UTF-8, so this
+    // is a BYTE length.
+    const keepBytes = lastNewlineByteOffset < 0 ? 0 : lastNewlineByteOffset + 1;
     truncateSync(outPath, keepBytes);
     console.warn(
       '[joysound-detail-sweep] resume: dropped a torn final line (crash mid-append); the owning row is re-fetched',
     );
   }
-  // Scan ONLY the kept prefix (everything through the last newline) — exactly
-  // what survived the truncation above. A crash can land BETWEEN a record's
-  // text and its trailing newline, leaving a torn tail that is nonetheless
-  // COMPLETE JSON; scanning `raw` would parse that fragment into the skip set
-  // even though it was just truncated off disk — the row would never be
-  // re-fetched and would be permanently missing from the log. When the whole
-  // file is one torn line (no newline at all, lastIndexOf === -1), the kept
-  // prefix is empty and nothing is parsed — consistent with the
-  // truncate-to-zero above.
-  const parseable = raw.endsWith('\n') ? raw : raw.slice(0, raw.lastIndexOf('\n') + 1);
+  // Scan ONLY the kept prefix (everything through the last newline). After the
+  // truncation above the on-disk file IS that prefix and ends with a newline, so
+  // streaming every line yields exactly the surviving records — the torn
+  // fragment is physically gone and never enters the skip set (which would
+  // otherwise leave its row permanently unfetched). When the whole file was one
+  // torn line it is now empty and nothing is parsed. A corrupt INTERIOR line is
+  // skipped silently (it should never happen: every append is one
+  // newline-terminated JSON.stringify).
   let kept = 0;
-  for (const line of parseable.split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (trimmed === '') continue;
-    try {
-      const rec = JSON.parse(trimmed);
-      if (rec && typeof rec.naviGroupId === 'string' && rec.naviGroupId !== '') {
-        skip.add(rec.naviGroupId);
-        kept += 1;
-      }
-    } catch {
-      // A corrupt interior line (should not happen — every append is one
-      // newline-terminated JSON.stringify). The torn final line never reaches
-      // here: it is excluded from `parseable` above.
+  for await (const rec of streamJsonl(outPath, {
+    onParseError: () => {
+      /* corrupt interior line: skip silently, matching the prior empty catch */
+    },
+  })) {
+    if (rec && typeof rec.naviGroupId === 'string' && rec.naviGroupId !== '') {
+      skip.add(rec.naviGroupId);
+      kept += 1;
     }
   }
   if (kept > 0) {
@@ -294,7 +326,7 @@ export async function runDetailSweep({
   //    291,253 unique naviGroupIds, none mapping to >1 selSongNo). A future
   //    multi-sel listing dump would break that — it would skip every selSongNo
   //    under an already-seen naviGroupId, not just the decided one.
-  const skip = readResumeSkipSet(outPath);
+  const skip = await readResumeSkipSet(outPath);
   const pending = rows.filter((row) => !skip.has(String(row.naviGroupId ?? '')));
   const resumedSkipped = rows.length - pending.length;
 
