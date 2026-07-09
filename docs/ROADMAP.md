@@ -351,14 +351,16 @@ separately). Deferred, needing an owner decision or its own change:
   (materialize-or-document decision; the legacy-migration rebuild path already
   materializes them, the touched-only path does not).
 
-Low-severity bugs:
+Low-severity bugs (all fixed 2026-07-10, test-first):
 
-- hiragana iteration marks ゝ/ゞ are dropped in `kanaToRomaji`/`kanaToHangul`;
-- web fallback banner can show on the Browse landing view;
-- Favorites tab lacks a pending state during API hydration;
-- worker rate-limit bucket map is never pruned (unbounded growth);
-- worker `close()` does not close idle keep-alive sockets;
-- hint fields emit Hangul `initial` tokens, breaking server/offline parity
+- fixed: hiragana iteration marks ゝ/ゞ are dropped in `kanaToRomaji`/`kanaToHangul`;
+- fixed: web fallback banner can show on the Browse landing view;
+- fixed: Favorites tab lacks a pending state during API hydration;
+- fixed: worker rate-limit bucket map is never pruned (unbounded growth);
+- fixed: worker `close()` does not close idle keep-alive sockets (defensive —
+  on the repo's Node 24 runtime `server.close` already reaps idle sockets, so
+  the fix is a verified no-op there; no discriminating test is possible);
+- fixed: hint fields emit Hangul `initial` tokens, breaking server/offline parity
   (latent — reading fields are already excluded, hint fields are not).
 
 Behavior-preserving refactor batch:
