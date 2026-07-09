@@ -1,100 +1,118 @@
-# 세션 핸드오프 — ko 한국어 단독 + R4-4 + R1 전량 리뷰 (2026-07-05)
+# 세션 핸드오프 — 전레포 감사 + 수정 배치 3PR (2026-07-09)
 
 다음 세션이 stale 요약이 아니라 디스크/git/서버의 실제 상태에서 이어가도록 작성.
-직전 버전(2026-07-04, v21 라이브)은 아래로 갱신됨. 2026-07-05 세션은 R2 잔여(ko
-한국어 단독화)·R4-4(artistId 감사 신호)·R1(감사 결과 전량 웹리뷰)에 집중.
-
-## Active goal
-
-로드맵(docs/ROADMAP.md R1–R5) 순차 배송. 현재까지 **R1(감사 + 전량 리뷰),
-R2(i18n+라이선스+footer+ko 한국어 단독), R4-1(ruby 검색), R4-4(artistId 감사
-신호)가 main에 반영 완료**. reviewedMergePairs는 계속 누적 중이며 **다음 주간
-크롤에 코퍼스로 적용**됨(현 코퍼스 v21에는 미반영).
+직전 버전(2026-07-05 작성)은 아래로 갱신됨. 이번 세션은 ①전레포 무동작변경
+리팩토링·버그 감사(6 병렬 리뷰어) ②감사 수정 배치(PR #96) ③main 이중 회귀
+발견·치유(PR #97/#98)에 집중.
 
 ## Current state of record
 
-- **main**: `fb04ab5` == origin/main. 이번 세션 PR **#81–#88** 여덟 건 머지
-  (전부 author/reviewer 독립 에이전트 검수 + CI(verify/e2e) 통과 후 squash).
-- **서빙 DB**: hermes-host `db/current -> releases/data-2026-07-04-v21-title-ruby`
-  (v21, 1.81 GiB, `/api/meta` → `2026-06-18`). **이번 세션 DB 릴리스 없음** —
-  누적된 병합쌍은 다음 크롤 corpus에 적용. 롤백용 previous = v20.
-- **라이브 웹**: karaokedb.pages.dev — **ko 크롬이 한국어 단독**(PR #81,
-  2026-07-04 PowerShell wrangler 배포 + 실브라우저 검증 완료: 이중언어 잔재 0,
-  라이브 검색 정상). 부제 `Karaoke Search` + 푸터 워드마크 `KARAOKE SEARCH`만
-  브랜드로 영어 잔존. 한/영/일 스위처·MIT footer·실시간 DB 날짜·PWA 유지.
-- **작업 클론**: scratchpad(세션 종료 시 소멸). 다음 세션은 새로 `git clone
-  --filter=blob:none https://github.com/ghkim887/karaoke-search`.
-  Z:\karaoke는 라이브 NAS 마운트(코드 작업 금지, 조회/데이터 전송용).
-  ⚠️ 이번 세션 gotcha: 클론 node_modules에서 `@astrojs/markdown-remark/dist/
-  types.js`가 중간에 유실돼 astro check/build/knip이 ERR_MODULE_NOT_FOUND로
-  깨짐 → `corepack pnpm install --force`(재추출)로 복구(frozen install은 안 됨).
+- **main**: `a8827b8` (#94 guard-fix + #95 blog+tj corpus 머지 상태). **⚠️ main CI RED**
+  — 아래 열린 PR 3건이 그린으로 되돌리는 경로.
+- **열린 PR (오너 리뷰 대기, 머지 그랜트 없음)**:
+  - **#96** `fix/2026-07-09-audit-batch-a` — 감사 HIGH/MED 3건 수정 + 문서.
+    author→3패스 리뷰(스펙 APPROVE / 품질 APPROVE-W-MINOR 마이너 적용 / e2e APPROVE)→게이트 그린.
+  - **#97** `fix/2026-07-09-crawl-pr-ci-gate` — crawl.yml에 PR 생성 전
+    `pnpm --filter @karaoke/crawler test` 게이트. 리뷰 1라운드 BLOCKER(전체 스위트는
+    패리티 identity-핀 골든 때문에 매 크롤 false-red) 잡혀 크롤러 스코프로 재작업, 재리뷰 APPROVE.
+  - **#98** `fix/2026-07-09-korean-artist-leak` — #95 회귀 치유(아래 상세). 리뷰 APPROVE(8 하드체크 독립 재현).
+    **머지 순서 권고: #98 먼저**(main 그린 복구) → #96/#97은 CI 재실행하면 그린.
+  - #96과 #98이 둘 다 docs/ROADMAP.md에 Todo 추가 — 나중에 머지되는 쪽에서 사소한 충돌 가능(자명한 해소).
+- **서빙 DB**: oci `db/current -> v21` 변화 없음. v22 프로모션 보류 유지(커버리지 회귀 −49,683).
+- **라이브 웹**: karaokedb.pages.dev 변화 없음(이번 세션 배포 없음).
+- **작업 클론**: scratchpad(소멸성). 다음 세션은 fresh clone 후 이 문서부터.
 
-## Completed evidence (2026-07-05 세션)
+## main 이중 회귀의 전말 (#95발, 이번 세션 발견·치유)
 
-1. **#81 ko 한국어 단독화**: i18n.ts ko 카탈로그 이중언어 19키 → 한국어 단독
-   (aria-label 포함), `bilingual()` 헬퍼 제거, 푸터 disclaimer 로케일당 한 줄
-   (`applyDisclaimer` ko→en 절 제거, Footer.astro en span `hidden`). 드리프트
-   가드 테스트를 "byte-identical" → "ko Korean-only(브랜드 appSubtitle 예외)"로
-   재작성. 배포 + 실브라우저 검증.
-2. **#82 R4-4 artistId 감사 신호**: `scripts/build-joysound-artist-id-index.mjs`
-   (NAS 상세 로그 150MB 스트리밍 → {joysoundNumberToArtistId, artistNameToArtistIds},
-   gitignore), 감사에 `--artist-id-index` 플래그(candidate_artist_id/song_artist_ids/
-   artist_id_match 컬럼). **핵심 발견**: match는 rename 자동승격이 아니라 tier-B
-   동명이곡 **disambiguation aid**(실측 23 tier-A 매치, 0 tier-B). 순수 additive.
-3. **#84 R1 tier-A 후속 + 감사 개선**: 확정 병합쌍 6건 인코딩; 감사
-   `stripDecorations`가 `〈…〉`/`《…》` 태그 벗기도록 개선 → 재감사 tier A 39→50(+11).
-4. **#85 R1 tier-A 배치2**: 〈〉로 발굴된 +11 리뷰 → 7 병합쌍(浜崎 GREEN 등),
-   4 버전애매 보류.
-5. **#86 R1 B티어**: 6개 병렬 웹검색 에이전트로 needs-review 118곡 리뷰 →
-   **77 병합쌍 인코딩**(関ジャニ∞→SUPER EIGHT ~20, ENDLICHERI→ENDRECHERI,
-   ナイトメア→NIGHTMARE, 한자/로마자/성우 크레딧). 코퍼스 분류 스크립트로
-   표현불가 1(blog-428-4)만 배제.
-6. **#87 R1 reject-set 감사**: 4 병렬 에이전트로 자동 리젝 65곡 검증 →
-   **~29% false-reject 발견**(JOYSOUND가 한 아티스트에 여러 artistId 부여:
-   世界の終わり=SEKAI NO OWARI, 개명, 성우-캐릭터), **14 병합쌍 복구**.
-   → **R4-4 신호의 리젝 방향은 맹신 금지**(매치 방향은 고정밀).
-7. **#88 R1 C-tier 검수**: 아티스트키 재후보(126곡) 9 병렬 에이전트 웹리뷰 →
-   **19 표기변형 복구**(구자체 歸る=帰る·會津=会津, romaji↔카나 Ultra Relax·
-   STAMINA, 부제/태그/깨진 프리픽스), 2 표현불가(ヒプマイ, 후보 자체 TJ).
-   나머지 tier-C는 진짜 catalog gap(같은 아티스트·다른 곡 / 아티스트 부재).
+1. **크롤 PR에는 ci.yml이 아예 안 돎**: crawl PR은 기본 GITHUB_TOKEN으로 열리는데
+   GitHub는 GITHUB_TOKEN이 만든 PR에 `on: pull_request`를 트리거하지 않음 → #95가
+   무검증 머지되고 main push에서야 red(run 29011788138). → **#97이 게이트 신설**.
+2. **한국어 누출 145행**(테스트 가시) + **22행**(같은 3팀의 라틴제목/한자표기라
+   테스트 정규식 밖): TJ 아티스트검색이 일본시장 카탈로그 보유 한국 아티스트
+   (루시/로이킴/BOYNEXTDOOR)를 JPN 오판정(JPN≥3·KOR 0표), 드롭리스트에 3팀 부재라
+   크롤·파이프라인 양쪽 무반응. 곡 단위 pro 신호는 145행 전부 KOR로 정답을 갖고
+   있었음(시스템 수정은 ROADMAP "TJ filter seam"). → **#98이 드롭리스트 3팀 + 167행
+   퍼지**. tj-52990 "Count To Love"(BOYNEXTDOOR)만은 진짜 일본 싱글(BOYLIFE
+   2025-08-18, 빌보드재팬 Hot 100 1위)로 웹검증되어 reviewedSongOverrides allow로
+   보존(크롤 필터 step2 allow가 step3 deny 선행 — 기계 강제라 크롤에도 durable).
+3. **web 패리티 identity 게이트 실패(14건)가 bail에 은폐**: `pnpm -r test`는 crawler
+   실패에서 중단 → apps/web 실행 자체가 안 됨. #95가 코퍼스를 바꾸고 패리티
+   베이스라인(sha256+레코드수 핀)을 재생성 안 함. → **#98이 베이스라인 재생성**
+   (퍼지 격리 jaccard +0.0023 개선, 하락 쿼리 0).
+4. **smoke 6건 = blog-* id가 위치 기반이라 재크롤마다 id→곡 재배정**(#95: Utada
+   137/149, Ado 69/76, ZUTOMAYO 64/75, Yonezu 99/121). 곡들은 새 id에서 여전히 1위 —
+   검색 정상, 픽스처만 stale. → **#98이 6개 expectId 재고정**(karaoke number로
+   동일성 검증). **제품 함의(신규 발견)**: localStorage 즐겨찾기
+   (karaoke-favorites:v1)가 record id를 저장 → 재배정 크롤마다 유저 즐겨찾기가
+   조용히 다른 곡으로 바뀜. reviewedMergePairs는 벤더번호 키라 면역. 안정 식별자
+   설계 = ROADMAP(오너 결정). memory `blog-ids-positional-reshuffle-each-crawl`.
+5. **퍼지 도구 결함**: drop-artist-leaks.mjs가 reviewedSongOverrides allow를 무시
+   (docstring의 "classifyRecord와 동일 predicate" 주장 거짓). → **#98이 allow-list
+   패리티 수정**(+테스트 2건; chinese anomaly 하드드롭은 step-0 미러라 무조건 유지).
 
-**누적 reviewedMergePairs: Tier E = 191, Tier F = 161** (세션 시작 E84/F145).
-전부 다음 크롤 때 코퍼스에 적용. **R1 감사 3개 티어(A/B/C) 전량 리뷰 완료.**
+## 전레포 감사 결과 (2026-07-09, read-only, main a8827b8)
+
+6 병렬 리뷰어(search/schema · data-store · worker · web · crawler · scripts+CI),
+certain/likely 전건 오케스트레이터 독립 재검증. **PR #96으로 수정 출하 3건**:
+- **[HIGH] 레거시(pre-#93) DB에 delta patch → 미변경 곡 search_texts 전멸**
+  (schema.ts 마이그레이션이 테이블째 DROP 후 touched만 재작성; 라이브 v21이 정확히
+  레거시 형태). 수정: 마이그레이션 드롭 감지 시 전곡 재유도(full import 등가,
+  현행 스키마 delta 불변). 회귀 테스트 4건 + e2e(CLI patch→serve 왕복).
+- **[MED] 긴 romaji q → wanakana 재귀 스택오버플로 → /api/search 500**. 수정:
+  expandSearchQuery 256cp 가드(무throw) + worker 400(코드포인트 계수, astral 검증).
+- **[MED-잠복] decision-log >512MB면 스윕 재개·후보빌드 즉사**(readFileSync V8
+  문자열 상한). 수정: streamJsonl 스트리밍(torn-line 바이트 절단 보존, >64KB
+  멀티청크 테스트).
+
+**미수정·ROADMAP 기록(오너 판단 대기)**: delta 'affected' 모드 전역 idf 스테일
+(delta DB 랭킹 ≠ full rebuild; 112/148 토큰 재현), Tier B 동일소스 병합 입력순서
+의존(생존자 플립 재현; 동일벤더 번호 소실), delta의 미변경곡 힌트 무시, low 6건
+(반복부호 ゝ/ゞ 전사 탈락, web 폴백 배너 오표시, Favorites pending 부재, rate-limit
+Map 무정리, close() keep-alive, hint 초성 패리티), 무동작변경 리팩토링 8건,
+/api/meta↔Footer 날짜 계약 테스트. **감사 중 기각 2건(재발굴 금지)**: Footer 날짜
+갱신은 비버그(worker가 YYYY-MM-DD 절단), endStream 에러 삼킴은 Node24에서 반증.
+
+## Grant Ledger
+
+- **전레포 감사(read-only)** — 2026-07-09 사용자 요청. 완료.
+- **옵션 A 수정 배치 구현+PR** — 2026-07-09 "a 진행하고 문서화해줘". PR #96 오픈 완료.
+- **A+B 회귀 치유(코퍼스 퍼지+crawl 게이트)+PR** — 2026-07-09 "그대로 진행해".
+  PR #97/#98 오픈 완료. 도구 확장·tj-52990 allow·smoke 재고정은 오케스트레이터가
+  증거 기반 세부 승인.
+- **머지 그랜트 없음** — #96/#97/#98 전부 오너 리뷰 대기.
+- (이월) 읽기전용 prod DB 조회 grant(2026-07-08)는 이번 세션 미사용; oci ssh 보류 유지.
 
 ## Open items
 
-- **크롤 소킹 게이트(다음 주간 crawl.yml 후 확인)**:
-  1. 병합쌍(현 E191/F161, 세션 추가분 ~120)이 실제 적용됐는지(대상 곡 joysound
-     번호 획득). 골든 스냅샷/baseline 재생성 시 게이트 재실행.
-  2. 크롤러 ruby persistence(백필 미커버 ~70k곡).
-  3. classifier Phase-1 골든 게이트 첫 소킹.
-- **R1 잔여**:
-  1. **머저 메커니즘 확장** — 확정됐으나 현 tier E/F로 인코딩 불가한 ~10쌍:
-     후보가 자체 TJ 보유(tj-25103, tj-27098, tjpdf-28268, tjpdf-28871/28879),
-     대상이 tj+ky 복수 번호(blog-1184-1/3, blog-487-11, blog-163-90, blog-428-4).
-  2. **버전/VA 애매 보류 ~7건**(오너 판단): STILL 언어판(tj-26271/26350),
-     BLACK DIAMOND 메이저/인디(tj-27017), ねねね 레코おと/본인영상(tj-52426),
-     Various-Artists 플레이스홀더(tj-26410/26411/26827).
-  3. C-tier(제목 매치 없음 145곡) 검수 **완료(#88)** — 19 표기변형 복구,
-     나머지는 진짜 catalog gap. (더 파려면 아티스트키 후보 없던 19곡은 JOYSOUND
-     자체 부재 확정.)
-- **로드맵 백로그(우선순위 제안 순)**:
-  1. R4-2 tieupNames → media_context / R4-3 lyricist·composer 인덱싱(원천:
-     NAS runs/data-2026-06-14-.../joysound-detail-decision-log.jsonl 150MB).
-  2. R4-4 Option B(artistId를 코퍼스 스키마에 영속화 → 미래 자동 병합) — 보류됨.
-  3. R3 오프라인 전체 팩 / R5 ky·dam 준비(ROADMAP 참조).
-- **오너 결정 보류**: ROADMAP.md Open-questions — 오프사이트 백업, 워치독 알림 채널,
-  reading 필드 gram3 트림. **ko 한국어 단독화는 해소됨(#81 배송)**.
-- **영구 규칙**: 권한/시크릿 느슨함 의도(수정 금지), release 디렉터리 in-place
-  수정 금지(db/current 심링크), 보존 = current+1, 웹 빌드/wrangler는
-  PowerShell에서(MSYS env 오염), 에이전트 게이트 = CI 미러(biome/-r typecheck/
-  -r test/-r build/knip 고정), Pages 배포 후 실브라우저 검증 필수.
+1. **오너: PR 리뷰/머지 — #98 → #96 → #97 순 권고**(#98 먼저면 main 그린 복구,
+   이후 둘은 CI 재실행으로 그린 확인). ROADMAP 충돌 시 자명 해소.
+2. **오너 결정 대기(전부 ROADMAP 기록됨)**: idf drift 수용/수정, TierB 타이브레이크,
+   delta 힌트 정책, blog-id 안정 식별자 설계(즐겨찾기 무결성), 패리티 베이스라인
+   재생성 정책(수동뿐 → 매 크롤 red 유발 구조), TJ filter seam(곡 KOR pro 신호
+   선참조), smoke 안정키 피닝.
+3. **리팩토링 8건**은 원하면 chore PR 1건으로 일괄 처리 가능(안전성 논증 완료:
+   worker 죽은 자모 분기, hasNonAsciiCharacter 중복, stableStringify×3, ja-JP
+   정규화 중복, override Set 사전 정규화, marker 가드 통합, 한글 상수 중복,
+   SearchVendor/Vendor 유니온).
+4. (이월) 주간 크롤 소킹 게이트 3종 · R1 잔여(embedded-TJ/KY 브리지 본선) · R3/R5.
+   다음 주간 크롤(~금)은 #97 머지 시 새 게이트 하에 돎 — 통과가 #97의 실검증.
+5. (이월) v22는 fullCatalog 리스팅 필요(from-corpus 재사용 금지, memory 참조).
+
+## 영구 규칙 (기존 유지 + 이번 세션 추가)
+
+- (기존) 권한/시크릿 느슨함 의도(수정 금지), release 디렉터리 in-place 수정 금지,
+  보존 = current+1, 웹 빌드/wrangler는 PowerShell(MSYS env 오염), 에이전트 게이트 =
+  CI 미러(biome/-r typecheck/-r test/-r build/knip 고정), Pages 배포 후 실브라우저
+  검증 필수.
+- **(신규) `pnpm -r test`는 bail** — 첫 패키지 실패가 뒤 패키지 결과를 은폐. 전수
+  판정은 `-r --no-bail` 또는 패키지별 실행으로.
+- **(신규) 크롤 PR에는 ci.yml이 안 돎**(GITHUB_TOKEN PR은 pull_request 미트리거) —
+  #97 게이트가 방어선. 크롤로 코퍼스가 바뀌면 패리티 베이스라인 재생성 필요.
+- **(신규) blog-* id는 위치 기반, 크롤마다 재배정** — id를 고정하는 픽스처/기능
+  금지, 안정키는 karaoke number(tj/ky/joysound).
 
 ## Next first action
 
-1. 주간 크롤 완료 대기 → "크롤 소킹 게이트" 3종 확인(병합쌍 적용·ruby 유입·
-   골든 게이트). 문제없으면 새 corpus로 v22 릴리스 사이클(런북: README-ops
-   "Release promotion runbook", 힌트 jsonl 포함 필수).
-2. 또는 오너 지시대로 R1 머저 메커니즘 확장(표현불가 ~8쌍) / R4-2·R4-3 /
-   버전 보류 판단부터 — 코드 작업은 전부 로컬 클론 + author/reviewer 독립
-   에이전트 + CI 미러 게이트로.
+1. 오너 PR 리뷰(#98 → #96 → #97 순 권고). 머지 후 main CI 그린 확인.
+2. 다음 주간 크롤에서 #97 게이트 첫 실전 + 크롤 소킹 게이트 3종 확인.
+3. 원하면: 리팩토링 8건 chore PR / idf·TierB·blog-id 설계 브레인스토밍부터.
