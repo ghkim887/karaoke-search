@@ -5,21 +5,19 @@
 리팩토링·버그 감사(6 병렬 리뷰어) ②감사 수정 배치(PR #96) ③main 이중 회귀
 발견·치유(PR #97/#98)에 집중.
 
-## Current state of record
+## Current state of record (2026-07-10 갱신)
 
-- **main**: `a8827b8` (#94 guard-fix + #95 blog+tj corpus 머지 상태). **⚠️ main CI RED**
-  — 아래 열린 PR 3건이 그린으로 되돌리는 경로.
-- **열린 PR (오너 리뷰 대기, 머지 그랜트 없음)**:
-  - **#96** `fix/2026-07-09-audit-batch-a` — 감사 HIGH/MED 3건 수정 + 문서.
-    author→3패스 리뷰(스펙 APPROVE / 품질 APPROVE-W-MINOR 마이너 적용 / e2e APPROVE)→게이트 그린.
-  - **#97** `fix/2026-07-09-crawl-pr-ci-gate` — crawl.yml에 PR 생성 전
-    `pnpm --filter @karaoke/crawler test` 게이트. 리뷰 1라운드 BLOCKER(전체 스위트는
-    패리티 identity-핀 골든 때문에 매 크롤 false-red) 잡혀 크롤러 스코프로 재작업, 재리뷰 APPROVE.
-  - **#98** `fix/2026-07-09-korean-artist-leak` — #95 회귀 치유(아래 상세). 리뷰 APPROVE(8 하드체크 독립 재현).
-    **머지 순서 권고: #98 먼저**(main 그린 복구) → #96/#97은 CI 재실행하면 그린.
-  - #96과 #98이 둘 다 docs/ROADMAP.md에 Todo 추가 — 나중에 머지되는 쪽에서 사소한 충돌 가능(자명한 해소).
+- **main**: `1bd6390` — **CI GREEN 복구 완료**. 2026-07-09~10 세션의 5개 PR 전부
+  오너 그랜트("전부 머지")로 스쿼시 머지됨:
+  - **#98** #95 회귀 치유(167행 퍼지 + tj-52990 allow + 도구 allow-list 패리티 +
+    패리티 베이스라인 재생성 + smoke 6건 재고정) — 이 머지로 main 그린 복구.
+  - **#96** 감사 수정 배치(레거시 delta 전곡 재유도 HIGH / long-q 400 / 512MB 스트리밍 + 문서).
+  - **#97** crawl.yml PR-전 크롤러 테스트 게이트(다음 주간 크롤이 첫 실검증).
+  - **#99** HANDOFF 체크포인트. **#100** 감사 리팩토링 8건(무동작변경 —
+    파생테이블 덤프/프로브 바이트 동일 증명, 리뷰 APPROVE, main push CI 확인).
 - **서빙 DB**: oci `db/current -> v21` 변화 없음. v22 프로모션 보류 유지(커버리지 회귀 −49,683).
-- **라이브 웹**: karaokedb.pages.dev 변화 없음(이번 세션 배포 없음).
+- **라이브 웹**: karaokedb.pages.dev 변화 없음(이번 세션 배포 없음). 코퍼스 167행
+  퍼지는 다음 배포 때 번들에 반영됨.
 - **작업 클론**: scratchpad(소멸성). 다음 세션은 fresh clone 후 이 문서부터.
 
 ## main 이중 회귀의 전말 (#95발, 이번 세션 발견·치유)
@@ -84,18 +82,17 @@ Map 무정리, close() keep-alive, hint 초성 패리티), 무동작변경 리�
 
 ## Open items
 
-1. **오너: PR 리뷰/머지 — #98 → #96 → #97 순 권고**(#98 먼저면 main 그린 복구,
-   이후 둘은 CI 재실행으로 그린 확인). ROADMAP 충돌 시 자명 해소.
+1. ~~PR 리뷰/머지~~ **완료(2026-07-10, #96–#100 전부 머지, main 그린)**.
 2. **오너 결정 대기(전부 ROADMAP 기록됨)**: idf drift 수용/수정, TierB 타이브레이크,
    delta 힌트 정책, blog-id 안정 식별자 설계(즐겨찾기 무결성), 패리티 베이스라인
    재생성 정책(수동뿐 → 매 크롤 red 유발 구조), TJ filter seam(곡 KOR pro 신호
    선참조), smoke 안정키 피닝.
-3. **리팩토링 8건**은 원하면 chore PR 1건으로 일괄 처리 가능(안전성 논증 완료:
-   worker 죽은 자모 분기, hasNonAsciiCharacter 중복, stableStringify×3, ja-JP
-   정규화 중복, override Set 사전 정규화, marker 가드 통합, 한글 상수 중복,
-   SearchVendor/Vendor 유니온).
+3. ~~리팩토링 8건~~ **완료(#100 머지)**. 감사의 low 잔여(반복부호 ゝ/ゞ 전사,
+   web 폴백 배너/Favorites pending, rate-limit Map 정리, close() keep-alive,
+   hint 초성 패리티)는 ROADMAP에 남아 있음 — 수정 시 동작 변경 수반이라 오너 지시 때 착수.
 4. (이월) 주간 크롤 소킹 게이트 3종 · R1 잔여(embedded-TJ/KY 브리지 본선) · R3/R5.
-   다음 주간 크롤(~금)은 #97 머지 시 새 게이트 하에 돎 — 통과가 #97의 실검증.
+   다음 주간 크롤(~금)은 #97 게이트 하에 돎 — 통과가 #97의 실검증. 크롤이 blog
+   페이지를 다시 만지면 패리티 베이스라인 재생성 필요(영구 규칙 참조).
 5. (이월) v22는 fullCatalog 리스팅 필요(from-corpus 재사용 금지, memory 참조).
 
 ## 영구 규칙 (기존 유지 + 이번 세션 추가)
