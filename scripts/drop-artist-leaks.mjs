@@ -10,10 +10,18 @@
  * artist splitter because Python cannot import the TS source. This script
  * imports the canonical implementations straight from the built crawler dist
  * (`isInDropList` / `isInChineseDropList` / `normalizeForMatch` /
- * `splitArtistCollab`), so the corpus-level filter is EXACTLY the same
- * predicate the crawl-time parser applies in `classifyRecord` — zero parity
- * machinery for the Chinese list (the Korean sidecar stays: it still has a
- * Python consumer in `scripts/ingest_anisong_pdf.py`).
+ * `splitArtistCollab` / `isReviewedTjSongAllow`) — zero parity machinery for the
+ * Chinese list (the Korean sidecar stays: it still has a Python consumer in
+ * `scripts/ingest_anisong_pdf.py`).
+ *
+ * Parity scope: this tool mirrors the crawl-time filter chain's `curated-allow`
+ * (reviewed-song-allow) and `deny-list` (drop-list-reject) steps — an artist-name
+ * match drops a row UNLESS its TJ number is reviewed-song-allow-listed, exactly as
+ * the chain admits reviewed songs (step 2) before the drop-list reject (step 3).
+ * It does NOT reproduce the chain's cache-driven steps (reviewed-song-drop,
+ * non-jpn-pro-reject, jpn-admit-pro/artist, blog-rescue): those need the searchSong
+ * enrichment cache, which the corpus-cleanup path deliberately does not load. So
+ * this is a subset of `classifyRecord`, not the full predicate.
  *
  * Why this exists
  * ---------------
@@ -45,6 +53,9 @@
  * 3. For each record, drop if ANY component of `artist_primary` (per
  *    `splitArtistCollab` — the same decomposition the parser uses) matches
  *    the drop set, or — chinese pass — the record `id` is a catalog anomaly.
+ *    EXCEPTION: an artist-name match is spared when the record's TJ number is
+ *    reviewed-song-allow-listed (`isReviewedTjSongAllow`) — the curated
+ *    exact-TJ K-pop Japanese releases. The catalog-anomaly drop is NOT spared.
  * 4. Atomic-write the result back via `<file>.tmp` + rename (canonical
  *    pipeline byte-shape: indent=2 + trailing newline). When no records
  *    match, the corpus file is NOT rewritten — on-disk bytes survive
@@ -79,6 +90,10 @@ const KOREAN_DIST = resolve(
 const CHINESE_DIST = resolve(
   REPO_ROOT,
   'packages/crawler/dist/adapters/tj-media-direct/chineseArtistDropList.js',
+);
+const REVIEWED_OVERRIDES_DIST = resolve(
+  REPO_ROOT,
+  'packages/crawler/dist/adapters/tj-media-direct/reviewedSongOverrides.js',
 );
 
 /**
@@ -127,7 +142,7 @@ export function parseArgs(argv) {
  */
 export async function loadListPredicates(list) {
   const distModule = list === 'korean' ? KOREAN_DIST : CHINESE_DIST;
-  for (const path of [CLUSTERING_DIST, distModule]) {
+  for (const path of [CLUSTERING_DIST, distModule, REVIEWED_OVERRIDES_DIST]) {
     if (!existsSync(path)) {
       throw new Error(
         `missing crawler dist at ${path}\n  Run \`corepack pnpm --filter @karaoke/crawler build\` first.`,
@@ -137,12 +152,18 @@ export async function loadListPredicates(list) {
   const { normalizeForMatch, splitArtistCollab } = await import(
     pathToFileURL(CLUSTERING_DIST).href
   );
+  // Reviewed-song-allow (curated-allow) is TJ-number-level and list-agnostic, so
+  // it is imported once and wired into both list modes uniformly — mirroring the
+  // crawl chain, where the single reviewed-song-allow step precedes the combined
+  // Korean+Chinese drop-list-reject step.
+  const { isReviewedTjSongAllow } = await import(pathToFileURL(REVIEWED_OVERRIDES_DIST).href);
   const mod = await import(pathToFileURL(distModule).href);
   if (list === 'korean') {
     return {
       isDropKey: mod.isInDropList,
       keyCount: mod.DROP_KEY_SET.size,
       anomalyIds: new Set(),
+      isReviewedAllow: isReviewedTjSongAllow,
       normalizeForMatch,
       splitArtistCollab,
     };
@@ -151,6 +172,7 @@ export async function loadListPredicates(list) {
     isDropKey: mod.isInChineseDropList,
     keyCount: mod.CHINESE_ARTIST_DROP_LIST.size,
     anomalyIds: CATALOG_ANOMALY_IDS,
+    isReviewedAllow: isReviewedTjSongAllow,
     normalizeForMatch,
     splitArtistCollab,
   };
@@ -173,20 +195,39 @@ export function isArtistDropped(artist, { isDropKey, normalizeForMatch, splitArt
  * Partition `records` into kept / dropped per the drop predicate + anomaly
  * IDs. Pure — no I/O. Returns `{ kept, droppedCount, droppedSamples }` where
  * `droppedSamples` is the first 10 `[id, artist]` pairs.
+ *
+ * reviewed-song-allow: a row that the artist deny-list would drop is SPARED when
+ * its TJ karaoke number is on the reviewed-song allow-list (`isReviewedAllow`).
+ * This mirrors the crawl-time filter chain, where reviewed-song-allow (step 2)
+ * precedes drop-list-reject (step 3): a hand-audited K-pop / Korean-artist
+ * Japanese release keyed by exact TJ number survives the artist-name drop. The
+ * catalog-anomaly hard-drop (chinese pass) is NOT spared — those rows have a
+ * malformed artist field, closer to the chain's hard-drop phase.
  */
 export function partitionCorpus(records, predicates) {
   const kept = [];
   const droppedSamples = [];
   let droppedCount = 0;
+  const recordDrop = (recId, artist) => {
+    droppedCount += 1;
+    if (droppedSamples.length < 10) {
+      droppedSamples.push([recId === '' ? '<no-id>' : recId, artist]);
+    }
+  };
   for (const rec of records) {
     const recId = rec.id == null ? '' : String(rec.id);
     const artist = typeof rec.artist_primary === 'string' ? rec.artist_primary : '';
-    if (predicates.anomalyIds.has(recId) || isArtistDropped(artist, predicates)) {
-      droppedCount += 1;
-      if (droppedSamples.length < 10) {
-        droppedSamples.push([recId === '' ? '<no-id>' : recId, artist]);
-      }
+    if (predicates.anomalyIds.has(recId)) {
+      recordDrop(recId, artist);
       continue;
+    }
+    if (isArtistDropped(artist, predicates)) {
+      const tj = typeof rec.karaoke_numbers?.tj === 'string' ? rec.karaoke_numbers.tj : '';
+      const reviewedAllow = tj !== '' && predicates.isReviewedAllow?.(tj) === true;
+      if (!reviewedAllow) {
+        recordDrop(recId, artist);
+        continue;
+      }
     }
     kept.push(rec);
   }

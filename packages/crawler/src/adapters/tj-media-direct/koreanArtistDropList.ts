@@ -243,6 +243,24 @@ export const DROP_LIST: readonly DropListEntry[] = [
     lastReviewed: '2026-06-04',
     note: 'Live TJ artist search returns KOR for the Hangul-suffixed group rows; 7 TJ-direct rows leaked in the current corpus.',
   },
+  {
+    canonical: 'LUCY',
+    variants: ['LUCY', '루시'],
+    lastReviewed: '2026-07-09',
+    note: 'PR #95 weekly crawl leak: `루시` JPN 3/0/0 in cache while proEnrichment tags all rows KOR — 71 TJ-direct rows, incl. the collab `루시(Feat.원슈타인)` (whole-string cache key UNKNOWN; drops via lead component `루시`). Latin `LUCY` added defensively — 0 cache entries today.',
+  },
+  {
+    canonical: 'Roy Kim',
+    variants: ['로이킴', 'Roy Kim'],
+    lastReviewed: '2026-07-09',
+    note: 'PR #95 weekly crawl leak: `로이킴` JPN 4/0/0 in cache while proEnrichment tags all rows KOR — 59 TJ-direct rows. Latin `Roy Kim` added defensively — 0 cache entries today.',
+  },
+  {
+    canonical: 'BOYNEXTDOOR',
+    variants: ['BOYNEXTDOOR', '보이넥스트도어'],
+    lastReviewed: '2026-07-09',
+    note: 'PR #95 weekly crawl leak: `boynextdoor` JPN 4/0/0 in cache — 37 TJ-direct rows, proEnrichment KOR except tj-52990 ("Count To Love", genuine JP maxi single, admitted via reviewed-song-allow). Hangul `보이넥스트도어` added defensively — 0 cache entries today.',
+  },
 ];
 
 /**
