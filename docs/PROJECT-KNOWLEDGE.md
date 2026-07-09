@@ -202,6 +202,30 @@ above).
   records. A full crawl is hours of wall time (network-bound, per-record TJ
   enrichment); for smoke tests prefer `--limit 5` or CI `workflow_dispatch`.
 
+## Search DB: delta patch and query expansion
+
+- `createSongDatabase` converges a legacy DB to the canonical schema, which for
+  a fully-derived table it can't ALTER in place (drop `search_texts.text_norm`,
+  widen a `field`/`kind` CHECK) means DROP+recreate — a WHOLE-TABLE operation
+  that empties that table for EVERY song. The delta patcher calls
+  `createSongDatabase` and used to then re-derive only the touched songs, so on
+  a pre-#93-shaped served DB (the live v21 case) every UNTOUCHED song silently
+  lost its `search_texts` rows (the exact-text serve tier) while docstrings
+  claimed the tables were "cleared per-song by the delta patcher". Rule: a
+  migration that drops a derived table inside the delta path MUST trigger full
+  re-derivation of ALL songs (now implemented — `createSongDatabase` returns a
+  `SongDatabaseMigrationReport`, and the patcher falls back to a whole-corpus
+  rebuild + full stat recompute + full hint materialization; regression-tested
+  in `packages/data-store/test/delta-legacy-migration.test.ts`). Never document
+  per-song safety for a whole-table operation.
+- `expandSearchQuery` (`@karaoke/search`) feeds user query text to wanakana
+  (`toHiragana`/`toKatakana`/`toRomaji`), which parses by per-token recursion
+  and overflows the call stack near ~5-6k ASCII chars; unbounded `q` surfaced as
+  `/api/search` HTTP 500s. Rule: bound query length at the API edge (the worker
+  rejects `q` over 256 code points with a 400) AND guard expansion length inside
+  `@karaoke/search` (`MAX_EXPANDABLE_QUERY_CODE_POINTS`, returns the query
+  unchanged above the bound). Never feed unbounded user text to wanakana.
+
 ## Frontend / UI invariants
 
 - Playwright e2e must use `await page.goto('')` (relative empty string).
