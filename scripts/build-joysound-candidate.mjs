@@ -42,6 +42,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
 import { isCliInvocation } from './lib/cli.mjs';
 import { compareCorpora } from './lib/corpus-audit-guardrails.mjs';
+import { streamJsonl } from './lib/jsonl.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -595,17 +596,17 @@ function conflictNulledIds(baselineRecords, candidateById) {
 
 // --- Main build ----------------------------------------------------------
 
-function readJsonlAdmits(path) {
-  const raw = readFileSync(path, 'utf8');
+export async function readJsonlAdmits(path) {
   const checkpoint1Targets = new Set(CHECKPOINT1_EXCLUDED_SEL_SONG_NOS);
   const checkpoint1Decisions = [];
   const admits = [];
   let total = 0;
-  for (const line of raw.split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (trimmed.length === 0) continue;
+  // Stream the decision log (never a whole-file readFileSync, which throws past
+  // V8's ~512MB string cap at fullCatalog scale). streamJsonl skips blank lines
+  // and, with no onParseError handler, rethrows a malformed line's SyntaxError —
+  // matching the prior JSON.parse-with-no-try/catch behavior exactly.
+  for await (const entry of streamJsonl(path)) {
     total += 1;
-    const entry = JSON.parse(trimmed);
     // Track EVERY row (any decision) on a CHECKPOINT-1 SUSPECT number so the
     // exclusion guard can verify it is looking at the right log.
     const key = admitNumberKey(entry);
@@ -663,7 +664,7 @@ async function main() {
   const baselineSnapshot = JSON.parse(JSON.stringify(currentCorpus));
 
   // --- Step 1: normalize admits -> SongRecords -----------------------------
-  const { admits: rawAdmits, total, checkpoint1Decisions } = readJsonlAdmits(decisionLogPath);
+  const { admits: rawAdmits, total, checkpoint1Decisions } = await readJsonlAdmits(decisionLogPath);
   console.log(
     `[build-joysound-candidate] decision log: ${total} rows, ${rawAdmits.length} admit rows`,
   );

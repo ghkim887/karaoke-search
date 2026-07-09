@@ -69,7 +69,22 @@ export function openSongDatabase(path: string): SongDatabase {
   return new (sqlite().DatabaseSync)(path);
 }
 
-export function createSongDatabase(db: SongDatabase): void {
+/**
+ * What converging a database to the canonical schema had to do. The delta
+ * patcher reads this to decide whether its touched-only re-derivation is safe.
+ */
+export interface SongDatabaseMigrationReport {
+  /**
+   * True when converging a legacy database required DROPping and recreating a
+   * fully-derived per-song search table (`search_texts` and/or `search_tokens`).
+   * Such a drop empties that table for EVERY song, so a touched-only delta patch
+   * would leave untouched songs with no index rows — the caller must re-derive
+   * the whole corpus instead (see the delta patcher's rebuild-all path).
+   */
+  droppedDerivedTable: boolean;
+}
+
+export function createSongDatabase(db: SongDatabase): SongDatabaseMigrationReport {
   db.exec('PRAGMA foreign_keys = ON;');
   // `CREATE TABLE IF NOT EXISTS` only materializes the `WITHOUT ROWID` layout on
   // a fresh database; a legacy rowid database opened by this code keeps its
@@ -92,8 +107,8 @@ export function createSongDatabase(db: SongDatabase): void {
   );
   ensureTableColumn(db, 'songs', 'title_ruby', 'ALTER TABLE songs ADD COLUMN title_ruby TEXT');
   // Reading fields (R4) are token-only, so only `search_tokens` gains them.
-  ensureSearchTableFields(db, 'search_tokens', "'title_ruby'");
-  ensureSearchTokensHintFields(db);
+  let droppedDerivedTable = ensureSearchTableFields(db, 'search_tokens', "'title_ruby'");
+  droppedDerivedTable = ensureSearchTokensHintFields(db) || droppedDerivedTable;
   // Retire dead schema on legacy databases (2026-07-08): the search-only
   // `search_hints` table and the `search_texts.text_norm` column were written
   // but never read at serve/export/rebuild (recall materializes through
@@ -101,32 +116,42 @@ export function createSongDatabase(db: SongDatabase): void {
   // dropping them here loses no durable data and lets a delta patch on an
   // older served DB avoid the removed NOT-NULL `text_norm` column.
   db.exec('DROP TABLE IF EXISTS search_hints');
-  ensureSearchTextsNoTextNorm(db);
+  droppedDerivedTable = ensureSearchTextsNoTextNorm(db) || droppedDerivedTable;
   db.exec(SONG_INDEX_SCHEMA_SQL);
   db.exec(SONG_LEGACY_INDEX_DROP_SQL);
+  return { droppedDerivedTable };
 }
 
 /**
  * Widen a fully-derived search table's `field` CHECK to a newer field set.
- * SQLite cannot ALTER a CHECK in place, but `search_texts`/`search_tokens` are
- * rebuilt on every {@link importSongs} (and cleared per-song by the delta
- * patcher), so dropping and recreating one from the current schema loses no
- * durable data. `marker` is a quoted field literal (e.g. `"'title_ruby'"`) that
- * a current-schema table's DDL contains and a legacy one does not. The re-exec
- * of {@link SONG_TABLE_SCHEMA_SQL} recreates only the dropped table (the rest
- * use `IF NOT EXISTS`).
+ * SQLite cannot ALTER a CHECK in place, so a legacy table is DROPped and
+ * recreated from the current schema. This is a WHOLE-TABLE operation: it empties
+ * the table for EVERY song, not just per-song rows. The full {@link importSongs}
+ * path re-derives every song immediately afterward, so it loses nothing; the
+ * delta patcher must NOT run its touched-only re-derivation after a drop (that
+ * would leave untouched songs with no rows) — {@link createSongDatabase}
+ * reports the drop via {@link SongDatabaseMigrationReport} so the delta patcher
+ * can fall back to a full corpus rebuild. `marker` is a quoted field literal
+ * (e.g. `"'title_ruby'"`) that a current-schema table's DDL contains and a
+ * legacy one does not. The re-exec of {@link SONG_TABLE_SCHEMA_SQL} recreates
+ * only the dropped table (the rest use `IF NOT EXISTS`). Returns whether the
+ * table was dropped.
  */
-function ensureSearchTableFields(db: SongDatabase, tableName: string, marker: string): void {
+function ensureSearchTableFields(db: SongDatabase, tableName: string, marker: string): boolean {
   const row = db
     .prepare(`SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?`)
     .get(tableName) as { sql?: string } | undefined;
   if (row?.sql !== undefined && !row.sql.includes(marker)) {
     db.exec(`DROP TABLE IF EXISTS ${tableName}`);
     db.exec(SONG_TABLE_SCHEMA_SQL);
+    return true;
   }
+  return false;
 }
 
-function ensureSearchTokensHintFields(db: SongDatabase): void {
+/** As {@link ensureSearchTableFields}, for the search-hint / gram field set on
+ * `search_tokens`. Returns whether the table was dropped. */
+function ensureSearchTokensHintFields(db: SongDatabase): boolean {
   const row = db
     .prepare(`SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'search_tokens'`)
     .get() as { sql?: string } | undefined;
@@ -136,26 +161,33 @@ function ensureSearchTokensHintFields(db: SongDatabase): void {
   ) {
     db.exec('DROP TABLE IF EXISTS search_tokens');
     db.exec(SONG_TABLE_SCHEMA_SQL);
+    return true;
   }
+  return false;
 }
 
 /**
  * Retire the dead `search_texts.text_norm` column on a legacy database. The
- * column was written but never read (recall lives in `search_tokens`), and
- * `search_texts` is fully rebuilt on every {@link importSongs} and cleared
- * per-song by the delta patcher, so dropping and recreating the table from the
- * current schema loses no durable data. The re-exec of {@link
- * SONG_TABLE_SCHEMA_SQL} recreates only the dropped table (the rest use
- * `IF NOT EXISTS`).
+ * column was written but never read (recall lives in `search_tokens`). SQLite
+ * cannot drop a column of a `WITHOUT ROWID` table in place, so the whole table
+ * is DROPped and recreated from the current schema — a WHOLE-TABLE operation
+ * that empties `search_texts` for EVERY song. The full {@link importSongs} path
+ * re-derives every song immediately afterward, so it loses nothing; the delta
+ * patcher must NOT run its touched-only re-derivation after this drop (see
+ * {@link ensureSearchTableFields} and {@link SongDatabaseMigrationReport}). The
+ * re-exec of {@link SONG_TABLE_SCHEMA_SQL} recreates only the dropped table (the
+ * rest use `IF NOT EXISTS`). Returns whether the table was dropped.
  */
-function ensureSearchTextsNoTextNorm(db: SongDatabase): void {
+function ensureSearchTextsNoTextNorm(db: SongDatabase): boolean {
   const row = db
     .prepare(`SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'search_texts'`)
     .get() as { sql?: string } | undefined;
   if (row?.sql?.includes('text_norm')) {
     db.exec('DROP TABLE IF EXISTS search_texts');
     db.exec(SONG_TABLE_SCHEMA_SQL); // recreates only the dropped table (others are IF NOT EXISTS)
+    return true;
   }
+  return false;
 }
 
 function ensureTableColumn(

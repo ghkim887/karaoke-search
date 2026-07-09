@@ -137,6 +137,17 @@ export function normalizeKaraokeNumber(value: string): string {
 const EXPANSION_VARIANT_LIMIT = 3;
 
 /**
+ * Upper bound (in code points) on a query `expandSearchQuery` will transliterate.
+ * The wanakana transliterators (`toHiragana`/`toKatakana`/`toRomaji`) parse by
+ * per-token recursion and overflow the call stack on pathological inputs (near
+ * ~5-6k ASCII chars). No realistic karaoke query approaches this, so above the
+ * bound the query is returned unchanged rather than fed to wanakana. The worker
+ * rejects over-length `q` at the API edge too; this is the library-level guard
+ * for every other caller.
+ */
+const MAX_EXPANDABLE_QUERY_CODE_POINTS = 256;
+
+/**
  * Shared script-detection predicates — the single source for kana / Han /
  * Hangul / Latin discrimination consumed by this module AND the crawler
  * adapters (blog-whitelist trim, JP-likely rescue, JOYSOUND alias echo). They
@@ -225,6 +236,13 @@ export function expandSearchQuery(query: string): string[] {
   };
 
   push(original);
+
+  // Guard wanakana against stack-overflowing on a pathologically long query
+  // (see MAX_EXPANDABLE_QUERY_CODE_POINTS): above the bound, skip expansion and
+  // return the original unchanged (the no-expansion result).
+  if (Array.from(original).length > MAX_EXPANDABLE_QUERY_CODE_POINTS) {
+    return variants;
+  }
 
   // Detect on the NFKC form so width variants (half-width kana, full-width
   // Latin) classify the same way they index.

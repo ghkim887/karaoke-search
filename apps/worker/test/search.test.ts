@@ -638,6 +638,32 @@ describe('worker search API', () => {
     await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
   });
 
+  it('rejects a query longer than the 256 code-point bound with HTTP 400', async () => {
+    // Unbounded `q` reached wanakana (via expandSearchQuery) and stack-overflowed
+    // into a 500; the length bound turns a pathological query into a clean 400.
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
+    const response = await handleRequest(
+      new Request(`https://karaoke.example/api/search?q=${'ka'.repeat(3000)}`),
+      { db },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid q: at most 256 characters per query',
+    });
+  });
+
+  it('accepts a query at the 256 code-point bound', async () => {
+    const db = createSearchDatabaseWithSongs(FIXTURE_RECORDS);
+    const response = await handleRequest(
+      new Request(`https://karaoke.example/api/search?q=${'ka'.repeat(128)}`),
+      { db },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ items: [], nextCursor: null });
+  });
+
   it('returns prefix matches for numeric queries longer than the former 50-byte D1 LIKE limit', async () => {
     // The prefix pattern `${longPrefix}%` is 52 bytes, which the removed D1 gate
     // used to drop, silently skipping the prefix subquery and losing this record.

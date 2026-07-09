@@ -336,6 +336,47 @@ Parked because the touched files are in flight on the feature branch:
 - the agent-chunk prep/merge pattern (title_ko Stage 2, JOYSOUND
   adjudication) duplicates chunk-file plumbing — extract a shared lib.
 
+### 2026-07-09 audit deferred findings
+
+From the whole-repo audit (the three fixed bugs — legacy-DB delta derived-row
+wipe, wanakana over-long-query 500, decision-log >512 MB string read — shipped
+separately). Deferred, needing an owner decision or its own change:
+
+- idf drift in delta `affected` stat mode: a token's idf is not refreshed when
+  only the corpus count changes — accept + document, or recompute on count
+  change? (owner decision);
+- Tier B same-source merge collapse is input-order-dependent and can drop a
+  same-vendor number — needs a deterministic tie-break decision;
+- delta patch silently drops a new hint targeting an UNTOUCHED song
+  (materialize-or-document decision; the legacy-migration rebuild path already
+  materializes them, the touched-only path does not).
+
+Low-severity bugs:
+
+- hiragana iteration marks ゝ/ゞ are dropped in `kanaToRomaji`/`kanaToHangul`;
+- web fallback banner can show on the Browse landing view;
+- Favorites tab lacks a pending state during API hydration;
+- worker rate-limit bucket map is never pruned (unbounded growth);
+- worker `close()` does not close idle keep-alive sockets;
+- hint fields emit Hangul `initial` tokens, breaking server/offline parity
+  (latent — reading fields are already excluded, hint fields are not).
+
+Behavior-preserving refactor batch:
+
+- remove the dead compat-jamo branch in `apps/worker/src/index.ts`;
+- dedup `hasNonAsciiCharacter` (worker + data-store copies);
+- consolidate the three `stableStringify` implementations;
+- dedup the ja-JP NFKC normalize helper;
+- pre-normalize the reviewed-override Set key;
+- fold the data-store `ensure*` marker-guard helpers;
+- dedup the Hangul syllable/choseong constants;
+- unify the `SearchVendor`/`Vendor` union.
+
+Test coverage:
+
+- add a contract test for the implicit `/api/meta` date-only ↔ Footer regex
+  coupling.
+
 ### Chinese-leak detection future work
 
 The flat Chinese drop list + hardcoded catalog-anomaly IDs catch known leaks,
