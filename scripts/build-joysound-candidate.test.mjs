@@ -450,23 +450,18 @@ describe('CHECKPOINT-1 exclusion (excludeCheckpoint1Admits)', () => {
     expect(kept).toEqual([]);
   });
 
-  it('fails fast unless the log contains exactly one row per SUSPECT number', () => {
-    const admits = [admitRow('640256')];
-    // Wrong / already-scrubbed log: no SUSPECT rows at all.
-    expect(() => excludeCheckpoint1Admits(admits, [])).toThrow(/checkpoint1-screening\.md/u);
-    expect(() => excludeCheckpoint1Admits(admits, undefined)).toThrow(/checkpoint1-screening\.md/u);
-    // Partial coverage: 1 of 3.
-    expect(() =>
-      excludeCheckpoint1Admits(admits, [{ selSongNo: '148140', decision: 'drop' }]),
-    ).toThrow(/exactly one row per SUSPECT selSongNo/u);
-    // Duplicate coverage: one number twice, one missing.
-    expect(() =>
-      excludeCheckpoint1Admits(admits, [
-        { selSongNo: '148140', decision: 'drop' },
-        { selSongNo: '148140', decision: 'admit' },
-        { selSongNo: '153397', decision: 'drop' },
-      ]),
-    ).toThrow(/checkpoint1-screening\.md/u);
+  // A current sweep on a from-corpus listing no longer lists the 3 SUSPECTs at
+  // all (removed from reviewedJoysoundOverrides.ts and dropped from the corpus),
+  // so the log carries no SUSPECT rows. The invariant (none survives as an
+  // admit) holds trivially — the guard must PASS, not abort on absence.
+  it('passes when the 3 SUSPECTs are absent from the log (current from-corpus sweep)', () => {
+    const admits = [admitRow('640256'), admitRow('12591')];
+    for (const decisions of [[], undefined]) {
+      const { kept, excluded, droppedInLog } = excludeCheckpoint1Admits(admits, decisions);
+      expect(kept).toEqual(admits);
+      expect(excluded).toEqual([]);
+      expect(droppedInLog).toBe(0);
+    }
   });
 });
 
