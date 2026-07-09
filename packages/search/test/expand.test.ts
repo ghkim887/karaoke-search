@@ -54,4 +54,26 @@ describe('expandSearchQuery', () => {
     expect(variants.length).toBeLessThanOrEqual(3);
     expect(expandSearchQuery('よる').length).toBeLessThanOrEqual(3);
   });
+
+  it('never throws on an over-long query and returns the no-expansion result', () => {
+    // wanakana parses by per-token recursion and overflows the stack near ~5-6k
+    // ASCII chars; a length guard must return the original unchanged instead.
+    const longRomaji = 'ka'.repeat(3000); // 6000 code points
+    expect(() => expandSearchQuery(longRomaji)).not.toThrow();
+    expect(expandSearchQuery(longRomaji)).toEqual([longRomaji]);
+
+    const longAscii = 'a'.repeat(6000);
+    expect(() => expandSearchQuery(longAscii)).not.toThrow();
+    expect(expandSearchQuery(longAscii)).toEqual([longAscii]);
+  });
+
+  it('applies the guard only above the code-point bound', () => {
+    // At the 256 code-point bound a romaji query still expands normally.
+    const atBound = 'ka'.repeat(128); // 256 code points
+    expect([...atBound].length).toBe(256);
+    expect(expandSearchQuery(atBound).length).toBeGreaterThan(1);
+    // One code point over the bound: returned unchanged, no expansion.
+    const overBound = `${atBound}k`; // 257 code points
+    expect(expandSearchQuery(overBound)).toEqual([overBound]);
+  });
 });
