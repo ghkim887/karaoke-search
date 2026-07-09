@@ -25,17 +25,27 @@
 // call: surface the broken `--conflicts-out` artifact instead of papering
 // over it.
 //
-// Usage: node scripts/compose-crawl-pr-body.mjs [conflictsPath]
-//   conflictsPath defaults to /tmp/merge-conflicts.json (the crawl.yml path).
+// PARITY DELTA (added 2026-07-10): the crawl workflow regenerates the
+// search-parity baseline from the freshly crawled corpus and renders the
+// per-query delta with scripts/compare-parity-baselines.mjs. When a delta path
+// is passed as the second argument, its contents are appended verbatim as a
+// trailing section so the reviewer sees the drift in the crawl PR body (the
+// drift gate moves to PR review). Omitting the argument preserves the original
+// conflicts-only behavior byte-for-byte. Passing a path that does not exist is
+// fail-closed (throws) — the workflow always produces it, so a missing file
+// means the regenerate/compare step silently failed.
+//
+// Usage: node scripts/compose-crawl-pr-body.mjs [conflictsPath] [parityDeltaPath]
+//   conflictsPath   defaults to /tmp/merge-conflicts.json (the crawl.yml path).
+//   parityDeltaPath optional; when given, its contents are appended.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { isCliInvocation } from './lib/cli.mjs';
 
 export const DEFAULT_CONFLICTS_PATH = '/tmp/merge-conflicts.json';
 
-export function composePrBody(conflictsPath = DEFAULT_CONFLICTS_PATH) {
-  let body = 'Automated crawl output. See workflow run for logs.\n';
-  if (!existsSync(conflictsPath)) return body;
+function composeConflictsSection(conflictsPath) {
+  if (!existsSync(conflictsPath)) return '';
 
   const summary = JSON.parse(readFileSync(conflictsPath, 'utf8'));
   const total = summary.total;
@@ -47,22 +57,43 @@ export function composePrBody(conflictsPath = DEFAULT_CONFLICTS_PATH) {
     // should fail the job, not be papered over.
     throw new Error(`conflicts summary "total" is not an integer: ${total}`);
   }
-  if (total <= 0) return body;
+  if (total <= 0) return '';
 
-  body += '\n';
-  body += '## Merge conflicts during dedup\n';
-  body += `- Total: ${total}\n`;
-  body += '- Sample (first 10):\n';
+  let section = '\n';
+  section += '## Merge conflicts during dedup\n';
+  section += `- Total: ${total}\n`;
+  section += '- Sample (first 10):\n';
   for (const c of summary.sample) {
     const vs = c.values.map((v) => `${v.source}=${v.value}`).join(', ');
-    body += `  - ${c.field}: ${vs} -> winner: ${c.winner} (cluster_key=${c.cluster_key})\n`;
+    section += `  - ${c.field}: ${vs} -> winner: ${c.winner} (cluster_key=${c.cluster_key})\n`;
   }
+  return section;
+}
+
+function composeParitySection(parityDeltaPath) {
+  if (parityDeltaPath === undefined) return '';
+  if (!existsSync(parityDeltaPath)) {
+    // Fail-closed: the crawl workflow always regenerates + compares the parity
+    // baseline before composing the body, so a missing delta file means that
+    // step silently produced nothing — surface it, don't ship a PR without it.
+    throw new Error(`parity delta file not found: ${parityDeltaPath}`);
+  }
+  // The delta markdown already opens with its own "## ..." heading and ends
+  // with a newline; a single leading blank line separates it from whatever
+  // preceded it (boilerplate line or the conflicts section).
+  return `\n${readFileSync(parityDeltaPath, 'utf8')}`;
+}
+
+export function composePrBody(conflictsPath = DEFAULT_CONFLICTS_PATH, parityDeltaPath = undefined) {
+  let body = 'Automated crawl output. See workflow run for logs.\n';
+  body += composeConflictsSection(conflictsPath);
+  body += composeParitySection(parityDeltaPath);
   return body;
 }
 
 if (isCliInvocation(import.meta.url)) {
   try {
-    process.stdout.write(composePrBody(process.argv[2] ?? DEFAULT_CONFLICTS_PATH));
+    process.stdout.write(composePrBody(process.argv[2] ?? DEFAULT_CONFLICTS_PATH, process.argv[3]));
   } catch (err) {
     console.error(err.message);
     process.exitCode = 1;
