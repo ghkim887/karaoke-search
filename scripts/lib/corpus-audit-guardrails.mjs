@@ -1,5 +1,6 @@
 import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { stableStringify } from './canonical-json.mjs';
 import { isCliInvocation } from './cli.mjs';
 
 const SAMPLE_LIMIT = 20;
@@ -1033,7 +1034,7 @@ function baselineJoysoundNumberMap(records) {
   return numbers;
 }
 
-function normalizeForComparison(value) {
+export function normalizeForComparison(value) {
   return asString(value).normalize('NFKC').replace(/\s+/gu, ' ').trim().toLocaleLowerCase('ja-JP');
 }
 
@@ -1477,15 +1478,6 @@ function duplicateIdReport(records) {
       count: matches.length,
       samples: matches.slice(0, SAMPLE_LIMIT).map(sampleRichRecord),
     }));
-}
-
-function stableStringify(value) {
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
 }
 
 function isPresent(value) {

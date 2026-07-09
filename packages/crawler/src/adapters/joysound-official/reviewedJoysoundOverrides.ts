@@ -245,9 +245,13 @@ export const REVIEWED_JOYSOUND_DROP_ENTRIES: readonly ReviewedJoysoundOverrideEn
   },
 ];
 
-const REVIEWED_JOYSOUND_ALLOW = new Set<string>(REVIEWED_JOYSOUND_ALLOW_NUMBERS);
+// Store normalized keys so lookups (which probe with `normalizeJoysoundNumberKey`)
+// always match, even for a future hyphenated/whitespace entry.
+const REVIEWED_JOYSOUND_ALLOW = new Set<string>(
+  REVIEWED_JOYSOUND_ALLOW_NUMBERS.map((selSongNo) => normalizeJoysoundNumberKey(selSongNo)),
+);
 const REVIEWED_JOYSOUND_DROP = new Set<string>(
-  REVIEWED_JOYSOUND_DROP_ENTRIES.map((entry) => entry.selSongNo),
+  REVIEWED_JOYSOUND_DROP_ENTRIES.map((entry) => normalizeJoysoundNumberKey(entry.selSongNo)),
 );
 
 export function isReviewedJoysoundAllow(selSongNo: string): boolean {

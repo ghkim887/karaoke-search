@@ -1,12 +1,14 @@
 import { useRef } from 'preact/hooks';
 import { t } from '../lib/i18n.js';
 import { useLocale } from '../lib/locale-hooks.js';
+import type { SearchVendor } from '../lib/search.js';
 
 /**
  * Karaoke-machine vendor keys. UI-only concept (not part of `@karaoke/schema`)
  * — these select which `karaoke_numbers` field a record must have non-null on.
+ * Aliases the lib-side owner {@link SearchVendor} so the two unions never drift.
  */
-export type Vendor = 'tj' | 'ky' | 'joysound';
+export type Vendor = SearchVendor;
 
 interface VendorChipsProps {
   selected: ReadonlySet<Vendor>;

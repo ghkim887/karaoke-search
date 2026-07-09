@@ -40,8 +40,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeJsonAtomic } from './lib/atomic-write.mjs';
+import { stableStringify } from './lib/canonical-json.mjs';
 import { isCliInvocation } from './lib/cli.mjs';
-import { compareCorpora } from './lib/corpus-audit-guardrails.mjs';
+import { compareCorpora, normalizeForComparison } from './lib/corpus-audit-guardrails.mjs';
 import { streamJsonl } from './lib/jsonl.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -158,8 +159,7 @@ export function buildJoysoundRecord(entry, crawledAt) {
  * @returns {string}
  */
 export function normalizeForConflictMatch(value) {
-  const str = typeof value === 'string' ? value : '';
-  return str.normalize('NFKC').replace(/\s+/gu, ' ').trim().toLocaleLowerCase('ja-JP');
+  return normalizeForComparison(value);
 }
 
 function normalizeJoysoundNumber(value) {
@@ -907,26 +907,9 @@ async function main() {
   console.log(`[build-joysound-candidate] delta report -> ${deltaOutPath}`);
 }
 
-/**
- * Order-independent deep serialization for equality checks. Mirrors
- * `stableStringify` in corpus-audit-guardrails.mjs: arrays preserve order,
- * object keys are sorted recursively. Used to decide whether an existing
- * record changed at all before classifying HOW it changed.
- *
- * NOTE: the previous implementation used `JSON.stringify(record,
- * Object.keys(record).sort())` — but the 2nd arg is a REPLACER ALLOWLIST, not a
- * key sorter, and it recurses into nested objects, so `karaoke_numbers` (whose
- * keys tj/ky/joysound are absent from the top-level allowlist) serialized as
- * `{}`. That made all karaoke_numbers changes invisible to the equality check.
- */
-export function stableStringify(value) {
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
+// Re-exported for build-joysound-candidate.test.mjs (used internally at the
+// mutation-detection sweep above). See ./lib/canonical-json.mjs.
+export { stableStringify };
 
 // Fields whose ANY change is genuine corruption — the JOYSOUND merge must never
 // rewrite these on an existing record (it only unions numbers/aliases

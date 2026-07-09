@@ -1,4 +1,9 @@
 import { toHiragana, toKatakana, toRomaji } from 'wanakana';
+import {
+  HANGUL_JONGSEONG_COUNT,
+  HANGUL_JUNGSEONG_COUNT,
+  HANGUL_SYLLABLE_BASE,
+} from './transliterate.js';
 
 export { kanaToHangul, kanaToRomaji } from './transliterate.js';
 
@@ -35,12 +40,9 @@ const SEARCH_WORD_PATTERN = /[\p{Letter}\p{Number}\p{Mark}]+/gu;
 const KARAOKE_PROVIDER_PATTERN = /^(tj|ky|joysound)[\s:_-]*(\d[\d\s:_-]*)$/u;
 const KARAOKE_NUMBER_PATTERN = /^\d[\d\s:_-]*$/u;
 
-const HANGUL_SYLLABLE_START = 0xac00;
 const HANGUL_SYLLABLE_END = 0xd7a3;
 const HANGUL_CHOSEONG_START = 0x1100;
 const HANGUL_CHOSEONG_END = 0x1112;
-const HANGUL_JUNGSEONG_COUNT = 21;
-const HANGUL_JONGSEONG_COUNT = 28;
 const HANGUL_INITIALS = [
   'ㄱ',
   'ㄲ',
@@ -108,11 +110,11 @@ export function makeHangulInitials(value: string): string {
       }
       continue;
     }
-    if (codePoint < HANGUL_SYLLABLE_START || codePoint > HANGUL_SYLLABLE_END) {
+    if (codePoint < HANGUL_SYLLABLE_BASE || codePoint > HANGUL_SYLLABLE_END) {
       continue;
     }
 
-    const syllableOffset = codePoint - HANGUL_SYLLABLE_START;
+    const syllableOffset = codePoint - HANGUL_SYLLABLE_BASE;
     const initialIndex = Math.floor(
       syllableOffset / (HANGUL_JUNGSEONG_COUNT * HANGUL_JONGSEONG_COUNT),
     );
@@ -194,6 +196,11 @@ export function hasHangul(value: string): boolean {
 /** Whether `value` contains any A–Z / a–z Latin letter. */
 export function hasLatinLetter(value: string): boolean {
   return LATIN_LETTER_PATTERN.test(value);
+}
+
+/** Whether `value` contains any non-ASCII character (code point above U+007F). */
+export function hasNonAsciiCharacter(value: string): boolean {
+  return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
 /**

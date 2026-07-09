@@ -421,9 +421,12 @@ const HANGUL_MONOGRAPHS: Record<string, string> = {
   ヶ: '케',
 };
 
-const HANGUL_SYLLABLE_BASE = 0xac00;
-const HANGUL_JUNGSEONG_COUNT = 21;
-const HANGUL_JONGSEONG_COUNT = 28;
+// Hangul syllable-composition constants (U+AC00 block: 19 choseong x 21
+// jungseong x 28 jongseong). Shared with index.ts (makeHangulInitials); defined
+// here in the leaf module so index.ts imports them without a cycle.
+export const HANGUL_SYLLABLE_BASE = 0xac00;
+export const HANGUL_JUNGSEONG_COUNT = 21;
+export const HANGUL_JONGSEONG_COUNT = 28;
 const HANGUL_SYLLABLE_COUNT = 19 * HANGUL_JUNGSEONG_COUNT * HANGUL_JONGSEONG_COUNT;
 /** Jongseong (받침) index in the 28-entry final-consonant list. */
 const JONGSEONG_NIEUN = 4; // ㄴ

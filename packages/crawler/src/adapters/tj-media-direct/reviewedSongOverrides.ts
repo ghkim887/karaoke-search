@@ -899,10 +899,14 @@ export const REVIEWED_TJ_SONG_DROP_LIST: readonly ReviewedSongOverrideEntry[] = 
   },
 ];
 
+// Store normalized keys so lookups (which probe with `normalizeTjNumberKey`)
+// always match, even for a future leading-zero/whitespace entry.
 const REVIEWED_TJ_SONG_ALLOW = new Set<string>(
-  REVIEWED_TJ_SONG_ALLOW_LIST.map((entry) => entry.tj),
+  REVIEWED_TJ_SONG_ALLOW_LIST.map((entry) => normalizeTjNumberKey(entry.tj)),
 );
-const REVIEWED_TJ_SONG_DROP = new Set<string>(REVIEWED_TJ_SONG_DROP_LIST.map((entry) => entry.tj));
+const REVIEWED_TJ_SONG_DROP = new Set<string>(
+  REVIEWED_TJ_SONG_DROP_LIST.map((entry) => normalizeTjNumberKey(entry.tj)),
+);
 
 export function isReviewedTjSongAllow(tj: string): boolean {
   return REVIEWED_TJ_SONG_ALLOW.has(normalizeTjNumberKey(tj));

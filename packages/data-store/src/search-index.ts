@@ -5,6 +5,7 @@ import {
   PROVIDER_MASKS,
   compactSearchText,
   deriveKanaRomaji,
+  hasNonAsciiCharacter,
   kanaToHangul,
   kanaToRomaji,
   makeCharacterNgrams,
@@ -324,10 +325,6 @@ function makeNonAsciiCharacterUnigrams(value: string): string[] {
     grams.push(character);
   }
   return grams;
-}
-
-function hasNonAsciiCharacter(value: string): boolean {
-  return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
 export function karaokeProviderMask(numbers: KaraokeNumbers): number {
