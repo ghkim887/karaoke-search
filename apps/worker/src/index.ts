@@ -7,6 +7,7 @@ import {
   PROVIDER_MASKS,
   compactSearchText,
   expandSearchQuery,
+  hasNonAsciiCharacter,
   makeCharacterNgrams,
   makeHangulInitials,
   parseKaraokeNumberQuery,
@@ -47,7 +48,6 @@ const MAX_QUERY_CODE_POINTS = 256;
 const EXPANDED_VARIANT_WEIGHT_SCALE = 0.5;
 const MATCH_TIER_TOKEN = 1;
 const MATCH_TIER_EXACT_TEXT = 2;
-const HANGUL_INITIALS_QUERY_PATTERN = /^[ㄱ-ㅎ]+$/u;
 const JSON_HEADERS = {
   'access-control-allow-origin': '*',
   'content-type': 'application/json; charset=utf-8',
@@ -577,17 +577,10 @@ function addVariantQueryTokens(
   if (hangulInitials.length >= 2) {
     add('initial', hangulInitials.slice(0, MAX_PREFIX_TOKEN_CHARS), scaled(35));
   }
-  if (HANGUL_INITIALS_QUERY_PATTERN.test(compactQuery)) {
-    add('initial', Array.from(compactQuery).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''), scaled(35));
-  }
 }
 
 function trimLeadingZeroes(value: string): string {
   return value.replace(/^0+/u, '') || '0';
-}
-
-function hasNonAsciiCharacter(value: string): boolean {
-  return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
 function parseVendors(value: string | null): Vendor[] | undefined {
