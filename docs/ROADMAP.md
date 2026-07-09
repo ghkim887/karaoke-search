@@ -48,7 +48,28 @@ residue and should be tagged as such, not force-merged. Do this BEFORE R5
 (KY/DAM expansion) — the same artist-variant merge weaknesses will multiply
 with every new provider.
 
-### R1 follow-up — merger-mechanism extension (open, 2026-07-05)
+### R1 follow-up — merger-mechanism extension (HELD 2026-07-10, owner)
+
+**Status update (2026-07-10, live-API-verified recon):** the "embedded-TJ/KY
+bridge" premise is dead — JOYSOUND-sourced rows never carry TJ/KY numbers (the
+adapter hard-nulls them; the API exposes no competitor numbers). Ground truth:
+4 of the both-vendor pairs (aLIEz, &Z, Astronauts, 天使と悪魔) now resolve by
+plain Tier A at the next corpus build (their blog rows already carry
+tj+ky+joysound, and standalone joysound-source rows exist); **6 songs remain
+genuinely blocked** (the 5 candidate-own-TJ pairs below plus パンダヒーロー,
+whose joy145546 is bound to tj-27416/GUMI) — every one is a two-TJ conflict
+that the single-value-per-vendor data model cannot hold. Also: the Tier F entry
+`['tj','28268','162483']` is INERT (soft-merge claims the joy side before Tier F
+runs) and should be removed/superseded when any mechanism lands; the pair
+comments' `blog-523-9`/`blog-163-90` ids drifted in #95 (now -10/-91).
+
+**Owner decision (2026-07-10): HELD.** Rationale: the twin TJ numbers may be
+legitimately distinct catalog entries (TJ genuinely lists both numbers), so
+collapsing them behind one displayed number — the "search-only alias" design —
+may misrepresent the catalog; if this is ever built, a design that keeps both
+numbers visible deserves equal weight. Revisit alongside the Tier B
+same-source tie-break question (same underlying "same song or two entries?"
+judgment).
 
 The R1 audit was fully reviewed across all three tiers (A/B/C) over PRs
 #76/#84–#88; ~120 reviewed pairs are now in `reviewedMergePairs.ts`
@@ -402,6 +423,8 @@ entries (see PROJECT-KNOWLEDGE, drop lists).
   per-artist admit so genuinely-Korean rows self-reject without a hand-maintained drop-list
   entry. Filter order is load-bearing (`assertPhaseOrder` at module load), so this needs design —
   e.g. a new KOR-pro-reject step placed among steps 0–3, NOT a reorder of the admit steps.
+  **HELD (2026-07-10, owner): do not start without an explicit owner go**, and in any case not
+  before the #97 crawl gate has soaked at least one weekly crawl.
 - **Search-parity baseline regeneration policy.** The weekly crawl changes corpus identity by
   design, but `apps/web/src/lib/search-parity.golden.test.ts` pins a sha256 + record count and
   regenerates ONLY by hand (`UPDATE_PARITY_SNAPSHOT=1` + a human jaccard-diff review). So every
@@ -423,6 +446,10 @@ entries (see PROJECT-KNOWLEDGE, drop lists).
   key by record id, so a user's saved favorites silently re-target DIFFERENT songs after
   such a crawl. Needs a stable record-identity design for blog rows (e.g. derive the id
   from a stable key such as a karaoke number or content hash) — owner decision.
+  **HELD (2026-07-10, owner): no action planned for now.** The recommended
+  narrow fix on file (favorites store a stable key — vendor numbers — and
+  resolve to ids at load, one-time v1 migration) stays available for when this
+  is picked up.
 
 ### JOYSOUND classifier safe-predicate unification — Phase 2 (deferred)
 
@@ -449,9 +476,11 @@ are DROP→ADMIT flips, so genuine-JP dropout is structurally impossible. A full
 flips** in either direction for all three predicates — the widening is latent
 for today's catalog and only affects future rows carrying those code points.
 
-**Phase 2 (deferred — proceed after the golden gate has soaked one crawl
-cycle):** unify the remaining three predicates, which sit on ADMIT/DROP-critical
-paths whose real JOYSOUND foreign-name distribution is not yet validated:
+**Phase 2 (deferred — HELD 2026-07-10, owner: do not start without an explicit
+owner go; technical precondition unchanged — proceed only after the golden gate
+has soaked one crawl cycle):** unify the remaining three predicates, which sit
+on ADMIT/DROP-critical paths whose real JOYSOUND foreign-name distribution is
+not yet validated:
 - `RE_HANGUL` → `hasHangul` (`\p{Script=Hangul}`): adds half-width Hangul and
   Jamo Extended-A/B → widens the `foreign-korean` DROP directly;
 - `RE_HAN_FOREIGN` → `hasHan` (`\p{Script=Han}`): adds supplementary-plane Han →
@@ -466,7 +495,7 @@ Hangul/Han code points above. The Phase-2 divergence points are already pinned a
 their current behaviour in the golden gate's Part B2 — flipping those assertions
 is the Phase-2 change spec.
 
-### Offsite full-corpus backup publication (HELD 2026-07-04, owner)
+### Offsite full-corpus backup publication (re-HELD 2026-07-10, owner)
 
 Local retention now keeps only current+previous release (README-ops on the
 NAS root), which makes an offsite corpus copy the only protection against
@@ -478,7 +507,15 @@ asset. Unblocked by: owner approval of public publication (the same
 metadata is already publicly queryable through the live API), or choosing
 a private storage target instead.
 
-### Watchdog alert channel (HELD 2026-07-04, owner)
+**Severity note (2026-07-09 verification):** the repo currently has ZERO
+GitHub releases — both tracked manifests point at 404 assets (dangling), so
+`fetch-full-corpus.mjs`/the self-host SQLite build cannot reprovision from
+GitHub at all and the NAS holds the only full-corpus copy. **Owner re-held
+2026-07-10 (no plans for now)** with that risk on record. The dependent
+full-corpus publish workflow (PR-2) and the API-first deploy flip (PR-3)
+stay held with it.
+
+### Watchdog alert channel (re-HELD 2026-07-10, owner — no plans for now)
 
 `karaoke-healthz.timer` (1-min healthz watchdog with auto-restart and a
 10-min restart-loop guard) is live on the host and logs to the journal
