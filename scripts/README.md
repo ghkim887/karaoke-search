@@ -23,6 +23,7 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | `apply-manual-title-ko-fixes.mjs` | CI / manual title_ko sidecar replay | Weekly | After Stage 2 replay, in `crawl.yml` |
 | `prune-artist-nationality-cache.mjs` | CI / tj-search-cache pruning (drops unreachable `artistNationalityMap` keys) | Weekly | Before schema validation, in `crawl.yml` |
 | `validate-songs-json.mjs` | CI / data quality gate | Weekly | Final gate, in `crawl.yml` |
+| `compare-parity-baselines.mjs` | CI / search-parity baseline delta for the crawl PR body | Weekly | In `crawl.yml` after the baseline is regenerated (old-vs-new); also manual (`<old.json> <new.json>`) |
 | `compose-crawl-pr-body.mjs` | CI / crawl PR-body composer | Weekly | In `crawl.yml`, stdout redirected to `$RUNNER_TEMP/pr_body.md` |
 | `export-drop-list.mjs` | Build chain (Korean drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `export-clustering-rules.mjs` | Build chain (`SPLIT_RE` splitter-pattern JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
