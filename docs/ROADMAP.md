@@ -347,6 +347,39 @@ tool). Grow the catalog-anomaly ID list in `scripts/drop-artist-leaks.mjs` as
 anomalies surface; revisit list structure if the Chinese list grows past ~20
 entries (see PROJECT-KNOWLEDGE, drop lists).
 
+### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
+
+- **TJ filter seam — a Korean act can be admitted JPN by the per-artist step despite a
+  per-song KOR signal.** `jpn-admit-artist` (FILTER_STEPS step 5) can verdict a Korean act JPN
+  from the artist-scan vote tally seeded by its JP-market catalog entries, even when the
+  per-song `proEnrichmentMap` already carries `nationalcode: KOR` for that exact row. Today only
+  the deterministic drop list catches these (the 2026-07-09 LUCY / Roy Kim / BOYNEXTDOOR leak
+  admitted 168 rows this way). Consider consulting the per-song KOR pro signal before/at the
+  per-artist admit so genuinely-Korean rows self-reject without a hand-maintained drop-list
+  entry. Filter order is load-bearing (`assertPhaseOrder` at module load), so this needs design —
+  e.g. a new KOR-pro-reject step placed among steps 0–3, NOT a reorder of the admit steps.
+- **Search-parity baseline regeneration policy.** The weekly crawl changes corpus identity by
+  design, but `apps/web/src/lib/search-parity.golden.test.ts` pins a sha256 + record count and
+  regenerates ONLY by hand (`UPDATE_PARITY_SNAPSHOT=1` + a human jaccard-diff review). So every
+  crawl PR leaves the apps/web tests red until someone regenerates the baseline (and `-r test`
+  masks it — pnpm bails at the earlier crawler package). The crawl pipeline/CI needs an
+  owner-decided regeneration policy: auto-regen defeats the gate's purpose (a silent-drift guard
+  that rubber-stamps itself), pure-manual guarantees weekly red. Design needed (e.g. the crawl PR
+  regenerates the baseline AND surfaces the per-query jaccard delta for human sign-off).
+- **Smoke-fixture ids are positional and go stale on every crawl.** The parity
+  relevance-smoke fixture (`apps/web/src/lib/fixtures/search-parity-smoke.json`) pins
+  expected results by `blog-*` record id, which reshuffle whenever a crawl re-touches
+  those blog pages — #95 displaced 6 of them (re-pinned by hand on 2026-07-09 after
+  verifying identity via stable karaoke numbers). Design a stable-key pinning for the
+  smoke harness (assert by karaoke number or title+artist, not the positional id) so it
+  no longer needs a manual re-pin every crawl.
+- **PRODUCT: `blog-*` record ids are positional and reshuffle each crawl.** #95
+  re-assigned the Utada page ids wholesale (e.g. `blog-301-13` was 光, is now a different
+  song). Device favorites (localStorage `karaoke-favorites:v1`) and `/api/songs` lookups
+  key by record id, so a user's saved favorites silently re-target DIFFERENT songs after
+  such a crawl. Needs a stable record-identity design for blog rows (e.g. derive the id
+  from a stable key such as a karaoke number or content hash) — owner decision.
+
 ### JOYSOUND classifier safe-predicate unification — Phase 2 (deferred)
 
 The JOYSOUND classifier
