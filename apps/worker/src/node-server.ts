@@ -21,8 +21,23 @@ interface RateLimitBucket {
   count: number;
 }
 
+/**
+ * Rate-limit state: the per-client buckets plus the timestamp of the last
+ * eviction sweep. `lastSweepAt` bounds the sweep to at most once per window so
+ * the added per-request work stays amortized O(1) — see {@link
+ * sweepExpiredBuckets}.
+ */
+export interface RateLimiterState {
+  buckets: Map<string, RateLimitBucket>;
+  lastSweepAt: number;
+}
+
+export function createRateLimiterState(): RateLimiterState {
+  return { buckets: new Map(), lastSweepAt: 0 };
+}
+
 export function createKaraokeSearchNodeServer(options: NodeServerOptions): Server {
-  const buckets = new Map<string, RateLimitBucket>();
+  const rateLimiter = createRateLimiterState();
   return createServer(async (req, res) => {
     try {
       const request = toWebRequest(req);
@@ -34,7 +49,7 @@ export function createKaraokeSearchNodeServer(options: NodeServerOptions): Serve
         const limited = checkRateLimit(
           req,
           options.rateLimit,
-          buckets,
+          rateLimiter,
           options.trustProxyHeaders === true,
         );
         if (limited) {
@@ -76,6 +91,10 @@ function startFromEnv(env: NodeJS.ProcessEnv = process.env): Server {
       db.close();
       process.exit(0);
     });
+    // `server.close` alone can wait on idle keep-alive sockets, so an otherwise
+    // idle client could delay shutdown; closing idle connections releases them
+    // while any in-flight request still drains (Node 18.2+).
+    server.closeIdleConnections();
   };
   process.once('SIGINT', close);
   process.once('SIGTERM', close);
@@ -132,16 +151,18 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function checkRateLimit(
+export function checkRateLimit(
   req: IncomingMessage,
   options: RateLimitOptions | undefined,
-  buckets: Map<string, RateLimitBucket>,
+  state: RateLimiterState,
   trustProxyHeaders: boolean,
 ): boolean {
   if (options === undefined) {
     return false;
   }
   const now = options.now?.() ?? Date.now();
+  sweepExpiredBuckets(state, now, options.windowMs);
+  const { buckets } = state;
   const key = clientKey(req, trustProxyHeaders);
   const existing = buckets.get(key);
   if (existing === undefined || now - existing.windowStart >= options.windowMs) {
@@ -150,6 +171,26 @@ function checkRateLimit(
   }
   existing.count += 1;
   return existing.count > options.maxRequests;
+}
+
+/**
+ * Evict buckets whose window has fully elapsed. Behavior-neutral: the next
+ * request for an evicted key hits the same `now - windowStart >= windowMs`
+ * reset branch it would have hit with the stale bucket present, so allow/deny
+ * decisions are identical — only idle keys stop accumulating. Gated by
+ * `lastSweepAt` to run at most once per window, keeping the amortized
+ * per-request cost O(1) instead of scanning every bucket on every request.
+ */
+function sweepExpiredBuckets(state: RateLimiterState, now: number, windowMs: number): void {
+  if (now - state.lastSweepAt < windowMs) {
+    return;
+  }
+  state.lastSweepAt = now;
+  for (const [key, bucket] of state.buckets) {
+    if (now - bucket.windowStart >= windowMs) {
+      state.buckets.delete(key);
+    }
+  }
 }
 
 function clientKey(req: IncomingMessage, trustProxyHeaders: boolean): string {
