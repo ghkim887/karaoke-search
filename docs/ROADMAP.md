@@ -374,8 +374,9 @@ Behavior-preserving refactor batch:
 
 Test coverage:
 
-- add a contract test for the implicit `/api/meta` date-only ↔ Footer regex
-  coupling.
+- ✅ **DONE (2026-07-10).** Added a contract test for the implicit `/api/meta`
+  date-only ↔ Footer regex coupling (`apps/worker/test/meta-contract.test.ts`
+  asserts the YYYY-MM-DD / '' shape; Footer.astro points back at it).
 
 ### Chinese-leak detection future work
 
