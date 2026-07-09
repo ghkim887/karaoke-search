@@ -17,7 +17,9 @@ import {
   recalculateAllTokenStats,
   resolveSearchHints,
 } from './search-index.js';
+import type { ResolvedSearchHint } from './search-index.js';
 import { prepareSongWriteStatements, writeSongRecordRows } from './song-writer.js';
+import type { SongWriteStatements } from './song-writer.js';
 
 export type DeltaPatchTokenStatMode = 'affected' | 'all';
 
@@ -410,7 +412,7 @@ interface DeltaMutationResult {
 }
 
 function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): DeltaMutationResult {
-  createSongDatabase(db);
+  const migration = createSongDatabase(db);
   const candidateById = new Map(options.candidateRecords.map((record) => [record.id, record]));
   const sortOrderById = new Map(
     options.candidateRecords.map((record, index) => [record.id, index]),
@@ -424,6 +426,17 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec('BEGIN');
   try {
+    // Converging a legacy DB may have DROPped+recreated a fully-derived search
+    // table (see createSongDatabase), which empties it for EVERY song. The
+    // touched-only path below would then leave untouched songs with no index
+    // rows, so re-derive the whole corpus instead — the result is identical to a
+    // fresh full import of the candidate corpus (+ hints).
+    if (migration.droppedDerivedTable) {
+      const result = rebuildAllDerivedRows(db, statements, options, hintsBySongId);
+      db.exec('COMMIT');
+      return result;
+    }
+
     // Collect the touched songs' OLD token keys in one set-based sweep before
     // deleting them (see collectTokenKeysForSongs), then drop their tokens in a
     // single set-based DELETE. `search_tokens` has no `song_id` index, so this
@@ -492,6 +505,50 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
     db.exec('ROLLBACK');
     throw error;
   }
+}
+
+/**
+ * Recovery path for when {@link createSongDatabase} had to DROP+recreate a
+ * fully-derived search table to converge a legacy DB. That drop empties the
+ * table for EVERY song, so a touched-only re-derivation would strand untouched
+ * songs with no index rows. Instead, re-derive the entire corpus exactly like a
+ * full {@link importSongs}: the resulting `search_texts`/`search_tokens`/
+ * `search_token_stats` and hint tokens are identical to a fresh full import of
+ * the candidate corpus. Runs inside the caller's transaction. `affectedTokenCount`
+ * reflects that every stat row was recomputed (the whole corpus was affected).
+ */
+function rebuildAllDerivedRows(
+  db: SongDatabase,
+  statements: SongWriteStatements,
+  options: DeltaMutationOptions,
+  hintsBySongId: Map<string, ResolvedSearchHint[]>,
+): DeltaMutationResult {
+  // Drop songs the candidate no longer contains; ON DELETE CASCADE clears their
+  // numbers/aliases (search rows were already emptied by the migration).
+  for (const songId of options.delta.removedIds) {
+    statements.deleteSong.run(songId);
+  }
+  // Clear all derived index state so the re-derivation starts from a clean,
+  // corpus-complete slate. `search_texts`/`search_tokens` are already empty from
+  // the migration drop; `search_token_stats` (never dropped by a migration)
+  // still holds the pre-drop rows and must be discarded before recompute.
+  db.exec('DELETE FROM search_token_stats; DELETE FROM search_tokens; DELETE FROM search_texts');
+  options.candidateRecords.forEach((record, index) => {
+    // Numbers/aliases survive for untouched songs; clear before the shared
+    // writer re-inserts them, exactly as the full-import path does. The upsert
+    // sets each song's sort_order to its candidate index, so no separate
+    // sort-order pass is needed.
+    statements.deleteNumbers.run(record.id);
+    statements.deleteAliases.run(record.id);
+    writeSongRecordRows(statements, record, index, hintsBySongId.get(record.id) ?? []);
+  });
+  const recalculatedTokenStatCount = recalculateAllTokenStats(db, options.candidateRecords.length);
+  const prunedGram1TokenCount = pruneHighDfGram1Tokens(db, GRAM1_DF_CAP);
+  return {
+    affectedTokenCount: recalculatedTokenStatCount,
+    recalculatedTokenStatCount,
+    prunedGram1TokenCount,
+  };
 }
 
 function formatRatio(value: number): string {
