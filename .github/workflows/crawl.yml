@@ -116,8 +116,55 @@ jobs:
         # until it is fixed (owner remediation decision, 2026-07-09).
         run: pnpm --filter @karaoke/crawler test
 
-      - name: Compose PR body with merge-conflict summary
-        run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json > "${RUNNER_TEMP}/pr_body.md"
+      - name: Snapshot the committed search-parity baseline
+        # Copy the CURRENTLY COMMITTED parity baseline aside before regenerating
+        # it below, so the delta step can diff pre-crawl vs regenerated. Lands in
+        # RUNNER_TEMP (outside the repo tree) so it is never staged into the PR.
+        run: cp apps/web/src/lib/__snapshots__/search-parity.baseline.json "${RUNNER_TEMP}/parity-baseline.old.json"
+
+      - name: Regenerate the search-parity baseline from the crawled corpus
+        # POLICY (owner-approved 2026-07-10): the weekly crawl rewrites the corpus
+        # by design, which changes its sha256. The search-parity golden gate
+        # (apps/web/src/lib/search-parity.golden.test.ts) sha256-pins the committed
+        # corpus, so on a crawl PR it CANNOT pass until its baseline is regenerated
+        # against the new corpus. Historically a human regenerated it by hand after
+        # the crawl, so every crawl PR shipped with apps/web tests red -- this bit
+        # us in #95 (masked by pnpm's bail). We regenerate inside the workflow AND
+        # surface the resulting per-query delta in the PR body (next two steps), so
+        # the human drift-gate MOVES to the crawl-PR review instead of being
+        # silently rubber-stamped: auto-regen alone would hide real ranking drift;
+        # the delta report is what preserves the gate's purpose.
+        #
+        # ORDER IS LOAD-BEARING: this runs AFTER the crawler-test leakage gate
+        # above. We must never regenerate a baseline for a corpus that fails the
+        # leakage guard -- a red leakage gate stops the run before we reach here.
+        #
+        # UPDATE-MODE SEMANTICS (intended): with UPDATE_PARITY_SNAPSHOT=1 the test
+        # rewrites the baseline from the freshly built indexes, so the corpus-
+        # identity / per-query / aggregate assertions compare the new baseline
+        # against itself and pass trivially. BUT the relevance-smoke assertions
+        # (obvious matches must rank top-3 on BOTH search paths, resolved by stable
+        # karaoke number) and the setup-time stable-key resolution STILL run and
+        # STILL assert under UPDATE mode -- so if the new corpus drops an obvious
+        # match out of the top 3, or a smoke case's stable key goes stale/ambiguous,
+        # vitest exits non-zero, THIS step fails, the crawl run goes red, and NO PR
+        # is opened. That is the intended safety net: a corpus that breaks an
+        # obvious-match smoke is never proposed.
+        env:
+          UPDATE_PARITY_SNAPSHOT: '1'
+        run: pnpm --filter @karaoke/web exec vitest run src/lib/search-parity.golden.test.ts
+
+      - name: Compute the search-parity baseline delta for the PR body
+        # Diff the pre-crawl baseline (snapshotted above) against the just-
+        # regenerated one and render a markdown section for the PR body.
+        # compare-parity-baselines.mjs NEVER fails the build on a regression -- the
+        # crawl PR must still open so a human can review the delta -- but it flags
+        # any dropped Jaccard or lost top-1 agreement loudly so the reviewer must
+        # acknowledge it before merge.
+        run: node scripts/compare-parity-baselines.mjs "${RUNNER_TEMP}/parity-baseline.old.json" apps/web/src/lib/__snapshots__/search-parity.baseline.json > "${RUNNER_TEMP}/parity-delta.md"
+
+      - name: Compose PR body with merge-conflict summary and parity delta
+        run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json "${RUNNER_TEMP}/parity-delta.md" > "${RUNNER_TEMP}/pr_body.md"
 
       - name: Close prior crawl PRs
         env:
@@ -136,3 +183,4 @@ jobs:
           add-paths: |
             apps/web/public/data/songs.json
             apps/web/public/data/tj-search-cache.json
+            apps/web/src/lib/__snapshots__/search-parity.baseline.json
