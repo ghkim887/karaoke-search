@@ -86,6 +86,36 @@ jobs:
         # runner's summary output.
         run: node scripts/run-post-crawl-pipeline.mjs
 
+      - name: Run crawler tests before opening the crawl PR
+        # Runs the @karaoke/crawler package test suite against the corpus the
+        # post-crawl pipeline just wrote (apps/web/public/data/songs.json) BEFORE
+        # any PR is proposed. The load-bearing guard is
+        # packages/crawler/test/product-corpus-regression.test.ts, which asserts
+        # the known TJ-direct Korean-script leakage rows never return -- an
+        # absence check, so it stays green as the corpus legitimately grows.
+        #
+        # Deliberately scoped to the crawler package, NOT the full workspace
+        # suite (`pnpm test`): the workspace suite includes corpus-identity
+        # golden tests (apps/web search-parity baseline) that sha256-pin the
+        # committed songs.json and fail on ANY corpus change -- i.e. on every
+        # legitimate weekly crawl -- which would false-red this gate and block
+        # every crawl PR from opening. The crawler package holds no such pin.
+        #
+        # Why this runs here and not only in ci.yml: the crawl PR is opened by
+        # peter-evans/create-pull-request using the default GITHUB_TOKEN, and
+        # GitHub does not trigger `on: pull_request` workflows for PRs created
+        # with GITHUB_TOKEN. So ci.yml (lint/typecheck/test/build) never runs on
+        # crawl-output PRs -- a corpus regression stays invisible until the
+        # post-merge push to main goes red (PR #95 shipped 145 Korean-script
+        # leakage rows; CI only failed after the squash-merge landed on main).
+        # This step closes that gap by running the guard inside the crawl job.
+        #
+        # Failure mode (intended): if the suite fails, this step fails, the crawl
+        # run goes red, and NO PR is opened -- the regressing corpus is never
+        # proposed. Accepted tradeoff: a regression blocks the weekly data PR
+        # until it is fixed (owner remediation decision, 2026-07-09).
+        run: pnpm --filter @karaoke/crawler test
+
       - name: Compose PR body with merge-conflict summary
         run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json > "${RUNNER_TEMP}/pr_body.md"
 
