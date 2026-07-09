@@ -37,6 +37,10 @@ const VENDORS = ['tj', 'ky', 'joysound'] as const;
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
 const MAX_QUERY_TOKENS = 24;
+// Upper bound (in code points) on the `q` search parameter. Matches the
+// @karaoke/search expansion guard so wanakana (reached via expandSearchQuery)
+// never sees an over-length query; a longer `q` is a clean 400, never a 500.
+const MAX_QUERY_CODE_POINTS = 256;
 // Weight multiplier applied to tokens from expanded romaji↔kana query variants
 // (the original query keeps full weight). Biases original-query matches above
 // expansion-only matches without degrading existing scoring.
@@ -90,7 +94,7 @@ export async function handleRequest(request: Request, context: SearchContext): P
 
 export async function handleSearchRequest(request: Request, db: SearchDatabase): Promise<Response> {
   const url = new URL(request.url);
-  const query = url.searchParams.get('q')?.trim() ?? '';
+  const query = parseQuery(url.searchParams.get('q'));
   const vendors = parseVendors(url.searchParams.get('vendor'));
   const limit = parseLimit(url.searchParams.get('limit'));
   const offset = parseCursor(url.searchParams.get('cursor'));
@@ -639,6 +643,14 @@ function parseSongIds(value: string | null): string[] {
     throw new BadRequestError(`Invalid ids: at most ${MAX_LIMIT} ids per request`);
   }
   return ids;
+}
+
+function parseQuery(value: string | null): string {
+  const query = value?.trim() ?? '';
+  if (Array.from(query).length > MAX_QUERY_CODE_POINTS) {
+    throw new BadRequestError(`Invalid q: at most ${MAX_QUERY_CODE_POINTS} characters per query`);
+  }
+  return query;
 }
 
 function parseLimit(value: string | null): number {
