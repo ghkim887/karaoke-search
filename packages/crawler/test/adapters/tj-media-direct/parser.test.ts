@@ -257,6 +257,39 @@ describe('parseCatalogResponse — reviewed song-level overrides', () => {
     expect(records).toEqual([]);
     expect(stats.dropped).toBe(1);
   });
+
+  it('admits the reviewed BOYNEXTDOOR JP release (tj 52990) via song-override while a non-reviewed BOYNEXTDOOR row drops', () => {
+    // Option B (2026-07-09): `Count To Love` is BOYNEXTDOOR's genuine Japanese
+    // maxi-single lead track, allowed by exact TJ number. Every other
+    // BOYNEXTDOOR row still drops via the Korean drop list. reviewed-song-allow
+    // (step 2) precedes drop-list-reject (step 3), so 52990 survives and 43349
+    // (a Korean-catalog BOYNEXTDOOR row) drops.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 52990,
+            indexTitle: 'Count To Love',
+            indexSong: 'BOYNEXTDOOR',
+            publishdate: '2025-08-18',
+          },
+          {
+            pro: 43349,
+            indexTitle: 'Nice Guy',
+            indexSong: 'BOYNEXTDOOR',
+            publishdate: '2023-05-30',
+          },
+        ],
+      },
+    };
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+
+    expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['52990']);
+    expect(stats.admittedBySongOverride).toBe(1);
+    expect(stats.dropped).toBe(1);
+  });
 });
 
 describe('parseCatalogResponse — blog-whitelist rescue (path 3)', () => {
@@ -754,6 +787,99 @@ describe('parseCatalogResponse — Phase 1 §2.E drop-list reject', () => {
     const { records } = parseCatalogResponse(json, SOURCE_URL, { cache });
     expect(records).toHaveLength(1);
     expect(records[0]?.artist_primary).toBe('LiSA');
+  });
+
+  it('drops the PR #95 leaker `루시` (LUCY) even when the artist scan tagged it JPN', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 32100, indexTitle: '1년 365일', indexSong: '루시', publishdate: '2023-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    // PR #95 weekly crawl: the artist scan voted `루시` JPN 3/0/0 while the
+    // per-song proEnrichment tagged the rows KOR. Drop list rejects regardless.
+    cache.artistNationalityMap.루시 = {
+      code: 'JPN',
+      votes: { JPN: 3, KOR: 0, ENG: 0 },
+      lastSeen: '2026-07-08T04:41:07.835Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+  });
+
+  it('drops the `루시(Feat.원슈타인)` collab via its lead component (any-component scan)', () => {
+    // splitArtistCollab('루시(Feat.원슈타인)') -> ['루시(Feat.원슈타인)', '루시',
+    // '원슈타인']. The collab whole-string is UNKNOWN in cache, but the lead
+    // component `루시` is on the drop list and drop-list-reject scans every
+    // component, so the row drops.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 900571,
+            indexTitle: 'Collab Track',
+            indexSong: '루시(Feat.원슈타인)',
+            publishdate: '2024-01-01',
+          },
+        ],
+      },
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+  });
+
+  it('drops the PR #95 leaker `로이킴` (Roy Kim) even when the artist scan tagged it JPN', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 36707, indexTitle: '봄봄봄', indexSong: '로이킴', publishdate: '2013-04-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.로이킴 = {
+      code: 'JPN',
+      votes: { JPN: 4, KOR: 0, ENG: 0 },
+      lastSeen: '2026-07-08T04:41:07.835Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
+  });
+
+  it('drops the Latin-script PR #95 leaker `BOYNEXTDOOR` even when the artist scan tagged it JPN', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 43349,
+            indexTitle: 'Nice Guy',
+            indexSong: 'BOYNEXTDOOR',
+            publishdate: '2023-05-30',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.boynextdoor = {
+      code: 'JPN',
+      votes: { JPN: 4, KOR: 0, ENG: 0 },
+      lastSeen: '2026-07-08T04:41:07.835Z',
+    };
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+    expect(records).toEqual([]);
+    expect(stats.dropped).toBe(1);
+    expect(stats.admittedByArtist).toBe(0);
   });
 });
 

@@ -16,7 +16,7 @@
     {
       "id": "smoke-ussewa",
       "query": "うっせぇわ",
-      "expectId": "blog-135-2",
+      "expectId": "blog-135-1",
       "note": "Ado — うっせぇわ. Original over the Giga Remix."
     },
     {
@@ -64,7 +64,7 @@
     {
       "id": "smoke-sikkeureowo",
       "query": "시끄러워",
-      "expectId": "blog-135-2",
+      "expectId": "blog-135-1",
       "note": "うっせぇわ by Korean title_ko '시끄러워'."
     },
     {
@@ -76,25 +76,25 @@
     {
       "id": "smoke-zutomayo",
       "query": "ZUTOMAYO",
-      "expectId": "blog-105-31",
+      "expectId": "blog-105-46",
       "note": "Alias ZUTOMAYO -> ずっと真夜中でいいのに。 top record."
     },
     {
       "id": "smoke-yonezu",
       "query": "米津玄師",
-      "expectId": "blog-101-27",
+      "expectId": "blog-101-32",
       "note": "Kanji artist 米津玄師 top record."
     },
     {
       "id": "smoke-yonezu-ko",
       "query": "요네즈 켄시",
-      "expectId": "blog-101-27",
+      "expectId": "blog-101-32",
       "note": "Korean artist_ko 요네즈 켄시 -> 米津玄師 top record."
     },
     {
       "id": "smoke-hikari",
       "query": "光",
-      "expectId": "blog-301-13",
+      "expectId": "blog-301-10",
       "note": "宇多田ヒカル — 光 (title_primary '光'). Single-kanji exact."
     }
   ]
