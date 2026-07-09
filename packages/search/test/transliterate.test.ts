@@ -251,6 +251,16 @@ describe('iteration marks and middle dot', () => {
     expect(kanaToRomaji('ア・イ')).toBe('a i');
     expect(kanaToHangul('ア・イ')).toBe('아 이');
   });
+  // Hiragana iteration marks ゝ (U+309D) / ゞ (U+309E) sit just past the
+  // U+3041–U+3096 hiragana→katakana fold range, so they must be folded to their
+  // katakana forms ヽ/ヾ for segment() to repeat the previous mora.
+  it('folds hiragana ゝ/ゞ to katakana ヽ/ヾ so they repeat the previous mora', () => {
+    expect(kanaToRomaji('みゝ')).toBe('mimi');
+    expect(kanaToRomaji('はゞ')).toBe('haba');
+    expect(kanaToHangul('みゝ')).toBe('미미');
+    // Katakana iteration marks are unaffected by the fold (regression guard).
+    expect(kanaToRomaji('ミヽ')).toBe('mimi');
+  });
 });
 
 describe('hiragana and width folding (NFKC + hiragana→katakana)', () => {
