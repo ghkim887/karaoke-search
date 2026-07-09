@@ -115,4 +115,48 @@ describe('App offline fallback banner (T4-6)', () => {
     });
     expect(host.querySelector('.fallback-notice')).toBeNull();
   });
+
+  it('does NOT show the offline hint on the Browse landing when a background favorites prefetch falls back', async () => {
+    // Starred records exist, so the favorites prefetch runs on mount even on the
+    // Browse tab; make it fail so it engages the local fallback for FAVORITES.
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r2']));
+    const fetchSpy = vi
+      .spyOn(searchModule, 'fetchSongsByIds')
+      .mockRejectedValue(new Error('network down'));
+    // Browse itself is healthy and nothing is searched — the landing is shown.
+    vi.spyOn(searchModule, 'searchApi').mockResolvedValue([kick]);
+    await mount();
+
+    // Let the background favorites prefetch fail and engage the fallback corpus.
+    await waitFor(() => (fetchSpy.mock.calls.length > 0 ? true : null));
+    await flushPromises();
+    await flushPromises();
+
+    // The Browse landing shows the featured-artist empty state and NO banner —
+    // nothing fallback-served is displayed in the active view.
+    expect(host.querySelector('.empty-state')).not.toBeNull();
+    expect(host.querySelector('.fallback-notice')).toBeNull();
+  });
+
+  it('shows the offline hint for fallback-served Browse results even when the favorites prefetch also failed', async () => {
+    // Both paths fail: the favorites prefetch (background) AND the browse search
+    // the user actually runs. The banner must reflect the DISPLAYED (browse)
+    // results, so it appears — proving the scoping is per-view, not a global off.
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r2']));
+    vi.spyOn(searchModule, 'fetchSongsByIds').mockRejectedValue(new Error('down'));
+    vi.spyOn(searchModule, 'searchApi').mockRejectedValue(new Error('network down'));
+    await mount();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    typeQuery(host, 'kick');
+    vi.advanceTimersByTime(150);
+    vi.useRealTimers();
+
+    await waitFor(() => {
+      const c = host.querySelector<HTMLElement>('[data-testid="result-card"]');
+      return c?.textContent?.includes('KICK BACK') ? c : null;
+    });
+    const notice = await waitFor(() => host.querySelector<HTMLElement>('.fallback-notice'));
+    expect(notice).not.toBeNull();
+  });
 });

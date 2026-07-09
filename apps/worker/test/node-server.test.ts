@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import {
   type SongDatabase,
@@ -7,7 +8,12 @@ import {
 } from '@karaoke/data-store';
 import type { SongRecord } from '@karaoke/schema';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createKaraokeSearchNodeServer, isCliEntrypoint } from '../src/node-server.js';
+import {
+  checkRateLimit,
+  createKaraokeSearchNodeServer,
+  createRateLimiterState,
+  isCliEntrypoint,
+} from '../src/node-server.js';
 import { SqliteSearchDatabase } from '../src/sqlite-adapter.js';
 
 const openDatabases: SongDatabase[] = [];
@@ -121,6 +127,43 @@ describe('Node self-host API server', () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(429);
     await expect(second.json()).resolves.toEqual({ error: 'Rate limit exceeded' });
+  });
+});
+
+describe('rate-limit bucket eviction', () => {
+  const fakeReq = (ip: string): IncomingMessage =>
+    ({ socket: { remoteAddress: ip }, headers: {} }) as unknown as IncomingMessage;
+
+  it('keeps identical allow/deny decisions for a single client across a window boundary', () => {
+    const state = createRateLimiterState();
+    let now = 0;
+    const options = { windowMs: 60_000, maxRequests: 2, now: () => now };
+    const req = fakeReq('203.0.113.7');
+
+    expect(checkRateLimit(req, options, state, false)).toBe(false); // 1st
+    expect(checkRateLimit(req, options, state, false)).toBe(false); // 2nd (== max)
+    expect(checkRateLimit(req, options, state, false)).toBe(true); // 3rd exceeds
+    now = 60_000; // window rolls over
+    expect(checkRateLimit(req, options, state, false)).toBe(false); // fresh window
+  });
+
+  it('evicts expired-window buckets so distinct one-shot clients cannot grow the map unbounded', () => {
+    const state = createRateLimiterState();
+    let now = 0;
+    const options = { windowMs: 60_000, maxRequests: 5, now: () => now };
+
+    // 1000 distinct clients, each arriving a full window after the last, so
+    // every earlier bucket's window has expired by the time the next hits.
+    for (let i = 0; i < 1000; i += 1) {
+      now = i * 60_000;
+      expect(
+        checkRateLimit(fakeReq(`10.0.${(i >> 8) & 255}.${i & 255}`), options, state, false),
+      ).toBe(false);
+    }
+
+    // Without eviction the map would retain ~1000 dead buckets; the lazy sweep
+    // bounds it to the live window (a handful), not the number of clients seen.
+    expect(state.buckets.size).toBeLessThanOrEqual(2);
   });
 });
 

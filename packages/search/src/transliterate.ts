@@ -63,6 +63,17 @@ const ITERATION = 'ヽ';
 const ITERATION_VOICED = 'ヾ';
 
 /**
+ * Hiragana iteration marks ゝ (U+309D) / ゞ (U+309E) sit just past the
+ * U+3041–U+3096 fold range, so the +0x60 code-shift never reaches them. Map
+ * them explicitly onto their katakana counterparts ヽ (U+30FD) / ヾ (U+30FE) so
+ * {@link segment} repeats the previous mora exactly as it does for katakana.
+ */
+const HIRAGANA_ITERATION_MARKS: Record<string, string> = {
+  ゝ: ITERATION,
+  ゞ: ITERATION_VOICED,
+};
+
+/**
  * Katakana that gain a voiced (dakuten) form, used only to resolve the voiced
  * iteration mark ヾ against the preceding kana. Not a general voicing table.
  */
@@ -440,10 +451,11 @@ function toKatakana(input: string): string {
   let result = '';
   for (const character of normalized) {
     const codePoint = character.codePointAt(0) ?? 0;
-    result +=
-      codePoint >= HIRAGANA_START && codePoint <= HIRAGANA_END
-        ? String.fromCodePoint(codePoint + HIRAGANA_TO_KATAKANA_SHIFT)
-        : character;
+    if (codePoint >= HIRAGANA_START && codePoint <= HIRAGANA_END) {
+      result += String.fromCodePoint(codePoint + HIRAGANA_TO_KATAKANA_SHIFT);
+    } else {
+      result += HIRAGANA_ITERATION_MARKS[character] ?? character;
+    }
   }
   return result;
 }

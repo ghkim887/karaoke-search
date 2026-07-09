@@ -731,6 +731,33 @@ describe('App favorites via API (full API-first mode)', () => {
     expect(host.querySelector('.favorites-empty')).not.toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  it('shows a searching state, not NoResults, while API Favorites hydration is pending', async () => {
+    localStorage.setItem('karaoke-favorites:v1', JSON.stringify(['r2', 'r1']));
+    const r1 = fixtureRecords[0];
+    const r2 = fixtureRecords[1];
+    if (!r1 || !r2) throw new Error('fixture records missing');
+    let resolveFetch: (records: SongRecord[]) => void = () => {};
+    const pending = new Promise<SongRecord[]>((resolve) => {
+      resolveFetch = resolve;
+    });
+    vi.spyOn(searchModule, 'fetchSongsByIds').mockReturnValue(pending);
+
+    await mount();
+    await clickFavoritesTab(host);
+
+    // While hydration is in flight the favorites tab shows the same loading
+    // treatment Browse uses, NOT the "no results" empty state.
+    const searching = await waitFor(() => host.querySelector<HTMLElement>('.search-loading'));
+    expect(searching).not.toBeNull();
+    expect(host.querySelector('.no-results')).toBeNull();
+
+    resolveFetch([r1, r2]);
+    await waitFor(() =>
+      host.querySelectorAll('[data-testid="result-card"]').length === 2 ? true : null,
+    );
+    expect(host.querySelector('.search-loading')).toBeNull();
+  });
 });
 
 describe('App API error surfacing (T1-2)', () => {
