@@ -1,100 +1,132 @@
 {
-  "_readme": "Relevance smoke fixture for the search-parity gate (T4-2). Each entry pairs an unambiguous query (an exact title/artist string, or its Korean rendering, from the committed corpus) with the expected canonical record id. The gate asserts expectId appears in the TOP 3 results of BOTH the client MiniSearch path and the worker SQLite path. These are curated from real corpus records (verified, not guessed) so a ranking regression that buries an obvious match fails loudly on whichever path regressed. Consumed by search-parity.golden.test.ts; independent of the divergence snapshot.",
+  "_readme": "Relevance smoke fixture for the search-parity gate (T4-2). Each entry pairs an unambiguous query (an exact title/artist string, or its Korean rendering, from the committed corpus) with a STABLE KEY identifying the expected record: expectNumbers ({tj?/ky?/joysound?} — at least one vendor karaoke number, which is stable identity) plus expectTitle/expectArtist as a self-documenting cross-check. The harness (search-parity.golden.test.ts) resolves expectNumbers against the loaded corpus to the current record id at setup (failing loudly if a key hits zero or multiple records, or if the resolved title/artist have drifted), then asserts that id appears in the TOP 3 results of BOTH the client MiniSearch path and the worker SQLite path. Pinning by karaoke number (not the POSITIONAL blog-* id, which reshuffles whenever a crawl re-touches a blog page) removes the per-crawl manual re-pin toil. These are curated from real corpus records (verified, not guessed) so a ranking regression that buries an obvious match fails loudly on whichever path regressed. Consumed by search-parity.golden.test.ts; independent of the divergence snapshot.",
   "cases": [
     {
       "id": "smoke-yoruni",
       "query": "夜に駆ける",
-      "expectId": "blog-99-1",
+      "expectNumbers": { "tj": "68381", "ky": "44656", "joysound": "446181" },
+      "expectTitle": "夜に駆ける",
+      "expectArtist": "YOASOBI",
       "note": "YOASOBI — 夜に駆ける. Exact JP title must top both paths."
     },
     {
       "id": "smoke-gurenge",
       "query": "紅蓮華",
-      "expectId": "blog-153-1",
+      "expectNumbers": { "tj": "68047", "ky": "44419", "joysound": "439817" },
+      "expectTitle": "紅蓮華(鬼滅の刃 OP)",
+      "expectArtist": "LiSA",
       "note": "LiSA — 紅蓮華(鬼滅の刃 OP). Canonical release over remixes/TV-size."
     },
     {
       "id": "smoke-ussewa",
       "query": "うっせぇわ",
-      "expectId": "blog-135-1",
+      "expectNumbers": { "tj": "68458", "ky": "75999", "joysound": "487458" },
+      "expectTitle": "うっせぇわ",
+      "expectArtist": "Ado",
       "note": "Ado — うっせぇわ. Original over the Giga Remix."
     },
     {
       "id": "smoke-lemon",
       "query": "Lemon",
-      "expectId": "blog-101-2",
+      "expectNumbers": { "tj": "28822", "ky": "44253", "joysound": "425691" },
+      "expectTitle": "Lemon(ドラマ'アンナチュラル' OST)",
+      "expectArtist": "米津玄師",
       "note": "米津玄師 — Lemon(ドラマ'アンナチュラル' OST). Latin title recall."
     },
     {
       "id": "smoke-byoshin",
       "query": "秒針を噛む",
-      "expectId": "blog-105-0",
+      "expectNumbers": { "tj": "28942", "ky": "44343", "joysound": "431361" },
+      "expectTitle": "秒針を噛む",
+      "expectArtist": "ずっと真夜中でいいのに。",
       "note": "ずっと真夜中でいいのに。 — 秒針を噛む."
     },
     {
       "id": "smoke-dokidoki",
       "query": "ドキドキ",
-      "expectId": "blog-749-5",
-      "note": "JUDY AND MARY — ドキドキ. Katakana title."
+      "expectNumbers": { "tj": "25004", "joysound": "9570" },
+      "expectTitle": "ドキドキ",
+      "expectArtist": "JUDY AND MARY",
+      "note": "JUDY AND MARY — ドキドキ. Katakana title (no ky number)."
     },
     {
       "id": "smoke-cherry",
       "query": "チェリー",
-      "expectId": "blog-226-0",
+      "expectNumbers": { "tj": "25008", "ky": "41564", "joysound": "9906" },
+      "expectTitle": "チェリー",
+      "expectArtist": "スピッツ",
       "note": "スピッツ — チェリー. Katakana loanword title."
     },
     {
       "id": "smoke-robinson",
       "query": "ロビンソン",
-      "expectId": "blog-226-2",
+      "expectNumbers": { "tj": "25401", "ky": "41844", "joysound": "9087" },
+      "expectTitle": "ロビンソン",
+      "expectArtist": "スピッツ",
       "note": "スピッツ — ロビンソン. Distinctive katakana title."
     },
     {
       "id": "smoke-hongryeonhwa",
       "query": "홍련화",
-      "expectId": "blog-153-1",
+      "expectNumbers": { "tj": "68047", "ky": "44419", "joysound": "439817" },
+      "expectTitle": "紅蓮華(鬼滅の刃 OP)",
+      "expectArtist": "LiSA",
       "note": "紅蓮華 by Korean title_ko '홍련화'."
     },
     {
       "id": "smoke-bameul",
       "query": "밤을 달리다",
-      "expectId": "blog-99-1",
+      "expectNumbers": { "tj": "68381", "ky": "44656", "joysound": "446181" },
+      "expectTitle": "夜に駆ける",
+      "expectArtist": "YOASOBI",
       "note": "夜に駆ける by Korean title_ko '밤을 달리다'."
     },
     {
       "id": "smoke-sikkeureowo",
       "query": "시끄러워",
-      "expectId": "blog-135-1",
+      "expectNumbers": { "tj": "68458", "ky": "75999", "joysound": "487458" },
+      "expectTitle": "うっせぇわ",
+      "expectArtist": "Ado",
       "note": "うっせぇわ by Korean title_ko '시끄러워'."
     },
     {
       "id": "smoke-yoasobi",
       "query": "YOASOBI",
-      "expectId": "blog-99-5",
+      "expectNumbers": { "tj": "52595", "ky": "75979", "joysound": "628772" },
+      "expectTitle": "UNDEAD",
+      "expectArtist": "YOASOBI",
       "note": "Artist YOASOBI top record; artist-field recall."
     },
     {
       "id": "smoke-zutomayo",
       "query": "ZUTOMAYO",
-      "expectId": "blog-105-46",
+      "expectNumbers": { "tj": "26094", "ky": "44773", "joysound": "496079" },
+      "expectTitle": "袖のキルト",
+      "expectArtist": "ずっと真夜中でいいのに。",
       "note": "Alias ZUTOMAYO -> ずっと真夜中でいいのに。 top record."
     },
     {
       "id": "smoke-yonezu",
       "query": "米津玄師",
-      "expectId": "blog-101-32",
+      "expectNumbers": { "tj": "27915", "ky": "44048", "joysound": "196181" },
+      "expectTitle": "vivi",
+      "expectArtist": "米津玄師",
       "note": "Kanji artist 米津玄師 top record."
     },
     {
       "id": "smoke-yonezu-ko",
       "query": "요네즈 켄시",
-      "expectId": "blog-101-32",
+      "expectNumbers": { "tj": "27915", "ky": "44048", "joysound": "196181" },
+      "expectTitle": "vivi",
+      "expectArtist": "米津玄師",
       "note": "Korean artist_ko 요네즈 켄시 -> 米津玄師 top record."
     },
     {
       "id": "smoke-hikari",
       "query": "光",
-      "expectId": "blog-301-10",
+      "expectNumbers": { "tj": "25191", "ky": "41217", "joysound": "22583" },
+      "expectTitle": "光",
+      "expectArtist": "宇多田ヒカル",
       "note": "宇多田ヒカル — 光 (title_primary '光'). Single-kanji exact."
     }
   ]

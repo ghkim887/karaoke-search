@@ -407,13 +407,13 @@ entries (see PROJECT-KNOWLEDGE, drop lists).
   owner-decided regeneration policy: auto-regen defeats the gate's purpose (a silent-drift guard
   that rubber-stamps itself), pure-manual guarantees weekly red. Design needed (e.g. the crawl PR
   regenerates the baseline AND surfaces the per-query jaccard delta for human sign-off).
-- **Smoke-fixture ids are positional and go stale on every crawl.** The parity
-  relevance-smoke fixture (`apps/web/src/lib/fixtures/search-parity-smoke.json`) pins
-  expected results by `blog-*` record id, which reshuffle whenever a crawl re-touches
-  those blog pages — #95 displaced 6 of them (re-pinned by hand on 2026-07-09 after
-  verifying identity via stable karaoke numbers). Design a stable-key pinning for the
-  smoke harness (assert by karaoke number or title+artist, not the positional id) so it
-  no longer needs a manual re-pin every crawl.
+- **Smoke-fixture ids are positional and go stale on every crawl.** — ✅ **DONE (2026-07-10).**
+  The parity relevance-smoke fixture (`apps/web/src/lib/fixtures/search-parity-smoke.json`)
+  previously pinned expected results by `blog-*` record id, which reshuffle whenever a crawl
+  re-touches those blog pages — #95 displaced 6 of them (re-pinned by hand on 2026-07-09 after
+  verifying identity via stable karaoke numbers). The harness now pins by stable karaoke-number
+  keys (`expectNumbers` {tj/ky/joysound} + an `expectTitle`/`expectArtist` cross-check), resolved
+  to the current record id at test setup, so it no longer needs a manual re-pin every crawl.
 - **PRODUCT: `blog-*` record ids are positional and reshuffle each crawl.** #95
   re-assigned the Utada page ids wholesale (e.g. `blog-301-13` was 光, is now a different
   song). Device favorites (localStorage `karaoke-favorites:v1`) and `/api/songs` lookups

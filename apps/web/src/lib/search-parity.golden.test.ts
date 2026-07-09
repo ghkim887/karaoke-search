@@ -84,11 +84,24 @@ interface GoldenQuery {
   vendors?: SearchVendor[];
   note: string;
 }
+type VendorNumberKey = 'tj' | 'ky' | 'joysound';
 interface SmokeCase {
   id: string;
   query: string;
   vendors?: SearchVendor[];
-  expectId: string;
+  /**
+   * STABLE identity: at least one vendor karaoke number. Resolved to the
+   * current record id at setup by `resolveSmokeExpectId`. Pins by number
+   * instead of the POSITIONAL blog-* id, which reshuffles whenever a crawl
+   * re-touches a blog page (see docs/ROADMAP.md history).
+   */
+  expectNumbers: Partial<Record<VendorNumberKey, string>>;
+  /**
+   * Self-documenting cross-check on the number-resolved record — asserted to
+   * match, NOT a fuzzy fallback (resolution is strictly BY NUMBER).
+   */
+  expectTitle: string;
+  expectArtist: string;
   note: string;
 }
 interface QuerySnapshot {
@@ -119,6 +132,8 @@ let index: MiniSearch<SongRecord>;
 let byId: Map<string, SongRecord>;
 let db: SearchDatabase;
 let sqlite: SongDatabase;
+/** Smoke id -> the corpus record id its stable karaoke-number key resolves to (built in beforeAll). */
+let resolvedSmokeIds: Map<string, string>;
 
 /**
  * Minimal sync→async adapter over node:sqlite that satisfies the worker's
@@ -191,6 +206,44 @@ function round6(value: number): number {
   return Math.round(value * 1e6) / 1e6;
 }
 
+/**
+ * Resolve a smoke case's STABLE karaoke-number key to the single corpus record
+ * it identifies today. Resolution is strictly BY NUMBER (tj/ky/joysound is
+ * stable identity); `expectTitle`/`expectArtist` are a self-documenting
+ * cross-check that the number still points at the documented song, NOT a fuzzy
+ * fallback. Throws (naming the smoke id) if the key pins no number, resolves to
+ * zero or multiple records, or the resolved record's title/artist have drifted
+ * — so a stale fixture fails loudly at setup instead of silently asserting the
+ * wrong record.
+ */
+function resolveSmokeExpectId(smoke: SmokeCase, records: readonly SongRecord[]): string {
+  const wanted: [VendorNumberKey, string][] = [];
+  for (const vendor of ['tj', 'ky', 'joysound'] as const) {
+    const number = smoke.expectNumbers[vendor];
+    if (number !== undefined) wanted.push([vendor, number]);
+  }
+  if (wanted.length === 0) {
+    throw new Error(
+      `smoke "${smoke.id}": expectNumbers pins no vendor number; a smoke case must carry at least one tj/ky/joysound karaoke number.`,
+    );
+  }
+  const matches = records.filter((record) =>
+    wanted.every(([vendor, number]) => record.karaoke_numbers[vendor] === number),
+  );
+  const record = matches[0];
+  if (matches.length !== 1 || record === undefined) {
+    throw new Error(
+      `smoke "${smoke.id}": stable key ${JSON.stringify(smoke.expectNumbers)} resolved to ${matches.length} corpus records (${JSON.stringify(matches.map((m) => m.id))}), expected exactly 1. Re-pin from the current corpus.`,
+    );
+  }
+  if (record.title_primary !== smoke.expectTitle || record.artist_primary !== smoke.expectArtist) {
+    throw new Error(
+      `smoke "${smoke.id}": record ${record.id} (resolved by number) carries title/artist ${JSON.stringify(record.title_primary)} / ${JSON.stringify(record.artist_primary)}, but the fixture documents ${JSON.stringify(smoke.expectTitle)} / ${JSON.stringify(smoke.expectArtist)}. The number now points at a different song — update the fixture or investigate the corpus.`,
+    );
+  }
+  return record.id;
+}
+
 let current: Snapshot;
 let baseline: Snapshot;
 
@@ -199,6 +252,12 @@ beforeAll(async () => {
   corpusHash = createHash('sha256').update(raw).digest('hex');
   const records = JSON.parse(raw.toString('utf8')) as SongRecord[];
   recordCount = records.length;
+
+  // Resolve every smoke case's stable karaoke-number key to a current record id
+  // (loud failure here if any key is stale/ambiguous — see resolveSmokeExpectId).
+  resolvedSmokeIds = new Map(
+    smokeCases.map((smoke) => [smoke.id, resolveSmokeExpectId(smoke, records)] as const),
+  );
 
   index = buildIndex(records);
   byId = new Map(records.map((record) => [record.id, record] as const));
@@ -294,18 +353,137 @@ describe('search-parity gate: aggregate metrics are no worse than baseline', () 
 
 describe('search-parity relevance smoke: obvious matches rank in the top 3 on BOTH paths', () => {
   for (const smoke of smokeCases) {
-    it(`${smoke.id}: "${smoke.query}" -> ${smoke.expectId}`, async () => {
+    it(`${smoke.id}: "${smoke.query}"`, async () => {
+      // Resolved from the stable karaoke-number key in beforeAll (not a
+      // positional blog-* id); assert the SAME record ranks top-3 as before.
+      const expectId = resolvedSmokeIds.get(smoke.id);
+      expect(
+        expectId,
+        `smoke "${smoke.id}" was not resolved to a corpus id during setup`,
+      ).toBeDefined();
+      if (expectId === undefined) return;
       const vendors = smoke.vendors ?? [];
       const web = webTopIds(smoke.query, vendors, SMOKE_TOP_N);
       const worker = await workerTopIds(smoke.query, vendors, SMOKE_TOP_N);
       expect(
         web,
-        `MiniSearch path missed ${smoke.expectId} in top ${SMOKE_TOP_N}: ${JSON.stringify(web)}`,
-      ).toContain(smoke.expectId);
+        `MiniSearch path missed ${expectId} (${smoke.expectTitle} / ${smoke.expectArtist}) in top ${SMOKE_TOP_N}: ${JSON.stringify(web)}`,
+      ).toContain(expectId);
       expect(
         worker,
-        `worker path missed ${smoke.expectId} in top ${SMOKE_TOP_N}: ${JSON.stringify(worker)}`,
-      ).toContain(smoke.expectId);
+        `worker path missed ${expectId} (${smoke.expectTitle} / ${smoke.expectArtist}) in top ${SMOKE_TOP_N}: ${JSON.stringify(worker)}`,
+      ).toContain(expectId);
     });
   }
+});
+
+describe('smoke stable-key resolver fails loudly on a broken key', () => {
+  // Pure-function guard for resolveSmokeExpectId. The loud-failure path is what
+  // turns a stale fixture into a clear, named error instead of a silent wrong
+  // assertion, so it is worth pinning directly. Synthetic records keep this
+  // independent of the heavy corpus build in beforeAll.
+  function makeRecord(
+    id: string,
+    numbers: Partial<Record<VendorNumberKey, string>>,
+    title: string,
+    artist: string,
+  ): SongRecord {
+    return {
+      id,
+      source_url: `https://example.test/${id}`,
+      title_primary: title,
+      title_ko: null,
+      artist_primary: artist,
+      artist_ko: null,
+      karaoke_numbers: {
+        tj: numbers.tj ?? null,
+        ky: numbers.ky ?? null,
+        joysound: numbers.joysound ?? null,
+      },
+      crawled_at: '2026-01-01T00:00:00.000Z',
+    };
+  }
+
+  const fakeRecords: SongRecord[] = [
+    makeRecord('rec-1', { tj: '100', ky: '200' }, 'Song One', 'Artist One'),
+    makeRecord('rec-2', { tj: '300', joysound: '400' }, 'Song Two', 'Artist Two'),
+    makeRecord('rec-dupe-a', { ky: '999' }, 'Dup A', 'Artist Dup'),
+    makeRecord('rec-dupe-b', { ky: '999' }, 'Dup B', 'Artist Dup'),
+  ];
+  const base = { query: 'q', note: 'n' } as const;
+
+  it('resolves a valid single-number key to the matching record id', () => {
+    expect(
+      resolveSmokeExpectId(
+        {
+          id: 's-ok',
+          ...base,
+          expectNumbers: { tj: '100' },
+          expectTitle: 'Song One',
+          expectArtist: 'Artist One',
+        },
+        fakeRecords,
+      ),
+    ).toBe('rec-1');
+  });
+
+  it('throws (naming the smoke id) when a number matches zero records', () => {
+    expect(() =>
+      resolveSmokeExpectId(
+        {
+          id: 's-missing',
+          ...base,
+          expectNumbers: { tj: '000000' },
+          expectTitle: 'Song One',
+          expectArtist: 'Artist One',
+        },
+        fakeRecords,
+      ),
+    ).toThrow(/s-missing.*resolved to 0 corpus records/);
+  });
+
+  it('throws when a number matches multiple records', () => {
+    expect(() =>
+      resolveSmokeExpectId(
+        {
+          id: 's-dupe',
+          ...base,
+          expectNumbers: { ky: '999' },
+          expectTitle: 'Dup A',
+          expectArtist: 'Artist Dup',
+        },
+        fakeRecords,
+      ),
+    ).toThrow(/s-dupe.*resolved to 2 corpus records/);
+  });
+
+  it('throws when the resolved record title/artist have drifted from the fixture', () => {
+    expect(() =>
+      resolveSmokeExpectId(
+        {
+          id: 's-drift',
+          ...base,
+          expectNumbers: { tj: '100' },
+          expectTitle: 'Wrong Title',
+          expectArtist: 'Artist One',
+        },
+        fakeRecords,
+      ),
+    ).toThrow(/s-drift.*different song/);
+  });
+
+  it('throws when the key pins no vendor number', () => {
+    expect(() =>
+      resolveSmokeExpectId(
+        {
+          id: 's-empty',
+          ...base,
+          expectNumbers: {},
+          expectTitle: 'Song One',
+          expectArtist: 'Artist One',
+        },
+        fakeRecords,
+      ),
+    ).toThrow(/s-empty.*pins no vendor number/);
+  });
 });
