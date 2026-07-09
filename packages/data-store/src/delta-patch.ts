@@ -429,8 +429,10 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
     // Converging a legacy DB may have DROPped+recreated a fully-derived search
     // table (see createSongDatabase), which empties it for EVERY song. The
     // touched-only path below would then leave untouched songs with no index
-    // rows, so re-derive the whole corpus instead — the result is identical to a
-    // fresh full import of the candidate corpus (+ hints).
+    // rows, so re-derive the whole corpus instead — the derived index tables
+    // (search_texts/search_tokens/search_token_stats + hint tokens) then match a
+    // fresh full import of the candidate corpus (the delta path never runs
+    // ANALYZE, so sqlite_stat1 planner stats may still differ).
     if (migration.droppedDerivedTable) {
       const result = rebuildAllDerivedRows(db, statements, options, hintsBySongId);
       db.exec('COMMIT');
@@ -511,10 +513,13 @@ function mutateSongDelta(db: SongDatabase, options: DeltaMutationOptions): Delta
  * Recovery path for when {@link createSongDatabase} had to DROP+recreate a
  * fully-derived search table to converge a legacy DB. That drop empties the
  * table for EVERY song, so a touched-only re-derivation would strand untouched
- * songs with no index rows. Instead, re-derive the entire corpus exactly like a
- * full {@link importSongs}: the resulting `search_texts`/`search_tokens`/
- * `search_token_stats` and hint tokens are identical to a fresh full import of
- * the candidate corpus. Runs inside the caller's transaction. `affectedTokenCount`
+ * songs with no index rows. Instead, re-derive the entire corpus like a full
+ * {@link importSongs}: the enumerated derived index tables
+ * (`search_texts`/`search_tokens`/`search_token_stats` and the hint tokens) are
+ * identical to a fresh full import of the candidate corpus. This does NOT run
+ * ANALYZE (the delta path never does), so `sqlite_stat1` planner statistics may
+ * differ from a full import — a planner-only artifact, never query results or
+ * exported data. Runs inside the caller's transaction. `affectedTokenCount`
  * reflects that every stat row was recomputed (the whole corpus was affected).
  */
 function rebuildAllDerivedRows(

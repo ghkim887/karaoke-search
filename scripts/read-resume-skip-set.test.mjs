@@ -101,3 +101,30 @@ it('skips blank lines and rows without a usable naviGroupId', async () => {
   expect([...skip].sort()).toEqual(['A', 'B']);
   expect(warnSpy).not.toHaveBeenCalled();
 });
+
+it('handles a torn line whose last newline is beyond the 64KB backward-scan chunk', async () => {
+  // scanNewlineBounds reads backward in 64KB chunks. A torn fragment LARGER than
+  // one chunk (no newline in it) forces the loop to advance past the first chunk
+  // before it finds the last newline in the kept prefix — the multi-chunk path.
+  const path = join(dir, 'big-torn.jsonl');
+  const ids = Array.from({ length: 300 }, (_, i) => `n${i}`);
+  const keptPrefix = `${ids.map((id) => decisionLine(id, `song ${id}`)).join('\n')}\n`;
+  // >64KB, no newline: the last newline sits before the final 64KB chunk.
+  const tornFragment = `{"naviGroupId":"TORN","selSongNo":"T-001","songName":"${'x'.repeat(70000)}`;
+  writeFileSync(path, keptPrefix + tornFragment, 'utf8');
+  const keepBytes = Buffer.byteLength(keptPrefix, 'utf8');
+  expect(Buffer.byteLength(tornFragment, 'utf8')).toBeGreaterThan(64 * 1024);
+
+  const skip = await readResumeSkipSet(path);
+
+  // Full skip-set contents: every intact line, and NOT the torn fragment.
+  expect(skip.size).toBe(300);
+  expect(skip.has('n0')).toBe(true);
+  expect(skip.has('n299')).toBe(true);
+  expect(skip.has('TORN')).toBe(false);
+  // Byte-exact truncation to the kept prefix, once again newline-terminated.
+  expect(statSync(path).size).toBe(keepBytes);
+  expect(readFileSync(path, 'utf8').endsWith('\n')).toBe(true);
+  expect(warnSpy).toHaveBeenCalledTimes(1);
+  expect(warnSpy.mock.calls[0][0]).toContain('dropped a torn final line');
+});
