@@ -21,7 +21,7 @@
  *   - **Never** widen an entry to an artist-level admit — that is what the
  *     drop list / artist-tag steps are for.
  *
- * Counts: allow=112, drop=9 (asserted by
+ * Counts: allow=113, drop=9 (asserted by
  * `test/adapters/tj-media-direct/reviewedSongOverrides.test.ts`).
  */
 
@@ -669,6 +669,13 @@ export const REVIEWED_TJ_SONG_ALLOW_LIST: readonly ReviewedSongOverrideEntry[] =
     artist: 'ENHYPEN',
     decidedOn: '2026-06',
     note: 'add_song_level_japanese_tieup_or_japanese_version_row',
+  },
+  {
+    tj: '52990',
+    title: 'Count To Love',
+    artist: 'BOYNEXTDOOR',
+    decidedOn: '2026-07',
+    note: 'add_song_level_kpop_or_korean_artist_official_jpn_row — BOYNEXTDOOR 2nd JP maxi single "BOYLIFE" lead track (released 2025-08-18, #1 Billboard Japan Hot 100). BOYNEXTDOOR is on koreanArtistDropList; admit this exact JP release at the TJ-number level only, not the artist catalog. proEnrichment nationalcode JPN.',
   },
   {
     tj: '68013',

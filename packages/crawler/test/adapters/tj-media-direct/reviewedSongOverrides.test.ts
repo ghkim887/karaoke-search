@@ -7,10 +7,10 @@ import {
 } from '../../../src/adapters/tj-media-direct/reviewedSongOverrides.js';
 
 describe('reviewedSongOverrides — 2026-06 FP/FN audit lists', () => {
-  it('carries exactly 112 allow entries and 9 drop entries (audit counts)', () => {
+  it('carries exactly 113 allow entries and 9 drop entries (audit counts)', () => {
     // Accidental dedup/loss of a single entry silently changes which songs
     // are admitted/dropped — pin the audited counts.
-    expect(REVIEWED_TJ_SONG_ALLOW_LIST.length).toBe(112);
+    expect(REVIEWED_TJ_SONG_ALLOW_LIST.length).toBe(113);
     expect(REVIEWED_TJ_SONG_DROP_LIST.length).toBe(9);
   });
 
