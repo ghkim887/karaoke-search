@@ -16,6 +16,10 @@ export interface ApiFavoritesResult {
   /** API favorites hydration failed while the Favorites tab is showing them —
    *  surfaced as an error, not an empty favorites view. */
   favoritesFailed: boolean;
+  /** API favorites are still hydrating for the Favorites tab (starred records
+   *  exist but the first fetch has not resolved) — the view should show a
+   *  loading state, not NoResults. The Browse analogue is `browseSearchPending`. */
+  favoritesPending: boolean;
 }
 
 /**
@@ -66,11 +70,15 @@ export function useApiFavorites(
     };
   }, [backend, favoriteIds, retryNonce]);
 
-  const favoritesFailed =
-    !backend.requiresLocalCorpus &&
-    activeTab === 'favorites' &&
-    favoriteIds.length > 0 &&
-    status === 'error';
+  const favoritesActive =
+    !backend.requiresLocalCorpus && activeTab === 'favorites' && favoriteIds.length > 0;
+  const favoritesFailed = favoritesActive && status === 'error';
+  // Still hydrating: starred records exist but the first fetch has not populated
+  // `apiFavorites` yet (it stays `null` until the initial fetch resolves; an
+  // error sets it to `[]`, surfaced via `favoritesFailed` instead). Mirrors the
+  // Browse pending signal so the Favorites tab shows a loading state rather than
+  // flashing NoResults over the empty candidate set.
+  const favoritesPending = favoritesActive && apiFavorites === null;
 
-  return { apiFavorites, favoritesFailed };
+  return { apiFavorites, favoritesFailed, favoritesPending };
 }

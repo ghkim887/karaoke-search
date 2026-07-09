@@ -39,6 +39,7 @@ type RenderMode =
   | 'loading'
   | 'favorites-empty'
   | 'favorites-error'
+  | 'favorites-searching'
   | 'favorites'
   | 'browse-empty'
   | 'browse-searching'
@@ -78,17 +79,17 @@ export function App({ songCount }: AppProps) {
   const backend = useMemo(() => createSearchBackend(), []);
 
   const { bundle, loading, error } = useCorpus(backend);
-  // True only while results are being served from the local offline corpus
-  // because the API is unreachable (T4-6). Drives the offline hint banner;
-  // stays false on the healthy API path, so the DOM there is unchanged.
-  const fallbackActive = useFallbackStatus(backend);
+  // Per-source fallback signal (T4-6): true while a given view's results are
+  // being served from the local offline corpus because the API is unreachable.
+  // Stays false on the healthy API path, so the DOM there is unchanged.
+  const fallbackStatus = useFallbackStatus(backend);
   const { apiBrowse, browseSearchPending, browseSearchFailed } = useApiBrowse(backend, {
     activeTab,
     query,
     selectedVendors,
     retryNonce,
   });
-  const { apiFavorites, favoritesFailed } = useApiFavorites(backend, {
+  const { apiFavorites, favoritesFailed, favoritesPending } = useApiFavorites(backend, {
     activeTab,
     favoriteIds,
     retryNonce,
@@ -164,11 +165,20 @@ export function App({ songCount }: AppProps) {
   // Memoized count exposed via aria-live so screen readers announce only when
   // the result count changes — not on every keystroke before debounce settles.
   const resultCount = results.length;
-  const resultStatusLabel = browseSearchPending
-    ? t(locale, 'searching')
-    : browseSearchFailed || favoritesFailed
-      ? t(locale, 'errorOccurred')
-      : t(locale, 'resultCount', resultCount);
+  const resultStatusLabel =
+    browseSearchPending || favoritesPending
+      ? t(locale, 'searching')
+      : browseSearchFailed || favoritesFailed
+        ? t(locale, 'errorOccurred')
+        : t(locale, 'resultCount', resultCount);
+
+  // Show the offline hint only when the ACTIVE view's displayed results were
+  // fallback-served: the Favorites tab reflects the favorites fetch; Browse
+  // reflects its own search (never the empty landing, where nothing is served).
+  // A background favorites prefetch that falls back must not surface the hint on
+  // the Browse landing.
+  const fallbackNoticeVisible =
+    activeTab === 'favorites' ? fallbackStatus.favorites : query !== '' && fallbackStatus.browse;
 
   // Build-time record count, formatted with thousands separators (en-US to
   // match the prior hard-coded "26,401" format).
@@ -218,14 +228,18 @@ export function App({ songCount }: AppProps) {
    *                                   → 'favorites-empty'
    *   4. activeTab === 'favorites' && API favorites fetch failed
    *                                   → 'favorites-error'
-   *   5. activeTab === 'favorites'    → 'favorites'  (NoResults if 0 filtered)
-   *   6. activeTab === 'browse' && query === ''
+   *   5. activeTab === 'favorites' && API favorites still hydrating
+   *                                   → 'favorites-searching' (loading, not
+   *                                                            NoResults over the
+   *                                                            empty candidate set)
+   *   6. activeTab === 'favorites'    → 'favorites'  (NoResults if 0 filtered)
+   *   7. activeTab === 'browse' && query === ''
    *                                   → 'browse-empty'
-   *   7. activeTab === 'browse' && API search pending
+   *   8. activeTab === 'browse' && API search pending
    *                                   → 'browse-searching'
-   *   8. activeTab === 'browse' && API search failed
+   *   9. activeTab === 'browse' && API search failed
    *                                   → 'browse-error'
-   *   9. activeTab === 'browse'       → 'browse'     (NoResults if 0 filtered)
+   *  10. activeTab === 'browse'       → 'browse'     (NoResults if 0 filtered)
    */
   const mode: RenderMode =
     error !== null
@@ -236,15 +250,17 @@ export function App({ songCount }: AppProps) {
           ? 'favorites-empty'
           : favoritesFailed
             ? 'favorites-error'
-            : activeTab === 'favorites'
-              ? 'favorites'
-              : query === ''
-                ? 'browse-empty'
-                : browseSearchPending
-                  ? 'browse-searching'
-                  : browseSearchFailed
-                    ? 'browse-error'
-                    : 'browse';
+            : favoritesPending
+              ? 'favorites-searching'
+              : activeTab === 'favorites'
+                ? 'favorites'
+                : query === ''
+                  ? 'browse-empty'
+                  : browseSearchPending
+                    ? 'browse-searching'
+                    : browseSearchFailed
+                      ? 'browse-error'
+                      : 'browse';
 
   const renderBody = (): JSX.Element => {
     switch (mode) {
@@ -269,6 +285,7 @@ export function App({ songCount }: AppProps) {
         return <ErrorState message={t(locale, 'favoritesLoadFailed')} onRetry={handleRetry} />;
       case 'browse-empty':
         return <EmptyState onPickArtist={handlePickArtist} />;
+      case 'favorites-searching':
       case 'browse-searching':
         return searchLoadingNode;
       case 'browse-error':
@@ -295,7 +312,7 @@ export function App({ songCount }: AppProps) {
         <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
         <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
         <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
-        {fallbackActive ? <FallbackNotice /> : null}
+        {fallbackNoticeVisible ? <FallbackNotice /> : null}
         <span class="sr-only" aria-live="polite" aria-atomic="true" data-testid="result-count">
           {resultStatusLabel}
         </span>

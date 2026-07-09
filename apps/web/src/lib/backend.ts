@@ -37,6 +37,11 @@ export interface SearchBackend {
   getFavorites(ids: string[]): Promise<SongRecord[]>;
 }
 
+/** The independent data paths whose fallback state is tracked separately.
+ *  Internal: the exported {@link FallbackStatusSource} references it, but
+ *  consumers pass the string literals directly, so it is not re-exported. */
+type FallbackSource = 'browse' | 'favorites';
+
 /**
  * Optional capability implemented by a backend that can transparently fall back
  * to a local corpus when its primary (API) source fails. Lets the UI surface a
@@ -44,10 +49,13 @@ export interface SearchBackend {
  * fallback. Detected via {@link isFallbackStatusSource}.
  */
 export interface FallbackStatusSource {
-  /** True when the MOST RECENT data operation was served from the local
-   *  fallback corpus because the primary API call failed. Reflects the current
-   *  displayed data source (flips back to false once the API recovers). */
-  isFallbackActive(): boolean;
+  /** True when the most recent operation on `source` was served from the local
+   *  fallback corpus because the primary API call failed (flips back to false
+   *  once that source's API recovers). Per-source so the UI can reflect the
+   *  ACTIVE view's data source: a background favorites prefetch that falls back
+   *  must not imply the Browse results on screen are offline. With `source`
+   *  omitted, reports whether ANY source is currently fallback-served. */
+  isFallbackActive(source?: FallbackSource): boolean;
   /** Subscribe to fallback-active changes. Returns an unsubscribe function. */
   subscribeFallback(listener: () => void): () => void;
 }
@@ -122,7 +130,7 @@ class LocalBackend implements SearchBackend {
  */
 class FallbackBackend implements SearchBackend, FallbackStatusSource {
   readonly requiresLocalCorpus = false;
-  #fallbackActive = false;
+  #fallbackActive: Record<FallbackSource, boolean> = { browse: false, favorites: false };
   #listeners = new Set<() => void>();
   /** Memoized lazy corpus load. Resolves `null` if the corpus can't be loaded
    *  (so callers re-throw the API error rather than masking it). */
@@ -138,12 +146,12 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
   async browse(query: string, vendors: SearchVendor[], limit: number): Promise<SongRecord[]> {
     try {
       const records = await this.primary.browse(query, vendors, limit);
-      this.#setFallbackActive(false);
+      this.#setFallbackActive('browse', false);
       return records;
     } catch (apiError) {
       const bundle = await this.#ensureCorpus();
       if (bundle === null || bundle.byId.size === 0) {
-        this.#setFallbackActive(false);
+        this.#setFallbackActive('browse', false);
         throw apiError;
       }
       const vendorSet: ReadonlySet<Vendor> = new Set(vendors);
@@ -159,7 +167,7 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
       // both (idempotently) via `finalizeResults`, so the visible result matches
       // the offline backend's own path exactly.
       const result = filterByVendors(records, vendorSet).slice(0, limit);
-      this.#setFallbackActive(true);
+      this.#setFallbackActive('browse', true);
       return result;
     }
   }
@@ -167,12 +175,12 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
   async getFavorites(ids: string[]): Promise<SongRecord[]> {
     try {
       const records = await this.primary.getFavorites(ids);
-      this.#setFallbackActive(false);
+      this.#setFallbackActive('favorites', false);
       return records;
     } catch (apiError) {
       const bundle = await this.#ensureCorpus();
       if (bundle === null || bundle.byId.size === 0) {
-        this.#setFallbackActive(false);
+        this.#setFallbackActive('favorites', false);
         throw apiError;
       }
       // Resolve favorites from the bundle in the requested id order; the caller
@@ -182,13 +190,16 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
         const rec = bundle.byId.get(id);
         if (rec !== undefined) records.push(rec);
       }
-      this.#setFallbackActive(true);
+      this.#setFallbackActive('favorites', true);
       return records;
     }
   }
 
-  isFallbackActive(): boolean {
-    return this.#fallbackActive;
+  isFallbackActive(source?: FallbackSource): boolean {
+    if (source === undefined) {
+      return this.#fallbackActive.browse || this.#fallbackActive.favorites;
+    }
+    return this.#fallbackActive[source];
   }
 
   subscribeFallback(listener: () => void): () => void {
@@ -208,9 +219,9 @@ class FallbackBackend implements SearchBackend, FallbackStatusSource {
     return this.#corpus;
   }
 
-  #setFallbackActive(active: boolean): void {
-    if (this.#fallbackActive === active) return;
-    this.#fallbackActive = active;
+  #setFallbackActive(source: FallbackSource, active: boolean): void {
+    if (this.#fallbackActive[source] === active) return;
+    this.#fallbackActive[source] = active;
     for (const listener of this.#listeners) listener();
   }
 }
