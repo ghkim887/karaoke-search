@@ -1,12 +1,14 @@
 import type { JSX } from 'preact';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useMemo, useState } from 'preact/hooks';
 import { useApiBrowse } from '../hooks/useApiBrowse.js';
 import { useApiFavorites } from '../hooks/useApiFavorites.js';
 import { useCorpus } from '../hooks/useCorpus.js';
 import { useFallbackStatus } from '../hooks/useFallbackStatus.js';
+import { useRetryNonce } from '../hooks/useRetryNonce.js';
+import { useSearchQuery } from '../hooks/useSearchQuery.js';
 import { useSearchResults } from '../hooks/useSearchResults.js';
+import { useVendorFilter } from '../hooks/useVendorFilter.js';
 import { createSearchBackend } from '../lib/backend.js';
-import { DEBOUNCE_MS } from '../lib/constants.js';
 import { useFavorites } from '../lib/favorites.js';
 import { t } from '../lib/i18n.js';
 import { LocaleContext, useLocaleStore } from '../lib/locale-hooks.js';
@@ -19,7 +21,6 @@ import { ResultList } from './ResultList.js';
 import { SearchBox } from './SearchBox.js';
 import type { TabId } from './TabBar.js';
 import { TAB_PANEL_ID, TabBar, tabButtonId } from './TabBar.js';
-import type { Vendor } from './VendorChips.js';
 import { VendorChips } from './VendorChips.js';
 
 interface AppProps {
@@ -62,16 +63,21 @@ export function App({ songCount }: AppProps) {
   // This island is the stateful owner for its own subtree, propagating the
   // locale down via LocaleContext so every child string re-renders on change.
   const locale = useLocaleStore();
-  // Controlled input value — reflects what the user sees in the box.
-  const [inputValue, setInputValue] = useState('');
-  // Debounced search query — only updated after 150 ms of quiet.
-  const [query, setQuery] = useState('');
-  const [selectedVendors, setSelectedVendors] = useState<ReadonlySet<Vendor>>(() => new Set());
+  // Debounced search-input state machine: `inputValue` is the controlled value
+  // shown in the box; `query` is the debounced value that drives the search.
+  const {
+    inputValue,
+    query,
+    handleInput,
+    setQueryImmediate,
+    reset: resetSearch,
+  } = useSearchQuery();
+  // Vendor-chip filter selection.
+  const { selectedVendors, toggleVendor, reset: resetVendors } = useVendorFilter();
   const [activeTab, setActiveTab] = useState<TabId>('browse');
-  // Bumped by the ErrorState retry button; a dep of the API browse/favorites
-  // hooks so a retry re-issues the failed request in place.
-  const [retryNonce, setRetryNonce] = useState(0);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Retry signal for the API browse/favorites hooks — bumped by the ErrorState
+  // retry button so a retry re-issues the failed request in place.
+  const { retryNonce, retry } = useRetryNonce();
   const { isFavorite, toggle: toggleFavorite, orderedIds: favoriteIds } = useFavorites();
 
   // Single mode-decision point: API worker vs offline bundle. Every downstream
@@ -108,58 +114,14 @@ export function App({ songCount }: AppProps) {
   // the API backend is active the controls are usable immediately.
   const controlsDisabled = loading && backend.requiresLocalCorpus;
 
-  // Clean up the debounce timer on unmount.
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
-    };
-  }, []);
-
-  /** Called on every keystroke from SearchBox. Updates the visible input
-   *  immediately and schedules a debounced search-query update. */
-  const handleInputChange = (value: string) => {
-    setInputValue(value);
-    if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setQuery(value);
-    }, DEBOUNCE_MS);
-  };
-
-  /** Re-issues the failed API request in place. Bumping `retryNonce` re-runs the
-   *  API browse + favorites effects with the current query/favorites; the active
-   *  view's request is retried and the other is a harmless idempotent refetch. */
-  const handleRetry = () => setRetryNonce((n) => n + 1);
-
-  /** Called when a featured-artist chip is clicked. Updates both the visible
-   *  input and the search query synchronously (no debounce needed). */
-  const handlePickArtist = (name: string) => {
-    if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
-    setInputValue(name);
-    setQuery(name);
-  };
-
   /** Called when the user clicks a tab. Resets all filter/search state to
    *  defaults so the incoming tab always shows a clean view. No-ops if the
    *  user clicks the already-active tab (preserves current state). */
   const handleTabChange = (newTab: TabId) => {
     if (newTab === activeTab) return;
-    if (debounceTimer.current !== null) {
-      clearTimeout(debounceTimer.current);
-      debounceTimer.current = null;
-    }
-    setInputValue('');
-    setQuery('');
-    setSelectedVendors(new Set());
+    resetSearch();
+    resetVendors();
     setActiveTab(newTab);
-  };
-
-  const toggleVendor = (v: Vendor) => {
-    setSelectedVendors((prev) => {
-      const next = new Set(prev);
-      if (next.has(v)) next.delete(v);
-      else next.add(v);
-      return next;
-    });
   };
 
   // Memoized count exposed via aria-live so screen readers announce only when
@@ -273,7 +235,7 @@ export function App({ songCount }: AppProps) {
         if (activeTab === 'browse' && query === '') {
           return (
             <>
-              <EmptyState onPickArtist={handlePickArtist} />
+              <EmptyState onPickArtist={setQueryImmediate} />
               {loadingNode}
             </>
           );
@@ -282,14 +244,14 @@ export function App({ songCount }: AppProps) {
       case 'favorites-empty':
         return <FavoritesEmpty />;
       case 'favorites-error':
-        return <ErrorState message={t(locale, 'favoritesLoadFailed')} onRetry={handleRetry} />;
+        return <ErrorState message={t(locale, 'favoritesLoadFailed')} onRetry={retry} />;
       case 'browse-empty':
-        return <EmptyState onPickArtist={handlePickArtist} />;
+        return <EmptyState onPickArtist={setQueryImmediate} />;
       case 'favorites-searching':
       case 'browse-searching':
         return searchLoadingNode;
       case 'browse-error':
-        return <ErrorState message={t(locale, 'searchRequestFailed')} onRetry={handleRetry} />;
+        return <ErrorState message={t(locale, 'searchRequestFailed')} onRetry={retry} />;
       case 'favorites':
       case 'browse':
         // Identical render output post-`results` computation; the candidate-
@@ -309,7 +271,7 @@ export function App({ songCount }: AppProps) {
   return (
     <LocaleContext.Provider value={locale}>
       <main class="results">
-        <SearchBox value={inputValue} onInput={handleInputChange} disabled={controlsDisabled} />
+        <SearchBox value={inputValue} onInput={handleInput} disabled={controlsDisabled} />
         <TabBar activeTab={activeTab} onChange={handleTabChange} disabled={loading} />
         <VendorChips selected={selectedVendors} onToggle={toggleVendor} />
         {fallbackNoticeVisible ? <FallbackNotice /> : null}
