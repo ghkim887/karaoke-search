@@ -303,6 +303,12 @@ manifest [+ optional SQLite]) and `scripts/fetch-full-corpus.mjs`
 
 ### JOYSOUND runbook owner checkpoints
 
+**Status (2026-07-10): HISTORICAL / COMPLETED.** The June JOYSOUND
+detail-crawl → candidate-build → merge flow described below shipped as serving
+release v21 (live since 2026-07-04); the `feat/joysound-full-catalog-sweep`
+feature branch is merged/gone and its runbook now lives on `main`. The
+checkpoints below are retained for the historical record, not as pending work.
+
 From the deploy runbook (on the feature branch:
 `docs/superpowers/runbooks/2026-06-09-joysound-deploy.md`):
 
@@ -319,9 +325,16 @@ From the deploy runbook (on the feature branch:
 
 ### title_ko review CSV backlog
 
-`scripts/data/llm-review.csv` carries ~255 medium/low-confidence LLM
-translations pending human spot-check. Workflow: spot a wrong entry → append
-a `{id, title_primary, title_ko}` row to
+**Status update (2026-07-10):** a full agent pre-review of all 255
+medium/low-confidence rows completed (ok 215 / fix 27 / uncertain 13). The 24
+net owner-signed fixes (19 mistranslations + 5 empty-value fills) landed via
+PR #109 — `scripts/data/title-ko-manual-fixes.json` grew 3 → 27 entries (corpus
+application at the next post-crawl pipeline run). The 13 uncertain rows are
+deliberately left no-action. The remainder stays incremental owner-review work.
+
+`scripts/data/llm-review.csv` carries the ~255 medium/low-confidence LLM
+translations. Workflow: spot a wrong entry → append a
+`{id, title_primary, title_ko}` row to
 `scripts/data/title-ko-manual-fixes.json` → commit; the next post-crawl
 pipeline run applies it. Unblocked by: owner review time (incremental — any
 subset helps).
@@ -389,16 +402,33 @@ Parked because the touched files are in flight on the feature branch:
 
 From the whole-repo audit (the three fixed bugs — legacy-DB delta derived-row
 wipe, wanakana over-long-query 500, decision-log >512 MB string read — shipped
-separately). Deferred, needing an owner decision or its own change:
+separately). The three items below were deferred pending an owner decision and
+are now all ✅ **RESOLVED by PR #107 (2026-07-10)**:
 
-- idf drift in delta `affected` stat mode: a token's idf is not refreshed when
-  only the corpus count changes — accept + document, or recompute on count
-  change? (owner decision);
-- Tier B same-source merge collapse is input-order-dependent and can drop a
-  same-vendor number — needs a deterministic tie-break decision;
-- delta patch silently drops a new hint targeting an UNTOUCHED song
-  (materialize-or-document decision; the legacy-migration rebuild path already
-  materializes them, the touched-only path does not).
+- **idf drift in delta `affected` stat mode — accepted + documented.** A token's
+  idf derives from the GLOBAL song count, so any delta that changes the corpus
+  size (a net add or remove) staleifies every untouched token's idf (measured
+  112/148 tokens diverge from a full rebuild; ranking effect limited to near-tie
+  reordering). Per owner decision this is accepted and documented precisely on the
+  `tokenStatMode` field docstring in `packages/data-store/src/delta-patch.ts`; a
+  full import/release build always recomputes all stats and is the authoritative
+  source of idf. The recompute-on-count-change option remains available
+  (`tokenStatMode: 'all'` refreshes every token's stat) but is unplanned.
+- **Tier B same-source merge collapse — deterministic tie-break shipped.** Each
+  cluster's members are now sorted by the existing `compareMergedRecords` total
+  order (tj asc nulls-last, then normalize(title), then id) at the single
+  materialize point before `mergeCluster` in `packages/crawler/src/merge.ts`, so
+  the equal-SOURCE_RANK survivor is input-order-independent. This does NOT change
+  WHICH records collapse; the committed corpus is preserved byte-for-byte (it is
+  already globally sorted by the comparator, so the within-cluster sort is a no-op
+  there, and two shuffled inputs now converge to the same hash).
+- **Delta hint for an UNTOUCHED song — stderr warning guard shipped.** The
+  touched-only delta path still does not materialize a hint targeting a song the
+  delta did not touch (a full import/release build does), and that limit is now
+  documented as intended; `warnHintsForUntouchedSongs` in
+  `packages/data-store/src/delta-patch.ts` emits one non-fatal stderr warning
+  naming the untouched-target count, up to three sample ids, and the remediation.
+  The rebuild-all migration path materializes every song and does not warn.
 
 Low-severity bugs (all fixed 2026-07-10, test-first):
 
@@ -412,16 +442,25 @@ Low-severity bugs (all fixed 2026-07-10, test-first):
 - fixed: hint fields emit Hangul `initial` tokens, breaking server/offline parity
   (latent — reading fields are already excluded, hint fields are not).
 
-Behavior-preserving refactor batch:
+Behavior-preserving refactor batch — ✅ **DONE (PR #100, 2026-07-10)** — all
+eight shipped as behavior-preserving refactors (self-host SQLite dump and the
+search probes verified byte-identical before/after):
 
-- remove the dead compat-jamo branch in `apps/worker/src/index.ts`;
-- dedup `hasNonAsciiCharacter` (worker + data-store copies);
-- consolidate the three `stableStringify` implementations;
-- dedup the ja-JP NFKC normalize helper;
+- remove the dead compat-jamo branch in `apps/worker/src/index.ts` (NFKC folds
+  compatibility jamo U+3131–U+314E to conjoining jamo, so the branch could never
+  match; the now-unused `HANGUL_INITIALS_QUERY_PATTERN` constant went with it);
+- dedup `hasNonAsciiCharacter` (hoisted into `@karaoke/search`; both local copies
+  deleted);
+- consolidate the three `stableStringify` implementations (into
+  `scripts/lib/canonical-json.mjs`);
+- dedup the ja-JP NFKC normalize helper (`normalizeForConflictMatch` delegates to
+  the exported `normalizeForComparison`);
 - pre-normalize the reviewed-override Set key;
-- fold the data-store `ensure*` marker-guard helpers;
-- dedup the Hangul syllable/choseong constants;
-- unify the `SearchVendor`/`Vendor` union.
+- fold the data-store `ensure*` marker-guard helpers (into a single
+  `ensureSearchTokensFields`);
+- dedup the Hangul syllable/choseong constants (single definition in
+  `packages/search/src/transliterate.ts`, imported by `index.ts`);
+- unify the `SearchVendor`/`Vendor` union (`Vendor` now aliases `SearchVendor`).
 
 Test coverage:
 
@@ -453,14 +492,18 @@ entries (see PROJECT-KNOWLEDGE, drop lists).
   e.g. a new KOR-pro-reject step placed among steps 0–3, NOT a reorder of the admit steps.
   **HELD (2026-07-10, owner): do not start without an explicit owner go**, and in any case not
   before the #97 crawl gate has soaked at least one weekly crawl.
-- **Search-parity baseline regeneration policy.** The weekly crawl changes corpus identity by
-  design, but `apps/web/src/lib/search-parity.golden.test.ts` pins a sha256 + record count and
-  regenerates ONLY by hand (`UPDATE_PARITY_SNAPSHOT=1` + a human jaccard-diff review). So every
-  crawl PR leaves the apps/web tests red until someone regenerates the baseline (and `-r test`
-  masks it — pnpm bails at the earlier crawler package). The crawl pipeline/CI needs an
-  owner-decided regeneration policy: auto-regen defeats the gate's purpose (a silent-drift guard
-  that rubber-stamps itself), pure-manual guarantees weekly red. Design needed (e.g. the crawl PR
-  regenerates the baseline AND surfaces the per-query jaccard delta for human sign-off).
+- **Search-parity baseline regeneration policy** — ✅ **DONE (PR #106, 2026-07-10).**
+  The weekly crawl changes corpus identity by design, and
+  `apps/web/src/lib/search-parity.golden.test.ts` pins a sha256 + record count, so every
+  crawl PR used to leave the apps/web tests red until someone hand-regenerated the baseline
+  (and `-r test` masked it — pnpm bailed at the earlier crawler package; this bit #95).
+  `crawl.yml` now regenerates the baseline in the crawl workflow AFTER the crawler-test
+  leakage gate (never regenerate a baseline for a corpus that fails leakage), via
+  `UPDATE_PARITY_SNAPSHOT=1` (the relevance-smoke assertions still run and can red the run
+  before any PR opens), then `scripts/compare-parity-baselines.mjs` renders the per-query
+  jaccard/top-1 delta into the crawl PR body for human sign-off and the regenerated baseline
+  ships in the PR. This keeps the drift-gate meaningful (auto-regen alone would rubber-stamp
+  drift; the delta report preserves the human review) without guaranteeing weekly red.
 - **Smoke-fixture ids are positional and go stale on every crawl.** — ✅ **DONE (2026-07-10).**
   The parity relevance-smoke fixture (`apps/web/src/lib/fixtures/search-parity-smoke.json`)
   previously pinned expected results by `blog-*` record id, which reshuffle whenever a crawl
