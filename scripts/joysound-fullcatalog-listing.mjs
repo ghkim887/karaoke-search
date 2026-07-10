@@ -401,25 +401,26 @@ async function main() {
   // spuriously fail the resume consistency check.
   const kanaFilter = args.kana ? kanaList.join(',') : null;
 
-  const http = new HttpClient();
+  // Cache OFF: this is a fresh one-shot enumeration that never refetches a URL
+  // in-run, so the on-disk ETag cache buys nothing here. Left on, the
+  // HttpClient's response cache stores every listing-page body in one in-memory
+  // object and re-serializes the WHOLE object to `.cache/http.json` on each
+  // persist; that unbounded string blew V8's max-string-length cap at ~1.1k
+  // large RSC pages (RangeError: Invalid string length, 2026-07-10). Nothing to
+  // flush with the cache off, so there is no end-of-run persist.
+  const http = new HttpClient({ cache: 'off' });
   const pageFetcher = (kana, page) => fetchJoysoundSonglistPage(http, kana, page);
 
-  let stats;
-  try {
-    stats = await runFullCatalogListing({
-      outPath: args.outPath,
-      pageFetcher,
-      kanaList,
-      kanaFilter,
-      maxPagesPerKana: args.maxPagesPerKana,
-      limit: args.limit,
-      allowEmptyKana: args.allowEmptyKana,
-      fresh: args.fresh,
-    });
-  } finally {
-    // Persist the HttpClient's batched ETag cache so a resume gets 304s.
-    if (typeof http.flush === 'function') await http.flush();
-  }
+  const stats = await runFullCatalogListing({
+    outPath: args.outPath,
+    pageFetcher,
+    kanaList,
+    kanaFilter,
+    maxPagesPerKana: args.maxPagesPerKana,
+    limit: args.limit,
+    allowEmptyKana: args.allowEmptyKana,
+    fresh: args.fresh,
+  });
 
   console.log(
     JSON.stringify({
