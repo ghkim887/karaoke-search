@@ -688,12 +688,18 @@ GitHub at all and the NAS holds the only full-corpus copy. **Owner re-held
 full-corpus publish workflow (PR-2) and the API-first deploy flip (PR-3)
 stay held with it.
 
-### Watchdog alert channel (re-HELD 2026-07-10, owner — no plans for now)
+### Watchdog alert channel (CLOSED 2026-07-10, owner: no dedicated channel)
 
-`karaoke-healthz.timer` (1-min healthz watchdog with auto-restart and a
-10-min restart-loop guard) is live on the host and logs to the journal
-(tag `karaoke-healthz`). No alert channel is wired - a wedged service is
-self-healed but a HUMAN is only informed via journal inspection. Unblocked
-by: owner picking a channel (Telegram / Discord webhook / e-mail / none);
-the hook point is the `logger` calls in
-`/srv/nas/karaoke/healthz-watchdog.sh`.
+**Owner decision (2026-07-10): CLOSED — no dedicated alert channel will be
+wired.** Rationale: the R6 liveness workflow (PR #117) now covers the
+human-notification need from the OUTSIDE — a failed scheduled probe of the
+public site (healthz/meta/search through the Pages-Functions → Funnel →
+origin chain) triggers GitHub's default failure e-mail to the owner. The
+remaining gap (immediate notice of host-internal restart loops that
+self-heal fast enough to never fail an external probe) is accepted.
+
+Standing facts: `karaoke-healthz.timer` (1-min healthz watchdog with
+auto-restart and a 10-min restart-loop guard) stays live on the host and
+logs to the journal (tag `karaoke-healthz`); a sustained restart loop DOES
+surface externally via the liveness workflow. If this is ever reopened, the
+hook point is the `logger` calls in `/srv/nas/karaoke/healthz-watchdog.sh`.
