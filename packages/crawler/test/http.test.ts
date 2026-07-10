@@ -23,11 +23,18 @@ vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn(async () => undefined),
 }));
 
-import { rename as mockRename, rm as mockRm } from 'node:fs/promises';
+import {
+  readFile as mockReadFile,
+  rename as mockRename,
+  rm as mockRm,
+  writeFile as mockWriteFile,
+} from 'node:fs/promises';
 import { request as mockRequest } from 'undici';
 const mockedRequest = vi.mocked(mockRequest);
 const mockedRename = vi.mocked(mockRename);
 const mockedRm = vi.mocked(mockRm);
+const mockedReadFile = vi.mocked(mockReadFile);
+const mockedWriteFile = vi.mocked(mockWriteFile);
 
 // ---------------------------------------------------------------------------
 // Helper: build a fake undici response whose body is an async-iterable of
@@ -358,6 +365,80 @@ describe('HttpClient — per-host cache opt-out', () => {
     expect(sent[1]).toHaveProperty('if-none-match', '"v1"');
     expect(second?.status).toBe(200);
     expect(second?.body).toBe('cached-body');
+  });
+});
+
+describe('HttpClient — client-wide cache off mode', () => {
+  beforeEach(() => {
+    mockedRequest.mockReset();
+    mockedRename.mockClear();
+    mockedReadFile.mockClear();
+    mockedWriteFile.mockClear();
+  });
+
+  /** Headers undici saw for the GET of `url` (skips the robots.txt call). */
+  function headersSentFor(url: string): Array<Record<string, string>> {
+    return mockedRequest.mock.calls
+      .filter(([target]) => target === url)
+      .map(([, opts]) => (opts as { headers: Record<string, string> }).headers);
+  }
+
+  it('does not store responses: a repeat fetch sends no validators and re-hits the network', async () => {
+    // Every response carries an ETag; with the cache OFF it must be ignored.
+    mockedRequest.mockImplementation(
+      async () => fakeTextResponse(200, 'fresh', { etag: '"v1"' }) as never,
+    );
+    const client = new HttpClient({
+      cache: 'off',
+      hostConfigOverrides: { 'j-pop-playlist.tistory.com': FAST_BLOG_HOST },
+    });
+    const url = 'https://j-pop-playlist.tistory.com/off-repeat';
+    await client.fetch(url);
+    await client.fetch(url);
+
+    // Both fetches actually hit the network, and the second carries NO
+    // conditional validators (nothing was stored from the first).
+    const sent = headersSentFor(url);
+    expect(sent).toHaveLength(2);
+    expect(sent[1]).not.toHaveProperty('if-none-match');
+    expect(sent[1]).not.toHaveProperty('if-modified-since');
+  });
+
+  it('never reads or writes .cache/http.json and flush() is a disk-free no-op', async () => {
+    mockedRequest.mockImplementation(
+      async () => fakeTextResponse(200, 'fresh', { etag: '"v1"' }) as never,
+    );
+    const client = new HttpClient({
+      cache: 'off',
+      cachePersistEvery: 1, // would persist on the first store IF anything were stored
+      hostConfigOverrides: { 'j-pop-playlist.tistory.com': FAST_BLOG_HOST },
+    });
+    await client.fetch('https://j-pop-playlist.tistory.com/off-disk');
+
+    // loadCache short-circuited → the cache file was never read...
+    expect(mockedReadFile).not.toHaveBeenCalled();
+    // ...and nothing was ever persisted (no atomic writeFile, no rename).
+    expect(mockedWriteFile).not.toHaveBeenCalled();
+    expect(mockedRename).not.toHaveBeenCalled();
+
+    // flush() resolves and still touches no disk.
+    await expect(client.flush()).resolves.toBeUndefined();
+    expect(mockedWriteFile).not.toHaveBeenCalled();
+    expect(mockedRename).not.toHaveBeenCalled();
+  });
+
+  it('persistent mode (default) still reads the cache file and persists stores', async () => {
+    // Regression guard: the default lane must keep loading + persisting.
+    mockedRequest.mockImplementation(
+      async () => fakeTextResponse(200, 'fresh', { etag: '"v1"' }) as never,
+    );
+    const client = new HttpClient({
+      cachePersistEvery: 1,
+      hostConfigOverrides: { 'j-pop-playlist.tistory.com': FAST_BLOG_HOST },
+    });
+    await client.fetch('https://j-pop-playlist.tistory.com/on-store');
+    expect(mockedReadFile).toHaveBeenCalled(); // loadCache read .cache/http.json
+    expect(mockedRename).toHaveBeenCalledTimes(1); // the 2xx body was persisted
   });
 });
 

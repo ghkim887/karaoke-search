@@ -176,6 +176,14 @@ above).
   whichever first, plus a final `flush()`): persisting rewrites the entire
   cache file atomically, so persist-per-store is O(n²) IO over a long crawl.
   A crash loses at most the last un-flushed batch — acceptable for a cache.
+- The response cache is **unbounded**: every 2xx body is held in one in-memory
+  object and the WHOLE object is re-serialized to `.cache/http.json` on each
+  persist. A bulk enumeration crossed V8's max string length at ~1.1k large RSC
+  pages (`RangeError: Invalid string length` in `JSON.stringify`, 2026-07-10,
+  JOYSOUND fullCatalog listing). **Rule:** any one-shot bulk enumeration of
+  >~1k large pages must construct the client with `new HttpClient({ cache:
+  'off' })` — it never refetches a URL in-run, so the cache buys nothing and is
+  pure liability. The weekly-crawl lane leaves the default `'persistent'` mode.
 - `searchSong` strips ASCII apostrophes from `searchTxt` to work around a TJ
   server parser bug (`resultCode=04`). Escaping (`\'`, `%27`, …) hits the
   same bug — don't try.

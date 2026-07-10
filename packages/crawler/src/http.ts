@@ -247,6 +247,24 @@ const DEFAULT_CACHE_PERSIST_MAX_AGE_MS = 30_000;
 
 /** Construction-time tuning knobs for `HttpClient`. All optional. */
 export interface HttpClientOptions {
+  /**
+   * Client-wide on-disk conditional-request cache mode. Default `'persistent'`.
+   *
+   * - `'persistent'`: current behaviour — load/write `.cache/http.json`, send
+   *   ETag/Last-Modified validators, replay cached bodies on 304, honoring the
+   *   per-host `cache` opt-out in `HOST_CONFIG` / `hostConfigOverrides`.
+   * - `'off'`: fully disables caching for THIS client. `.cache/http.json` is
+   *   never read or written, no response is stored in memory, and no
+   *   conditional validators are sent (so no 304 replay); `flush()` is a
+   *   no-op. Intended for bulk one-shot enumerations that never refetch a URL
+   *   in-run, where the whole-object cache — re-serialized in full on every
+   *   persist — grows unboundedly and can blow the V8 string-length cap.
+   *
+   * Independent of the per-host `cache` boolean: `'off'` forces every host off;
+   * `'persistent'` leaves per-host opt-outs in effect. Existing callers omit
+   * this and get byte-identical `'persistent'` behaviour.
+   */
+  cache?: 'persistent' | 'off';
   /** Persist the cache at most once per this many stores. Default 200. */
   cachePersistEvery?: number;
   /**
@@ -361,6 +379,7 @@ export class HttpClient {
   private nextAllowedAt = 0;
   private robotsByHost = new Map<string, Promise<RobotsRules>>();
   private loggedHosts = new Set<string>();
+  private readonly cacheMode: 'persistent' | 'off';
   private readonly cachePersistEvery: number;
   private readonly cachePersistMaxAgeMs: number;
   private readonly hostConfigOverrides: Record<string, HostConfig>;
@@ -372,6 +391,7 @@ export class HttpClient {
   private flushInFlight: Promise<void> | undefined;
 
   constructor(options: HttpClientOptions = {}) {
+    this.cacheMode = options.cache ?? 'persistent';
     this.cachePersistEvery = options.cachePersistEvery ?? DEFAULT_CACHE_PERSIST_EVERY;
     this.cachePersistMaxAgeMs = options.cachePersistMaxAgeMs ?? DEFAULT_CACHE_PERSIST_MAX_AGE_MS;
     this.hostConfigOverrides = options.hostConfigOverrides ?? {};
@@ -381,6 +401,8 @@ export class HttpClient {
   }
 
   private async loadCache(): Promise<void> {
+    // Cache off: never read `.cache/http.json`; the in-memory cache stays {}.
+    if (this.cacheMode === 'off') return;
     if (this.cacheLoaded) return;
     const data = await readJsonFile<Record<string, CacheEntry>>(CACHE_PATH);
     this.cache = data ?? {};
@@ -418,6 +440,10 @@ export class HttpClient {
    * interleaved writes to the shared tmp file inside persistCache.
    */
   flush(): Promise<void> {
+    // Cache off: never touch disk. Nothing is ever stored (resolveHostConfig
+    // forces every host's cache off), so pendingCacheStores is always 0, but
+    // guard explicitly so flush() is a hard no-op regardless.
+    if (this.cacheMode === 'off') return Promise.resolve();
     if (this.flushInFlight) return this.flushInFlight;
     if (this.pendingCacheStores === 0) return Promise.resolve();
     this.flushInFlight = (async () => {
@@ -445,7 +471,11 @@ export class HttpClient {
       userAgent: cfg.userAgent ?? DEFAULT_USER_AGENT,
       minIntervalMs: cfg.minIntervalMs ?? DEFAULT_RATE_LIMIT_BASE_MS,
       jitterMs: cfg.jitterMs ?? DEFAULT_RATE_LIMIT_JITTER_MS,
-      cache: cfg.cache ?? true,
+      // Client-wide `cache: 'off'` forces every host off, which makes the
+      // read/validator path (fetch:576), the 304-replay path, and the store
+      // site all inert — they already gate on hostCfg.cache. `'persistent'`
+      // preserves the per-host opt-out (defaults true).
+      cache: this.cacheMode === 'off' ? false : (cfg.cache ?? true),
     };
   }
 
