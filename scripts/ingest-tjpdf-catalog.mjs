@@ -47,12 +47,15 @@
  *     end-state the old ingest reached (it wrote a PDF transliteration that
  *     `normalize_tj_title_ko.py` Stage 1 then nulled). The title_ko lane
  *     (Stage-2 replay + manual fixes) owns this field; this ingest does not
- *     touch lane logic.  NB: because the Stage-2 replay cache is title-GUARDED
- *     (it NFKC-compares the cached `title_primary` before re-applying a cached
- *     translation — see translate_title_ko_via_agents.mjs), the mass title
- *     change means cached translations for changed-title codes will not
- *     auto-re-apply and need a fresh Stage-2 LLM run. See the PR body's
- *     cache-keying finding.
+ *     touch lane logic.  NB: the Stage-2 replay cache is ALSO title-GUARDED (it
+ *     NFKC-compares each cached entry's stored `title_primary` before
+ *     re-applying its translation — translate_title_ko_via_agents.mjs:133-141),
+ *     so the mass title change was matched by a one-time MECHANICAL re-key of
+ *     the cache's stored `title_primary` to the API titles (ROADMAP R7 Option
+ *     2; translations byte-preserved). Stage-2 therefore re-applies every
+ *     existing tjpdf translation, and a consistency pin
+ *     (ingest-tjpdf-catalog.test.mjs) keeps the cache and the catalog from
+ *     drifting apart. See the PR body's cache-keying finding.
  *   - artist_ko      = PRESERVED from the dropped `tjpdf-*` row (keyed by TJ
  *     number, artist-identity-guarded like artist_aliases); genuinely-new
  *     discovery codes get null. Rationale: artist_ko is a phonetic Hangul

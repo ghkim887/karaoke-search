@@ -4,7 +4,7 @@
 // cross-file guard-consistency pin (manual-fix guards vs the committed catalog),
 // which replaces TestManualFixesGuardAlignment from the retired python test.
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -288,5 +288,43 @@ describe('manual-fix guard ↔ catalog consistency', () => {
         `manual-fix guard for ${fix.id} must equal the catalog title (else the fix silently skips)`,
       ).toBe(catalogTitle.normalize('NFKC'));
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Second guard surface (ROADMAP R7, Option 2): the Stage-2 replay cache
+// (scripts/data/llm-translations-chunk-*.json) stores a per-entry title_primary
+// that applyDecisionsToCorpus NFKC-compares before re-applying a cached
+// translation (translate_title_ko_via_agents.mjs:133-141) — a title mismatch
+// silently skips the translation. After the R7 mass title change the cache was
+// mechanically re-keyed to the API titles. This pin makes the cache and the
+// committed catalog unable to drift apart again: every tjpdf cache entry whose
+// code is in the catalog must carry the exact catalog title (NFKC).
+// ---------------------------------------------------------------------------
+describe('Stage-2 cache title_primary ↔ catalog consistency', () => {
+  it('every catalog-covered tjpdf cache entry stores the exact catalog title (NFKC)', () => {
+    const catalog = readCatalog(join(DATA_DIR, 'tjpdf-catalog.jsonl'));
+    const byCode = new Map(catalog.map((e) => [e.pro, e.indexTitle]));
+
+    const chunkFiles = readdirSync(DATA_DIR).filter((f) =>
+      /^llm-translations-chunk-\d+\.json$/.test(f),
+    );
+    let checked = 0;
+    for (const f of chunkFiles) {
+      const entries = JSON.parse(readFileSync(join(DATA_DIR, f), 'utf-8'));
+      for (const e of entries) {
+        if (!String(e.id).startsWith('tjpdf-')) continue;
+        const code = e.id.slice('tjpdf-'.length);
+        const catalogTitle = byCode.get(code);
+        if (catalogTitle === undefined) continue; // dropped code — not in the catalog
+        checked += 1;
+        expect(
+          e.title_primary.normalize('NFKC'),
+          `Stage-2 cache title_primary for ${e.id} (in ${f}) must equal the catalog title, else applyDecisionsToCorpus silently skips its translation`,
+        ).toBe(catalogTitle.normalize('NFKC'));
+      }
+    }
+    // Guard against a no-op pin (e.g. cache files renamed away).
+    expect(checked).toBeGreaterThan(300);
   });
 });
