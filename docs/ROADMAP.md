@@ -261,11 +261,62 @@ Preparation checklist:
 
 ## R6. Ops / monitoring follow-ups
 
-- **Pages-Functions liveness check.** `apps/web/functions/*` proxy same-origin
-  requests to the self-host API (reached over Tailscale Funnel). Add a
-  monitoring check that these Pages Functions stay live, so a wedged or
-  unreachable self-host origin surfaces as an alert rather than a silent
-  search outage on the public site.
+- **Pages-Functions liveness check.** ✅ **DONE (PR #117, 2026-07-10).**
+  `.github/workflows/liveness.yml` probes the live public site every 30 minutes
+  (healthz `{"ok":true}` proves the Pages Function → Funnel → origin chain;
+  /api/meta contract shape; a stable /api/search probe), 3 retries per probe;
+  a failed scheduled run relies on GitHub's default failure e-mail —
+  deliberately no new alert channel (§9 stays owner-held). Original scope:
+  `apps/web/functions/*` proxy same-origin requests to the self-host API
+  (reached over Tailscale Funnel); a wedged origin used to be a silent search
+  outage on the public site.
+
+## R7. Replace the tjpdf PDF ingest with a TJ searchSong number-probe (DOCUMENTED 2026-07-10 — not started)
+
+**Owner decision (2026-07-10): document only; implementation needs a separate
+go.** Outcome of a drop-review of the `tjpdf` source.
+
+**Context.** `tjpdf-*` is not a crawler: `scripts/ingest_anisong_pdf.py`
+re-inserts (coverage-only, idempotent) ~632 anime/vocaloid TJ numbers parsed
+from a MANUALLY downloaded TJ poster-songbook PDF
+(`scripts/data/anisong_utf8.txt`, via `pdftotext -table`). It exists because
+the `tj-media-direct` bulk feed (`newSongOfMonth`, one POST ≈ 67k items)
+does not carry these numbers at all — measured: tjpdf fills the 28xxx block
+with 518 numbers where the bulk feed has only 170. Dropping it outright was
+evaluated and REJECTED: the tracked baseline would lose all 635 songs
+(sole-source there), the full corpus would lose 43 songs entirely and the TJ
+number on 589 more (TJ coverage −10.4%), and 376 LLM title_ko + 72
+tjpdf-keyed Tier F pairs would go dead.
+
+**Verification that unlocks the replacement (2026-07-10).** A full reverse
+probe of all 632 tjpdf numbers against the legacy JSON API
+(`POST /legacy/api/searchSong`, body `searchTxt=<num>&strType=16&nationType=`)
+found **632/632 as exact `pro` matches, 0 errors**, every one tagged
+`nationalcode=JPN`, with title/artist/publishdate — and the API titles are
+CLEANER than the PDF: both known PDF column-leak corruptions come back intact
+(`28477 → 紫陽花アイ愛物語(パタリロ西遊記! OP)`,
+`68430 → ぐだふわエブリデー(…300年… OP)`). Probe cost ≈ 7 min at the
+adapter's production TJ politeness (500ms ± 100ms).
+
+**Design sketch (when picked up):**
+
+- Replace the PDF post-step with an API number-probe enrichment: a committed
+  seed list of the known numbers (the current 632) fetched via
+  `searchSong strType=16`; emit records with the SAME `tjpdf-<num>` id shape
+  (ids derive from the TJ number, so the translation cache, manual fixes,
+  Tier F pairs, and parity baselines see zero churn).
+- New-number DISCOVERY replaces manual PDF acquisition: a polite number-range
+  sweep over the anime blocks (28xxx–29xxx, 68xxx+) — `strType=16` returns
+  exact hits, so unknown numbers are directly enumerable; JPN filtering comes
+  free from `nationalcode`.
+- Side effects: fixes the two corrupted `title_primary` values; retires
+  `ingest_anisong_pdf.py` + `test_ingest_anisong_pdf.py` +
+  `anisong_utf8.txt` + the manual PDF download/convert step.
+- NON-goal: `title_ko` stays on the LLM Stage-2 pipeline — the API's
+  `sortTitleKo` is a katakana→hangul sort helper, exactly the class Stage 1
+  deliberately strips as "not a translation"; JOYSOUND ruby is likewise a
+  phonetic reading, not a Korean title. No substitute exists for the
+  translation channel.
 
 ## Open questions
 
