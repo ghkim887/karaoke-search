@@ -1,156 +1,95 @@
-# 세션 핸드오프 — 전레포 감사 + 수정 배치 3PR (2026-07-09)
+# 세션 핸드오프 — v22 크롤 가동 + 무결정 배치 완결 (2026-07-11 00:10 KST 체크포인트)
 
-다음 세션이 stale 요약이 아니라 디스크/git/서버의 실제 상태에서 이어가도록 작성.
-직전 버전(2026-07-05 작성)은 아래로 갱신됨. 이번 세션은 ①전레포 무동작변경
-리팩토링·버그 감사(6 병렬 리뷰어) ②감사 수정 배치(PR #96) ③main 이중 회귀
-발견·치유(PR #97/#98)에 집중.
+직전 버전(2026-07-09/10 감사 세션)을 갱신. 이번 세션(2026-07-10~11)은
+①B-1 fullCatalog 리스팅 배선(#113) ②v22 풀크롤 발진(+HttpClient 캐시 사고
+치유 #114) ③two-TJ 검증·종결(#115) ④무결정 배치(#116–#123) ⑤오너 결정
+3건 집행(v22 stage-2 사전승인 / R7 구현 go / §9 종결 #124)을 수행.
 
-## Current state of record (2026-07-10 갱신)
+## Current state of record
 
-- **main**: `1bd6390` — **CI GREEN 복구 완료**. 2026-07-09~10 세션의 5개 PR 전부
-  오너 그랜트("전부 머지")로 스쿼시 머지됨:
-  - **#98** #95 회귀 치유(167행 퍼지 + tj-52990 allow + 도구 allow-list 패리티 +
-    패리티 베이스라인 재생성 + smoke 6건 재고정) — 이 머지로 main 그린 복구.
-  - **#96** 감사 수정 배치(레거시 delta 전곡 재유도 HIGH / long-q 400 / 512MB 스트리밍 + 문서).
-  - **#97** crawl.yml PR-전 크롤러 테스트 게이트(다음 주간 크롤이 첫 실검증).
-  - **#99** HANDOFF 체크포인트. **#100** 감사 리팩토링 8건(무동작변경 —
-    파생테이블 덤프/프로브 바이트 동일 증명, 리뷰 APPROVE, main push CI 확인).
-- **서빙 DB**: oci `db/current -> v21` 변화 없음. v22 프로모션 보류 유지(커버리지 회귀 −49,683).
-- **라이브 웹**: karaokedb.pages.dev 변화 없음(이번 세션 배포 없음). 코퍼스 167행
-  퍼지는 다음 배포 때 번들에 반영됨.
-- **작업 클론**: scratchpad(소멸성). 다음 세션은 fresh clone 후 이 문서부터.
+- **main**: `eea60b2` (#123까지, CI success 확인). 열린 PR: **#124**(docs:
+  §9 종결 + 이 체크포인트; head는 이 커밋) — 머지 승인 대기.
+  **R7 구현 PR은 아직 미오픈**(author 작업 중, 아래 In-progress).
+- **v22 풀크롤 LIVE (oci)**: tmux `v22` — 리스팅 **352,290행 완료**(행 게이트
+  ≥280k 통과) 후 detail-sweep 진행 중(체크포인트 시점 9,699 결정, ~2.5/s →
+  **ETA 토요일(7/12) 오전 KST**). tmux `v22stage2` — sweep `code=0` 시
+  **candidate 빌드+커버리지 게이트 자동 실행**(오너 사전승인, 승격 제외).
+  런 디렉터리 `/srv/nas/karaoke/runs/data-2026-07-10-v22-fullcatalog/`
+  (status.txt = 상태기계; 재개 = run-v22.sh 재실행이 항상 안전).
+  stage-2 클론 = oci `~/v22/stage2/karaoke-search` @ eea60b2.
+- **서빙**: oci `db/current → v21`(joysound 306,822 = 커버리지 게이트 기준값,
+  라이브 검증 2026-07-10). 웹 배포 없음.
+- **라이브니스**: `.github/workflows/liveness.yml` 가동(수동 1회 success;
+  스케줄 틱은 GitHub 큐 등록 지연 중 — 첫 자동 run 확인 요).
+- **작업 클론**: scratchpad `kwork`(+ 워크트리 `kw-r7`=R7 author 사용 중).
+  소멸성 — 다음 세션은 fresh clone.
 
-## main 이중 회귀의 전말 (#95발, 이번 세션 발견·치유)
+## Grant Ledger (2026-07-10~11)
 
-1. **크롤 PR에는 ci.yml이 아예 안 돎**: crawl PR은 기본 GITHUB_TOKEN으로 열리는데
-   GitHub는 GITHUB_TOKEN이 만든 PR에 `on: pull_request`를 트리거하지 않음 → #95가
-   무검증 머지되고 main push에서야 red(run 29011788138). → **#97이 게이트 신설**.
-2. **한국어 누출 145행**(테스트 가시) + **22행**(같은 3팀의 라틴제목/한자표기라
-   테스트 정규식 밖): TJ 아티스트검색이 일본시장 카탈로그 보유 한국 아티스트
-   (루시/로이킴/BOYNEXTDOOR)를 JPN 오판정(JPN≥3·KOR 0표), 드롭리스트에 3팀 부재라
-   크롤·파이프라인 양쪽 무반응. 곡 단위 pro 신호는 145행 전부 KOR로 정답을 갖고
-   있었음(시스템 수정은 ROADMAP "TJ filter seam"). → **#98이 드롭리스트 3팀 + 167행
-   퍼지**. tj-52990 "Count To Love"(BOYNEXTDOOR)만은 진짜 일본 싱글(BOYLIFE
-   2025-08-18, 빌보드재팬 Hot 100 1위)로 웹검증되어 reviewedSongOverrides allow로
-   보존(크롤 필터 step2 allow가 step3 deny 선행 — 기계 강제라 크롤에도 durable).
-3. **web 패리티 identity 게이트 실패(14건)가 bail에 은폐**: `pnpm -r test`는 crawler
-   실패에서 중단 → apps/web 실행 자체가 안 됨. #95가 코퍼스를 바꾸고 패리티
-   베이스라인(sha256+레코드수 핀)을 재생성 안 함. → **#98이 베이스라인 재생성**
-   (퍼지 격리 jaccard +0.0023 개선, 하락 쿼리 0).
-4. **smoke 6건 = blog-* id가 위치 기반이라 재크롤마다 id→곡 재배정**(#95: Utada
-   137/149, Ado 69/76, ZUTOMAYO 64/75, Yonezu 99/121). 곡들은 새 id에서 여전히 1위 —
-   검색 정상, 픽스처만 stale. → **#98이 6개 expectId 재고정**(karaoke number로
-   동일성 검증). **제품 함의(신규 발견)**: localStorage 즐겨찾기
-   (karaoke-favorites:v1)가 record id를 저장 → 재배정 크롤마다 유저 즐겨찾기가
-   조용히 다른 곡으로 바뀜. reviewedMergePairs는 벤더번호 키라 면역. 안정 식별자
-   설계 = ROADMAP(오너 결정). memory `blog-ids-positional-reshuffle-each-crawl`.
-5. **퍼지 도구 결함**: drop-artist-leaks.mjs가 reviewedSongOverrides allow를 무시
-   (docstring의 "classifyRecord와 동일 predicate" 주장 거짓). → **#98이 allow-list
-   패리티 수정**(+테스트 2건; chinese anomaly 하드드롭은 step-0 미러라 무조건 유지).
+- **B-1 리스팅 배선 구현+PR** — "B-1 리스팅 배선 진행해" → #113 머지("머지
+  직접 진행해"로 명시 승인). oci ssh 재개방(Tailscale 재인증 완료).
+- **v22 크롤 실행** — "전체 리스팅 진행하고 이후에 바로 풀 크롤 돌려" →
+  리스팅+sweep 자동 연쇄 가동. #114 핫픽스 머지 명시 승인.
+- **two-TJ 검증** — "인터넷 검색으로 실제 레코드인지 구분… 무연결 유지+검증만"
+  → 12개 번호 전건 실재 확인, #115 머지 승인.
+- **무결정 배치** — "내 결정 없이 진행할 수 있으면서 v22 지장 없는 것들 모아서
+  처리해" → #116–#122; "전부 머지" 승인. #123(배치 마감 docs) 머지 승인.
+- **오너 결정 3건 (2026-07-10 말)** — ①v22 **candidate 빌드+커버리지 게이트
+  사전승인**(승격은 별도 go) ②**R7 구현 go**(tjpdf→searchSong API 카탈로그)
+  ③**§9 워치독 채널 종결**(전용 채널 없음, #117로 갈음).
+- **미승인(명시적으로 남김)**: v22 승격(db/current 플립·배포), R5 KY 어댑터
+  구현(서베이만 완료), §8 방향, blog-id, TJ filter seam, classifier Phase 2.
 
-## 전레포 감사 결과 (2026-07-09, read-only, main a8827b8)
+## Completed with evidence (이 세션, 전부 머지·CI green)
 
-6 병렬 리뷰어(search/schema · data-store · worker · web · crawler · scripts+CI),
-certain/likely 전건 오케스트레이터 독립 재검증. **PR #96으로 수정 출하 3건**:
-- **[HIGH] 레거시(pre-#93) DB에 delta patch → 미변경 곡 search_texts 전멸**
-  (schema.ts 마이그레이션이 테이블째 DROP 후 touched만 재작성; 라이브 v21이 정확히
-  레거시 형태). 수정: 마이그레이션 드롭 감지 시 전곡 재유도(full import 등가,
-  현행 스키마 delta 불변). 회귀 테스트 4건 + e2e(CLI patch→serve 왕복).
-- **[MED] 긴 romaji q → wanakana 재귀 스택오버플로 → /api/search 500**. 수정:
-  expandSearchQuery 256cp 가드(무throw) + worker 400(코드포인트 계수, astral 검증).
-- **[MED-잠복] decision-log >512MB면 스윕 재개·후보빌드 즉사**(readFileSync V8
-  문자열 상한). 수정: streamJsonl 스트리밍(torn-line 바이트 절단 보존, >64KB
-  멀티청크 테스트).
+- **#113** fullCatalog 리스팅 도구(사이드카 재개, 커버리지 하드가드) —
+  author→정적 리뷰 APPROVE→실사용 e2e APPROVE(sweep 소비까지 실증).
+- **#114** HttpClient `cache:'off'`(무한 캐시 → V8 상한 크래시 치유; 488MB
+  캐시 부검 확인) — 리스팅이 1131페이지부터 무손실 재개.
+- **#115** two-TJ 6쌍 = **무연결-by-design 종결**(TJ 공식검색으로 12개 번호
+  전건 실재; 브리지 항목 CLOSED).
+- **#116** ROADMAP 스테일 정리(#107/#100/#106/#109 반영). **#117** R6
+  라이브니스(수동 run success로 검증). **#118** R7 설계 문서(632/632 프로브
+  증거). **#119** App.tsx 훅 추출(리뷰 APPROVE, 불변식 5종). **#120** 간체
+  탐지기 report-only(76자, 리뷰 APPROVE — 전수 문자 대조). **#121** curated
+  이동(드리프트 게이트 이빨 실증; 백로그 3건은 이미 089e8c5에 있었음).
+  **#122** tjpdf 손상 제목 2건 + **#109 가드 정렬**(무음 되돌림 차단; REVISE
+  1라운드). **#123** 배치 마감 docs(R5 KY 서베이 반영 포함).
+- **KY(kysing.kr) 서베이 완료** — 공식 표면/robots 전허용/JSON API 없음/전수=
+  번호 프로브/JP 제목검색 불신뢰. ROADMAP R5에 기록(#123), memory
+  `ky-kysing-source-survey-2026-07-10`.
 
-**미수정·ROADMAP 기록(오너 판단 대기)**: delta 'affected' 모드 전역 idf 스테일
-(delta DB 랭킹 ≠ full rebuild; 112/148 토큰 재현), Tier B 동일소스 병합 입력순서
-의존(생존자 플립 재현; 동일벤더 번호 소실), delta의 미변경곡 힌트 무시, low 6건
-(반복부호 ゝ/ゞ 전사 탈락, web 폴백 배너 오표시, Favorites pending 부재, rate-limit
-Map 무정리, close() keep-alive, hint 초성 패리티), 무동작변경 리팩토링 8건,
-/api/meta↔Footer 날짜 계약 테스트. **감사 중 기각 2건(재발굴 금지)**: Footer 날짜
-갱신은 비버그(worker가 YYYY-MM-DD 절단), endStream 에러 삼킴은 Node24에서 반증.
+## Open items
 
-## Grant Ledger
+- **In-progress ① v22 sweep** (oci, 세션 독립): 완료 감지 = status.txt에
+  `SWEEP EXIT` → stage-2 자동 → `STAGE2 DONE total=… joysound=… coverage=PASS|FAIL`.
+  다음 세션 첫 확인: `ssh ubuntu@oci 'tail -5 /srv/nas/karaoke/runs/data-2026-07-10-v22-fullcatalog/status.txt'`.
+  PASS면 **오너에게 승격 go 요청**(승격 = 새 릴리스 디렉터리 + db/current 플립
+  + 배포; in-place 수정 금지, 보존 current+1, 게이트는 최종 상태에서 재실행).
+- **In-progress ② R7 author** (`author-r7-catalog`, 워크트리 kw-r7, 브랜치
+  feat/r7-tjpdf-api-catalog): 프로브→커밋 카탈로그→오프라인 인제스트 교체 +
+  **manual-fix 가드 6건 정렬 의무**(PK의 새 규칙 참조) + LLM 캐시 키잉 조사
+  (제목 키면 중단·보고 조건). **머지는 금요 크롤 소킹 후로 홀드**(오케스트레이터
+  결정 — 파이프라인 스텝 교체라 소킹 오염 방지).
+- **Blocked(오너 승인): #124 머지** — §9 종결 + 이 체크포인트.
+- **시간 게이트: 금요일(7/11) 주간 크롤 = 관찰 전용.** 첫 실전: #97 게이트,
+  #106 패리티 재생성, #121 사이드카 경로, #122 제목 교정+가드, 라이브니스
+  스케줄. 결과 보고만; 후속 작업은 오너 지시.
+- **Deferred → ROADMAP**: R5 KY 스파이크(제안됨, 미승인), §8 방향(승격 전
+  결정 요청됨), R3 스파이크, 간체 탐지기 배선(소킹 후), classifier 게이트
+  재구조화, .tmp_review 정리, title_ko uncertain 13건.
 
-- **전레포 감사(read-only)** — 2026-07-09 사용자 요청. 완료.
-- **옵션 A 수정 배치 구현+PR** — 2026-07-09 "a 진행하고 문서화해줘". PR #96 오픈 완료.
-- **A+B 회귀 치유(코퍼스 퍼지+crawl 게이트)+PR** — 2026-07-09 "그대로 진행해".
-  PR #97/#98 오픈 완료. 도구 확장·tj-52990 allow·smoke 재고정은 오케스트레이터가
-  증거 기반 세부 승인.
-- **머지 그랜트 없음** — #96/#97/#98 전부 오너 리뷰 대기.
-- (이월) 읽기전용 prod DB 조회 grant(2026-07-08)는 이번 세션 미사용; oci ssh 보류 유지.
+## 영구 규칙 delta (이 세션 신규 — PK/ROADMAP에 반영됨)
 
-## Open items (2026-07-10 오너 결정 라운드 반영)
-
-1. ~~PR 리뷰/머지~~ **완료 — #96–#103 전부 머지, main 그린** (#102 smoke
-   안정키+계약테스트, #103 low 버그 6건 포함; ゝ/ゞ·배너·Favorites pending·
-   rate-limit·shutdown·hint 초성 = 전부 수정 완료).
-2. **오너 보류(2026-07-10, 사유 포함 — ROADMAP에 기록)**:
-   - R1 머저 브리지(two-TJ 6곡): **보류** — "실제로 번호 2개가 공존하는 곡일 수
-     있음"(별칭으로 숨기는 설계가 카탈로그 왜곡일 수 있다는 관점). 부속 사실:
-     4쌍은 차기 빌드에서 Tier A 자동 해소, Tier F `['tj','28268','162483']`는
-     inert(메커니즘 도입 시 제거), 페어 주석 id 드리프트 2건.
-   - blog-id 안정 식별자/즐겨찾기 무결성: **보류**(당장 계획 없음; 권고안
-     "즐겨찾기 v2 = 벤더번호 저장"은 ROADMAP에 대기).
-   - 오프사이트 백업(§8)·워치독 채널(§9): **보류**(당장 계획 없음). ⚠ 릴리스
-     자산 0개 확인됨(매니페스트 댕글링, NAS 유일본) — 리스크 인지 하 보류.
-   - PR-2/PR-3(풀코퍼스 발행 워크플로/배포 플립): §8 보류에 종속돼 함께 보류.
-   - ~~버전 애매 ~7건~~ **해소(2026-07-10 오너 판정, #110 머지)**: 5건 Tier E
-     인코딩(STILL-JP 26271↔166525 / BLACK DIAMOND 메이저 27017↔175060 / ねねね
-     레코음 52426↔806868 / 氷のエンペラーII 26411↔166164 / F・G・K・S
-     26827↔172354; 카운트 191→196; 주간 크롤에선 휴면, JOYSOUND 포함 컴포즈에서
-     발효) + 2건 분리 종결(tj-26350 영어판 STILL — 양 벤더 관례상 언어판은 별곡
-     + two-TJ 제약; tj-26410 Do your Best — 플레이스홀더 아티스트에 타이틀-온리
-     매치는 디코이 리스크). 근거는 ROADMAP R1 follow-up 절.
-3. **실행 큐 완료(2026-07-10)**: ①패리티 베이스라인 재생성 정책 = **#106 머지**
-   (크롤이 재생성+jaccard 델타를 크롤 PR 본문에 표기, 누출 게이트 통과 후에만;
-   무변경 코퍼스에서 바이트 동일 재생성 증명 — PR 스팸 없음. 주의: smoke 픽스처가
-   이제 크롤 PR 생성 게이트가 됨 — #102의 번호 피닝으로 일상 id 셔플에는 면역)
-   ②TierB 결정적 생존자 + ③idf 문서화 + ④delta 힌트 경고 가드 = **#107 머지**
-   (커밋 코퍼스 26,133 전량 재머지 해시 동일 증명; fresh 크롤에서만 수렴 방향으로
-   생존자 달라질 수 있음 — 의도된 개선).
-   ⑤title_ko 255건 사전검토 완료: ok 215 / fix 27 / uncertain 13 → no-op·부재
-   제외 순 제안 24건(오역 19 + 빈값 채움 5) — **오너 사인오프 완료, #109 머지**
-   (manual-fixes.json 3→27 엔트리; 코퍼스 적용은 차기 파이프라인). 반영 전문(기록용):
-   - FILL tj-25020 → 낙하산의 방 / tj-25096 → Try me ~나를 믿어줘~ /
-     tj-25665 → 아시타에카에루 / tj-25729 → 애니메탈 / tj-27722 → 여름빛 미소로 1, 2, Jump!
-   - FIX tj-26079 에치젠 닌도→에치젠 인동 / tj-26407 바이올렛→비오라이트 /
-     tj-27524 젠고의 바다→제니고의 바다 / tj-27638 암야의 동반자살 맹세→암야의 사랑의 맹세 /
-     tj-27727 한 목소리 일대→일성일대 / tj-27828 전력 쾅 큐~→전력 바탄큐~ /
-     tjpdf-27879 벚꽃 너에게 새기다→벚꽃 너에게 미소짓다 / tjpdf-28209 사야 콩→사야엔도우 /
-     tjpdf-28238 해피니~뉴~냐→해피 뉴 냐 / tjpdf-28407 자・도・야 리셋!→잠으로 도망쳐 리셋! /
-     tjpdf-28477 서유기 수국 아이 사랑 이야기→수국 아이 사랑 이야기(소스 손상 프리픽스 제거) /
-     tjpdf-28507 서룰리언→세룰리언 / tj-6249 2100년이 채핀키드→2100년 가챠핀 키드 /
-     tj-68042 치카핫 치카치카하→치캇토 치카치카 / tj-68745 카나데토 모스 소라→카나데토모스소라 /
-     tj-68833 비비ㅅ 러브→비빗 러브 / tj-68869 알렉시사이미아 페어→알렉시사이미아 스페어 /
-     tj-68990 아이조메바시→아이젠바시 / tj-6985 나마이키 (건방지게)→건방지게
-   uncertain 13건(입수 소망·호시아이·사랑☆카나 등)은 무행동. 부수 발견: tjpdf
-   title_primary 손상 2건(tjpdf-28477 "! 서유기" 프리픽스, tjpdf-68430 한국어 혼입 —
-   PDF 인제스트 아티팩트 추정, 별건 미착수).
-4. **시간 게이트 = 전부 보류(2026-07-10, 오너)**: 금요일 주간 크롤은 돌아가는 대로
-   **관찰만**(#97 게이트 첫 실전, 소킹 체크: 병합쌍 적용·ruby 유입·classifier
-   골든·167행 퍼지 유지) — 결과에 따른 후속 작업 착수는 오너 지시 필요. TJ filter
-   seam 설계·classifier Phase 2도 **오너 go 없이는 착수 금지**(ROADMAP HELD 주석
-   참조).
-5. **v22 fullCatalog 크롤: 보류(2026-07-10, 오너)** — 착수·승격 모두 명시적 go
-   필요(승격은 oci ssh 보류 해제 포함). 방법론은 memory
-   `joysound-full-corpus-needs-fullcatalog-crawl` + 런북 참조.
-
-## 영구 규칙 (기존 유지 + 이번 세션 추가)
-
-- (기존) 권한/시크릿 느슨함 의도(수정 금지), release 디렉터리 in-place 수정 금지,
-  보존 = current+1, 웹 빌드/wrangler는 PowerShell(MSYS env 오염), 에이전트 게이트 =
-  CI 미러(biome/-r typecheck/-r test/-r build/knip 고정), Pages 배포 후 실브라우저
-  검증 필수.
-- **(신규) `pnpm -r test`는 bail** — 첫 패키지 실패가 뒤 패키지 결과를 은폐. 전수
-  판정은 `-r --no-bail` 또는 패키지별 실행으로.
-- **(신규) 크롤 PR에는 ci.yml이 안 돎**(GITHUB_TOKEN PR은 pull_request 미트리거) —
-  #97 게이트가 방어선. 크롤로 코퍼스가 바뀌면 패리티 베이스라인 재생성 필요.
-- **(신규) blog-* id는 위치 기반, 크롤마다 재배정** — id를 고정하는 픽스처/기능
-  금지, 안정키는 karaoke number(tj/ky/joysound).
+- HttpClient 응답 캐시는 무한 성장 — 대량 열거는 `cache:'off'`(PK).
+- **title_primary를 바꾸면 title-ko-manual-fixes 가드를 같은 변경에서 정렬**
+  (무음 스킵; PK에 규칙+테스트 패턴).
+- blog-* id 불안정/안정키 규칙, pnpm bail, 크롤 PR CI 미트리거 — 기존 유지.
 
 ## Next first action
 
-1. 오너 go 대기: Open items 3의 실행 가능 5건(패리티 정책이 최우선 — 금요일 전).
-2. 금요일 주간 크롤 결과 확인(#97 게이트 첫 실전 + 소킹 체크 + 베이스라인 재생성).
-3. 보류 항목은 ROADMAP의 HELD 주석이 정본 — 재론 시 그 사유부터 읽을 것.
+1. `ssh ubuntu@oci 'tail -5 /srv/nas/karaoke/runs/data-2026-07-10-v22-fullcatalog/status.txt'` —
+   v22 진행/완료 확인 (STAGE2 DONE + coverage=PASS면 승격 go 질문 준비).
+2. `gh pr list --repo ghkim887/karaoke-search --state open` — #124(+R7 PR)
+   상태 확인; R7 PR이 열려 있으면 리뷰 파이프라인(정적 필수) 후 소킹-홀드 유지.
+3. 금요 크롤 run 결과 관찰·보고 (`gh run list --workflow crawl`).
