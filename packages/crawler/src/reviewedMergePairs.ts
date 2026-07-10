@@ -231,6 +231,15 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['6827', '719'], // tj-6827: 會津の小鐵=会津の小鉄 (kyūjitai)
   ['68380', '488127'], // tj-68380: ALMIGHTY～仮面の約束 feat.川上洋平 (OST tag; full ver)
   ['6861', '16877'], // tj-6861: スタミナ=STAMINA (katakana↔romaji)
+  // --- 2026-07-10 owner-adjudicated version-ambiguous batch (R1 follow-up) ---
+  // DORMANT until a JOYSOUND-bearing compose: no joysound-source rows exist in
+  // the weekly blog+tj baseline, so these merges take effect only at the next
+  // JOYSOUND-crawl corpus.
+  ['26271', '166525'], // STILL(咎狗の血 ED) / いとう かなこ ↔ STILL〈日本語Version〉 / いとう かなこ (JP-language version; same artist/title)
+  ['27017', '175060'], // BLACK DIAMOND(しゅごキャラ! OST) / ブラックダイヤモンズ ↔ BLACK DIAMOND〈Major Version〉 / ブラックダイヤモンズ (owner: major cut over indies joy176052)
+  ['52426', '806868'], // ねねねねねねねね! 大爆走 / 桃鈴ねね ↔ ねねねねねねねね! 大爆走〈レコ音〉 / 桃鈴ねね (owner: reco-oto cut over honnin-eizou joy809290)
+  ['26411', '166164'], // 氷のエンペラーII / Various Artists ↔ 氷のエンペラーII / ミュージカル テニスの王子様 (title-only merge; TJ VA placeholder)
+  ['26827', '172354'], // F・G・K・S / Various Artists ↔ F・G・K・S / ミュージカル テニスの王子様 (title-only; only 2 DB results)
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -240,7 +249,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 191;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 196;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
