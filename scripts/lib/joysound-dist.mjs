@@ -26,11 +26,11 @@ const DIST_DETAIL = new URL(
 );
 const DIST_CLUSTERING = new URL('../../packages/crawler/dist/clustering.js', import.meta.url);
 const DIST_KOREAN_DROP = new URL(
-  '../../packages/crawler/dist/adapters/tj-media-direct/koreanArtistDropList.js',
+  '../../packages/crawler/dist/curated/koreanArtistDropList.js',
   import.meta.url,
 );
 const DIST_CHINESE_DROP = new URL(
-  '../../packages/crawler/dist/adapters/tj-media-direct/chineseArtistDropList.js',
+  '../../packages/crawler/dist/curated/chineseArtistDropList.js',
   import.meta.url,
 );
 const DIST_HTTP = new URL('../../packages/crawler/dist/http.js', import.meta.url);

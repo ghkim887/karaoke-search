@@ -55,7 +55,7 @@ jobs:
         #   clustering-rules.json         — from clustering.ts SPLIT_RE_SOURCE/FLAGS
         run: |
           for sidecar in \
-            packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json \
+            packages/crawler/src/curated/korean-artist-drop-list.json \
             packages/crawler/src/clustering-rules.json; do
             git diff --exit-code -- "$sidecar" || { echo "Sidecar drift detected: $sidecar"; exit 1; }
           done

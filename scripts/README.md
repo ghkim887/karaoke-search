@@ -47,7 +47,7 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
   negative delta (more output than input) is treated as fatal and aborts.
 - **`export-drop-list.mjs` runs as a post-build step.** Reads
   `packages/crawler/dist/.../koreanArtistDropList.js`, writes
-  `packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json`.
+  `packages/crawler/src/curated/korean-artist-drop-list.json`.
   The sidecar JSON is **tracked in git** so a TS-edited-without-regen drift
   is visible at code-review time. CI also has a sidecar drift guard step
   (`Verify all sidecars are in sync`), which covers the Korean drop-list

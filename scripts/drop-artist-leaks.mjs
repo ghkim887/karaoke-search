@@ -83,14 +83,8 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
 
 const CLUSTERING_DIST = resolve(REPO_ROOT, 'packages/crawler/dist/clustering.js');
-const KOREAN_DIST = resolve(
-  REPO_ROOT,
-  'packages/crawler/dist/adapters/tj-media-direct/koreanArtistDropList.js',
-);
-const CHINESE_DIST = resolve(
-  REPO_ROOT,
-  'packages/crawler/dist/adapters/tj-media-direct/chineseArtistDropList.js',
-);
+const KOREAN_DIST = resolve(REPO_ROOT, 'packages/crawler/dist/curated/koreanArtistDropList.js');
+const CHINESE_DIST = resolve(REPO_ROOT, 'packages/crawler/dist/curated/chineseArtistDropList.js');
 const REVIEWED_OVERRIDES_DIST = resolve(
   REPO_ROOT,
   'packages/crawler/dist/adapters/tj-media-direct/reviewedSongOverrides.js',

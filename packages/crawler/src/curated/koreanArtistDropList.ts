@@ -1,4 +1,4 @@
-import { normalizeForMatch } from './normalize.js';
+import { normalizeForMatch } from '../adapters/tj-media-direct/normalize.js';
 
 /**
  * Hand-curated drop list of known Korean acts that leak into the TJ-direct

@@ -1107,10 +1107,10 @@ export function readDropListKeys(relativePath) {
 }
 
 const KOREAN_DROP_KEYS = readDropListKeys(
-  '../../packages/crawler/src/adapters/tj-media-direct/koreanArtistDropList.ts',
+  '../../packages/crawler/src/curated/koreanArtistDropList.ts',
 );
 const CHINESE_DROP_KEYS = readDropListKeys(
-  '../../packages/crawler/src/adapters/tj-media-direct/chineseArtistDropList.ts',
+  '../../packages/crawler/src/curated/chineseArtistDropList.ts',
 );
 
 function sameTitleArtist(row, record) {

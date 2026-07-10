@@ -1,7 +1,7 @@
 import { hasKana, hasLatinLetter } from '@karaoke/search';
 import { splitArtistCollab } from '../../clustering.js';
-import { isInChineseDropList } from '../tj-media-direct/chineseArtistDropList.js';
-import { isInDropList } from '../tj-media-direct/koreanArtistDropList.js';
+import { isInChineseDropList } from '../../curated/chineseArtistDropList.js';
+import { isInDropList } from '../../curated/koreanArtistDropList.js';
 import { normalizeForMatch } from '../tj-media-direct/normalize.js';
 import { isReviewedJoysoundAllow, isReviewedJoysoundDrop } from './reviewedJoysoundOverrides.js';
 import type { JoysoundDetail, JoysoundListItem } from './types.js';
