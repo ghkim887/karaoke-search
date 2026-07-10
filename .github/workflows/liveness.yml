@@ -1,0 +1,107 @@
+# Liveness probe for the public site's Pages Functions (ROADMAP R6).
+#
+# Purpose: apps/web/functions/* are Cloudflare Pages Functions that proxy
+# same-origin requests (/healthz, /api/*) to the self-host API reached over a
+# Tailscale Funnel. If that origin is wedged or unreachable, the public site's
+# search silently breaks with nothing surfacing it. This scheduled job probes
+# the LIVE public site through those Functions so a broken proxy/origin turns a
+# scheduled run RED.
+#
+# Failure notification is deliberately GitHub's DEFAULT behavior: GitHub emails
+# the workflow's owner when a *scheduled* run fails. No new alert channel is
+# wired here on purpose — the dedicated alert-channel decision (ROADMAP §9) is
+# owner-HELD and out of scope for R6. RED scheduled run == the alert.
+#
+# Scheduled workflows only run on the default branch, so this begins probing
+# once merged to main.
+name: liveness
+
+on:
+  schedule:
+    # Every 30 minutes. Cheap (3 curl probes), well under any origin rate limit.
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run at a time; a new schedule tick supersedes a queued one instead of
+  # piling up. cancel-in-progress stays false so an in-flight probe that may be
+  # about to report a real failure is never cancelled out from under us.
+  group: liveness
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    # Backstop only; the job normally finishes in seconds. Worst case (all three
+    # probes exhaust 3 attempts with 20s backoff) is well under this.
+    timeout-minutes: 10
+    env:
+      # Public production URL (docs/ARCHITECTURE.md, README.md). Not a secret.
+      PAGES_BASE_URL: https://karaokedb.pages.dev
+    steps:
+      # No actions/checkout: the probe reads nothing from the repo. curl and jq
+      # are both preinstalled on ubuntu-latest, so this job is dependency-free.
+      - name: Probe live Pages Functions
+        run: |
+          base="${PAGES_BASE_URL%/}"
+
+          # Probe one URL: require HTTP 200 AND a jq assertion over the (compact,
+          # single-line) JSON body. Up to 3 attempts, 20s apart, before failing.
+          # On final failure prints which probe failed with status + truncated
+          # body. The API always emits compact JSON (JSON.stringify), so the body
+          # is a single line and the trailing "\n<status>" split below is exact.
+          probe() {
+            name="$1"; url="$2"; filter="$3"
+            status=""; body=""
+            for attempt in 1 2 3; do
+              response="$(curl -sS --max-time 25 -H 'accept: application/json' \
+                -w $'\n%{http_code}' "$url" 2>/dev/null || true)"
+              status="${response##*$'\n'}"
+              body="${response%$'\n'*}"
+              if [ "$status" = "200" ] && printf '%s' "$body" | jq -e "$filter" >/dev/null 2>&1; then
+                echo "OK   $name (attempt $attempt, HTTP $status)"
+                return 0
+              fi
+              echo "WARN $name attempt $attempt failed (HTTP ${status:-none})"
+              if [ "$attempt" -lt 3 ]; then sleep 20; fi
+            done
+            echo "FAIL $name after 3 attempts"
+            echo "  url: $url"
+            echo "  last HTTP status: ${status:-none}"
+            echo "  body (truncated to 500 chars):"
+            printf '%s' "$body" | head -c 500
+            echo ""
+            return 1
+          }
+
+          failures=0
+
+          # 1) healthz: {"ok":true}. That literal can only be produced by the
+          #    self-host node-server (apps/worker/src/node-server.ts), so a 200
+          #    with .ok==true proves the full Pages Function -> Funnel -> origin
+          #    chain is live. A wedged origin makes the Function's fetch throw
+          #    (non-200) and this goes RED.
+          probe "healthz" "$base/healthz" \
+            '.ok == true' || failures=1
+
+          # 2) /api/meta: {"dbUpdatedAt": "YYYY-MM-DD"} or "" (empty DB). Mirrors
+          #    the worker <-> Footer contract exactly (meta-contract.test.ts): a
+          #    date-only string or the empty sentinel, nothing more constrained.
+          probe "api/meta" "$base/api/meta" \
+            '(.dbUpdatedAt | type == "string") and ((.dbUpdatedAt == "") or (.dbUpdatedAt | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")))' \
+            || failures=1
+
+          # 3) /api/search: shape {items:[...], nextCursor:string|null}. Query is
+          #    "RADWIMPS" — pure ASCII (no URL-encoding), a globally famous band
+          #    whose Latin-script name appears verbatim as artist_primary and so
+          #    cannot be re-romanized across crawls; hundreds of matching rows in
+          #    the corpus. Assert real, non-empty results WITHOUT pinning any
+          #    record id (blog-* ids reshuffle every crawl) or exact counts.
+          probe "api/search" "$base/api/search?q=RADWIMPS&limit=5" \
+            '(.items | type == "array") and ((.items | length) >= 1) and (.items[0].id | type == "string") and ((.items[0].id | length) > 0) and (.items[0].title_primary | type == "string") and has("nextCursor")' \
+            || failures=1
+
+          exit "$failures"
