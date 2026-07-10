@@ -355,6 +355,45 @@ export class JoysoundOfficialCrawler implements Crawler {
 }
 
 /**
+ * Fetch a single JOYSOUND full-catalog songlist page and parse its listing rows
+ * plus its pagination total. A standalone building block (the class-based
+ * crawler above stays untouched) used by the fresh-enumeration listing tool
+ * (`scripts/joysound-fullcatalog-listing.mjs`) to emit the raw listing JSONL the
+ * v22 detail-sweep pipeline consumes.
+ *
+ * `totalPages` is returned RAW (may be `null` when the page carries no
+ * pagination hint); the caller applies the "null → page-1-only" fallback that
+ * `crawlSources` does inline, so the semantics stay in one obvious place per
+ * consumer rather than being pre-baked here.
+ *
+ * Failure semantics mirror the class crawler's listing path: a robots-blocked
+ * fetch (`null`) or any non-2xx throws — a listing-page failure must abort the
+ * enumeration, never be silently skipped (a skipped page = a coverage hole).
+ */
+export async function fetchJoysoundSonglistPage(
+  http: Pick<HttpClient, 'fetch'>,
+  kana: string,
+  page: number,
+): Promise<{ items: JoysoundListItem[]; totalPages: number | null }> {
+  const url = `${FULL_SONGLIST_BASE}/${encodeURIComponent(kana)}?page=${page}`;
+  const res = await http.fetch(url);
+  if (res === null) {
+    throw new Error(
+      `[joysound-fullcatalog] songlist ${kana} page ${page} blocked by robots.txt: ${url}`,
+    );
+  }
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(
+      `[joysound-fullcatalog] songlist ${kana} page ${page} HTTP ${res.status} (${url})`,
+    );
+  }
+  return {
+    items: parseJoysoundListItems(res.body),
+    totalPages: parseJoysoundPagination(res.body).totalPages,
+  };
+}
+
+/**
  * Explicit opt-in crawler for full JOYSOUND leak/false-positive audits.
  * Not registered in the default adapter list because a full run walks every
  * kana bucket in `/web/search/songlist/{kana}` before detail-classifying rows.
