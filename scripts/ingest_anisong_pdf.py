@@ -90,6 +90,28 @@ DROP_LIST_SIDECAR = (
     / 'korean-artist-drop-list.json'
 )
 
+# Corrupted-title overrides (pdftotext column-leak repair), keyed by TJ code.
+# Two rows in scripts/data/anisong_utf8.txt have the Korean anime-name column
+# fused into the JP title cell: the anime-name column collapses to <4 spaces
+# from the title, so `_extract_title_from_prefix` merges them and its
+# Hangul->JP transition split leaves a stray Korean fragment in `title`
+# (e.g. TJ 28477 parses as '! 서유기 紫陽花アイ愛物語', TJ 68430 as
+# '300년, 모르는 ぐだふわエブリデー'). Both artist cells parse correctly
+# (美勇伝 / 悠木碧) and are left untouched.
+#
+# These map the code to the correct title_primary, applied at insert (below)
+# so the fix survives every idempotent pipeline re-run WITHOUT hand-editing
+# anisong_utf8.txt — keeping the PDF-derived source clean and resilient to a
+# future PDF refresh (regenerating the .txt won't silently reintroduce the
+# bug for these codes).
+#
+# Source: TJ Media legacy searchSong API (strType=16 exact-pro match),
+# verbatim, probed 2026-07-10.
+_TITLE_OVERRIDES: dict[str, str] = {
+    '28477': '紫陽花アイ愛物語(パタリロ西遊記! OP)',
+    '68430': 'ぐだふわエブリデー(スライム倒して300年、知らないうちにレベルMAXになってました OP)',
+}
+
 # Anchor: a 4-or-5 digit number not adjacent to other digits or a decimal point.
 # (Most codes are 5 digits; ~33 legacy codes are 4 digits like 6479, 6899, 6943.)
 # Note: lookbehind also excludes '.' to defend against decimal-like patterns.
@@ -747,7 +769,10 @@ def main() -> int:
         # Track this fallback as a caveat for the report.
         if not r['title']:
             title_fallbacks.append(code)
-        title = r['title'] or r['artist']
+        # Apply the corrupted-title override (see _TITLE_OVERRIDES) at insert so
+        # the correct title_primary is reasserted on every pipeline run, ahead of
+        # both the parsed title and the artist fallback.
+        title = _TITLE_OVERRIDES.get(code) or r['title'] or r['artist']
         artist = r['artist']
         # Preserve the original crawled_at for codes already seen in a prior
         # tjpdf-* row (byte-idempotency: unchanged inputs produce an identical
