@@ -178,6 +178,20 @@ export function buildIngestedCorpus(
   corpus,
   { isArtistDropped, normalizeForMatch, nowIso = isoUtcNow, sourceUrl = SOURCE_URL },
 ) {
+  // Validate the catalog up-front: required identifier fields + unique `pro`.
+  // The probe writes a unique catalog by construction, but the file is
+  // hand-editable — fail fast (naming the offending code) rather than silently
+  // inserting a duplicate/garbage tjpdf row.
+  const seenPro = new Set();
+  for (let i = 0; i < catalogEntries.length; i += 1) {
+    assertCatalogEntry(catalogEntries[i], i);
+    const pro = catalogEntries[i].pro;
+    if (seenPro.has(pro)) {
+      throw new Error(`catalog has a duplicate pro "${pro}" (entry #${i}) — codes must be unique`);
+    }
+    seenPro.add(pro);
+  }
+
   // Harvest carry-forward fields from existing tjpdf-* rows, keyed by TJ number.
   const oldCrawledAt = new Map();
   const oldAliases = new Map();
@@ -220,7 +234,6 @@ export function buildIngestedCorpus(
 
   for (let i = 0; i < catalogEntries.length; i += 1) {
     const entry = catalogEntries[i];
-    assertCatalogEntry(entry, i);
     const code = entry.pro;
 
     if (tjPresent.has(code)) {

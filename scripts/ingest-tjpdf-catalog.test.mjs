@@ -203,6 +203,13 @@ describe('buildIngestedCorpus', () => {
       }),
     ).toThrow(/missing\/empty required field "indexTitle"/);
   });
+
+  it('fails fast on a duplicate pro in the catalog (naming the code)', () => {
+    const catalog = [catEntry('700'), catEntry('701'), catEntry('700')];
+    expect(() => buildIngestedCorpus(catalog, [], { ...predicates(), nowIso: FIXED_NOW })).toThrow(
+      /duplicate pro "700"/,
+    );
+  });
 });
 
 describe('runIngest (file I/O)', () => {

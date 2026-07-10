@@ -11,8 +11,9 @@
  * imports the canonical implementations straight from the built crawler dist
  * (`isInDropList` / `isInChineseDropList` / `normalizeForMatch` /
  * `splitArtistCollab` / `isReviewedTjSongAllow`) — zero parity machinery for the
- * Chinese list (the Korean sidecar stays: it still has a Python consumer in
- * `scripts/ingest_anisong_pdf.py`).
+ * Chinese list. The Korean sidecar JSON has no runtime reader anymore (both this
+ * script and `scripts/ingest-tjpdf-catalog.mjs` read the built dist); it stays
+ * only as a build-time drift-visibility guard.
  *
  * Parity scope: this tool mirrors the crawl-time filter chain's `curated-allow`
  * (reviewed-song-allow) and `deny-list` (drop-list-reject) steps — an artist-name
