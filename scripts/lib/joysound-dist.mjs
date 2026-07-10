@@ -33,6 +33,11 @@ const DIST_CHINESE_DROP = new URL(
   '../../packages/crawler/dist/adapters/tj-media-direct/chineseArtistDropList.js',
   import.meta.url,
 );
+const DIST_HTTP = new URL('../../packages/crawler/dist/http.js', import.meta.url);
+const DIST_JOYSOUND_CRAWLER = new URL(
+  '../../packages/crawler/dist/adapters/joysound-official/crawler.js',
+  import.meta.url,
+);
 
 /**
  * Import the built JOYSOUND classifier module (`{ buildJoysoundDecision }`).
@@ -74,4 +79,22 @@ export async function loadJpArtistDropDeps() {
   const { isInDropList } = await import(DIST_KOREAN_DROP.href);
   const { isInChineseDropList } = await import(DIST_CHINESE_DROP.href);
   return { normalizeForMatch, splitArtistCollab, isInDropList, isInChineseDropList };
+}
+
+/**
+ * Import the built crawler pieces the JOYSOUND full-catalog LISTING tool needs:
+ * the polite `HttpClient` (200ms±50 rate limit, 429/5xx retries, robots
+ * allowlist incl. the `/web/search/songlist` path, ETag cache) and the
+ * `fetchJoysoundSonglistPage` building block + the `JOYSOUND_FULL_CATALOG_KANA`
+ * default kana walk order. Returns
+ * `{ HttpClient, fetchJoysoundSonglistPage, JOYSOUND_FULL_CATALOG_KANA }`.
+ *
+ * @returns {Promise<{ HttpClient: Function, fetchJoysoundSonglistPage: Function, JOYSOUND_FULL_CATALOG_KANA: readonly string[] }>}
+ */
+export async function loadJoysoundListingDeps() {
+  const { HttpClient } = await import(DIST_HTTP.href);
+  const { fetchJoysoundSonglistPage, JOYSOUND_FULL_CATALOG_KANA } = await import(
+    DIST_JOYSOUND_CRAWLER.href
+  );
+  return { HttpClient, fetchJoysoundSonglistPage, JOYSOUND_FULL_CATALOG_KANA };
 }

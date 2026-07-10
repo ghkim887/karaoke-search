@@ -3,6 +3,7 @@ import {
   JOYSOUND_FULL_CATALOG_KANA,
   JoysoundFullCatalogCrawler,
   JoysoundOfficialCrawler,
+  fetchJoysoundSonglistPage,
 } from '../../../src/adapters/joysound-official/crawler.js';
 import type { HttpClient } from '../../../src/http.js';
 
@@ -797,6 +798,96 @@ describe('JoysoundOfficialCrawler — detail-fetch resilience (retry + skip coun
     expect(summaryLine).toMatch(/skipped\D*1/);
     expect(summaryLine).toMatch(/1\s+detail-fetch/);
     expect(summaryLine).toMatch(/0\s+invalid/);
+  });
+});
+
+describe('fetchJoysoundSonglistPage — standalone listing-page building block', () => {
+  it('parses items and totalPages from a songlist page', async () => {
+    const fetched: string[] = [];
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch(url: string) {
+        fetched.push(url);
+        return {
+          status: 200,
+          body: listingHtml(
+            [
+              {
+                naviGroupId: '110001',
+                selSongNo: '110-001',
+                songName: '夜に駆ける',
+                artistName: 'YOASOBI',
+              },
+              {
+                naviGroupId: '110002',
+                selSongNo: '110-002',
+                songName: '群青',
+                artistName: 'YOASOBI',
+              },
+            ],
+            7,
+          ),
+        };
+      },
+    };
+
+    const { items, totalPages } = await fetchJoysoundSonglistPage(http as HttpClient, 'ア', 3);
+
+    expect(totalPages).toBe(7);
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({
+      naviGroupId: '110001',
+      selSongNo: '110-001',
+      songName: '夜に駆ける',
+      artistName: 'YOASOBI',
+    });
+    // URL is the kana-indexed songlist path, percent-encoded, with the page.
+    expect(fetched).toEqual([`${FULL_SONGLIST_BASE}/${encodeURIComponent('ア')}?page=3`]);
+  });
+
+  it('returns totalPages: null when the page carries no pagination hint', async () => {
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch() {
+        // A body with a listing row but NO "totalPage(s)" key at all.
+        return {
+          status: 200,
+          body:
+            '<!doctype html><html><body><script>{"items":[' +
+            '{"naviGroupId":"120001","selSongNo":"120-001","songName":"曲","artistName":"歌手",' +
+            '"artistId":"$undefined","tieupInfo":"$undefined","tieupId":"$undefined"}' +
+            ']}</script></body></html>',
+        };
+      },
+    };
+
+    const { items, totalPages } = await fetchJoysoundSonglistPage(http as HttpClient, 'カ', 1);
+
+    expect(totalPages).toBeNull();
+    expect(items).toHaveLength(1);
+    expect(items[0]?.naviGroupId).toBe('120001');
+  });
+
+  it('throws on a non-2xx listing response (a page failure must abort, not skip)', async () => {
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch() {
+        return { status: 503, body: 'unavailable' };
+      },
+    };
+    await expect(fetchJoysoundSonglistPage(http as HttpClient, 'ア', 1)).rejects.toThrow(/503/);
+  });
+
+  it('throws when the listing page is blocked by robots (null fetch result)', async () => {
+    const http: Pick<HttpClient, 'fetch'> = {
+      async fetch() {
+        return null;
+      },
+    };
+    await expect(fetchJoysoundSonglistPage(http as HttpClient, 'ア', 1)).rejects.toThrow(/robots/);
+  });
+});
+
+describe('JoysoundOfficialCrawler — invalid-row skip (kept with the crawler suite)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('skips a row whose selSongNo normalizes to invalid without aborting the crawl, and counts it as invalid', async () => {
