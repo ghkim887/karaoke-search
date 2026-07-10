@@ -471,10 +471,10 @@ export class HttpClient {
       userAgent: cfg.userAgent ?? DEFAULT_USER_AGENT,
       minIntervalMs: cfg.minIntervalMs ?? DEFAULT_RATE_LIMIT_BASE_MS,
       jitterMs: cfg.jitterMs ?? DEFAULT_RATE_LIMIT_JITTER_MS,
-      // Client-wide `cache: 'off'` forces every host off, which makes the
-      // read/validator path (fetch:576), the 304-replay path, and the store
-      // site all inert — they already gate on hostCfg.cache. `'persistent'`
-      // preserves the per-host opt-out (defaults true).
+      // Client-wide `cache: 'off'` forces every host off, which makes
+      // fetch()'s read/validator, 304-replay, and store paths all inert — they
+      // already gate on hostCfg.cache. `'persistent'` preserves the per-host
+      // opt-out (defaults true).
       cache: this.cacheMode === 'off' ? false : (cfg.cache ?? true),
     };
   }
