@@ -278,3 +278,31 @@ once the self-host setup stabilizes.
   content. Don't stage it in maintenance commits unless the diff has hunks.
 - `pdftotext -table` for the anisong PDF is a Windows/xpdf capability (see
   above) — regeneration is a manual Windows-host step.
+
+## CI, test gates, and record identity (2026-07-09/10 incident lessons)
+
+- `pnpm -r test` (pnpm recursive run) BAILS at the first failing package, so
+  every later package silently never runs — after #95 the crawler corpus
+  regression masked 14 apps/web parity failures for days, and a "one failure"
+  summary was really "one failure plus everything behind it unexecuted". Rule:
+  any full-workspace test verdict must use `pnpm -r --no-bail test` (or
+  per-package runs) and cite per-package summaries; a bailed run proves only
+  the packages that actually executed.
+- PRs opened with the default `GITHUB_TOKEN` (e.g. by
+  peter-evans/create-pull-request in `crawl.yml`) do NOT trigger
+  `on: pull_request` workflows — GitHub suppresses recursive workflow events —
+  so `ci.yml` never ran on weekly crawl PRs and #95 merged a regressing corpus
+  with green-looking status that only turned red on the post-merge main push.
+  Rule: any PR a workflow generates must carry its gates INSIDE the generating
+  workflow (the crawl job now runs the crawler corpus-regression suite and the
+  parity-baseline regen/delta before opening its PR); never assume repo-level
+  CI covers bot-opened PRs.
+- `blog-*` record ids are POSITIONAL (`blog-{artistId}-{rowIndex}`): any crawl
+  that re-touches a blog page reassigns the id→song mapping wholesale (#95
+  moved 137/149 ids on the Utada page alone). Anything that pins a blog id
+  across crawls silently re-targets a different song — this broke the parity
+  smoke fixtures and still affects device favorites (localStorage stores record
+  ids; stable-identity design is an owner-held ROADMAP item). Rule: never
+  persist or pin a `blog-*` id across crawls in fixtures, tooling, or features;
+  the stable identity is the vendor karaoke number (tj/ky/joysound), with
+  title+artist as a cross-check.
