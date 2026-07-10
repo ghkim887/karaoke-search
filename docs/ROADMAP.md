@@ -34,7 +34,7 @@ numbers; that is expected, not a defect.)
   exact-title clustering.
 
 **Status (2026-07-05): ✅ DONE** — audit CLI (#73) + full tier-A/B/C human/web
-review (#76/#84–#88) → `reviewedMergePairs` Tier E = 191 / Tier F = 161
+review (#76/#84–#88) → `reviewedMergePairs` Tier E = 196 / Tier F = 161
 (applied at the next crawl). ~10 residual confirmed pairs need the
 merger-mechanism extension (see the R1 follow-up subsection below). Original
 work item below.
@@ -73,7 +73,7 @@ judgment).
 
 The R1 audit was fully reviewed across all three tiers (A/B/C) over PRs
 #76/#84–#88; ~120 reviewed pairs are now in `reviewedMergePairs.ts`
-(Tier E = 191, Tier F = 161, applied at the next crawl). **~10 confirmed
+(Tier E = 196, Tier F = 161, applied at the next crawl). **~10 confirmed
 merges remain UN-encodable** because the current allowlist data shapes —
 Tier E `[tj, joysound]` and Tier F `[vendor, number, joysound]` — can only
 express "one affected vendor number ↔ one JOYSOUND number". Two shapes fall
@@ -105,9 +105,18 @@ record absorb a JOYSOUND number from a candidate that carries its own
 conflicting TJ (dropping/relocating the candidate's TJ deliberately), and
 (b) a multi-number reviewed-pair shape (or generalized `ALLOWED_JOY_SIDE_EXTRA_PROVIDERS`)
 that attaches a both-vendor (tj+ky) affected record to one JOYSOUND number.
-Keep it exact-pair-reviewed (no broad artist rule). Also holds ~7 owner-decision
-version-ambiguous pairs (STILL EN/JP, BLACK DIAMOND major/indies, ねねね
-presentation variants, "Various Artists" placeholders).
+Keep it exact-pair-reviewed (no broad artist rule).
+
+**Version-ambiguous pairs — RESOLVED (2026-07-10, owner).** Of the ~7 held, 5
+are now encoded as Tier E: `tj-26271↔joy166525` (STILL JP-language version),
+`tj-27017↔joy175060` (BLACK DIAMOND major cut over indies), `tj-52426↔joy806868`
+(Nenenene reco-oto cut over honnin-eizou), and the two Various-Artists↔Musical
+title-only placeholders `tj-26411↔joy166164` and `tj-26827↔joy172354`. 2 are
+CLOSED as keep-separate: `tj-26350` "Still (Eng Ver.)" stays a distinct TJ-only
+entry (both TJ and JOYSOUND treat language versions as separate songs; a
+same-song ruling would need the held two-TJ mechanism), and `tj-26410`
+"Do your Best" was rejected as too risky (title-only match against a placeholder
+artist, the title has many decoys, and the candidate differs by punctuation).
 
 ## R2. UI language separation (Korean / English / Japanese)
 
