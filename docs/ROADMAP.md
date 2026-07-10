@@ -48,7 +48,7 @@ residue and should be tagged as such, not force-merged. Do this BEFORE R5
 (KY/DAM expansion) — the same artist-variant merge weaknesses will multiply
 with every new provider.
 
-### R1 follow-up — merger-mechanism extension (HELD 2026-07-10, owner)
+### R1 follow-up — merger-mechanism extension (RESOLVED 2026-07-10, owner: unlinked-by-design)
 
 **Status update (2026-07-10, live-API-verified recon):** the "embedded-TJ/KY
 bridge" premise is dead — JOYSOUND-sourced rows never carry TJ/KY numbers (the
@@ -63,13 +63,30 @@ that the single-value-per-vendor data model cannot hold. Also: the Tier F entry
 runs) and should be removed/superseded when any mechanism lands; the pair
 comments' `blog-523-9`/`blog-163-90` ids drifted in #95 (now -10/-91).
 
-**Owner decision (2026-07-10): HELD.** Rationale: the twin TJ numbers may be
-legitimately distinct catalog entries (TJ genuinely lists both numbers), so
-collapsing them behind one displayed number — the "search-only alias" design —
-may misrepresent the catalog; if this is ever built, a design that keeps both
-numbers visible deserves equal weight. Revisit alongside the Tier B
-same-source tie-break question (same underlying "same song or two entries?"
-judgment).
+**Owner decision (2026-07-10): RESOLVED — the 6 pairs stay separate, unlinked
+records BY DESIGN.** Initially held on the suspicion that the twin TJ numbers
+are legitimately distinct catalog entries; a same-day web verification (owner
+directive: "keep unlinked, but verify none of the numbers is fake") CONFIRMED
+that suspicion for **all 12 numbers** against TJ's own live catalog
+(`tjmedia.com/song/accompaniment_search?searchTxt=<num>&strType=16`, primary;
+datalibrary.info/karaoke + namu.wiki/VocaDB corroboration; 3 numbers
+independently re-checked by the orchestrator). Every pair is a systematic,
+deliberate double-listing — no fake/stale numbers, so no data change is needed
+and no merge/alias/link mechanism will be built for them:
+
+| Pair | TJ num — credit (verbatim) | TJ num — credit (verbatim) | Pattern |
+|---|---|---|---|
+| Rocket Dive | 6579 — hide with Spread Beaver (AWOL OP) | 25103 — hide | old block band credit vs later solo credit |
+| ALWAYS | 27011 — 中島美嘉 | 27098 — 中島美嘉 (サヨナライツカ OST) | plain vs OST-tagged registration |
+| まっがーれ↓スペクタクル | 26737 — 古泉一樹 (Character Song) | 28268 — 小野大輔 (OST) | character credit vs CV credit |
+| DIVISION BATTLE ANTHEM | 28871 — Division All Stars | 68196 — same, title suffix " +" | 2xxxx base vs 6xxxx re-registration ("+" = TJ's update marker) |
+| Division Rap Battle | 28879 — Division All Stars | 68160 — same, title suffix " ＋" | same re-registration pattern |
+| パンダヒーロー | 28247 — ハチ(Feat.GUMI) | 27416 — GUMI | producer credit vs vocaloid credit |
+
+Search finds every entry by its own number/title/artist today; the two rows per
+song are each faithful to TJ's actual catalog. Anyone re-reading this later:
+do NOT re-propose a merge/alias for these pairs without NEW evidence (e.g. TJ
+retiring one of the numbers).
 
 The R1 audit was fully reviewed across all three tiers (A/B/C) over PRs
 #76/#84–#88; ~120 reviewed pairs are now in `reviewedMergePairs.ts`
@@ -99,13 +116,15 @@ maps an explicit `(vendor,number,joysound)` triple to ONE extra provider cell
 (used for `tj-68342` 再会 + ky44631). It is not general: it doesn't cover the
 candidate-own-TJ conflict, and it only permits a single extra cell.
 
-**Work item (not yet built — documented for a later session):** extend the
-merger so these are expressible, e.g. (a) a reviewed rule that lets an affected
-record absorb a JOYSOUND number from a candidate that carries its own
-conflicting TJ (dropping/relocating the candidate's TJ deliberately), and
-(b) a multi-number reviewed-pair shape (or generalized `ALLOWED_JOY_SIDE_EXTRA_PROVIDERS`)
-that attaches a both-vendor (tj+ky) affected record to one JOYSOUND number.
-Keep it exact-pair-reviewed (no broad artist rule).
+**Work item (CLOSED 2026-07-10 by the unlinked-by-design decision — kept only
+as reference should a NEW pair shape ever appear):** the mechanism sketches
+were (a) a reviewed rule letting an affected record absorb a JOYSOUND number
+from a candidate that carries its own conflicting TJ (dropping/relocating the
+candidate's TJ deliberately), and (b) a multi-number reviewed-pair shape (or
+generalized `ALLOWED_JOY_SIDE_EXTRA_PROVIDERS`) attaching a both-vendor
+(tj+ky) affected record to one JOYSOUND number. If ever revived: keep it
+exact-pair-reviewed (no broad artist rule), and remove the inert Tier F entry
+`['tj','28268','162483']` at that time.
 
 **Version-ambiguous pairs — RESOLVED (2026-07-10, owner).** Of the ~7 held, 5
 are now encoded as Tier E: `tj-26271↔joy166525` (STILL JP-language version),
