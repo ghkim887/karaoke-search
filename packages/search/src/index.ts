@@ -204,6 +204,86 @@ export function hasNonAsciiCharacter(value: string): boolean {
 }
 
 /**
+ * Curated set of Han characters that appear ONLY in simplified-Chinese (PRC)
+ * script — a high-precision signal that a row is Mandopop/Cantopop rather than
+ * Japanese. This is the detector the ROADMAP "Chinese-leak detection" item calls
+ * for: a broad `hasHan`-without-kana scan false-positives on the ~2k
+ * kanji-titled Japanese songs in the corpus and is the WRONG tool, so instead we
+ * key on characters Japanese never uses.
+ *
+ * CURATION RULE (precision over recall — a false-positive on a genuine Japanese
+ * song is worse than a missed leak). Every character below is:
+ *   1. a form used in simplified Chinese, AND
+ *   2. NOT a valid Japanese kanji — not jōyō / jinmeiyō / common hyōgai, AND
+ *   3. distinct (different code point) from BOTH the traditional form AND the
+ *      Japanese shinjitai, which are what Japanese text actually uses.
+ *
+ * The load-bearing trap this set AVOIDS: many Japanese shinjitai were simplified
+ * to the SAME glyph the PRC adopted (国 学 体 会 医 数 万 与 声 点 …). Those are
+ * valid Japanese and are deliberately EXCLUDED — a Japanese title full of them
+ * must NOT match. Only PRC simplifications Japan did not adopt are included.
+ *
+ * Each block is annotated with the Japanese counterpart form that proves the
+ * simplified glyph is not used in Japanese (Japanese would write the counterpart
+ * instead). Kept deliberately small and reviewable — a curated few-dozen
+ * high-frequency characters, not an exhaustive Unihan dump.
+ */
+const SIMPLIFIED_ONLY_HAN_BLOCKS = [
+  // Mandarin function words with no Japanese kanji counterpart at all:
+  // 们 (plural marker), 这 (this; JA 這), 吗 (question particle; trad 嗎).
+  '们这吗',
+  // 言→讠 speech-radical simplifications (Japanese keeps the 言 radical):
+  // 说説 语語 请請 谁誰 读読 谢謝 让譲 认認 论論 词詞 话話 讲講 议議 记記 该該.
+  '说语请谁读谢让认论词话讲议记该',
+  // 金→钅 metal-radical simplifications (Japanese keeps 金):
+  // 钱銭 银銀 铁鉄 钟鐘 锁鎖.
+  '钱银铁钟锁',
+  // 門→门 gate-radical simplifications (Japanese keeps the full 門):
+  // 门門 问問 间間 闻聞.
+  '门问间闻',
+  // Animal-radical simplifications distinct from the Japanese forms:
+  // 马馬 鸟鳥 鱼魚 鸡鶏.
+  '马鸟鱼鸡',
+  // 見→见 / 頁→页 radical simplifications: 见見 观観 觉覚 题題.
+  '见观觉题',
+  // 糸→纟 silk-radical simplifications (Japanese keeps 糸): 红紅 给給 经経 结結.
+  '红给经结',
+  // Whole-character PRC simplifications whose Japanese counterpart (given after
+  // each) is a DIFFERENT code point, so a Japanese title never contains these:
+  // 爱愛 乐楽 龙竜 时時 电電 义義 习習 华華 汉漢 东東 车車 风風 飞飛 岁歳 应応 药薬
+  // 图図 团団 单単 战戦 关関 边辺 过過 进進 运運 还還 长長 买買 卖売.
+  '爱乐龙时电义习华汉东车风飞岁应药图团单战关边过进运还长买卖',
+  // Common Chinese surname characters in their PRC-simplified form (a strong
+  // artist-name leak signal), each distinct from the Japanese/traditional glyph:
+  // 张張 陈陳 刘劉 郑鄭 邓鄧 赵趙 孙孫 韩韓.
+  '张陈刘郑邓赵孙韩',
+] as const;
+
+/**
+ * The curated simplified-Chinese-only Han characters as a lookup set (one
+ * single-character string per code point). Frozen membership; see
+ * {@link SIMPLIFIED_ONLY_HAN_BLOCKS} for the per-block curation rationale.
+ */
+export const SIMPLIFIED_ONLY_HAN: ReadonlySet<string> = new Set(
+  Array.from(SIMPLIFIED_ONLY_HAN_BLOCKS.join('')),
+);
+
+/**
+ * Whether `value` contains any curated simplified-Chinese-only Han character
+ * (see {@link SIMPLIFIED_ONLY_HAN}). REPORT-ONLY signal for surfacing suspected
+ * non-Japanese (Mandopop/Cantopop) rows for human review — it does NOT and must
+ * NOT feed the crawl filter chain, classifier, or any admit/drop decision.
+ */
+export function hasSimplifiedOnlyHan(value: string): boolean {
+  for (const character of value) {
+    if (SIMPLIFIED_ONLY_HAN.has(character)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Expand a free-text search query into safe transliteration variants for
  * recall, **without** generating kanji readings. Behaviour:
  *

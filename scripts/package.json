@@ -9,6 +9,7 @@
   "devDependencies": {
     "@karaoke/crawler": "workspace:*",
     "@karaoke/schema": "workspace:*",
+    "@karaoke/search": "workspace:*",
     "vitest": "^2.1.8"
   }
 }
