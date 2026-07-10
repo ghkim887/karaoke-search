@@ -34,9 +34,11 @@ Sources (each an adapter in `packages/crawler/src/adapters/`):
    records). Every candidate runs through the 7-step Japanese-relevance
    filter chain (`adapters/tj-media-direct/filterSteps.ts`; order is
    load-bearing — see PROJECT-KNOWLEDGE).
-3. **`tjpdf-*` PDF post-step** — `scripts/ingest_anisong_pdf.py` inserts
-   PDF-only records (~600) for anime-songbook coverage. Coverage-only: no
-   tagging.
+3. **`tjpdf-*` TJ-catalog post-step** — `scripts/ingest-tjpdf-catalog.mjs`
+   inserts records (~635) for anime/vocaloid TJ numbers absent from the other
+   adapters, from the committed TJ `searchSong` probe catalog
+   (`scripts/data/tjpdf-catalog.jsonl`, refreshed on-demand by the network probe
+   `scripts/probe-tjpdf-catalog.mjs`). Offline + coverage-only: no tagging.
 
 Pipeline order per crawl:
 

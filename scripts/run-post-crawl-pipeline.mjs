@@ -2,12 +2,12 @@
 // Weekly post-crawl pipeline runner — extracted from `.github/workflows/crawl.yml`.
 //
 // Before this script existed, the 11-step order-load-bearing post-processing
-// chain (atomic rename → splitter parity → PDF ingest → Stage 1 title_ko strip
-// → merger replay → KPOP drop → Cpop drop → Stage 2 LLM cache replay → manual
-// title_ko fixes → cache prune → schema validation) lived ONLY as YAML step
-// order in crawl.yml. It could not be run locally as one unit, and prose
-// copies of the order kept drifting. This file is now the single source of
-// truth for the chain; crawl.yml invokes it as one step.
+// chain (atomic rename → splitter parity → tjpdf catalog ingest → Stage 1
+// title_ko strip → merger replay → KPOP drop → Cpop drop → Stage 2 LLM cache
+// replay → manual title_ko fixes → cache prune → schema validation) lived ONLY
+// as YAML step order in crawl.yml. It could not be run locally as one unit, and
+// prose copies of the order kept drifting. This file is now the single source
+// of truth for the chain; crawl.yml invokes it as one step.
 //
 // Usage:
 //   node scripts/run-post-crawl-pipeline.mjs [--corpus <path>] [--skip <step-name>]... [--help]
@@ -15,9 +15,10 @@
 //   --corpus  Corpus path (default: apps/web/public/data/songs.json, relative
 //             to the repo root). When overridden, the resolved absolute path
 //             is also exported to child steps as KARAOKE_SONGS_JSON so the
-//             steps that hardcode the default corpus path (anisong-pdf-ingest,
-//             replay-merger, drop-kpop-leaks, drop-cpop-leaks,
-//             prune-artist-nationality-cache) operate on the same file.
+//             steps that read the default corpus path from the env
+//             (tjpdf-catalog-ingest, replay-merger, drop-kpop-leaks,
+//             drop-cpop-leaks, prune-artist-nationality-cache) operate on the
+//             same file.
 //             WARNING: the prune-artist-nationality-cache step ALWAYS mutates
 //             the REAL apps/web/public/data/tj-search-cache.json — the cache
 //             is not corpus-scoped, so --corpus does NOT redirect it. Restore
@@ -70,11 +71,13 @@ export function buildSteps(corpus = DEFAULT_CORPUS) {
       command: ['python', '-m', 'unittest', 'scripts/test_splitter_parity.py'],
     },
     {
-      // Coverage-only: inserts brand-new tjpdf-{code} records for PDF codes
-      // absent from the corpus. No category/section tagging (category
-      // dimension was removed).
-      name: 'anisong-pdf-ingest',
-      command: ['python', 'scripts/ingest_anisong_pdf.py'],
+      // Coverage-only: inserts brand-new tjpdf-{code} records for TJ catalog
+      // numbers absent from the corpus, from the committed TJ searchSong probe
+      // catalog (scripts/data/tjpdf-catalog.jsonl). Offline + deterministic —
+      // the network probe (scripts/probe-tjpdf-catalog.mjs) is run on-demand,
+      // not here. Reads KARAOKE_SONGS_JSON for the corpus path.
+      name: 'tjpdf-catalog-ingest',
+      command: [node, 'scripts/ingest-tjpdf-catalog.mjs'],
     },
     {
       // Stage 1: strip transliteration title_ko from tj-/tjpdf- records.

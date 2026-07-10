@@ -3,9 +3,9 @@
 This directory holds the project's non-package executables: build-chain
 shims, weekly-crawl post-processing, schema validation gates, and ad-hoc
 cleanup helpers used to reshape the corpus when policy changes. The mix of
-Python and JavaScript is deliberate — the PDF ingest has historically lived
-in Python (Windows-host `pdftotext -table` dependency, reused regex helpers),
-while the merger replay and schema validation reuse the TypeScript build's
+Python and JavaScript is deliberate — the title_ko Stage-1 normalizer and the
+cross-language splitter-parity mirror live in Python, while the tjpdf catalog
+ingest, merger replay, and schema validation reuse the TypeScript build's
 `dist/` artifacts directly. Python regression tests use stdlib `unittest`
 and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 
@@ -14,8 +14,9 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | Script | Role | Frequency | Invocation context |
 |---|---|---|---|
 | `run-post-crawl-pipeline.mjs` | CI / post-crawl chain runner (atomic rename → … → schema validation) | Weekly | Single step in `crawl.yml`; runnable locally (`--corpus`, `--skip`) |
-| `ingest_anisong_pdf.py` | CI / data ingest (coverage-only PDF records) | Weekly | After JS crawl, in `crawl.yml` |
-| `normalize_tj_title_ko.py` | CI / title_ko Stage 1 (strip TJ transliterations, salvage `media_context_ko`) | Weekly | After PDF ingest, in `crawl.yml` |
+| `probe-tjpdf-catalog.mjs` | On-demand TJ `searchSong` number-probe → refreshes `data/tjpdf-catalog.jsonl` (NETWORK) | On-demand | Manual (`--fresh`, `--range A..B`); NOT in the weekly pipeline |
+| `ingest-tjpdf-catalog.mjs` | CI / data ingest (coverage-only `tjpdf-*` records from the committed catalog; offline) | Weekly | After splitter parity, in the post-crawl pipeline |
+| `normalize_tj_title_ko.py` | CI / title_ko Stage 1 (strip TJ transliterations, salvage `media_context_ko`) | Weekly | After tjpdf catalog ingest, in `crawl.yml` |
 | `replay-merger.mjs` | CI / merger replay | Weekly | After Stage 1, in `crawl.yml` |
 | `drop-artist-leaks.mjs --list korean` | CI / Korean-artist leak cleanup | Weekly | After merger replay, in `crawl.yml` (also runnable manually after drop-list updates) |
 | `drop-artist-leaks.mjs --list chinese` | CI / Chinese-artist (Cantopop/Mandopop) leak cleanup (+ catalog-anomaly IDs) | Weekly | After KPOP drop, in `crawl.yml` |
@@ -38,9 +39,10 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 
 ## Operational notes
 
-- **Atomic writes everywhere.** `ingest_anisong_pdf.py` and `replay-merger.mjs`
-  both write to a `<file>.tmp` then `os.replace()` / `renameSync()` — partial
-  writes never reach `apps/web/public/data/songs.json`.
+- **Atomic writes everywhere.** The pipeline scripts (e.g.
+  `ingest-tjpdf-catalog.mjs`, `replay-merger.mjs`) write to a `<file>.tmp` then
+  `renameSync()` / `os.replace()` — partial writes never reach
+  `apps/web/public/data/songs.json`.
 - **`replay-merger.mjs` is gated by safety thresholds.** Refuses to write
   when the corpus shrinks by more than `MAX_DELTA_THRESHOLD` records
   (currently 1000) — see the constants block at the top of the file. A

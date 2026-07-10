@@ -365,10 +365,10 @@ describe('getLeadComponent — Fix A.2 unified lead extractor', () => {
   });
 });
 
-// Cross-language parity partner: scripts/test_ingest_anisong_pdf.py
-// class TestDropSplitReContents — mirrors the assertIn guards there so that
+// Cross-language parity partner: scripts/test_splitter_parity.py
+// (DROP_SPLIT_RE / _SPLIT_RE_SOURCE_FALLBACK checks) mirrors the guards here so
 // a Biome/copilot "tidy" that removes a delimiter from the TS character class
-// is caught by CI before a real anisong PDF retag silently drops records.
+// is caught by CI before the Python splitter mirror (lib/artist_split.py) drifts.
 describe('SPLIT_RE — TS parity with Python _DROP_SPLIT_RE', () => {
   it('contains the full delimiter character class for cross-language parity', () => {
     expect(SPLIT_RE.source).toContain('\\s+meets\\s+');

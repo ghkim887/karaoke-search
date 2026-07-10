@@ -38,7 +38,8 @@ import { isPlainObject } from './normalize.js';
  * the per-artist scanner, the parser's filter, and any future consumer.
  *
  * Atomic writes: write to a per-writer unique `<file>.<pid>.<uuid>.tmp`, then
- * rename. Mirrors the `scripts/ingest_anisong_pdf.py` pattern.
+ * rename. Mirrors the data pipeline's atomic-write convention
+ * (`scripts/lib/atomic-write.mjs` / `scripts/lib/corpus_io.py`).
  *
  * 90-day staleness: entries with `lastSeen` older than 90 days are treated
  * as missing by the freshness helpers so they get re-fetched. Catalog-mutation

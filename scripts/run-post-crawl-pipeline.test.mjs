@@ -34,7 +34,7 @@ describe('buildSteps', () => {
   const EXPECTED_ORDER = [
     'atomic-rename',
     'splitter-parity',
-    'anisong-pdf-ingest',
+    'tjpdf-catalog-ingest',
     'title-ko-stage1',
     'replay-merger',
     'drop-kpop-leaks',
