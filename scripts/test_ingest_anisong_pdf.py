@@ -839,5 +839,102 @@ class TestCollectTranslitLines(unittest.TestCase):
         self.assertEqual(result, [])
 
 
+class TestCorruptedTitleOverride(unittest.TestCase):
+    """`_TITLE_OVERRIDES` repairs the two rows where a pdftotext column-leak
+    fused Korean anime-name text into the JP title cell (TJ 28477 / TJ 68430).
+
+    Guards two things:
+      1. `parse_pdf` on the raw corrupted lines still emits the corrupted title
+         (documents the leak the override compensates for — if a future parser
+         change repairs it upstream, this assertion flags the override for
+         review). The artist cell parses correctly for both rows.
+      2. End-to-end `main()` writes the CORRECT title_primary (verbatim from the
+         TJ legacy searchSong API) to the new tjpdf-* record, artist untouched.
+    """
+
+    # Exact corrupted lines, verbatim from scripts/data/anisong_utf8.txt
+    # (pdftotext -table output): the Hangul anime-name column fuses into the
+    # JP title cell because the inter-column gap collapsed to <4 spaces.
+    _LINES_28477 = [
+        '파타리로! 서유기  紫陽花アイ愛物語                ★  28477  美勇伝\n',
+        '\n',
+        '           아지사이아이아이모노가타리                     비유우덴\n',
+        '\n',
+    ]
+    _LINES_68430 = [
+        '슬라임을 잡으면서 300년, 모르는  ぐだふわエブリデー             ★  68430  悠木碧\n',
+        '\n',
+        '사이에 레벨MAX가 되었습니다     구다후와 에브리데이                      유우키 아오이\n',
+        '\n',
+    ]
+
+    _CORRUPTED = {
+        '28477': '! 서유기 紫陽花アイ愛物語',
+        '68430': '300년, 모르는 ぐだふわエブリデー',
+    }
+    _CORRECT = {
+        '28477': '紫陽花アイ愛物語(パタリロ西遊記! OP)',
+        '68430': 'ぐだふわエブリデー(スライム倒して300年、知らないうちにレベルMAXになってました OP)',
+    }
+    _ARTIST = {'28477': '美勇伝', '68430': '悠木碧'}
+
+    def test_parse_pdf_still_emits_the_corrupted_title(self) -> None:
+        for code, lines in (('28477', self._LINES_28477), ('68430', self._LINES_68430)):
+            records, _caveats = ingest.parse_pdf(lines)
+            rec = next(r for r in records if r['tj'] == code)
+            self.assertEqual(
+                rec['title'], self._CORRUPTED[code],
+                f'parse_pdf title for {code} changed; the override may be redundant',
+            )
+            self.assertEqual(
+                rec['artist'], self._ARTIST[code],
+                f'artist for {code} should parse correctly (not corrupted)',
+            )
+
+    def test_override_map_holds_the_verified_api_values(self) -> None:
+        # Pins the correction constants themselves so a stray edit is caught.
+        self.assertEqual(ingest._TITLE_OVERRIDES['28477'], self._CORRECT['28477'])
+        self.assertEqual(ingest._TITLE_OVERRIDES['68430'], self._CORRECT['68430'])
+
+    def test_main_writes_corrected_title_primary(self) -> None:
+        combined = ''.join(self._LINES_28477) + ''.join(self._LINES_68430)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            songs_path = Path(tmpdir) / 'songs.json'
+            pdf_path = Path(tmpdir) / 'anisong.txt'
+            # Missing sidecar => empty drop set => no filtering (both artists are
+            # Japanese, so they would pass anyway; this just keeps the test
+            # hermetic from the repo's real sidecar).
+            missing_sidecar = Path(tmpdir) / 'absent-drop-list.json'
+
+            pdf_path.write_text(combined, encoding='utf-8')
+            songs_path.write_text(
+                json.dumps([], ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+
+            with (
+                patch.object(ingest, 'PDF_TEXT', pdf_path),
+                patch.object(ingest, 'SONGS_JSON', songs_path),
+                patch.object(ingest, 'DROP_LIST_SIDECAR', missing_sidecar),
+            ):
+                exit_code = ingest.main()
+            self.assertEqual(exit_code, 0)
+
+            corpus = json.loads(songs_path.read_text(encoding='utf-8'))
+            by_id = {r['id']: r for r in corpus}
+            for code in ('28477', '68430'):
+                rec = by_id.get(f'tjpdf-{code}')
+                self.assertIsNotNone(rec, f'tjpdf-{code} should be inserted')
+                assert rec is not None  # type-narrowing
+                self.assertEqual(
+                    rec['title_primary'], self._CORRECT[code],
+                    f'title_primary for tjpdf-{code} must be the corrected API value',
+                )
+                self.assertEqual(
+                    rec['artist_primary'], self._ARTIST[code],
+                    f'artist_primary for tjpdf-{code} must be left untouched',
+                )
+
+
 if __name__ == '__main__':
     unittest.main()
