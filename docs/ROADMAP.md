@@ -244,11 +244,42 @@ is the largest data-value item on the board.
 
 Preparation checklist:
 
-- **KY (Korean, kumyoung):** source survey (kysing.kr search endpoints /
-  monthly new-song listings), robots + terms review, then a
-  `packages/crawler/src/adapters/` adapter following the
-  joysound-official/tj-media-direct patterns (decision-log JSONL, resumable,
-  classifier goldens).
+- **KY (Korean, kumyoung): source survey ✅ DONE (2026-07-10); adapter
+  implementation stays owner-gated.** Findings (live-verified):
+  - `kysing.kr` is KY's OFFICIAL catalog surface (금영엔터테인먼트 footer,
+    biz-reg 221-88-00319). Legacy `kumyoung.com` still serves EUC-KR
+    monthly/weekly charts (`/out_svc/chartkorea.asp`, plain HTTP only) —
+    chart-only, no adapter value.
+  - robots.txt allow-all (no disallow, no crawl-delay); terms
+    (`/useguide/`) carry standard IP-reservation + a non-commercial clause,
+    silent on bots/scraping. No anti-bot observed (no Cloudflare/CAPTCHA/
+    rate-limit; search needs no login).
+  - **No JSON API, no bulk feed, no kana-index equivalent** — WordPress,
+    fully server-rendered GET HTML. Search:
+    `GET /search/?category={N}&keyword={term}&s_page={page}` (category
+    1=곡번호 2=곡명 7=아티스트 5=작곡 6=작사 4=가사 8=단곡명; ~15 rows/page;
+    rows in `ul.search_chart_list > li`, clean strings in `span[title]`).
+    Fields: number/title/artist/composer/lyricist/release(YYYY.MM)+flags.
+  - Number search is EXACT on the UN-padded integer (`6286` hits, `06286`
+    zero); the kysing 곡번호 == machine song number → a stable key aligned
+    with our `karaoke_numbers`. Full enumeration = per-number probe over
+    ~1..99999 (catalog ≈60k+, non-contiguous number space; ≈14 h at 500 ms
+    politeness). Incremental delta = `/latest/` (이달의 신곡, recent months
+    only).
+  - Japanese songs are titled in JAPANESE script (good for our corpus
+    keying) with tie-up appended in parens; LTS rows embed lyric/furigana
+    blocks in the title cell (isolate `span[title]`). **⚠ JP title-search is
+    unreliable** (existing exact titles can return 0) — an adapter must
+    query by NUMBER or ARTIST and read titles from results, never search by
+    JP title.
+  - Adapter fit: the per-number probe + resumable decision-log pattern
+    matches R7 (tjpdf→searchSong probe) and the v22 listing tool exactly;
+    the new risk axis is HTML-parse fragility (fixtures + drift guards).
+    The real bottleneck is MERGE pressure, not crawling: 1,244 existing KY
+    numbers Tier-A-merge for free; the rest need title/artist soft-merge +
+    R1-style human review rounds. Recommended sequence on go: ①1k-number
+    probe spike (JP ratio / field quality) ②adapter+filter ③full sweep
+    (oci, resumable) ④merge + review rounds → coverage gate.
 - **DAM (Japanese, Daiichi Kosho):** NEW provider — requires widening the
   `karaoke_numbers` provider CHECK (`'tj','ky','joysound'`) in
   `packages/data-store/src/schema.ts`, the `@karaoke/schema` types, worker
@@ -309,9 +340,11 @@ adapter's production TJ politeness (500ms ± 100ms).
   sweep over the anime blocks (28xxx–29xxx, 68xxx+) — `strType=16` returns
   exact hits, so unknown numbers are directly enumerable; JPN filtering comes
   free from `nationalcode`.
-- Side effects: fixes the two corrupted `title_primary` values; retires
-  `ingest_anisong_pdf.py` + `test_ingest_anisong_pdf.py` +
-  `anisong_utf8.txt` + the manual PDF download/convert step.
+- Side effects: retires `ingest_anisong_pdf.py` + `test_ingest_anisong_pdf.py`
+  + `anisong_utf8.txt` + the manual PDF download/convert step. (The two
+  corrupted `title_primary` values were fixed ahead of this item by PR #122,
+  2026-07-10 — an API-verbatim override map in the ingest, plus realigning the
+  tjpdf-28477 manual title_ko fix guard from PR #109 so it keeps applying.)
 - NON-goal: `title_ko` stays on the LLM Stage-2 pipeline — the API's
   `sortTitleKo` is a katakana→hangul sort helper, exactly the class Stage 1
   deliberately strips as "not a translation"; JOYSOUND ruby is likewise a
@@ -418,17 +451,19 @@ candidate measured ~946 MB during the 2026-06 JOYSOUND candidate dry-run —
 well past the cap — which motivated the decision. Workers + D1 + wrangler
 tooling was deleted from the repo on 2026-06-13.
 
-### Post-JOYSOUND refactor backlog (deferred to avoid feature-branch conflicts)
+### Post-JOYSOUND refactor backlog (mostly ✅ DONE as of 2026-07-10)
 
-Parked because the touched files are in flight on the feature branch:
+Originally parked to avoid feature-branch conflicts. Status audit 2026-07-10:
+three items had ALREADY shipped in the tier 0-2 refactor commit `089e8c5`
+(this list was stale); two more shipped today (PR #119, #121). Only two items
+remain open (marked below).
 
-- worker dedup: the `StoredSongRow` row shape is declared in both
-  `apps/worker/src/index.ts` and `@karaoke/data-store` — extract shared code
-  (the `splitSqlStatements` half of this item was resolved by deletion when
+- ✅ worker dedup (done in `089e8c5`): single `StoredSongRow` declaration at
+  `packages/data-store/src/import-export.ts`, imported by the worker
+  (the `splitSqlStatements` half was resolved by deletion when
   the D1 import scripts were removed 2026-06-13);
-- `apps/worker/scripts/build-sqlite-db.mjs` dynamically imports the
-  data-store via a hardcoded relative `dist/` path — switch to the
-  `@karaoke/data-store` bare specifier so package resolution owns the path;
+- ✅ `apps/worker/scripts/build-sqlite-db.mjs` bare `@karaoke/data-store`
+  specifier (done in `089e8c5`);
 - the worker's `D1*` interfaces (now `SearchDatabase`/`PreparedStatementLike`/
   `QueryResult`/`SqlValue`), the sqlite-adapter's `SqliteSearchDatabase`, and
   data-store's `SONG_SCHEMA_SQL` were renamed backend-neutral (T3-1). The
@@ -438,16 +473,21 @@ Parked because the touched files are in flight on the feature branch:
   `apps/worker/.wrangler/` stays gitignored for historical local scratch, and
   `apps/web/.wrangler/` is retained as live Cloudflare Pages local state
   (`apps/web/wrangler.toml`);
-- `apps/web/src/components/App.tsx` hook extraction (the component
-  accumulated search/API/favorites state machines);
-- JOYSOUND classifier gate-array restructure — only with a
-  diagnostic-replay proof of behavior identity;
-- move the curated drop lists out of `adapters/tj-media-direct/` into a
-  `src/curated/` home (keeping the sidecar export wiring intact);
-- `.tmp_review/` audit artifacts: archive then delete (untracked, multi-GB
-  over time);
-- the agent-chunk prep/merge pattern (title_ko Stage 2, JOYSOUND
-  adjudication) duplicates chunk-file plumbing — extract a shared lib.
+- ✅ `apps/web/src/components/App.tsx` hook extraction (PR #119, 2026-07-10):
+  the remaining inline search-query/vendor-filter/retry-nonce machines moved
+  to `apps/web/src/hooks/` (earlier API/corpus/results/fallback hooks were
+  already extracted); App.tsx is composition + rendering;
+- ⚪ OPEN — JOYSOUND classifier gate-array restructure — only with a
+  diagnostic-replay proof of behavior identity (deliberately skipped in the
+  2026-07-10 batch: replay proof is heavy and the v22 sweep was mid-flight);
+- ✅ curated drop lists moved to `packages/crawler/src/curated/` (PR #121,
+  2026-07-10; sidecar export wiring + both workflow drift gates re-pathed,
+  sidecars byte-identical);
+- ⚪ OPEN — `.tmp_review/` audit artifacts: archive then delete (untracked,
+  multi-GB over time; lives on the NAS prod tree, needs operator care);
+- ✅ the agent-chunk prep/merge shared lib exists (done in `089e8c5`):
+  `scripts/lib/agent-chunks.mjs` (transport shared; domain logic deliberately
+  stays per-consumer).
 
 ### 2026-07-09 audit deferred findings
 
@@ -529,6 +569,17 @@ scan false-positives on ~2k kanji-titled Japanese songs and is the wrong
 tool). Grow the catalog-anomaly ID list in `scripts/drop-artist-leaks.mjs` as
 anomalies surface; revisit list structure if the Chinese list grows past ~20
 entries (see PROJECT-KNOWLEDGE, drop lists).
+
+**Detector shipped REPORT-ONLY (PR #120, 2026-07-10):**
+`hasSimplifiedOnlyHan` in `@karaoke/search` (curated 76-char set, precision-
+first — all shinjitai-shared glyphs excluded, per-char reviewed) +
+`scripts/audit-simplified-chinese.mjs` (scans a corpus JSON, emits suspect
+JSONL + summary; no exit-code gating). Calibration: 0 hits over the 26,133-row
+baseline (17,257 Han-bearing rows scanned; a naive Han-without-kana scan would
+flag 4,105) while still firing on the known anomaly. Deliberately NOT wired
+into crawl.yml (kept clear of the first #97/#106 gate soak). Next steps
+(owner-gated): run it against fresh crawls / the full corpus, and wire
+confirmed hits into the drop list or the crawl report.
 
 ### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
 
