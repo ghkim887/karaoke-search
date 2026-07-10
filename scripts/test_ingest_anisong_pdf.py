@@ -25,6 +25,7 @@ import json
 import os
 import sys
 import tempfile
+import unicodedata
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -934,6 +935,50 @@ class TestCorruptedTitleOverride(unittest.TestCase):
                     rec['artist_primary'], self._ARTIST[code],
                     f'artist_primary for tjpdf-{code} must be left untouched',
                 )
+
+
+class TestManualFixesGuardAlignment(unittest.TestCase):
+    """Cross-file consistency pin: any `tjpdf-{code}` entry in
+    scripts/data/title-ko-manual-fixes.json for a code in `_TITLE_OVERRIDES`
+    must carry the CORRECTED title as its `title_primary` guard.
+
+    Why this matters: scripts/apply-manual-title-ko-fixes.mjs NFKC-compares
+    each fix's `title_primary` against the corpus title as a stale-fix guard;
+    on mismatch it SILENTLY skips the fix (exit 0, counter only). The anisong
+    ingest runs BEFORE the manual-fix step in run-post-crawl-pipeline.mjs, so
+    an overridden tjpdf-* row reaches the manual-fix step with the corrected
+    title. If the guard still held the old corrupted title, the owner-signed
+    title_ko fix would stop applying and silently revert. This test fails loudly
+    if the two drift apart again.
+    """
+
+    _FIXES_PATH = Path(__file__).resolve().parent / 'data' / 'title-ko-manual-fixes.json'
+
+    def _load_fixes_by_id(self) -> dict[str, dict]:
+        fixes = json.loads(self._FIXES_PATH.read_text(encoding='utf-8'))
+        return {f['id']: f for f in fixes}
+
+    def test_manual_fix_guards_match_overrides(self) -> None:
+        by_id = self._load_fixes_by_id()
+        for code, corrected in ingest._TITLE_OVERRIDES.items():
+            fix = by_id.get(f'tjpdf-{code}')
+            if fix is None:
+                continue  # no manual title_ko fix for this code — nothing to guard
+            self.assertEqual(
+                unicodedata.normalize('NFKC', fix['title_primary']),
+                unicodedata.normalize('NFKC', corrected),
+                f'manual-fix guard for tjpdf-{code} must equal _TITLE_OVERRIDES '
+                f'(NFKC), else apply-manual-title-ko-fixes.mjs silently skips it',
+            )
+
+    def test_28477_entry_present_and_aligned(self) -> None:
+        # Explicit pin for the entry this change realigns. The owner-signed
+        # title_ko (PR #109) must be preserved verbatim.
+        entry = self._load_fixes_by_id().get('tjpdf-28477')
+        self.assertIsNotNone(entry, 'tjpdf-28477 manual-fix entry must exist')
+        assert entry is not None  # type-narrowing
+        self.assertEqual(entry['title_primary'], '紫陽花アイ愛物語(パタリロ西遊記! OP)')
+        self.assertEqual(entry['title_ko'], '수국 아이 사랑 이야기')
 
 
 if __name__ == '__main__':
