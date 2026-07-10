@@ -86,8 +86,7 @@ DROP_LIST_SIDECAR = (
     / 'packages'
     / 'crawler'
     / 'src'
-    / 'adapters'
-    / 'tj-media-direct'
+    / 'curated'
     / 'korean-artist-drop-list.json'
 )
 

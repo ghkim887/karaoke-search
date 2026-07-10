@@ -1,6 +1,6 @@
+import { DROP_LIST } from '../../curated/koreanArtistDropList.js';
 import type { HttpClient } from '../../http.js';
 import type { ArtistNationalityEntry, SearchSongCache } from './cache.js';
-import { DROP_LIST } from './koreanArtistDropList.js';
 import {
   coerceNonEmptyString,
   coerceProString,

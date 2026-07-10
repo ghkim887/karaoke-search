@@ -15,9 +15,9 @@
  * short-circuits on the first non-'pass' verdict.
  */
 
+import { isInChineseDropList } from '../../curated/chineseArtistDropList.js';
+import { isInDropList } from '../../curated/koreanArtistDropList.js';
 import type { SearchSongCache } from './cache.js';
-import { isInChineseDropList } from './chineseArtistDropList.js';
-import { isInDropList } from './koreanArtistDropList.js';
 import { normalizeForMatch, splitArtistCollab } from './normalize.js';
 import type { KeepVerdict } from './parser.js';
 import { isReviewedTjSongAllow, isReviewedTjSongDrop } from './reviewedSongOverrides.js';

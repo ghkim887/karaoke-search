@@ -1,5 +1,5 @@
+import { normalizeForMatch } from '../adapters/tj-media-direct/normalize.js';
 import type { DropListEntry } from './koreanArtistDropList.js';
-import { normalizeForMatch } from './normalize.js';
 
 // Re-export the shared type so callers can import it from here without
 // reaching into the Korean module directly.

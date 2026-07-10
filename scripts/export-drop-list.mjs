@@ -2,7 +2,7 @@
 /**
  * Export the Korean-artist drop list as a JSON sidecar consumable from Python.
  *
- * The TS source of truth is `packages/crawler/src/adapters/tj-media-direct/
+ * The TS source of truth is `packages/crawler/src/curated/
  * koreanArtistDropList.ts`. The Python ingest (`scripts/ingest_anisong_pdf.py`)
  * needs the same drop set so it can refuse to insert/patch records whose
  * artist matches a known Korean act. (The corpus cleanup pass moved to
@@ -13,7 +13,7 @@
  * to a sidecar JSON file alongside the TS source.
  *
  * Output location (Fix 2, 2026-05-01): the sidecar lives at
- * `packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json`
+ * `packages/crawler/src/curated/korean-artist-drop-list.json`
  * — co-located with the TS source AND tracked in git. Co-locating means a TS
  * edit without a sidecar regen surfaces as a one-of-two-files diff at code
  * review (the staleness footgun is visible). Tracking in git means ad-hoc
@@ -51,18 +51,12 @@ import { isCliInvocation } from './lib/cli.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
-const DIST_MODULE = resolve(
-  REPO_ROOT,
-  'packages/crawler/dist/adapters/tj-media-direct/koreanArtistDropList.js',
-);
+const DIST_MODULE = resolve(REPO_ROOT, 'packages/crawler/dist/curated/koreanArtistDropList.js');
 // Sidecar lives next to the TS source and is tracked in git (Fix 2). The
 // `src/` tree is not gitignored, so the JSON shows up in `git status` after
 // every build — making a stale-sidecar / TS-edited-without-regen scenario
 // visible at code-review time.
-const OUT_PATH = resolve(
-  REPO_ROOT,
-  'packages/crawler/src/adapters/tj-media-direct/korean-artist-drop-list.json',
-);
+const OUT_PATH = resolve(REPO_ROOT, 'packages/crawler/src/curated/korean-artist-drop-list.json');
 
 async function main() {
   // dynamic import via file URL: the dist path is absolute on disk and not

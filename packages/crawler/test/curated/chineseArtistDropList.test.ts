@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { normalizeForMatch } from '../../src/adapters/tj-media-direct/normalize.js';
 import {
   CHINESE_ARTIST_DROP_LIST,
   CHINESE_DROP_LIST,
   isInChineseDropList,
-} from '../../../src/adapters/tj-media-direct/chineseArtistDropList.js';
-import { normalizeForMatch } from '../../../src/adapters/tj-media-direct/normalize.js';
+} from '../../src/curated/chineseArtistDropList.js';
 
 // ---------------------------------------------------------------------------
 // Structured-entry shape tests (parity with koreanArtistDropList.test.ts)
