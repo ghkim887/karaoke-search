@@ -1,0 +1,866 @@
+[
+  {
+    "id": "tjpdf-28552",
+    "title_primary": "On Your Mark ~ヒカリのキセキ~",
+    "title_ko": "On Your Mark ~빛의 기적~",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Mixed Latin+Japanese; kept 'On Your Mark' and translated the subtitle ヒカリのキセキ=빛의 기적; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28554",
+    "title_primary": "今走り出せば",
+    "title_ko": "지금 달리기 시작하면",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Straightforward literal translation of a clear meaningful title; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28559",
+    "title_primary": "遠くても",
+    "title_ko": "멀리 있어도",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of a clear title; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28561",
+    "title_primary": "月の裏側",
+    "title_ko": "달의 뒷면",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (달의 뒷면 = the far side of the moon); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28569",
+    "title_primary": "西瓜BABY",
+    "title_ko": "수박 BABY",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "西瓜=수박 (watermelon); kept the Latin BABY; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28573",
+    "title_primary": "Sexy Summerに 雪が降る",
+    "title_ko": "Sexy Summer에 눈이 내린다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Mixed Latin+Japanese; kept 'Sexy Summer' and translated 雪が降る=눈이 내린다; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28575",
+    "title_primary": "ヒカルものたち",
+    "title_ko": "빛나는 것들",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (ヒカルもの=빛나는 것); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28579",
+    "title_primary": "キリギリス人",
+    "title_ko": "베짱이 인간",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Web search confirmed the title references Aesop's 'The Ant and the Grasshopper'; キリギリス is 베짱이 in the Korean fable, so 베짱이 인간 (best-effort, no official Korean release title).",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%AD%E3%83%AA%E3%82%AE%E3%83%AA%E3%82%B9%E4%BA%BA"]
+  },
+  {
+    "id": "tjpdf-28582",
+    "title_primary": "ふりそでーしょん",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Web search: portmanteau of 振袖(furisode)+'celebration'; only Korean form found is the phonetic 후리소데이션, so null per no-transliteration policy.",
+    "web_sources": ["https://colorcodedlyrics.com/2013/06/23/kyary-pamyu-pamyu-furisodeshon/", "https://namu.wiki/w/%E3%82%AD%E3%83%9F%E3%81%AB100%E3%83%91%E3%83%BC%E3%82%BB%E3%83%B3%E3%83%88%20/%20%E3%81%B5%E3%82%8A%E3%81%9D%E3%81%A7%E3%83%BC%E3%81%97%E3%82%87%E3%82%93"]
+  },
+  {
+    "id": "tjpdf-28586",
+    "title_primary": "猫中毒",
+    "title_ko": "고양이 중독",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (猫=고양이, 中毒=중독); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28594",
+    "title_primary": "カモネギックス",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Web search: Akimoto Yasushi coined word from the proverb 鴨が葱を背負ってくる (an easy mark); untranslatable pun with no Korean canon, so null.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%A2%E3%83%8D%E3%82%AE%E3%83%83%E3%82%AF%E3%82%B9", "https://48pedia.org/%E3%82%AB%E3%83%A2%E3%83%8D%E3%82%AE%E3%83%83%E3%82%AF%E3%82%B9"]
+  },
+  {
+    "id": "tjpdf-28597",
+    "title_primary": "冬物語",
+    "title_ko": "겨울 이야기",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (冬物語=겨울 이야기); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28598",
+    "title_primary": "太陽の女神(海の上の診療所 OST)",
+    "title_ko": "태양의 여신",
+    "media_context_ko": "(바다 위의 진료소 OST)",
+    "confidence": "medium",
+    "reasoning": "Literal translation of title (태양의 여신); parenthetical drama 海の上の診療所 rendered literally as 바다 위의 진료소; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28613",
+    "title_primary": "Silly(Ｎのために OST)",
+    "title_ko": null,
+    "media_context_ko": "(N을 위하여 OST)",
+    "confidence": "high",
+    "reasoning": "Title 'Silly' is pure Latin so title_ko=null; drama Ｎのために is Minato Kanae's novel, published in Korean as N을 위하여; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28622",
+    "title_primary": "Kiss me 愛してる",
+    "title_ko": "Kiss me 사랑해",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Mixed Latin+Japanese; kept 'Kiss me' and translated 愛してる=사랑해; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28627",
+    "title_primary": "シャングリラ",
+    "title_ko": "샹그릴라",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "シャングリラ=Shangri-La, a proper noun whose established Korean form is 샹그릴라 (not a Japanese-phonetic transliteration); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28656",
+    "title_primary": "極楽浄土",
+    "title_ko": "극락정토",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Web search: 極楽浄土 is a Buddhist term with the fixed Korean hanja reading 극락정토; Korean lyrics page for the GARNiDELiA song confirms usage.",
+    "web_sources": ["https://www.lyrics.co.kr/?p=458535"]
+  },
+  {
+    "id": "tjpdf-28679",
+    "title_primary": "未来(映画'Orange' OST)",
+    "title_ko": "미래",
+    "media_context_ko": "(영화 '오렌지' OST)",
+    "confidence": "medium",
+    "reasoning": "Literal translation (未来=미래); film Orange released in Korea as 오렌지; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28681",
+    "title_primary": "ロマンスがありあまる(映画'ストレイヤーズクロニクル' 主題歌)",
+    "title_ko": "로맨스가 넘쳐난다",
+    "media_context_ko": "(영화 '스트레이어즈 크로니클' 주제가)",
+    "confidence": "medium",
+    "reasoning": "ロマンスがありあまる=로맨스가 넘쳐난다 (romance overflows); film ストレイヤーズクロニクル rendered 스트레이어즈 크로니클; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28702",
+    "title_primary": "二人セゾン",
+    "title_ko": "두 사람의 계절",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Web search: Korean 한글자막 fan-sub titles the Keyakizaka46 song 두 사람의 계절 (セゾン=saison=계절), matching the semantic translation.",
+    "web_sources": ["https://www.youtube.com/watch?v=KZSnkPuoFfc"]
+  },
+  {
+    "id": "tjpdf-28726",
+    "title_primary": "FLASH(映画'ちはやふる' OST)",
+    "title_ko": null,
+    "media_context_ko": "(영화 '치하야후루' OST)",
+    "confidence": "high",
+    "reasoning": "Title 'FLASH' is pure Latin so title_ko=null; ちはやふる is the well-known Chihayafuru, rendered in Korean as 치하야후루; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28727",
+    "title_primary": "恋を知らない君へ(ドラマ'時をかける少女' OST)",
+    "title_ko": "사랑을 모르는 그대에게",
+    "media_context_ko": "(드라마 '시간을 달리는 소녀' OST)",
+    "confidence": "medium",
+    "reasoning": "恋を知らない君へ=사랑을 모르는 그대에게; 時をかける少女 has the well-established Korean title 시간을 달리는 소녀; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-28746",
+    "title_primary": "不協和音",
+    "title_ko": "불협화음",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "不協和音 is exactly the standard Korean word 불협화음 (musical dissonance); deterministic hanja translation of the well-known Keyakizaka46 song.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29800",
+    "title_primary": "愛はかげろう",
+    "title_ko": "사랑은 아지랑이",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "かげろう here is 陽炎 (heat haze)=아지랑이; 사랑은 아지랑이; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29801",
+    "title_primary": "あの鐘を鳴らすのはあなた",
+    "title_ko": "저 종을 울리는 건 당신",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of the clause; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29802",
+    "title_primary": "あばよ",
+    "title_ko": "잘 가",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "あばよ is a casual farewell (so long)=잘 가; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29803",
+    "title_primary": "あばれ太鼓",
+    "title_ko": "성난 북",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "あばれ (暴れ, raging/wild) + 太鼓 (drum)=성난 북; best-effort, no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29804",
+    "title_primary": "雨の御堂筋",
+    "title_ko": "비 내리는 미도스지",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "御堂筋 is a major Osaka avenue (proper noun) rendered 미도스지; 雨の=비 내리는; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29805",
+    "title_primary": "アメリカ橋",
+    "title_ko": "아메리카 다리",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "アメリカ橋 is a named bridge (America-bashi); 橋=다리, so 아메리카 다리; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29806",
+    "title_primary": "有難や節 ",
+    "title_ko": "고마워라 가락",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "有難や=archaic 'how grateful' + 節 (tune/melody)=가락; best-effort literal, no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29808",
+    "title_primary": "いっそセレナーデ ",
+    "title_ko": "차라리 세레나데",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "いっそ=차라리 (rather/altogether), セレナーデ=세레나데; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29810",
+    "title_primary": "祝い船",
+    "title_ko": "축복의 배",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "祝い船 = celebration/blessing boat = 축복의 배; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29811",
+    "title_primary": "うそ",
+    "title_ko": "거짓말",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "うそ=거짓말 (lie); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29812",
+    "title_primary": "越前岬",
+    "title_ko": "에치젠 곶",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "越前岬 is Echizen Cape (Fukui), a place name; 岬=곶, so 에치젠 곶; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29813",
+    "title_primary": "襟裳岬",
+    "title_ko": "에리모 곶",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "襟裳岬 is Cape Erimo (Hokkaido), a place name; 岬=곶, so 에리모 곶; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29814",
+    "title_primary": "演歌兄弟",
+    "title_ko": "엔카 형제",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "演歌=엔카 (the genre name is kept), 兄弟=형제; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29815",
+    "title_primary": "大阪ラプソディー ",
+    "title_ko": "오사카 랩소디",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "大阪=오사카, ラプソディー=rhapsody=랩소디; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29816",
+    "title_primary": "男と女の破片",
+    "title_ko": "남자와 여자의 파편",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (破片=파편, fragment); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29817",
+    "title_primary": "おふくろさん",
+    "title_ko": "어머니",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "おふくろ is an affectionate word for mother=어머니; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29818",
+    "title_primary": "おまえに惚れた",
+    "title_ko": "너에게 반했다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "惚れた=반했다 (fell for you); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29819",
+    "title_primary": "およげ!たいやきくん",
+    "title_ko": "헤엄쳐라! 붕어빵",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "およげ=헤엄쳐라; たいやき is the fish-shaped cake, whose Korean cultural equivalent is 붕어빵; best-effort, no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29820",
+    "title_primary": "お嫁においで",
+    "title_ko": "내게 시집와요",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "お嫁においで = come be my bride = 내게 시집와요; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29821",
+    "title_primary": "女の駅",
+    "title_ko": "여자의 역",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (駅=역, station); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29822",
+    "title_primary": "女のみち",
+    "title_ko": "여자의 길",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "みち=道=길; 여자의 길; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29823",
+    "title_primary": "喝采",
+    "title_ko": "갈채",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "喝采 = applause/acclaim = 갈채 (exact hanja word); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29824",
+    "title_primary": "哀しみ本線日本海",
+    "title_ko": "슬픔 본선 일본해",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "哀しみ=슬픔, 本線=railway main line=본선, 日本海=일본해 (literal); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29825",
+    "title_primary": "神田川",
+    "title_ko": "간다 강",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "神田川 is the Kanda River in Tokyo; 川=강, so 간다 강; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29826",
+    "title_primary": "関白宣言",
+    "title_ko": "관백 선언",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "関白=관백 (historically the chief adviser, figuratively a domineering husband) + 宣言=선언; 관백 선언; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29827",
+    "title_primary": "ガキの頃のように",
+    "title_ko": "어릴 적처럼",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "ガキの頃 = kid/brat days = 어릴 적, のように=처럼; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29828",
+    "title_primary": "学生時代 ",
+    "title_ko": "학창 시절",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "学生時代 = student days = 학창 시절; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29829",
+    "title_primary": "君こそわが命",
+    "title_ko": "그대야말로 내 생명",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "君こそ=그대야말로, わが命=내 생명; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29830",
+    "title_primary": "君は心の妻だから",
+    "title_ko": "너는 마음의 아내니까",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (心の妻=마음의 아내, だから=니까); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29831",
+    "title_primary": "京都の恋",
+    "title_ko": "교토의 사랑",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "京都=교토, 恋=사랑; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29832",
+    "title_primary": "結婚しようよ ",
+    "title_ko": "결혼하자",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "結婚しようよ = let's get married = 결혼하자; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29833",
+    "title_primary": "恋の季節 ",
+    "title_ko": "사랑의 계절",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "恋の季節 = season of love = 사랑의 계절; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29834",
+    "title_primary": "恋の町札幌",
+    "title_ko": "사랑의 도시 삿포로",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "恋の町=사랑의 도시, 札幌=삿포로 (Sapporo); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29835",
+    "title_primary": "恋人も濡れる街角",
+    "title_ko": "연인도 젖는 길모퉁이",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "恋人も濡れる=연인도 젖는, 街角=길모퉁이; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29836",
+    "title_primary": "心のこり",
+    "title_ko": "미련",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "心のこり=心残り (lingering regret/attachment)=미련; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29837",
+    "title_primary": "秋桜(コスモス)",
+    "title_ko": "코스모스",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "秋桜 is read コスモス (the cosmos flower), given by the parenthetical; Korean 코스모스; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29838",
+    "title_primary": "さくら(独唱) ",
+    "title_ko": "벚꽃 (독창)",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "さくら=벚꽃, 独唱=독창 (solo); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29839",
+    "title_primary": "重力シンパシー",
+    "title_ko": "중력 심퍼시",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "重力=중력, シンパシー=English 'sympathy' rendered 심퍼시; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29840",
+    "title_primary": "さそり座の女",
+    "title_ko": "전갈자리의 여자",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "さそり座=Scorpio=전갈자리, 女=여자; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29841",
+    "title_primary": "サボテンの花",
+    "title_ko": "선인장 꽃",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "サボテン=cactus=선인장, 花=꽃; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29842",
+    "title_primary": "サライ",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Web search: サライ is a coined title from Persian 'sarai' (home/lodging) evoking 心のふるさと; only a phonetic Korean rendering exists, so null per no-transliteration policy.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%B5%E3%83%A9%E3%82%A4_(%E6%9B%B2)", "https://utaten.com/specialArticle/index/7678"]
+  },
+  {
+    "id": "tjpdf-29844",
+    "title_primary": "シクラメンのかほり",
+    "title_ko": "시클라멘의 향기",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "シクラメン=cyclamen=시클라멘, かほり=archaic かおり (fragrance)=향기; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29845",
+    "title_primary": "昭和ブルース ",
+    "title_ko": "쇼와 블루스",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "昭和=Showa era=쇼와, ブルース=블루스; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29846",
+    "title_primary": "知りたくないの",
+    "title_ko": "알고 싶지 않아",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "知りたくないの = I don't want to know = 알고 싶지 않아; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29847",
+    "title_primary": "知床旅情",
+    "title_ko": "시레토코 여정",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "知床=Shiretoko (Hokkaido)=시레토코, 旅情=travel sentiment=여정; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29848",
+    "title_primary": "白い海峡",
+    "title_ko": "하얀 해협",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "白い=하얀, 海峡=해협 (strait); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29849",
+    "title_primary": "白いブランコ ",
+    "title_ko": "하얀 그네",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "白い=하얀, ブランコ=swing=그네; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29851",
+    "title_primary": "時代おくれ",
+    "title_ko": "시대에 뒤처진",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "時代おくれ=時代遅れ (behind the times/old-fashioned)=시대에 뒤처진; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29852",
+    "title_primary": "十九の春",
+    "title_ko": "열아홉의 봄",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "十九の春 = the nineteenth (age 19) spring = 열아홉의 봄; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29854",
+    "title_primary": "瀬戸の花嫁",
+    "title_ko": "세토의 신부",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "瀬戸=Seto (Inland Sea)=세토, 花嫁=신부 (bride); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29855",
+    "title_primary": "せんせい",
+    "title_ko": "선생님",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "せんせい=先生=선생님; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29856",
+    "title_primary": "宗右衛門町ブルース",
+    "title_ko": "소에몬초 블루스",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "宗右衛門町 is Sōemon-chō, an Osaka district=소에몬초, ブルース=블루스; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29857",
+    "title_primary": "旅笠道中",
+    "title_ko": "나그네 여로",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "旅笠 (traveler's straw hat) + 道中 (on the road) evokes a wanderer's journey=나그네 여로; best-effort, no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29858",
+    "title_primary": "旅人よ",
+    "title_ko": "나그네여",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "旅人よ = O traveler = 나그네여; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29859",
+    "title_primary": "大都会",
+    "title_ko": "대도시",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "大都会 = big city = 대도시; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29860",
+    "title_primary": "誰もいない海",
+    "title_ko": "아무도 없는 바다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "誰もいない海 = the sea where no one is = 아무도 없는 바다; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29861",
+    "title_primary": "ついて来るかい",
+    "title_ko": "따라올래?",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "ついて来るかい = will you follow me? = 따라올래?; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29862",
+    "title_primary": "翼の折れた天使",
+    "title_ko": "날개 꺾인 천사",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "翼の折れた=날개 꺾인, 天使=천사; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29863",
+    "title_primary": "翼をください",
+    "title_ko": "날개를 주세요",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "翼をください = please give me wings = 날개를 주세요; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29864",
+    "title_primary": "手紙",
+    "title_ko": "편지",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "手紙 = letter = 편지; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29865",
+    "title_primary": "てんとう虫のサンバ",
+    "title_ko": "무당벌레 삼바",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "てんとう虫=ladybug=무당벌레, サンバ=삼바; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29866",
+    "title_primary": "東京砂漠 ",
+    "title_ko": "도쿄 사막",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "東京=도쿄, 砂漠=사막; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29867",
+    "title_primary": "東京の花売娘",
+    "title_ko": "도쿄의 꽃 파는 아가씨",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "花売娘 = flower-selling girl = 꽃 파는 아가씨; 도쿄의 꽃 파는 아가씨; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29868",
+    "title_primary": "東尋坊",
+    "title_ko": "도진보",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "東尋坊 is Tōjinbō, the Fukui cliffs (proper noun)=도진보; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29869",
+    "title_primary": "年下の男の子",
+    "title_ko": "연하의 남자아이",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "年下=연하 (younger), 男の子=남자아이; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29870",
+    "title_primary": "夏まつり",
+    "title_ko": "여름 축제",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "夏まつり = summer festival = 여름 축제; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29871",
+    "title_primary": "涙くんさよなら",
+    "title_ko": "눈물군, 안녕",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "涙くん = personified 'Mr. Tears' = 눈물군, さよなら=안녕(goodbye); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29872",
+    "title_primary": "なみだの操",
+    "title_ko": "눈물의 정조",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "なみだ=눈물, 操=fidelity/chastity=정조; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29873",
+    "title_primary": "ノラ",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Web search: ノラ is 野良 (stray) written in stylized katakana as a metaphor for a woman living wild, but deliberately ambiguous (also reads as the name Nora); no clean Korean form without transliteration, so null.",
+    "web_sources": ["https://www.uta-net.com/song/10471/", "https://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1338414328"]
+  },
+  {
+    "id": "tjpdf-29874",
+    "title_primary": "流恋草",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "Web search: 流恋草 is ateji read はぐれそう (from はぐれる, to stray from love); the characters do not match the reading, so no faithful Korean translation exists, hence null.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%B5%81%E6%81%8B%E8%8D%89"]
+  },
+  {
+    "id": "tjpdf-29875",
+    "title_primary": "花",
+    "title_ko": "꽃",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "花 = flower = 꽃 (the Kina Shōkichi Okinawan standard); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29876",
+    "title_primary": "花街の母",
+    "title_ko": "화류계의 어머니",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "花街 = pleasure/geisha quarter = 화류계, 母=어머니; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29877",
+    "title_primary": "春が来た",
+    "title_ko": "봄이 왔다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "春が来た = spring has come = 봄이 왔다; no web search.",
+    "web_sources": []
+  }
+]
