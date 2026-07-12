@@ -12,7 +12,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CATALOG_ANOMALY_IDS, USAGE, parseArgs, runDropArtistLeaks } from './drop-artist-leaks.mjs';
+import {
+  CATALOG_ANOMALY_IDS,
+  KOREAN_CATALOG_ANOMALY_IDS,
+  USAGE,
+  parseArgs,
+  runDropArtistLeaks,
+} from './drop-artist-leaks.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCRIPT_PATH = resolve(__dirname, 'drop-artist-leaks.mjs');
@@ -159,6 +165,24 @@ describe('runDropArtistLeaks', () => {
 
   it('documents the reviewed anomaly-ID set', () => {
     expect([...CATALOG_ANOMALY_IDS].sort()).toEqual(['tj-71365', 'tj-72638']);
+    expect([...KOREAN_CATALOG_ANOMALY_IDS].sort()).toEqual(['tj-70438']);
+  });
+
+  it('korean: drops a catalog-anomaly ID even though its artist (CUTIE STREET) matches no list', async () => {
+    // CUTIE STREET is a Japanese act — not on any drop list and it must stay so
+    // (their JP rows are admittable). tj-70438 is their KOR-language row; it
+    // drops by exact ID, mirroring the crawl chain's reviewed-song-drop.
+    writeCorpus(corpusPath, [...SURVIVORS, record('tj-70438', 'CUTIE STREET', '프리큐큐')]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2']);
+  });
+
+  it('korean anomaly IDs are scoped to the korean pass (chinese pass keeps tj-70438)', async () => {
+    writeCorpus(corpusPath, [...SURVIVORS, record('tj-70438', 'CUTIE STREET', '프리큐큐')]);
+    const code = await runDropArtistLeaks({ list: 'chinese', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'tj-70438']);
   });
 
   it('korean: keeps a drop-listed artist whose TJ is reviewed-song-allow-listed, drops the non-allowed one', async () => {

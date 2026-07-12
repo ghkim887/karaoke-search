@@ -2,6 +2,7 @@ import type { RawSongRecord } from '@karaoke/schema';
 import type { SearchSongCache } from './cache.js';
 import { FILTER_STEPS, buildFilterContext } from './filterSteps.js';
 import { extractCatalogItems } from './normalize.js';
+import { reviewedTjSongRender } from './reviewedSongOverrides.js';
 
 /**
  * Parse a TJ Media catalog JSON response into `RawSongRecord`s.
@@ -144,12 +145,18 @@ export function parseCatalogResponse(
         continue;
     }
 
+    // Per-song rendering override (reviewed-song-allow rows only): a curated
+    // JP release whose catalog `indexSong` carries a Hangul gloss
+    // (e.g. `IVE(아이브)`) is stamped with its script-clean display form so the
+    // admitted row does not read as Korean-script leakage. Absent for every
+    // other row — the raw `indexSong` is kept.
+    const render = reviewedTjSongRender(tj);
     records.push({
       source_url: sourceUrl,
       title_primary: title,
       title_ko: null,
-      artist_primary: artist,
-      artist_ko: null,
+      artist_primary: render ? render.artist_primary : artist,
+      artist_ko: render ? render.artist_ko : null,
       karaoke_numbers: { tj, ky: null, joysound: null },
     });
   }
