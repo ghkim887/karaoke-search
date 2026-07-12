@@ -2,12 +2,12 @@
   "_readme": "AUTO-GENERATED baseline for search-parity.golden.test.ts. Regenerate with UPDATE_PARITY_SNAPSHOT=1 (see the test file header). jaccard/top1Match are the FROZEN divergence floor; web/worker lists are the top-10 ids at generation time (informational, for reading divergences). Do not hand-edit.",
   "corpus": {
     "path": "apps/web/public/data/songs.json",
-    "sha256": "bc77d1640adb3de9872a257f9d59d55420eed8aa0cec07eb37d6b325dcf82db6",
-    "records": 26133
+    "sha256": "23a4af78a34b9f3eabf5198cfbfdc0f5d3235cd95c63c86987f1bbb71f4bfd9b",
+    "records": 26462
   },
   "aggregate": {
     "queryCount": 61,
-    "meanJaccard": 0.621149,
+    "meanJaccard": 0.621183,
     "top1MatchRate": 0.786885
   },
   "queries": {
@@ -105,14 +105,14 @@
       "worker": [
         "blog-226-7",
         "blog-224-0",
+        "tjpdf-28557",
         "blog-576-48",
         "tj-28828",
         "blog-828-39",
         "blog-147-27",
         "blog-224-52",
         "blog-242-31",
-        "blog-228-75",
-        "blog-837-21"
+        "blog-228-75"
       ]
     },
     "jp-full-ageha": {
@@ -299,7 +299,7 @@
     "jp-kana-cherry": {
       "query": "チェリー",
       "vendors": [],
-      "jaccard": 0.461538,
+      "jaccard": 0.357143,
       "top1Match": true,
       "web": [
         "blog-226-0",
@@ -319,10 +319,10 @@
         "blog-524-7",
         "blog-418-10",
         "tj-25975",
+        "tjpdf-68111",
         "blog-517-42",
         "tj-26782",
-        "blog-517-12",
-        "blog-358-6"
+        "blog-517-12"
       ]
     },
     "jp-kana-saudade": {
@@ -393,13 +393,14 @@
     "ko-full-hongryeonhwa": {
       "query": "홍련화",
       "vendors": [],
-      "jaccard": 0.272727,
+      "jaccard": 0.25,
       "top1Match": true,
       "web": [
         "blog-153-1",
         "blog-153-10",
         "blog-153-2",
-        "tj-27111"
+        "tj-27111",
+        "tj-27457"
       ],
       "worker": [
         "blog-153-1",
@@ -429,19 +430,19 @@
         "blog-168-130",
         "blog-535-40",
         "blog-504-37",
-        "tjpdf-28179"
+        "tj-27459"
       ],
       "worker": [
         "blog-99-1",
         "blog-226-63",
         "blog-99-52",
+        "tj-26337",
+        "tj-27459",
         "tjpdf-28179",
         "tj-6779",
-        "blog-449-6",
+        "blog-449-14",
         "blog-175-81",
-        "blog-445-46",
-        "blog-127-77",
-        "blog-383-17"
+        "blog-445-46"
       ]
     },
     "ko-full-sikkeureowo": {
@@ -507,8 +508,8 @@
         "blog-355-40",
         "blog-157-44",
         "tj-25464",
-        "tjpdf-28190",
-        "blog-117-62"
+        "tj-26423",
+        "tjpdf-28190"
       ],
       "worker": [
         "tj-25022",
@@ -518,9 +519,9 @@
         "blog-495-5",
         "tj-25464",
         "tj-25604",
+        "tj-26423",
         "tjpdf-28190",
-        "blog-157-44",
-        "blog-117-62"
+        "blog-157-44"
       ]
     },
     "ko-part-sarang": {
@@ -568,7 +569,7 @@
         "tj-27366",
         "blog-225-34",
         "blog-336-5",
-        "blog-105-25"
+        "tjpdf-28554"
       ],
       "worker": [
         "blog-99-1",
@@ -824,8 +825,7 @@
         "blog-802-47",
         "blog-436-25",
         "blog-1149-35",
-        "tj-26407",
-        "tjpdf-68074"
+        "tj-26407"
       ],
       "worker": [
         "tj-26724",
@@ -835,8 +835,7 @@
         "blog-802-47",
         "blog-436-25",
         "blog-1149-35",
-        "tj-26407",
-        "tjpdf-68074"
+        "tj-26407"
       ]
     },
     "artist-yoasobi": {
@@ -1003,8 +1002,8 @@
         "blog-101-17",
         "blog-101-10",
         "blog-101-3",
-        "blog-101-31",
-        "blog-101-29"
+        "blog-101-29",
+        "blog-101-5"
       ],
       "worker": [
         "blog-101-32",
@@ -1015,8 +1014,8 @@
         "blog-101-17",
         "blog-101-10",
         "blog-101-3",
-        "blog-101-31",
-        "blog-101-29"
+        "blog-101-29",
+        "blog-101-5"
       ]
     },
     "artist-lisa": {
@@ -1082,7 +1081,7 @@
     "short-hikari": {
       "query": "光",
       "vendors": [],
-      "jaccard": 0.818182,
+      "jaccard": 1,
       "top1Match": true,
       "web": [
         "blog-301-10",
@@ -1106,7 +1105,7 @@
         "blog-646-37",
         "blog-696-72",
         "blog-751-35",
-        "tjpdf-27875"
+        "tj-25144"
       ]
     },
     "short-natsu": {
@@ -1120,11 +1119,11 @@
         "tj-6919",
         "blog-576-134",
         "tj-25526",
+        "tj-27025",
         "blog-112-36",
         "blog-169-2",
         "blog-168-51",
-        "blog-361-113",
-        "blog-887-4"
+        "blog-361-113"
       ],
       "worker": [
         "blog-1172-61",
@@ -1202,7 +1201,7 @@
     "short-love": {
       "query": "love",
       "vendors": [],
-      "jaccard": 0.052632,
+      "jaccard": 0,
       "top1Match": false,
       "web": [
         "blog-828-139",
@@ -1212,9 +1211,9 @@
         "tj-6914",
         "blog-133-5",
         "blog-635-4",
+        "tj-25580",
         "tj-25165",
-        "blog-311-4",
-        "tj-26156"
+        "blog-311-4"
       ],
       "worker": [
         "tj-25114",
@@ -1226,7 +1225,7 @@
         "blog-730-324",
         "blog-790-31",
         "tj-52956",
-        "tj-25159"
+        "tjpdf-68675"
       ]
     },
     "short-jamo-g": {
@@ -1307,28 +1306,28 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
+        "blog-112-12",
         "blog-308-0",
         "blog-349-2",
         "tj-6840",
         "blog-384-29",
+        "tj-68401",
         "blog-99-10",
         "tj-68403",
         "blog-146-4",
-        "blog-350-7",
-        "blog-99-13",
-        "blog-114-8"
+        "blog-350-7"
       ],
       "worker": [
+        "blog-112-12",
         "blog-308-0",
         "blog-349-2",
         "tj-6840",
         "blog-384-29",
+        "tj-68401",
         "blog-99-10",
         "tj-68403",
         "blog-146-4",
-        "blog-350-7",
-        "blog-99-13",
-        "blog-114-8"
+        "blog-350-7"
       ]
     },
     "num-tj-cherry": {
@@ -1435,11 +1434,11 @@
         "blog-338-1",
         "tj-27002",
         "tj-27964",
+        "tjpdf-29831",
+        "tjpdf-29914",
         "blog-381-6",
         "tj-6164",
-        "tj-6222",
-        "tj-6412",
-        "tj-6414"
+        "tj-6222"
       ],
       "worker": [
         "tj-6595",
@@ -1449,9 +1448,9 @@
         "tjpdf-28313",
         "tj-28709",
         "tjpdf-29910",
+        "tjpdf-29914",
         "blog-145-8",
-        "tj-52832",
-        "tj-6164"
+        "tj-52832"
       ]
     },
     "vendor-yonezu-joysound": {
@@ -1510,15 +1509,15 @@
       "web": [],
       "worker": [
         "tj-27249",
+        "tjpdf-28573",
         "blog-525-6",
+        "blog-1508-84",
+        "blog-263-58",
         "tj-27307",
         "tj-28585",
         "tjpdf-68045",
         "tj-25517",
-        "tj-25840",
-        "tj-26180",
-        "blog-1508-84",
-        "blog-263-58"
+        "tj-25840"
       ]
     }
   }
