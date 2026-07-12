@@ -555,9 +555,17 @@ remain open (marked below).
   the remaining inline search-query/vendor-filter/retry-nonce machines moved
   to `apps/web/src/hooks/` (earlier API/corpus/results/fallback hooks were
   already extracted); App.tsx is composition + rendering;
-- ⚪ OPEN — JOYSOUND classifier gate-array restructure — only with a
-  diagnostic-replay proof of behavior identity (deliberately skipped in the
-  2026-07-10 batch: replay proof is heavy and the v22 sweep was mid-flight);
+- ✅ DONE — JOYSOUND classifier gate-array restructure (2026-07-12): the
+  monolithic `classifyJoysoundRecordWithReason` guard-clause chain is now an
+  ordered `JOYSOUND_GATES` array + a `PHASE_ORDER` data declaration with a
+  load-time `assertPhaseOrder()` (the load-bearing order is machine-checked at
+  import, no longer prose-only). Control-flow reshape ONLY — no predicate change
+  (the RE_HAN/RE_HANGUL unification stays owner-held Phase 2). Behavior identity
+  proved by double-replay byte-diff over the v22 sweep's 352,290-row decision
+  log: baseline (pre-restructure) and restructured replay outputs are
+  byte-identical (SHA-256 F65621D8…AD17), so (decision, reason) is identical for
+  every row. Golden gate `classifierGolden.test.ts` unchanged; new
+  `classifierGates.phaseOrder.test.ts` mirrors the TJ filterSteps guard;
 - ✅ curated drop lists moved to `packages/crawler/src/curated/` (PR #121,
   2026-07-10; sidecar export wiring + both workflow drift gates re-pathed,
   sidecars byte-identical);

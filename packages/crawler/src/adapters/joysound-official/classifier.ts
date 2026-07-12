@@ -409,42 +409,339 @@ export function classifyJoysoundRecord(args: ClassifyArgs): boolean {
 }
 
 /**
- * Reason-rich classification: returns the admit/drop verdict alongside the gate
- * that fired. `classifyJoysoundRecord` delegates here and returns `.admit`, so
- * the public boolean contract — and the crawler that consumes it — is unchanged.
+ * Semantic phase of a JOYSOUND classify gate. The gate array runs strictly in
+ * the order these phases are declared in {@link PHASE_ORDER}; that declaration
+ * IS the load-bearing chain order. Each phase maps to exactly one gate today, so
+ * "the phase order" and "the gate order" coincide — the point is that the order
+ * is now data the module verifies at load ({@link assertPhaseOrder}), not prose
+ * comments a reorder would silently pass (previously the order lived only in
+ * this docblock and was pinned solely by the golden gate test).
  *
  * Order (mirrors TJ's allow-precedes-droplist policy):
- *   1. override DROP   → drop first, before any admit gate.
- *   2. override ALLOW  → admit before the foreign-act gate, reason
- *      `reviewed-allow`.
- *   2b. authoritative foreign-name detail gate (DROP) — ONLY when `detail` is
- *      present. Runs AFTER reviewed-allow so the curated ALLOW K-pop Japanese
- *      releases (whose foreign-name fields ARE populated) stay admitted, and
- *      BEFORE the positive cascade so a populated Korean/Chinese foreign-name
- *      beats a kana title. Inert without `detail` (listing-only sweep
- *      unchanged). See {@link foreignNameSignal}.
- *   3. foreign-act gate (Korean drop list / Korean patterns / Chinese drop list
- *      / Western) → hard negative. Consulting the production drop lists keeps
- *      this gate in lock-step with the audit's `isAuditForeignAct` (Fix F1).
- *   4. positive gates: vocaloid > anime > jpop-kana.
- *   5. injected known-Japanese-artist admit (Fix F2). Runs AFTER the foreign-act
- *      gate so a foreign act that also has corpus presence (e.g. BoA) stays
- *      dropped; opt-in only, no-op in production.
- *   6. detail-gated JP recovery (`admit-jp-detail`) + fall-through drop, split
- *      by script signal for diagnostic richness. A row that would terminally
- *      `drop-han-only` / `drop-ascii-only` is RECOVERED when `detail` is present
- *      and `foreignNameSignal === null` (authoritative genuine-JP for
- *      Korean/Chinese rows) — UNLESS `detail.genreNames` carries the `洋楽`
- *      Western-music tag, which vetoes the recovery (natively-Latin foreign
- *      rows also have empty foreign-name fields, so null is not proof of
- *      genuine-JP there). Inert without `detail`.
+ *   1. override-drop            — curated DROP wins first, before any admit gate.
+ *   2. override-allow           — curated ALLOW admits BEFORE the foreign-act
+ *                                 gate (reason `reviewed-allow`).
+ *   3. foreign-name-detail-drop — authoritative foreign-name detail gate (DROP),
+ *                                 ONLY when `detail` is present. AFTER
+ *                                 override-allow (so curated ALLOW K-pop Japanese
+ *                                 releases, whose foreign-name fields ARE
+ *                                 populated, stay admitted) and BEFORE the
+ *                                 positive cascade (so a populated Korean/Chinese
+ *                                 foreign-name beats a kana title). Inert without
+ *                                 `detail`. See {@link foreignNameSignal}.
+ *   4. foreign-act              — hard negative act gate (Korean drop list /
+ *                                 Korean patterns / Chinese drop list / Western).
+ *                                 Consulting the production drop lists keeps this
+ *                                 in lock-step with the audit's isAuditForeignAct
+ *                                 (Fix F1).
+ *   5. positive-cascade         — positive gates: vocaloid > anime > jpop-kana.
+ *   6. injected-jp-artist       — injected known-Japanese-artist admit (Fix F2).
+ *                                 AFTER the foreign-act gate so a foreign act that
+ *                                 also has corpus presence (e.g. BoA) stays
+ *                                 dropped; opt-in only, no-op in production.
+ *   7. terminal                 — detail-gated JP recovery (`admit-jp-detail`)
+ *                                 bundled with the han/ascii-split fall-through
+ *                                 drop. Kept as ONE composite gate so the recovery
+ *                                 and its fall-through share short-circuit
+ *                                 reachability. Inert recovery without `detail`.
  */
-export function classifyJoysoundRecordWithReason({
+export type JoysoundGatePhase =
+  | 'override-drop'
+  | 'override-allow'
+  | 'foreign-name-detail-drop'
+  | 'foreign-act'
+  | 'positive-cascade'
+  | 'injected-jp-artist'
+  | 'terminal';
+
+/**
+ * Declared phase order — the single machine-checkable statement of the
+ * load-bearing gate order. {@link assertPhaseOrder} runs at module load and
+ * throws if {@link JOYSOUND_GATES} is not sorted by this sequence, so a reorder
+ * of the array (or a gate tagged out of policy order) fails fast at import time
+ * instead of silently shipping a mis-ordered pipeline.
+ */
+export const PHASE_ORDER: readonly JoysoundGatePhase[] = [
+  'override-drop',
+  'override-allow',
+  'foreign-name-detail-drop',
+  'foreign-act',
+  'positive-cascade',
+  'injected-jp-artist',
+  'terminal',
+];
+
+/**
+ * Short-circuiting gate verdict. `admit` / `drop` stop the reducer with the
+ * given reason; `pass` continues to the next gate.
+ */
+type JoysoundGateVerdict =
+  | { decision: 'admit'; reason: JoysoundClassifyReason }
+  | { decision: 'drop'; reason: JoysoundClassifyReason }
+  | { decision: 'pass' };
+
+/**
+ * Precomputed row surfaces shared by every gate, built ONCE per record by
+ * {@link buildJoysoundClassifyContext}. Carries the raw classify inputs plus the
+ * derived surfaces so no gate recomputes them.
+ */
+interface JoysoundClassifyContext {
+  listItem: JoysoundListItem;
+  detail: JoysoundDetail | undefined;
+  overrides: JoysoundOverridePredicates;
+  isKnownJapaneseArtist: ((artist: string) => boolean) | undefined;
+  /** songName + artistName + tieupInfo (+ detail song / artist / genre / tieup). */
+  surface: string;
+  /** songName + artistName (+ detail song / artist) — the kana/han/ascii surface. */
+  titleArtist: string;
+  /** artistName (+ detail native / foreign artist) — the vocaloid-artist surface. */
+  artistSurface: string;
+  /** artistName (+ detail native / foreign artist), unjoined, for per-field scans. */
+  artistFields: string[];
+  /** Positive signal computed ONCE, before override-allow (see the builder). */
+  positiveKind: PositiveSignalKind;
+}
+
+export interface JoysoundGate {
+  /** Stable name (matches the reason it stamps); used in test assertions. */
+  name: string;
+  /** Semantic phase; enforced against {@link PHASE_ORDER} at module load. */
+  phase: JoysoundGatePhase;
+  evaluate: (ctx: JoysoundClassifyContext) => JoysoundGateVerdict;
+}
+
+// ---------------------------------------------------------------------------
+// Gate implementations, declared in pipeline order (see JOYSOUND_GATES below
+// for the authoritative order — the array literal defines execution order).
+// ---------------------------------------------------------------------------
+
+/** 1. Curated DROP override wins first, before any admit gate. */
+const overrideDropGate: JoysoundGate = {
+  name: 'reviewed-drop',
+  phase: 'override-drop',
+  evaluate({ listItem, overrides }): JoysoundGateVerdict {
+    if (overrides.isDrop(listItem.selSongNo)) return { decision: 'drop', reason: 'reviewed-drop' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * 2. Curated ALLOW override admits BEFORE the foreign-act gate. `positiveKind`
+ *    is computed by the context builder before this gate runs (it is not read
+ *    here, but the compute-before-ALLOW timing is preserved — watch item 1).
+ */
+const overrideAllowGate: JoysoundGate = {
+  name: 'reviewed-allow',
+  phase: 'override-allow',
+  evaluate({ listItem, overrides }): JoysoundGateVerdict {
+    if (overrides.isAllow(listItem.selSongNo)) {
+      return { decision: 'admit', reason: 'reviewed-allow' };
+    }
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * 2b. Authoritative foreign-name detail gate (DROP). ONLY fires when a `detail`
+ *     is present — the foreign-name fields live exclusively on the detail API.
+ *     Placed AFTER reviewed-allow (so the curated ALLOW K-pop Japanese releases,
+ *     whose foreign-name fields ARE populated, still admit) and BEFORE the
+ *     positive cascade (so a populated Korean/Chinese foreign-name beats a kana
+ *     title). Inert in listing-only mode. See {@link foreignNameSignal}.
+ */
+const foreignNameDetailDropGate: JoysoundGate = {
+  name: 'foreign-name-detail-drop',
+  phase: 'foreign-name-detail-drop',
+  evaluate({ detail }): JoysoundGateVerdict {
+    if (!detail) return { decision: 'pass' };
+    const signal = foreignNameSignal(detail);
+    if (signal === 'korean') return { decision: 'drop', reason: 'foreign-korean' };
+    if (signal === 'chinese') return { decision: 'drop', reason: 'foreign-chinese' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * 3. Hard negative foreign-act gate. The classifier's own Korean patterns + the
+ *    production Korean drop list both resolve to `foreign-korean`; the production
+ *    Chinese drop list resolves to `foreign-chinese` (Fix F1); Western-act
+ *    components resolve to `foreign-western`.
+ */
+const foreignActGate: JoysoundGate = {
+  name: 'foreign-act',
+  phase: 'foreign-act',
+  evaluate({ artistFields }): JoysoundGateVerdict {
+    if (artistFields.some(isKnownKoreanAct)) return { decision: 'drop', reason: 'foreign-korean' };
+    for (const field of artistFields) {
+      const kind = dropListForeignKind(field);
+      if (kind === 'korean') return { decision: 'drop', reason: 'foreign-korean' };
+      if (kind === 'chinese') return { decision: 'drop', reason: 'foreign-chinese' };
+    }
+    if (artistFields.some(isKnownWesternAct))
+      return { decision: 'drop', reason: 'foreign-western' };
+    return { decision: 'pass' };
+  },
+};
+
+/** 4. Positive gates, in priority order vocaloid > anime > jpop-kana. */
+const positiveCascadeGate: JoysoundGate = {
+  name: 'positive-cascade',
+  phase: 'positive-cascade',
+  evaluate({ positiveKind }): JoysoundGateVerdict {
+    if (positiveKind === 'vocaloid') return { decision: 'admit', reason: 'admit-vocaloid' };
+    if (positiveKind === 'anime') return { decision: 'admit', reason: 'admit-anime' };
+    if (positiveKind === 'jpop') return { decision: 'admit', reason: 'admit-jpop-kana' };
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * 5. Injected known-Japanese-artist admit (Fix F2). Opt-in recall path: a row
+ *    with no positive script signal but a confirmed corpus JP artist admits. The
+ *    foreign-act gate above already excluded foreign acts, so a predicate hit
+ *    here is genuinely Japanese. No predicate → pass, so the production
+ *    classifier/crawler contract is unchanged.
+ */
+const injectedJpArtistGate: JoysoundGate = {
+  name: 'injected-jp-artist',
+  phase: 'injected-jp-artist',
+  evaluate({ isKnownJapaneseArtist, artistFields }): JoysoundGateVerdict {
+    if (isKnownJapaneseArtist) {
+      for (const field of artistFields) {
+        if (field !== '' && isKnownJapaneseArtist(field)) {
+          return { decision: 'admit', reason: 'admit-jp-artist' };
+        }
+      }
+    }
+    return { decision: 'pass' };
+  },
+};
+
+/**
+ * 6. Detail-gated JP recovery + fall-through drop, kept as ONE composite gate
+ *    (watch item 2 — splitting the recovery from the fall-through drop would
+ *    change short-circuit reachability). `drop-han-only` (kanji titles) and
+ *    `drop-ascii-only` (Latin-named JP acts) over-drop genuine Japanese rows.
+ *    When a `detail` is present and its foreign-name fields are empty
+ *    (`foreignNameSignal === null`), ADMIT instead of dropping. This is inert in
+ *    listing-only mode (no `detail` → keep the historical drop).
+ *    Note: if `detail` were foreign, foreign-name-detail-drop already returned a
+ *    drop above, so reaching here with a `detail` implies the signal is null —
+ *    the explicit re-check documents intent and is defensive.
+ *
+ *    洋楽 veto (Layer-3 400-row precision audit, 2026-06-12): an empty
+ *    foreign-name is authoritative ONLY against Korean/Chinese entries — those
+ *    are the only rows JOYSOUND renders `songNameForeign` / `artistNameForeign`
+ *    for. Natively-Latin Western/OPM/Bollywood entries have nothing to render, so
+ *    their foreign-name fields are ALSO empty and `null` must not be read as
+ *    genuine-JP. All 28 audited admit FPs came through this recovery; 26/28
+ *    carried JOYSOUND's own `洋楽` genre tag in `detail.genreNames` (the
+ *    authoritative catalog signal for Western music), so a `洋楽` row falls
+ *    through to the historical drop instead. The veto is SCOPED to this recovery:
+ *    genuine JP acts' English covers tagged `洋楽` admit via the EARLIER gates
+ *    (kana / anime / vocaloid / known-JP-artist / reviewed-allow) and are
+ *    unaffected. The ~0–3 genuinely-JP collab rows this drops (e.g. SLASH
+ *    feat.稲葉浩志) are an accepted precision-first cost, recoverable via the
+ *    curated ALLOW list.
+ */
+const terminalGate: JoysoundGate = {
+  name: 'terminal',
+  phase: 'terminal',
+  evaluate({ detail, titleArtist }): JoysoundGateVerdict {
+    const han = hasHanScript(titleArtist);
+    const ascii = hasLatinLetter(titleArtist);
+    if (
+      detail &&
+      (han || ascii) &&
+      foreignNameSignal(detail) === null &&
+      !detail.genreNames.includes(YOUGAKU_GENRE)
+    ) {
+      return { decision: 'admit', reason: 'admit-jp-detail' };
+    }
+    if (han) return { decision: 'drop', reason: 'drop-han-only' };
+    if (ascii) return { decision: 'drop', reason: 'drop-ascii-only' };
+    return { decision: 'drop', reason: 'drop-no-signal' };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// The ordered gate array — DO NOT reorder (load-bearing; assertPhaseOrder
+// enforces it at module load).
+// ---------------------------------------------------------------------------
+
+/**
+ * AUTHORITATIVE gate order (single source of truth). The order mirrors TJ's
+ * allow-precedes-droplist policy; see {@link JoysoundGatePhase} for the
+ * per-phase rationale. The foreign gates (foreign-name-detail-drop, foreign-act)
+ * precede the admit gates (positive-cascade, injected-jp-artist) so a populated
+ * foreign-name or a drop-listed foreign act beats a kana title or a corpus-artist
+ * hit. This order is not enforced by comment alone: every gate carries a `phase`
+ * ({@link PHASE_ORDER}) and {@link assertPhaseOrder} runs at module load, so a
+ * reorder of this array throws at import time.
+ */
+export const JOYSOUND_GATES: readonly JoysoundGate[] = [
+  overrideDropGate,
+  overrideAllowGate,
+  foreignNameDetailDropGate,
+  foreignActGate,
+  positiveCascadeGate,
+  injectedJpArtistGate,
+  terminalGate,
+];
+
+/**
+ * Structurally enforce the load-bearing gate order: every gate's {@link
+ * JoysoundGate.phase} must appear in non-decreasing {@link PHASE_ORDER} rank as
+ * the array is traversed. A reorder that would move a foreign DROP gate behind an
+ * admit gate — a foreign-leak class bug — trips this and throws at module load,
+ * before any record is classified. Prose comments and the array literal alone
+ * could not catch that; this can.
+ *
+ * Exported so tests can assert both that the real array passes and that a
+ * deliberately reordered array is rejected.
+ */
+export function assertPhaseOrder(gates: readonly JoysoundGate[]): void {
+  let prevRank = -1;
+  let prevGate: JoysoundGate | undefined;
+  for (const gate of gates) {
+    const rank = PHASE_ORDER.indexOf(gate.phase);
+    if (rank === -1) {
+      throw new Error(
+        `JOYSOUND_GATES phase check: gate "${gate.name}" has phase "${gate.phase}" which is not in PHASE_ORDER [${PHASE_ORDER.join(' → ')}].`,
+      );
+    }
+    if (rank < prevRank && prevGate !== undefined) {
+      throw new Error(
+        `JOYSOUND_GATES order violation: "${gate.name}" (phase "${gate.phase}") runs after "${prevGate.name}" (phase "${prevGate.phase}"), but "${gate.phase}" must not precede "${prevGate.phase}" per PHASE_ORDER [${PHASE_ORDER.join(' → ')}]. The JOYSOUND classify gate order is load-bearing.`,
+      );
+    }
+    prevRank = rank;
+    prevGate = gate;
+  }
+}
+
+// Fail fast at import time if the gate array is ever reordered out of policy.
+assertPhaseOrder(JOYSOUND_GATES);
+
+/**
+ * Build the shared classify context from the raw classify args. Precomputes the
+ * row surfaces ONCE and — critically — computes `positiveKind` here, BEFORE the
+ * override-allow gate runs. The pre-restructure chain computed the positive kind
+ * once, before the ALLOW path, and reused it in the positive cascade; keeping the
+ * single compute here preserves that timing (watch item 1: recomputing per gate
+ * could diverge if any gate mutated state — none do).
+ */
+function buildJoysoundClassifyContext({
   listItem,
   detail,
-  overrides = DEFAULT_OVERRIDES,
+  overrides,
   isKnownJapaneseArtist,
-}: ClassifyArgs): { admit: boolean; reason: JoysoundClassifyReason } {
+}: {
+  listItem: JoysoundListItem;
+  detail: JoysoundDetail | undefined;
+  overrides: JoysoundOverridePredicates;
+  isKnownJapaneseArtist: ((artist: string) => boolean) | undefined;
+}): JoysoundClassifyContext {
   const titleArtistParts: string[] = [listItem.songName, listItem.artistName];
   const surfaceParts: string[] = [listItem.songName, listItem.artistName, listItem.tieupInfo ?? ''];
   const artistFields: string[] = [listItem.artistName];
@@ -456,109 +753,56 @@ export function classifyJoysoundRecordWithReason({
       ...detail.tieupNames,
     );
     titleArtistParts.push(detail.songName, detail.artistName ?? '');
-    if (detail.artistName !== null) artistFields.push(detail.artistName);
-    // C2 (2026-06-09): feed the NATIVE artist name into the drop-list scan so
-    // a drop-listed act is caught by its native form (e.g. Hangul/Latin native
+    // C2 (2026-06-09): feed the NATIVE artist name into the drop-list scan so a
+    // drop-listed act is caught by its native form (e.g. Hangul/Latin native
     // name) and not only by the listing/katakana `artistName`. The foreign-act
-    // gate's drop-list scan (step 3) iterates `artistFields`, so adding the
-    // native name here is sufficient — no separate scan needed. The native name
-    // also strengthens the Korean-pattern / Western-component checks.
+    // gate's drop-list scan iterates `artistFields`, so adding the native name
+    // here is sufficient — no separate scan needed. The native name also
+    // strengthens the Korean-pattern / Western-component checks.
+    if (detail.artistName !== null) artistFields.push(detail.artistName);
     if (detail.artistNameForeign !== undefined) artistFields.push(detail.artistNameForeign);
   }
   const surface = surfaceParts.join(' ');
   const titleArtist = titleArtistParts.join(' ');
   const artistSurface = artistFields.join(' ');
-
-  // 1. Curated DROP override wins first.
-  if (overrides.isDrop(listItem.selSongNo)) return { admit: false, reason: 'reviewed-drop' };
-
-  // The positive signal kind from the normal gates, computed once so both the
-  // ALLOW path (whose reason is `reviewed-allow` regardless) and the normal
-  // cascade (which maps the kind to its `admit-*` reason) share it.
   const positiveKind = positiveSignalKind({ surface, artistSurface, titleArtist });
 
-  // 2. Curated ALLOW override admits BEFORE the foreign-act gate.
-  if (overrides.isAllow(listItem.selSongNo)) {
-    return { admit: true, reason: 'reviewed-allow' };
-  }
+  return {
+    listItem,
+    detail,
+    overrides,
+    isKnownJapaneseArtist,
+    surface,
+    titleArtist,
+    artistSurface,
+    artistFields,
+    positiveKind,
+  };
+}
 
-  // 2b. Authoritative foreign-name detail gate (DROP). ONLY fires when a
-  //     `detail` is present — the foreign-name fields live exclusively on the
-  //     detail API. Placed AFTER reviewed-allow (so the curated ALLOW K-pop
-  //     Japanese releases, whose foreign-name fields ARE populated, still
-  //     admit) and BEFORE the positive cascade (so a populated Korean/Chinese
-  //     foreign-name beats a kana title). Inert in listing-only mode.
-  if (detail) {
-    const signal = foreignNameSignal(detail);
-    if (signal === 'korean') return { admit: false, reason: 'foreign-korean' };
-    if (signal === 'chinese') return { admit: false, reason: 'foreign-chinese' };
+/**
+ * Reason-rich classification: returns the admit/drop verdict alongside the gate
+ * that fired. A thin wrapper over the {@link JOYSOUND_GATES} reducer —
+ * `classifyJoysoundRecord` delegates to this and returns `.admit`, so the public
+ * boolean contract (and the crawler that consumes it) is unchanged.
+ *
+ * The reducer runs the gates in {@link PHASE_ORDER} and short-circuits on the
+ * first admit/drop verdict. The terminal gate always decides, so the loop always
+ * returns; the post-loop fall-through exists only to keep the reducer total over
+ * any gate array.
+ */
+export function classifyJoysoundRecordWithReason({
+  listItem,
+  detail,
+  overrides = DEFAULT_OVERRIDES,
+  isKnownJapaneseArtist,
+}: ClassifyArgs): { admit: boolean; reason: JoysoundClassifyReason } {
+  const ctx = buildJoysoundClassifyContext({ listItem, detail, overrides, isKnownJapaneseArtist });
+  for (const gate of JOYSOUND_GATES) {
+    const verdict = gate.evaluate(ctx);
+    if (verdict.decision === 'pass') continue;
+    return { admit: verdict.decision === 'admit', reason: verdict.reason };
   }
-
-  // 3. Hard negative foreign-act gate. The classifier's own Korean patterns +
-  //    the production Korean drop list both resolve to `foreign-korean`; the
-  //    production Chinese drop list resolves to `foreign-chinese` (Fix F1).
-  if (artistFields.some(isKnownKoreanAct)) return { admit: false, reason: 'foreign-korean' };
-  for (const field of artistFields) {
-    const kind = dropListForeignKind(field);
-    if (kind === 'korean') return { admit: false, reason: 'foreign-korean' };
-    if (kind === 'chinese') return { admit: false, reason: 'foreign-chinese' };
-  }
-  if (artistFields.some(isKnownWesternAct)) return { admit: false, reason: 'foreign-western' };
-
-  // 4. Positive gates.
-  if (positiveKind === 'vocaloid') return { admit: true, reason: 'admit-vocaloid' };
-  if (positiveKind === 'anime') return { admit: true, reason: 'admit-anime' };
-  if (positiveKind === 'jpop') return { admit: true, reason: 'admit-jpop-kana' };
-
-  // 5. Injected known-Japanese-artist admit (Fix F2). Opt-in recall path: a row
-  //    with no positive script signal but a confirmed corpus JP artist admits.
-  //    The foreign-act gate above already excluded foreign acts, so a predicate
-  //    hit here is genuinely Japanese. No predicate → skipped, so the
-  //    production classifier/crawler contract is unchanged.
-  if (isKnownJapaneseArtist) {
-    for (const field of artistFields) {
-      if (field !== '' && isKnownJapaneseArtist(field)) {
-        return { admit: true, reason: 'admit-jp-artist' };
-      }
-    }
-  }
-
-  // 6. Detail-gated JP recovery + fall-through drop.
-  //    `drop-han-only` (kanji titles) and `drop-ascii-only` (Latin-named JP
-  //    acts) over-drop genuine Japanese rows. When a `detail` is present and
-  //    its foreign-name fields are empty (`foreignNameSignal === null`), ADMIT
-  //    instead of dropping. This is inert in listing-only mode (no `detail` →
-  //    keep the historical drop).
-  //    Note: if `detail` were foreign, step 2b already returned a drop above,
-  //    so reaching here with a `detail` implies the signal is null — the
-  //    explicit re-check documents intent and is defensive.
-  //
-  //    洋楽 veto (Layer-3 400-row precision audit, 2026-06-12): an empty
-  //    foreign-name is authoritative ONLY against Korean/Chinese entries —
-  //    those are the only rows JOYSOUND renders `songNameForeign` /
-  //    `artistNameForeign` for. Natively-Latin Western/OPM/Bollywood entries
-  //    have nothing to render, so their foreign-name fields are ALSO empty and
-  //    `null` must not be read as genuine-JP. All 28 audited admit FPs came
-  //    through this recovery; 26/28 carried JOYSOUND's own `洋楽` genre tag in
-  //    `detail.genreNames` (the authoritative catalog signal for Western
-  //    music), so a `洋楽` row falls through to the historical drop instead.
-  //    The veto is SCOPED to this recovery: genuine JP acts' English covers
-  //    tagged `洋楽` admit via the EARLIER gates (kana / anime / vocaloid /
-  //    known-JP-artist / reviewed-allow) and are unaffected. The ~0–3
-  //    genuinely-JP collab rows this drops (e.g. SLASH feat.稲葉浩志) are an
-  //    accepted precision-first cost, recoverable via the curated ALLOW list.
-  const han = hasHanScript(titleArtist);
-  const ascii = hasLatinLetter(titleArtist);
-  if (
-    detail &&
-    (han || ascii) &&
-    foreignNameSignal(detail) === null &&
-    !detail.genreNames.includes(YOUGAKU_GENRE)
-  ) {
-    return { admit: true, reason: 'admit-jp-detail' };
-  }
-  if (han) return { admit: false, reason: 'drop-han-only' };
-  if (ascii) return { admit: false, reason: 'drop-ascii-only' };
   return { admit: false, reason: 'drop-no-signal' };
 }
 
