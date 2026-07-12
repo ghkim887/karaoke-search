@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyCache } from '../../../src/adapters/tj-media-direct/cache.js';
 import {
   classifyRecord,
+  classifyRecordWithReason,
   parseCatalogResponse,
 } from '../../../src/adapters/tj-media-direct/parser.js';
 
@@ -700,6 +701,184 @@ describe('parseCatalogResponse — direct unit cases', () => {
     expect(records[0]?.artist_ko).toBeNull();
     expect(records[0]?.karaoke_numbers.ky).toBeNull();
     expect(records[0]?.karaoke_numbers.joysound).toBeNull();
+  });
+});
+
+describe('classifyRecordWithReason — per-row step + reason attribution', () => {
+  it('rejects a Korean drop-list act with step=drop-list-reject reason=korean-drop-list', () => {
+    const d = classifyRecordWithReason('1', '방탄소년단', emptyCache());
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('drop-list-reject');
+    expect(d.reason).toBe('korean-drop-list');
+  });
+
+  it('rejects a Chinese drop-list act with step=drop-list-reject reason=chinese-drop-list', () => {
+    const d = classifyRecordWithReason('2', 'BEYOND', emptyCache());
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('drop-list-reject');
+    expect(d.reason).toBe('chinese-drop-list');
+  });
+
+  it('rejects an explicit non-JPN pro with step=non-jpn-pro-reject reason=pro-non-jpn', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['3'] = {
+      nationalcode: 'KOR',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const d = classifyRecordWithReason('3', 'SomeAct', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('non-jpn-pro-reject');
+    expect(d.reason).toBe('pro-non-jpn');
+  });
+
+  it('rejects a reviewed song-level drop with step=reviewed-song-drop reason=reviewed-song-drop', () => {
+    // tj 70438 is the reviewed-song-drop CUTIE STREET Korean-language row.
+    const d = classifyRecordWithReason('70438', 'CUTIE STREET', emptyCache());
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('reviewed-song-drop');
+    expect(d.reason).toBe('reviewed-song-drop');
+  });
+
+  it('admits via per-pro JPN tag with step=jpn-admit-pro reason=pro', () => {
+    const cache = emptyCache();
+    cache.proEnrichmentMap['4'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const d = classifyRecordWithReason('4', 'UnknownAct', cache);
+    expect(d.verdict).toBe('pro');
+    expect(d.step).toBe('jpn-admit-pro');
+    expect(d.reason).toBe('pro');
+  });
+
+  it('admits via per-artist JPN tag with step=jpn-admit-artist reason=artist', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    const d = classifyRecordWithReason('5', 'YOASOBI', cache);
+    expect(d.verdict).toBe('artist');
+    expect(d.step).toBe('jpn-admit-artist');
+    expect(d.reason).toBe('artist');
+  });
+
+  it('admits via reviewed song-level allow with step=reviewed-song-allow reason=song-override', () => {
+    // tj 26544 is a reviewed-song-allow K-pop Japanese release.
+    const d = classifyRecordWithReason('26544', '東方神起', emptyCache());
+    expect(d.verdict).toBe('song-override');
+    expect(d.step).toBe('reviewed-song-allow');
+    expect(d.reason).toBe('song-override');
+  });
+
+  it('admits via blog rescue with step=blog-rescue reason=rescue', () => {
+    const d = classifyRecordWithReason('6', 'GRANRODEO', emptyCache(), new Set(['6']));
+    expect(d.verdict).toBe('rescue');
+    expect(d.step).toBe('blog-rescue');
+    expect(d.reason).toBe('rescue');
+  });
+
+  it('falls through to step=null reason=no-admit-path when no step fires', () => {
+    const d = classifyRecordWithReason('7', 'UnknownAct', emptyCache());
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBeNull();
+    expect(d.reason).toBe('no-admit-path');
+  });
+
+  it('agrees with classifyRecord on the verdict (thin wrapper contract)', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    for (const [tj, artist] of [
+      ['1', 'YOASOBI'],
+      ['2', '방탄소년단'],
+      ['3', 'UnknownAct'],
+    ] as const) {
+      expect(classifyRecordWithReason(tj, artist, cache).verdict).toBe(
+        classifyRecord(tj, artist, cache),
+      );
+    }
+  });
+});
+
+describe('parseCatalogResponse — decisions[] ↔ KeepStats consistency', () => {
+  it('records one decision per classified row, consistent with the counters', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          // by-artist:
+          { pro: 1, indexTitle: 't1', indexSong: 'YOASOBI', publishdate: '2020-01-01' },
+          // by-pro:
+          { pro: 2, indexTitle: 't2', indexSong: 'UnknownActA', publishdate: '2020-01-01' },
+          // by-rescue:
+          { pro: 3, indexTitle: 't3', indexSong: 'UnknownActB', publishdate: '2020-01-01' },
+          // song-override (reviewed-allow tj 26544):
+          { pro: 26544, indexTitle: 't4', indexSong: '東方神起', publishdate: '2020-01-01' },
+          // drop via korean-drop-list:
+          { pro: 5, indexTitle: 't5', indexSong: '방탄소년단', publishdate: '2020-01-01' },
+          // drop via no-admit-path:
+          { pro: 6, indexTitle: 't6', indexSong: 'UnknownActC', publishdate: '2020-01-01' },
+          // skipped by the malformed-row guard (NOT a decision):
+          { pro: null, indexTitle: 't7', indexSong: 'UnknownActD', publishdate: '2020-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtist();
+    cache.proEnrichmentMap['2'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    const { stats, decisions } = parseCatalogResponse(json, SOURCE_URL, {
+      cache,
+      forceIncludeTjNumbers: new Set(['3']),
+    });
+
+    // 6 classified rows (the malformed pro:null row is skipped, not a decision).
+    expect(decisions).toHaveLength(6);
+    const admits = decisions.filter((d) => d.decision === 'admit');
+    const drops = decisions.filter((d) => d.decision === 'drop');
+    expect(admits.filter((d) => d.reason === 'artist')).toHaveLength(stats.admittedByArtist);
+    expect(admits.filter((d) => d.reason === 'pro')).toHaveLength(stats.admittedByPro);
+    expect(admits.filter((d) => d.reason === 'song-override')).toHaveLength(
+      stats.admittedBySongOverride,
+    );
+    expect(admits.filter((d) => d.reason === 'rescue')).toHaveLength(stats.admittedByRescue);
+    expect(drops).toHaveLength(stats.dropped);
+
+    // no-admit-path fall-through is distinguished from an explicit step reject.
+    const fallThrough = drops.find((d) => d.reason === 'no-admit-path');
+    expect(fallThrough?.step).toBeNull();
+    expect(fallThrough?.tj).toBe('6');
+    expect(drops.find((d) => d.reason === 'korean-drop-list')?.step).toBe('drop-list-reject');
+  });
+
+  it('logs the RAW trimmed artist, not the per-song render override', () => {
+    // tj 68976 (IVE) is reviewed-song-allow and its render stamps
+    // artist_primary="IVE"; the decision log must keep the raw "IVE(아이브)".
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 68976, indexTitle: 'Will', indexSong: 'IVE(아이브)', publishdate: '2024-04-30' },
+        ],
+      },
+    };
+    const { records, decisions } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+    expect(records[0]?.artist_primary).toBe('IVE');
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0]?.artist).toBe('IVE(아이브)');
+    expect(decisions[0]?.decision).toBe('admit');
+    expect(decisions[0]?.reason).toBe('song-override');
   });
 });
 

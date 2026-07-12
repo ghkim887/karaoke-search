@@ -210,3 +210,145 @@ describe('simplified-Chinese audit section (2026-07-12, report-only)', () => {
     expect(body.indexOf('## Search-parity baseline delta')).toBeLessThan(body.indexOf(HEADING));
   });
 });
+
+describe('TJ filter attribution section (2026-07-12, report-only)', () => {
+  const HEADING = '### TJ filter attribution';
+
+  // Write a JSONL decision log named `name` into the temp dir; return nothing —
+  // the section reads by fixed filename from the DIR (the composer's 4th arg).
+  function writeDecisions(name, rows) {
+    writeText(name, rows.length === 0 ? '' : `${rows.map((r) => JSON.stringify(r)).join('\n')}\n`);
+  }
+  // A dir with all three decision files present (the CI-complete case).
+  function writeFullDir() {
+    writeDecisions('tj-filter.jsonl', [
+      {
+        tj: '1',
+        title: 't1',
+        artist: 'YOASOBI',
+        decision: 'admit',
+        step: 'jpn-admit-artist',
+        reason: 'artist',
+      },
+      {
+        tj: '2',
+        title: 't2',
+        artist: 'UnknownA',
+        decision: 'admit',
+        step: 'jpn-admit-pro',
+        reason: 'pro',
+      },
+      {
+        tj: '3',
+        title: 't3',
+        artist: '방탄소년단',
+        decision: 'drop',
+        step: 'drop-list-reject',
+        reason: 'korean-drop-list',
+      },
+      {
+        tj: '4',
+        title: 't4',
+        artist: 'UnknownB',
+        decision: 'drop',
+        step: null,
+        reason: 'no-admit-path',
+      },
+    ]);
+    writeDecisions('drop-kpop-leaks.jsonl', [
+      {
+        id: 'tj-5',
+        title: 't5',
+        artist: 'BTS',
+        decision: 'drop',
+        step: 'drop-artist-leaks',
+        reason: 'korean-drop-list',
+      },
+    ]);
+    writeDecisions('drop-cpop-leaks.jsonl', [
+      {
+        id: 'tj-6',
+        title: 't6',
+        artist: 'BEYOND',
+        decision: 'drop',
+        step: 'drop-artist-leaks',
+        reason: 'chinese-drop-list',
+      },
+    ]);
+  }
+
+  it('omits the section when no decisions dir is passed (byte-parity with old behavior)', () => {
+    expect(composePrBody(join(dir, 'nope.json'), undefined, undefined, undefined)).toBe(
+      BOILERPLATE,
+    );
+  });
+
+  it('renders totals and the aggregate reason table from all three files', () => {
+    writeFullDir();
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain(HEADING);
+    expect(body).toContain('Kept 2 / dropped 2 (from `tj-filter.jsonl`).');
+    expect(body).toContain('| step | decision | reason | count |');
+    expect(body).toContain('| tj-filter | admit | artist | 1 |');
+    expect(body).toContain('| tj-filter | admit | pro | 1 |');
+    expect(body).toContain('| tj-filter | drop | korean-drop-list | 1 |');
+    expect(body).toContain('| tj-filter | drop | no-admit-path | 1 |');
+    expect(body).toContain('| drop-kpop-leaks | drop | korean-drop-list | 1 |');
+    expect(body).toContain('| drop-cpop-leaks | drop | chinese-drop-list | 1 |');
+    // All files present → no fail-soft note.
+    expect(body).not.toContain('[!NOTE]');
+  });
+
+  it('renders "Kept 0 / dropped 0" for an all-clean crawl (empty files)', () => {
+    writeDecisions('tj-filter.jsonl', []);
+    writeDecisions('drop-kpop-leaks.jsonl', []);
+    writeDecisions('drop-cpop-leaks.jsonl', []);
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain('Kept 0 / dropped 0 (from `tj-filter.jsonl`).');
+    expect(body).toContain('No filter decisions recorded.');
+    expect(body).not.toContain('[!NOTE]');
+  });
+
+  it('renders a visible note (never throws) when tj-filter.jsonl is missing', () => {
+    // Dir exists (mkdtemp) but the anchor file was never written.
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain(HEADING);
+    expect(body).toContain('> [!NOTE]');
+    expect(body).toContain('not found');
+    expect(body).toContain('does not block the crawl');
+  });
+
+  it('renders a visible note (never throws) on a malformed tj-filter.jsonl line', () => {
+    writeText('tj-filter.jsonl', '{oops\n');
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain(HEADING);
+    expect(body).toContain('> [!NOTE]');
+    expect(body).toContain('Could not parse');
+  });
+
+  it('still renders the crawler table but appends a per-file note when a drop file is missing', () => {
+    writeDecisions('tj-filter.jsonl', [
+      {
+        tj: '1',
+        title: 't1',
+        artist: 'YOASOBI',
+        decision: 'admit',
+        step: 'jpn-admit-artist',
+        reason: 'artist',
+      },
+    ]);
+    // drop-kpop-leaks.jsonl / drop-cpop-leaks.jsonl intentionally absent.
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain('| tj-filter | admit | artist | 1 |');
+    expect(body).toContain('> [!NOTE]');
+    expect(body).toContain('drop-kpop-leaks.jsonl');
+    expect(body).toContain('drop-cpop-leaks.jsonl');
+  });
+
+  it('appends the TJ section AFTER the Chinese audit section when both are present', () => {
+    writeFullDir();
+    const suspects = writeText('s.jsonl', '');
+    const body = composePrBody(join(dir, 'nope.json'), undefined, suspects, dir);
+    expect(body.indexOf('### Simplified-Chinese audit')).toBeLessThan(body.indexOf(HEADING));
+  });
+});

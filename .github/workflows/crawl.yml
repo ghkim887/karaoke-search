@@ -69,7 +69,7 @@ jobs:
         # into the shell's parser.
         env:
           LIMIT: ${{ inputs.limit || 0 }}
-        run: pnpm --filter @karaoke/crawler start --limit "$LIMIT" --out apps/web/public/data/songs.json.tmp --conflicts-out /tmp/merge-conflicts.json
+        run: pnpm --filter @karaoke/crawler start --limit "$LIMIT" --out apps/web/public/data/songs.json.tmp --conflicts-out /tmp/merge-conflicts.json --decisions-out "${RUNNER_TEMP}/filter-decisions/tj-filter.jsonl"
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -84,7 +84,27 @@ jobs:
         # cache prune → schema validation) lives in the runner's step table —
         # the single source of truth for the order. Per-step status is in the
         # runner's summary output.
+        #
+        # FILTER_DECISIONS_DIR opts the two drop-artist-leaks steps into
+        # emitting a per-row drop decision log (drop-kpop-leaks.jsonl /
+        # drop-cpop-leaks.jsonl) alongside the crawler's tj-filter.jsonl written
+        # above. Same RUNNER_TEMP dir — outside the repo tree, never staged.
+        env:
+          FILTER_DECISIONS_DIR: ${{ runner.temp }}/filter-decisions
         run: node scripts/run-post-crawl-pipeline.mjs
+
+      - name: Upload the TJ filter decision logs
+        # Report-only artifact so a maintainer can answer "why was TJ row X
+        # dropped / which step admitted it" after a crawl (closing the crawl-time
+        # observability asymmetry with the JOYSOUND sweep's decision log).
+        # if: always() so a red leakage gate still ships the decisions — exactly
+        # when they are most needed. RUNNER_TEMP is outside the repo tree, so
+        # nothing here can leak into the crawl PR.
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: filter-decisions-${{ github.run_id }}
+          path: ${{ runner.temp }}/filter-decisions/
 
       - name: Run crawler tests before opening the crawl PR
         # Runs the @karaoke/crawler package test suite against the corpus the
@@ -183,8 +203,8 @@ jobs:
         # keeps the step green so the audit's stdout summary stays easy to find.)
         run: node scripts/audit-simplified-chinese.mjs apps/web/public/data/songs.json --out "${RUNNER_TEMP}/chinese-audit" || true
 
-      - name: Compose PR body with merge-conflict summary, parity delta, and Chinese-leak audit
-        run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json "${RUNNER_TEMP}/parity-delta.md" "${RUNNER_TEMP}/chinese-audit/suspects.jsonl" > "${RUNNER_TEMP}/pr_body.md"
+      - name: Compose PR body with merge-conflict summary, parity delta, Chinese-leak audit, and TJ filter attribution
+        run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json "${RUNNER_TEMP}/parity-delta.md" "${RUNNER_TEMP}/chinese-audit/suspects.jsonl" "${RUNNER_TEMP}/filter-decisions" > "${RUNNER_TEMP}/pr_body.md"
 
       - name: Close prior crawl PRs
         env:

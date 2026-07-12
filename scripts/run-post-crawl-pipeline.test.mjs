@@ -72,6 +72,39 @@ describe('buildSteps', () => {
     const validate = steps.find((s) => s.name === 'validate-songs-json');
     expect(validate.command).toContain(DEFAULT_CORPUS);
   });
+
+  it('omits --decisions-out from the drop steps when no decisions dir is given', () => {
+    const steps = buildSteps();
+    const kpop = steps.find((s) => s.name === 'drop-kpop-leaks');
+    const cpop = steps.find((s) => s.name === 'drop-cpop-leaks');
+    expect(kpop.command).toEqual([NODE, 'scripts/drop-artist-leaks.mjs', '--list', 'korean']);
+    expect(cpop.command).toEqual([NODE, 'scripts/drop-artist-leaks.mjs', '--list', 'chinese']);
+  });
+
+  it('threads FILTER_DECISIONS_DIR into ONLY the two drop-artist-leaks steps', () => {
+    const steps = buildSteps(DEFAULT_CORPUS, '/tmp/fd');
+    const byName = Object.fromEntries(steps.map((s) => [s.name, s.command]));
+    expect(byName['drop-kpop-leaks']).toEqual([
+      NODE,
+      'scripts/drop-artist-leaks.mjs',
+      '--list',
+      'korean',
+      '--decisions-out',
+      join('/tmp/fd', 'drop-kpop-leaks.jsonl'),
+    ]);
+    expect(byName['drop-cpop-leaks']).toEqual([
+      NODE,
+      'scripts/drop-artist-leaks.mjs',
+      '--list',
+      'chinese',
+      '--decisions-out',
+      join('/tmp/fd', 'drop-cpop-leaks.jsonl'),
+    ]);
+    // No other step is given --decisions-out.
+    for (const s of steps.filter((s) => !s.name.startsWith('drop-'))) {
+      expect(s.command).not.toContain('--decisions-out');
+    }
+  });
 });
 
 describe('parseArgs', () => {

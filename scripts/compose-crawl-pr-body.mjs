@@ -52,12 +52,27 @@
 // suspects), so a missing file means the audit step itself failed — surfaced in
 // the body, not swallowed and not blocking.
 //
-// Usage: node scripts/compose-crawl-pr-body.mjs [conflictsPath] [parityDeltaPath] [chineseSuspectsPath]
+// TJ FILTER ATTRIBUTION (added 2026-07-12, report-only): the crawler's
+// --decisions-out and the two drop-artist-leaks --decisions-out passes emit
+// per-row admit/drop decision logs under FILTER_DECISIONS_DIR. When that DIR is
+// passed as the FOURTH argument, this composer renders a "### TJ filter
+// attribution" section: a kept/dropped totals line from tj-filter.jsonl plus an
+// aggregate reason→count table (tj-filter admits by via, tj-filter drops by
+// reason incl. no-admit-path, and the two drop-artist-leaks files' drops by
+// reason, labelled per step). SAME fail-soft contract as the simplified-Chinese
+// section: any missing/unreadable file or malformed JSONL line renders a visible
+// [!NOTE] instead of throwing — this section must NEVER red the crawl. Omitting
+// the arg preserves the body byte-for-byte.
+//
+// Usage: node scripts/compose-crawl-pr-body.mjs [conflictsPath] [parityDeltaPath] [chineseSuspectsPath] [filterDecisionsDir]
 //   conflictsPath        defaults to /tmp/merge-conflicts.json (the crawl.yml path).
 //   parityDeltaPath      optional; when given, its contents are appended.
 //   chineseSuspectsPath  optional; when given, the audit section is appended.
+//   filterDecisionsDir   optional; when given, the TJ filter attribution section
+//                        is appended (reads tj-filter.jsonl + drop-*-leaks.jsonl).
 
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { isCliInvocation } from './lib/cli.mjs';
 
 export const DEFAULT_CONFLICTS_PATH = '/tmp/merge-conflicts.json';
@@ -66,6 +81,17 @@ const CHINESE_AUDIT_HEADING = '### Simplified-Chinese audit';
 // Cap the rendered rows so a pathological leak burst can't produce a wall of
 // table in the PR body; the full set is always in the audit's JSONL artifact.
 const CHINESE_AUDIT_MAX_ROWS = 20;
+
+const TJ_FILTER_HEADING = '### TJ filter attribution';
+// The crawler decision log; the two drop-artist-leaks decision logs are keyed
+// by their pipeline step name (see scripts/run-post-crawl-pipeline.mjs).
+const TJ_FILTER_DECISIONS_FILE = 'tj-filter.jsonl';
+const DROP_LEAKS_FILES = [
+  { step: 'drop-kpop-leaks', file: 'drop-kpop-leaks.jsonl' },
+  { step: 'drop-cpop-leaks', file: 'drop-cpop-leaks.jsonl' },
+];
+// Defensive cap on distinct reason rows; the real reason set is ~10.
+const TJ_FILTER_MAX_ROWS = 30;
 
 function composeConflictsSection(conflictsPath) {
   if (!existsSync(conflictsPath)) return '';
@@ -173,22 +199,132 @@ function composeChineseAuditSection(suspectsPath) {
   return `\n${CHINESE_AUDIT_HEADING}\n\n${countLine}\n\n${table.join('\n')}\n`;
 }
 
+/** Report-only section header + a GitHub `[!NOTE]` callout (never throws). */
+function tjFilterNote(message) {
+  return `\n${TJ_FILTER_HEADING}\n\n> [!NOTE]\n> ${message}\n`;
+}
+
+/**
+ * Parse a decision JSONL file into an array of plain-object rows. Throws on a
+ * read error or a malformed line (the caller catches and renders a note); a
+ * line that parses but is not a plain object is dropped (belt-and-suspenders,
+ * mirroring the Chinese-audit parser).
+ */
+function readDecisionRows(path) {
+  return readFileSync(path, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => JSON.parse(line))
+    .filter((row) => row !== null && typeof row === 'object' && !Array.isArray(row));
+}
+
+/** Tally rows by `reason`, sorted by count desc then reason asc (stable). */
+function countByReason(rows) {
+  const counts = new Map();
+  for (const row of rows) {
+    const reason = typeof row.reason === 'string' ? row.reason : '(unknown)';
+    counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
+/**
+ * Render the report-only TJ filter attribution section from the decision-log
+ * DIR. Fail-soft on every read/parse error (visible note, never throws) — the
+ * tj-filter.jsonl anchor missing/malformed yields a whole-section note; a
+ * missing/malformed drop-artist-leaks file yields a trailing per-file note but
+ * still renders the crawler table.
+ */
+function composeTjFilterAttributionSection(decisionsDir) {
+  if (decisionsDir === undefined) return '';
+
+  const tjPath = join(decisionsDir, TJ_FILTER_DECISIONS_FILE);
+  let tjRows;
+  try {
+    if (!existsSync(tjPath)) {
+      return tjFilterNote(
+        `Could not read the TJ filter decision log (\`${tjPath}\` not found) — the crawler's --decisions-out step likely failed; see the workflow logs. Report-only: this does not block the crawl.`,
+      );
+    }
+    tjRows = readDecisionRows(tjPath);
+  } catch (err) {
+    return tjFilterNote(
+      `Could not parse the TJ filter decision log (\`${tjPath}\`): ${err.message}. Report-only: this does not block the crawl.`,
+    );
+  }
+
+  const admits = tjRows.filter((r) => r.decision === 'admit');
+  const drops = tjRows.filter((r) => r.decision === 'drop');
+
+  // Build the aggregate table entries: tj-filter admits (by via), tj-filter
+  // drops (by reason incl. no-admit-path), then each drop-artist-leaks pass.
+  const entries = [];
+  for (const [reason, count] of countByReason(admits)) {
+    entries.push(['tj-filter', 'admit', reason, count]);
+  }
+  for (const [reason, count] of countByReason(drops)) {
+    entries.push(['tj-filter', 'drop', reason, count]);
+  }
+  const fileNotes = [];
+  for (const { step, file } of DROP_LEAKS_FILES) {
+    const path = join(decisionsDir, file);
+    try {
+      if (!existsSync(path)) {
+        fileNotes.push(`\`${file}\` not found — the ${step} pass may not have run.`);
+        continue;
+      }
+      for (const [reason, count] of countByReason(readDecisionRows(path))) {
+        entries.push([step, 'drop', reason, count]);
+      }
+    } catch (err) {
+      fileNotes.push(`\`${file}\` could not be parsed: ${err.message}.`);
+    }
+  }
+
+  let section = `\n${TJ_FILTER_HEADING}\n\n`;
+  section += `Kept ${admits.length} / dropped ${drops.length} (from \`${TJ_FILTER_DECISIONS_FILE}\`).\n`;
+  if (entries.length === 0) {
+    section += '\nNo filter decisions recorded.\n';
+  } else {
+    const shown = entries.slice(0, TJ_FILTER_MAX_ROWS);
+    if (entries.length > shown.length) {
+      section += `\n${entries.length} reason rows (showing first ${shown.length}):\n`;
+    }
+    section += '\n| step | decision | reason | count |\n|---|---|---|---|\n';
+    for (const [step, decision, reason, count] of shown) {
+      section += `| ${escapeCell(step)} | ${escapeCell(decision)} | ${escapeCell(reason)} | ${count} |\n`;
+    }
+  }
+  if (fileNotes.length > 0) {
+    section += `\n> [!NOTE]\n${fileNotes.map((n) => `> ${n}`).join('\n')}\n`;
+  }
+  return section;
+}
+
 export function composePrBody(
   conflictsPath = DEFAULT_CONFLICTS_PATH,
   parityDeltaPath = undefined,
   chineseSuspectsPath = undefined,
+  filterDecisionsDir = undefined,
 ) {
   let body = 'Automated crawl output. See workflow run for logs.\n';
   body += composeConflictsSection(conflictsPath);
   body += composeParitySection(parityDeltaPath);
   body += composeChineseAuditSection(chineseSuspectsPath);
+  body += composeTjFilterAttributionSection(filterDecisionsDir);
   return body;
 }
 
 if (isCliInvocation(import.meta.url)) {
   try {
     process.stdout.write(
-      composePrBody(process.argv[2] ?? DEFAULT_CONFLICTS_PATH, process.argv[3], process.argv[4]),
+      composePrBody(
+        process.argv[2] ?? DEFAULT_CONFLICTS_PATH,
+        process.argv[3],
+        process.argv[4],
+        process.argv[5],
+      ),
     );
   } catch (err) {
     console.error(err.message);

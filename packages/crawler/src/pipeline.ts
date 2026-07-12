@@ -1,7 +1,7 @@
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
-import type { Crawler } from './adapters/index.js';
+import type { CrawlOptions, Crawler } from './adapters/index.js';
 import { type AliasConflict, resolveArtistAliases } from './aliases.js';
 import { type MergeConflict, headlineConflicts, mergeRecords } from './merge.js';
 
@@ -19,6 +19,12 @@ export interface RunPipelineOptions {
    * GitHub Actions workflow can append it to the PR body.
    */
   conflictsOutPath?: string;
+  /**
+   * Optional path for the TJ per-row filter decision log (JSONL). Forwarded
+   * verbatim into each adapter's `CrawlOptions`; only `tj-media-direct` writes
+   * it. `undefined` (the default) leaves adapter behavior byte-identical.
+   */
+  decisionsOutPath?: string;
 }
 
 export interface RunPipelineResult {
@@ -40,8 +46,14 @@ export interface RunPipelineResult {
  *  4. Atomically write `outPath` via `outPath + ".tmp"` then rename.
  */
 export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipelineResult> {
-  const { adapters, limit, outPath, conflictsOutPath } = opts;
-  const adapterOptions = typeof limit === 'number' && limit > 0 ? { limit } : undefined;
+  const { adapters, limit, outPath, conflictsOutPath, decisionsOutPath } = opts;
+  // Preserve the original `undefined` when neither knob is set, so a plain
+  // crawl passes exactly what it did before (byte-identical adapter behavior).
+  const hasLimit = typeof limit === 'number' && limit > 0;
+  const adapterOptions: CrawlOptions | undefined =
+    hasLimit || decisionsOutPath
+      ? { ...(hasLimit ? { limit } : {}), ...(decisionsOutPath ? { decisionsOutPath } : {}) }
+      : undefined;
 
   const collected: SongRecord[] = [];
   for (const adapter of adapters) {

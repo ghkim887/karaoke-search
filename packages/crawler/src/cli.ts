@@ -10,7 +10,7 @@ const HELP = `karaoke-crawl — run registered source adapters and emit songs.js
 
 Usage:
   karaoke-crawl [--limit <n>] [--source <slug>]... [--out <path>]
-                [--conflicts-out <path>]
+                [--conflicts-out <path>] [--decisions-out <path>]
 
 Options:
   --limit <n>      Per-source page cap (e.g. artist pages for the blog
@@ -31,6 +31,12 @@ Options:
                    markers are excluded from the headline 'total' count, but
                    they ARE included in the per-entry 'sample' list for
                    forensic inspection.
+  --decisions-out <path>
+                   Optional path for the TJ per-row filter decision log
+                   (JSONL, one admit/drop attribution object per classified
+                   row). Only the tj-media-direct adapter writes it; overwrite
+                   semantics. When omitted, no file is written and behavior is
+                   unchanged. Resolved relative to the repo root.
   --help           Print this message and exit 0.
 `;
 
@@ -39,6 +45,7 @@ interface ParsedArgs {
   sources: string[];
   out: string;
   conflictsOut: string | null;
+  decisionsOut: string | null;
   help: boolean;
 }
 
@@ -48,6 +55,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     sources: [],
     out: 'apps/web/public/data/songs.json',
     conflictsOut: null,
+    decisionsOut: null,
     help: false,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -92,6 +100,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
       out.conflictsOut = next;
       continue;
     }
+    if (arg === '--decisions-out') {
+      const next = argv[++i];
+      if (next === undefined) throw new Error('--decisions-out requires a value');
+      out.decisionsOut = next;
+      continue;
+    }
     throw new Error(`unknown flag: ${arg}`);
   }
   return out;
@@ -124,6 +138,11 @@ async function main(): Promise<void> {
       ? parsed.conflictsOut
       : resolve(repoRoot, parsed.conflictsOut)
     : undefined;
+  const decisionsOutPath = parsed.decisionsOut
+    ? isAbsolute(parsed.decisionsOut)
+      ? parsed.decisionsOut
+      : resolve(repoRoot, parsed.decisionsOut)
+    : undefined;
 
   const selected = resolveAdaptersForSources(parsed.sources);
 
@@ -132,6 +151,7 @@ async function main(): Promise<void> {
     outPath,
     ...(parsed.limit > 0 ? { limit: parsed.limit } : {}),
     ...(conflictsOutPath ? { conflictsOutPath } : {}),
+    ...(decisionsOutPath ? { decisionsOutPath } : {}),
   };
   try {
     const { written, conflicts } = await runPipeline(pipelineOpts);

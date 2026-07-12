@@ -12,6 +12,13 @@ export interface CrawlOptions {
   /** Maximum number of source pages (e.g., artist pages) the adapter should
    * fetch. `undefined` means no cap. */
   limit?: number;
+  /**
+   * Optional path for a per-row filter decision log (JSONL). Only the
+   * `tj-media-direct` adapter honors it — it writes the FINAL parse's
+   * admit/drop attribution there. Other adapters ignore it. `undefined`
+   * (the default) means no file is written and behavior is unchanged.
+   */
+  decisionsOutPath?: string;
 }
 
 /**

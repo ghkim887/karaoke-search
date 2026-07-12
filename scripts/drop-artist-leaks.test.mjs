@@ -7,7 +7,7 @@
 // test script builds the crawler first, so dist is always present here).
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,9 +62,17 @@ describe('parseArgs', () => {
     expect(parseArgs(['--list', 'korean'])).toEqual({
       list: 'korean',
       dryRun: false,
+      decisionsOut: null,
       help: false,
     });
     expect(parseArgs(['--list', 'chinese', '--dry-run']).dryRun).toBe(true);
+  });
+
+  it('accepts --decisions-out with a value and rejects it without one', () => {
+    expect(parseArgs(['--list', 'korean', '--decisions-out', 'd.jsonl']).decisionsOut).toBe(
+      'd.jsonl',
+    );
+    expect(() => parseArgs(['--list', 'korean', '--decisions-out'])).toThrow(/requires a path/);
   });
 
   it('rejects unknown flags', () => {
@@ -289,6 +297,105 @@ describe('runDropArtistLeaks', () => {
       log: quietLog,
     });
     expect(code).toBe(2);
+  });
+
+  it('--decisions-out (korean): writes only dropped rows with per-check reasons', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    writeCorpus(corpusPath, [
+      ...SURVIVORS,
+      record('tj-99999', '방탄소년단', 'Dynamite'), // artist match → korean-drop-list
+      record('tj-70438', 'CUTIE STREET', '프리큐큐'), // korean anomaly ID → catalog-anomaly-id
+    ]);
+    const code = await runDropArtistLeaks({
+      list: 'korean',
+      corpusPath,
+      decisionsOut: decisionsPath,
+      log: quietLog,
+    });
+    expect(code).toBe(0);
+    const lines = readFileSync(decisionsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    // ONLY the two dropped rows — survivors (admits) are never logged.
+    expect(lines.map((l) => l.id).sort()).toEqual(['tj-70438', 'tj-99999']);
+    for (const l of lines) {
+      expect(l.decision).toBe('drop');
+      expect(l.step).toBe('drop-artist-leaks');
+    }
+    const byId = Object.fromEntries(lines.map((l) => [l.id, l]));
+    expect(byId['tj-99999'].reason).toBe('korean-drop-list');
+    expect(byId['tj-99999'].artist).toBe('방탄소년단');
+    expect(byId['tj-99999'].title).toBe('Dynamite');
+    expect(byId['tj-70438'].reason).toBe('catalog-anomaly-id');
+  });
+
+  it('--decisions-out (chinese): reason=chinese-drop-list', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    writeCorpus(corpusPath, [...SURVIVORS, record('tj-70170', 'BEYOND', '大地')]);
+    await runDropArtistLeaks({
+      list: 'chinese',
+      corpusPath,
+      decisionsOut: decisionsPath,
+      log: quietLog,
+    });
+    const lines = readFileSync(decisionsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    expect(lines).toHaveLength(1);
+    expect(lines[0].id).toBe('tj-70170');
+    expect(lines[0].reason).toBe('chinese-drop-list');
+    expect(lines[0].decision).toBe('drop');
+    expect(lines[0].step).toBe('drop-artist-leaks');
+  });
+
+  it('--decisions-out: a reviewed-song-allow row that was SPARED is not logged as a drop', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    const allowed = {
+      ...record('tj-52990', 'BOYNEXTDOOR', 'Count To Love'),
+      karaoke_numbers: { tj: '52990', ky: null, joysound: null },
+    };
+    const dropped = {
+      ...record('tj-43349', 'BOYNEXTDOOR', 'Nice Guy'),
+      karaoke_numbers: { tj: '43349', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, allowed, dropped]);
+    await runDropArtistLeaks({
+      list: 'korean',
+      corpusPath,
+      decisionsOut: decisionsPath,
+      log: quietLog,
+    });
+    const lines = readFileSync(decisionsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+    expect(lines.map((l) => l.id)).toEqual(['tj-43349']);
+    expect(lines[0].reason).toBe('korean-drop-list');
+  });
+
+  it('--decisions-out: writes an empty file when nothing dropped (clean corpus)', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    writeCorpus(corpusPath, SURVIVORS);
+    const code = await runDropArtistLeaks({
+      list: 'korean',
+      corpusPath,
+      decisionsOut: decisionsPath,
+      log: quietLog,
+    });
+    expect(code).toBe(0);
+    expect(readFileSync(decisionsPath, 'utf8')).toBe('');
+  });
+
+  it('flag-absent: no decision file is written and drops are unchanged', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    writeCorpus(corpusPath, [...SURVIVORS, record('tj-99999', '방탄소년단', 'Dynamite')]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(existsSync(decisionsPath)).toBe(false);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2']);
   });
 
   it('zero-key drop set → exit code 2, corpus untouched (Python empty-sidecar guard parity)', async () => {
