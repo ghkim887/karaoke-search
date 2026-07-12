@@ -433,3 +433,43 @@ describe('loadSeedCodes', () => {
     expect(codes.every((c) => typeof c === 'string')).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Committed seed ↔ catalog consistency (ROADMAP R7). The discovery workflow
+// appends every new hit to BOTH scripts/data/tjpdf-seed-numbers.json and
+// scripts/data/tjpdf-catalog.jsonl; this pin makes the two files unable to
+// drift apart — every seed code must have a catalog entry (else the seed-mode
+// probe reports a coverage MISS and exits non-zero), and every catalog code
+// must be a seed code (else a `--fresh` re-probe would silently drop it). It is
+// a 1:1 set-equality check (not a brittle absolute count), so ordinary
+// discovery-sweep additions keep it green without a per-PR bump.
+// ---------------------------------------------------------------------------
+describe('committed seed ↔ catalog consistency', () => {
+  const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), 'data');
+
+  it('the committed seed list and catalog cover the exact same TJ code set (1:1)', () => {
+    const seedCodes = loadSeedCodes(join(DATA_DIR, 'tjpdf-seed-numbers.json'));
+    const catalogCodes = readCatalog(join(DATA_DIR, 'tjpdf-catalog.jsonl')).map((e) =>
+      String(e.pro),
+    );
+
+    // No duplicates within either file.
+    expect(new Set(seedCodes).size, 'seed list has duplicate codes').toBe(seedCodes.length);
+    expect(new Set(catalogCodes).size, 'catalog has duplicate pro codes').toBe(catalogCodes.length);
+
+    // 1:1 — identical code sets (hence identical counts).
+    const seedSet = new Set(seedCodes);
+    const catSet = new Set(catalogCodes);
+    const seedOnly = seedCodes.filter((c) => !catSet.has(c));
+    const catOnly = catalogCodes.filter((c) => !seedSet.has(c));
+    expect(
+      seedOnly,
+      `seed codes with no catalog entry: ${seedOnly.slice(0, 10).join(', ')}`,
+    ).toEqual([]);
+    expect(
+      catOnly,
+      `catalog codes not in the seed list: ${catOnly.slice(0, 10).join(', ')}`,
+    ).toEqual([]);
+    expect(seedCodes.length).toBe(catalogCodes.length);
+  });
+});
