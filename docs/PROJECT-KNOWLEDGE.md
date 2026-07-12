@@ -165,14 +165,19 @@ above).
   skipped, not applied). Applied records get `title_ko_source: 'manual'` and
   DROP `title_ko_confidence`. Adding a fix = edit the sidecar JSON, commit;
   the next pipeline run applies it.
-- **Pitfall (2026-07-10, caught in PR #122 review): any change that edits a
-  record's `title_primary` (ingest overrides, parser fixes, source swaps)
-  silently disarms that record's manual title_ko fix** — the guard mismatch
-  skips with exit 0 and only a stderr counter, so an owner-signed correction
-  quietly reverts at the next pipeline run. RULE: whenever `title_primary`
-  changes for an id present in `title-ko-manual-fixes.json`, update that
-  entry's guard in the SAME change, and pin the alignment with a test
-  (see PR #122's guard-alignment test for the pattern).
+- **Pitfall (2026-07-10, caught in PR #122 review; generalized in PR #125):
+  any change that edits a record's `title_primary` (ingest overrides, parser
+  fixes, source swaps) silently disarms that record's title_ko on TWO guard
+  surfaces** — (1) the manual-fixes sidecar (NFKC guard mismatch → skip with
+  exit 0 + stderr counter → an owner-signed correction quietly reverts) and
+  (2) the Stage-2 replay cache (`translate_title_ko_via_agents.mjs` looks up
+  by id but APPLIES only when the cached `title_primary` NFKC-matches → the
+  cached translation silently stops re-applying). RULE: whenever
+  `title_primary` changes for an id present in `title-ko-manual-fixes.json`
+  OR the `llm-translations-chunk-*.json` cache, realign BOTH stored
+  `title_primary` guards in the SAME change (translations byte-preserved),
+  and pin the alignment with tests (patterns: PR #122's manual-fix guard
+  test; PR #125's catalog↔manual-fix and catalog↔cache drift pins).
 
 ## HTTP client (`packages/crawler/src/http.ts`)
 
