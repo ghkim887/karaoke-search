@@ -32,10 +32,15 @@ describe('tracked product corpus regressions', () => {
     expect(leaked).toEqual([]);
   });
 
-  it('does not contain the known Hanroro / Pororo TJ-direct leakage examples', () => {
+  it('does not contain the known Hanroro / Pororo / CUTIE STREET TJ-direct leakage examples', () => {
     const ids = new Set(loadCorpus().map((record) => record.id));
 
     expect(ids.has('tj-43796')).toBe(false);
     expect(ids.has('tj-98158')).toBe(false);
+    // tj-70438 = "프리큐큐" / CUTIE STREET — the 2026-07-11 weekly-crawl leak:
+    // a Korean-language row by a Japanese act. Dropped per-song at crawl time
+    // (reviewed-song-drop) and in the corpus-cleanup path
+    // (KOREAN_CATALOG_ANOMALY_IDS); the artist stays admittable for JP rows.
+    expect(ids.has('tj-70438')).toBe(false);
   });
 });

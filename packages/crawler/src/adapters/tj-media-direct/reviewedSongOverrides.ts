@@ -21,7 +21,7 @@
  *   - **Never** widen an entry to an artist-level admit — that is what the
  *     drop list / artist-tag steps are for.
  *
- * Counts: allow=113, drop=9 (asserted by
+ * Counts: allow=113, drop=10 (asserted by
  * `test/adapters/tj-media-direct/reviewedSongOverrides.test.ts`).
  */
 
@@ -35,6 +35,19 @@ export interface ReviewedSongOverrideEntry {
   artist: string;
   /** Decision month (`YYYY-MM`, UTC) — when the reviewer verdict was recorded. */
   decidedOn: string;
+  /**
+   * Optional display-rendering override for an *admitted* row (allow-list only).
+   * When present, the TJ-direct parser stamps `artist_primary` / `artist_ko`
+   * from this instead of the raw `indexSong`.
+   *
+   * Needed when the catalog artist string carries a Hangul gloss (e.g.
+   * `IVE(아이브)`) that would trip the product-corpus leak gate
+   * (`test/product-corpus-regression.test.ts`) — a genuine JP release must not
+   * read as Korean-script leakage. This is a per-song rendering, NOT a broad
+   * paren-splitting rule: Latin-only catalog rows (e.g. BOYNEXTDOOR tj-52990)
+   * already render clean and carry no `render`.
+   */
+  render?: { artist_primary: string; artist_ko: string | null };
   /** Audit action slug (+ short rationale for verdict-queue edge cases). */
   note?: string;
 }
@@ -828,8 +841,18 @@ export const REVIEWED_TJ_SONG_ALLOW_LIST: readonly ReviewedSongOverrideEntry[] =
     tj: '68976',
     title: 'Will',
     artist: 'IVE(아이브)',
-    decidedOn: '2026-06',
-    note: 'add_song_level_kpop_or_korean_artist_official_jpn_row',
+    decidedOn: '2026-07',
+    render: { artist_primary: 'IVE', artist_ko: '아이브' },
+    // TJ 68976 "Will" = IVE Japanese-language original (Pokémon Horizons OP,
+    // 2024-04-12; JP EP "Alive", Starship/Ariola Japan) — genuine JP-market
+    // release, JPN tag correct. ALLOW. Re-confirmed in the 2026-07-11
+    // weekly-crawl leak-gate round: the catalog artist "IVE(아이브)" carries a
+    // Hangul gloss, so the crawl-rendered artist_primary tripped
+    // product-corpus-regression's TJ-direct Hangul/no-Japanese guard even
+    // though the row is allowed. `render` stamps artist_primary="IVE" /
+    // artist_ko="아이브" so the admitted row is script-clean at the next crawl
+    // (precedent tj-52990 BOYNEXTDOOR needed no render — TJ raw was Latin-only).
+    note: 'add_song_level_kpop_or_korean_artist_official_jpn_row — IVE JP original "Will" (Pokémon Horizons OP, JP EP "Alive", Starship/Ariola Japan). proEnrichment nationalcode JPN. `render` strips the Hangul gloss from "IVE(아이브)" so the allow survives the leak gate.',
   },
 ];
 
@@ -897,6 +920,21 @@ export const REVIEWED_TJ_SONG_DROP_LIST: readonly ReviewedSongOverrideEntry[] = 
     decidedOn: '2026-06',
     note: 'drop_generic_non_scope_row',
   },
+  {
+    tj: '70438',
+    title: '프리큐큐',
+    artist: 'CUTIE STREET',
+    decidedOn: '2026-07',
+    // TJ 70438 "프리큐큐" = Korean-language ver. of CUTIE STREET's JP single
+    // ぷりきゅきゅ (released 2026-06-06 for KR market: Music Bank, KR charts).
+    // Group is Japanese but this KOR-tagged Korean-language row is TJ's Korean
+    // catalog, not J-pop. DROP. Per-song only: CUTIE STREET (ASOBISYSTEM /
+    // KAWAII LAB.) is a Japanese act whose artist tag would admit it at
+    // jpn-admit-artist (step 5), so this hard-drop (step 0, keyed by exact TJ
+    // number) is the seam — the artist stays admittable for their Japanese
+    // rows, so it MUST NOT go on koreanArtistDropList.
+    note: 'drop_per_song_korean_language_row — KOR-language ver. of CUTIE STREET (JP group) single ぷりきゅきゅ, 2026-06-06 KR release; TJ nationalcode KOR. Korean-catalog row, not J-pop. Artist stays admittable — do NOT add to koreanArtistDropList.',
+  },
 ];
 
 // Store normalized keys so lookups (which probe with `normalizeTjNumberKey`)
@@ -908,12 +946,36 @@ const REVIEWED_TJ_SONG_DROP = new Set<string>(
   REVIEWED_TJ_SONG_DROP_LIST.map((entry) => normalizeTjNumberKey(entry.tj)),
 );
 
+// Only allow-list entries that opt into a `render` override are materialized
+// here (keyed the same normalized shape lookups probe with). The parser
+// consults this when building an admitted record so a Hangul-glossed catalog
+// artist can be stamped as its script-clean display form.
+const REVIEWED_TJ_SONG_RENDER = new Map<
+  string,
+  { artist_primary: string; artist_ko: string | null }
+>(
+  REVIEWED_TJ_SONG_ALLOW_LIST.flatMap((entry) =>
+    entry.render ? [[normalizeTjNumberKey(entry.tj), entry.render] as const] : [],
+  ),
+);
+
 export function isReviewedTjSongAllow(tj: string): boolean {
   return REVIEWED_TJ_SONG_ALLOW.has(normalizeTjNumberKey(tj));
 }
 
 export function isReviewedTjSongDrop(tj: string): boolean {
   return REVIEWED_TJ_SONG_DROP.has(normalizeTjNumberKey(tj));
+}
+
+/**
+ * Per-song display-rendering override for an admitted TJ row, or `undefined`
+ * when the row has no override (the common case — the parser then keeps the raw
+ * `indexSong`). See {@link ReviewedSongOverrideEntry.render}.
+ */
+export function reviewedTjSongRender(
+  tj: string,
+): { artist_primary: string; artist_ko: string | null } | undefined {
+  return REVIEWED_TJ_SONG_RENDER.get(normalizeTjNumberKey(tj));
 }
 
 function normalizeTjNumberKey(tj: string): string {

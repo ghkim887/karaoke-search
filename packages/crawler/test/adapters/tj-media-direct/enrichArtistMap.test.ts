@@ -527,7 +527,7 @@ describe('enrichArtistMap — persist non-JPN proEnrichmentMap entries (Item A)'
     // descending to step 5 — and the assertion would prove "step 1 beats step 2"
     // instead of the documented "step 1 beats step 5". `91234` is verified clean
     // against reviewedSongOverrides.ts (ALLOW range ends at 68976; not on the
-    // 9-entry DROP list). Pin that invariant so the test can never silently
+    // 10-entry DROP list). Pin that invariant so the test can never silently
     // regress to short-circuiting at step 2.
     const TJ = '91234';
     expect(isReviewedTjSongAllow(TJ)).toBe(false);

@@ -290,6 +290,70 @@ describe('parseCatalogResponse — reviewed song-level overrides', () => {
     expect(stats.admittedBySongOverride).toBe(1);
     expect(stats.dropped).toBe(1);
   });
+
+  it('admits the reviewed IVE JP release (tj 68976) and renders a script-clean artist (leak-gate safe)', () => {
+    // The TJ catalog artist "IVE(아이브)" carries a Hangul gloss. The row is
+    // admitted via reviewed-song-allow (step 2), and the per-song `render`
+    // override stamps artist_primary="IVE" / artist_ko="아이브" so the admitted
+    // row does NOT read as Korean-script leakage at the next crawl's
+    // product-corpus gate. (BOYNEXTDOOR tj-52990 above needs no render — its TJ
+    // raw was already Latin-only.)
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          { pro: 68976, indexTitle: 'Will', indexSong: 'IVE(아이브)', publishdate: '2024-04-30' },
+        ],
+      },
+    };
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache: emptyCache() });
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers.tj).toBe('68976');
+    expect(records[0]?.artist_primary).toBe('IVE');
+    expect(records[0]?.artist_ko).toBe('아이브');
+    expect(stats.admittedBySongOverride).toBe(1);
+    // The exact invariant product-corpus-regression checks: title + rendered
+    // artist has no Hangul, so the admitted JP release survives the leak gate.
+    const text = `${records[0]?.title_primary} ${records[0]?.artist_primary}`;
+    expect(text).not.toMatch(/[가-힣]/);
+  });
+
+  it('drops the reviewed CUTIE STREET Korean-language row (tj 70438) but keeps their Japanese row', () => {
+    // Per-song drop: CUTIE STREET is a Japanese act, so its artist tag admits
+    // at jpn-admit-artist (step 5) — and MUST keep doing so for their
+    // Japanese-language rows. The 프리큐큐 row is the KOR-language release and
+    // drops by exact TJ number at reviewed-song-drop (step 0, which runs first),
+    // WITHOUT the artist going on the Korean drop list.
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          {
+            pro: 70438,
+            indexTitle: '프리큐큐',
+            indexSong: 'CUTIE STREET',
+            publishdate: '2026-06-06',
+          },
+          {
+            pro: 70439,
+            indexTitle: 'ぷりきゅきゅ',
+            indexSong: 'CUTIE STREET',
+            publishdate: '2024-01-01',
+          },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.cutiestreet = jpnArtist();
+
+    const { records, stats } = parseCatalogResponse(json, SOURCE_URL, { cache });
+
+    expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['70439']);
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.dropped).toBe(1);
+  });
 });
 
 describe('parseCatalogResponse — blog-whitelist rescue (path 3)', () => {

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * One-shot + re-runnable corpus cleanup: drop records whose artist matches
- * the Korean-artist or Chinese-artist (Cantopop / Mandopop) drop list, plus
- * — for the chinese pass — a small set of catalog-anomaly IDs.
+ * the Korean-artist or Chinese-artist (Cantopop / Mandopop) drop list, plus a
+ * small per-pass set of catalog-anomaly IDs (rows the artist-name match cannot
+ * catch).
  *
  * Replaces the former Python pair `scripts/drop_kpop_leaks.py` /
  * `scripts/drop_cpop_leaks.py`. Those scripts consumed JSON sidecars
@@ -34,13 +35,18 @@
  * (`tj-`, `blog-`, `tjpdf-`) — the corpus-level filter is the canonical one;
  * the parser filter is a crawl-time efficiency win.
  *
- * Catalog-anomaly IDs (chinese pass only)
- * ---------------------------------------
- * A small hardcoded list of TJ IDs whose `artist_primary` is malformed in the
- * TJ source (e.g. literal `-` for tj-72638, a record whose simplified-Chinese
- * title `明天你是否依然爱我` confirms it as Mandopop). The artist-name match
- * can't catch these because the artist field itself is the anomaly. Keep this
- * list small and reviewed.
+ * Catalog-anomaly IDs (per pass)
+ * ------------------------------
+ * A small hardcoded list of TJ IDs the artist-name match can't catch because
+ * the artist field itself is not a drop-list signal. Two flavours, each scoped
+ * to one pass:
+ *   - chinese (`CATALOG_ANOMALY_IDS`): `artist_primary` is malformed in the TJ
+ *     source (e.g. literal `-` for tj-72638, a record whose simplified-Chinese
+ *     title `明天你是否依然爱我` confirms it as Mandopop).
+ *   - korean (`KOREAN_CATALOG_ANOMALY_IDS`): `artist_primary` is a legitimate
+ *     Japanese act (must stay admittable) but the specific TJ row is a
+ *     Korean-catalog placement (e.g. tj-70438 CUTIE STREET's KOR-language row).
+ * Keep both lists small and reviewed.
  *
  * Behavior
  * --------
@@ -52,7 +58,7 @@
  *    dist is a hard error (exit 2), not an auto-rebuild.
  * 3. For each record, drop if ANY component of `artist_primary` (per
  *    `splitArtistCollab` — the same decomposition the parser uses) matches
- *    the drop set, or — chinese pass — the record `id` is a catalog anomaly.
+ *    the drop set, or the record `id` is a catalog anomaly for this pass.
  *    EXCEPTION: an artist-name match is spared when the record's TJ number is
  *    reviewed-song-allow-listed (`isReviewedTjSongAllow`) — the curated
  *    exact-TJ K-pop Japanese releases. The catalog-anomaly drop is NOT spared.
@@ -99,6 +105,20 @@ const REVIEWED_OVERRIDES_DIST = resolve(
  *   - tj-71365: same catalog-anomaly family (2026-06 audit).
  */
 export const CATALOG_ANOMALY_IDS = Object.freeze(new Set(['tj-72638', 'tj-71365']));
+
+/**
+ * Catalog-anomaly IDs (korean pass only): records whose `artist_primary` is a
+ * legitimate *Japanese* act — so the artist-name match neither does nor SHOULD
+ * catch them — but whose specific TJ row is a Korean-catalog placement that
+ * must drop by exact ID. Mirrors the crawl chain's reviewed-song-drop (step 0)
+ * for the same TJ number (drop-artist-leaks does not load the cache, so it
+ * re-applies these anomalies here instead). Keep this list small and reviewed.
+ *   - tj-70438: "프리큐큐" / CUTIE STREET — Korean-language ver. of the JP
+ *     single ぷりきゅきゅ (KR release 2026-06-06). CUTIE STREET is Japanese
+ *     (ASOBISYSTEM / KAWAII LAB.) and stays admittable for their JP-language
+ *     rows; only this KOR-tagged Korean-catalog row drops.
+ */
+export const KOREAN_CATALOG_ANOMALY_IDS = Object.freeze(new Set(['tj-70438']));
 
 export const USAGE = 'usage: node scripts/drop-artist-leaks.mjs --list korean|chinese [--dry-run]';
 
@@ -156,7 +176,7 @@ export async function loadListPredicates(list) {
     return {
       isDropKey: mod.isInDropList,
       keyCount: mod.DROP_KEY_SET.size,
-      anomalyIds: new Set(),
+      anomalyIds: KOREAN_CATALOG_ANOMALY_IDS,
       isReviewedAllow: isReviewedTjSongAllow,
       normalizeForMatch,
       splitArtistCollab,
@@ -195,8 +215,8 @@ export function isArtistDropped(artist, { isDropKey, normalizeForMatch, splitArt
  * This mirrors the crawl-time filter chain, where reviewed-song-allow (step 2)
  * precedes drop-list-reject (step 3): a hand-audited K-pop / Korean-artist
  * Japanese release keyed by exact TJ number survives the artist-name drop. The
- * catalog-anomaly hard-drop (chinese pass) is NOT spared — those rows have a
- * malformed artist field, closer to the chain's hard-drop phase.
+ * catalog-anomaly hard-drop (either pass) is NOT spared — those rows are dropped
+ * by exact TJ ID regardless of artist, closer to the chain's hard-drop phase.
  */
 export function partitionCorpus(records, predicates) {
   const kept = [];
