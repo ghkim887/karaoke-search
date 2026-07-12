@@ -1,0 +1,857 @@
+[
+  {
+    "id": "tjpdf-29878",
+    "title_primary": "春なのに",
+    "title_ko": "봄인데",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Kashiwabara Yoshie's 1983 hit (Miyuki Nakajima); no web search, no established Korean release title.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29879",
+    "title_primary": "春よ、来い",
+    "title_ko": "봄이여, 오라",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Unambiguous literal translation of Yumi Matsutoya's famous song; no web search needed.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29880",
+    "title_primary": "バスストップ ",
+    "title_ko": "버스 스톱",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Katakana of English 'Bus Stop' rendered as the standard Korean loanword form; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29881",
+    "title_primary": "百万本のバラ",
+    "title_ko": "백만 송이 장미",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Established canonical Korean title (also famous via Shim Su-bong's Korean version); known from training, no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29882",
+    "title_primary": "風雪ながれ旅",
+    "title_ko": "눈보라 유랑길",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort literal rendering of Kitajima Saburo enka (wind-snow wandering journey); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29883",
+    "title_primary": "ふれあい",
+    "title_ko": "교감",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Abstract noun (human warmth/contact) rendered as 교감; no established Korean title, no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29884",
+    "title_primary": "微笑がえし",
+    "title_ko": "미소의 답례",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Candies' 1978 song (returning a smile); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29885",
+    "title_primary": "孫",
+    "title_ko": "손주",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Single-word title of Oizumi Itsuro's hit; 손주 (grandchild); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29886",
+    "title_primary": "まちぶせ ",
+    "title_ko": "기다림",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "まちぶせ (lying in wait for a loved one) rendered as the romantic sense 기다림; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29887",
+    "title_primary": "待つわ",
+    "title_ko": "기다릴게요",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Amin's 1982 hit ('I'll wait'); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29888",
+    "title_primary": "聖母たちのララバイ",
+    "title_ko": "성모들의 자장가",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Clear literal translation of Iwasaki Hiromi's 1982 song; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29889",
+    "title_primary": "見上げてごらん夜の星を",
+    "title_ko": "올려다보렴 밤하늘의 별을",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Sakamoto Kyu's classic; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29890",
+    "title_primary": "むらさき雨情",
+    "title_ko": "보랏빛 비의 정취",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Best-effort poetic rendering of Fuji Ayako enka (purple + rain sentiment); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29891",
+    "title_primary": "名月赤城山",
+    "title_ko": "명월 아카기산",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "赤城山 is Mt. Akagi (place name kept), 名月 = bright/harvest moon; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29892",
+    "title_primary": "木綿のハンカチーフ ",
+    "title_ko": "무명 손수건",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Ota Hiromi's 1975 hit (cotton handkerchief); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29893",
+    "title_primary": "桃色吐息",
+    "title_ko": "분홍빛 한숨",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Takahashi Mariko's song (pink sigh); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29894",
+    "title_primary": "山",
+    "title_ko": "산",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Single-word title, unambiguous (mountain); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29896",
+    "title_primary": "月火水木金土日 ～君に贈る歌～",
+    "title_ko": "월화수목금토일 ~너에게 보내는 노래~",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Sonar Pocket title incl. subtitle (days of week + a song for you); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29897",
+    "title_primary": "夜桜お七",
+    "title_ko": "밤벚꽃 오시치",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Sakamoto Fuyumi enka; 夜桜 = night cherry blossoms, お七 = the name Oshichi (kept); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29898",
+    "title_primary": "ルージュの伝言 ",
+    "title_ko": "루주의 전언",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Arai Yumi's song (message written in lipstick/rouge); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29899",
+    "title_primary": "わが人生に悔いなし",
+    "title_ko": "내 인생에 후회는 없다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Ishihara Yujiro's song; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29900",
+    "title_primary": "別れの朝",
+    "title_ko": "이별의 아침",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Clear literal translation (morning of parting); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29901",
+    "title_primary": "別れの一本杉 ",
+    "title_ko": "이별의 외로운 삼나무",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kasuga Hachiro classic enka; 一本杉 = a lone cedar; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29902",
+    "title_primary": "幸せなら手をたたこう",
+    "title_ko": "행복하다면 손뼉을 쳐요",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Japanese version of 'If You're Happy and You Know It'; literal translation, no single canonical Korean title confirmed; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29904",
+    "title_primary": "野に咲く花のように",
+    "title_ko": "들에 피는 꽃처럼",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation of Da Capo's song; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29905",
+    "title_primary": "蒼い星くず",
+    "title_ko": "푸른 별가루",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kayama Yuzo song (blue stardust); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29907",
+    "title_primary": "飛んでイスタンブール ",
+    "title_ko": "날아서 이스탄불",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Shono Mayo's 1978 hit (fly to Istanbul); place name Istanbul rendered standard; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29909",
+    "title_primary": "ひなげしの花",
+    "title_ko": "개양귀비 꽃",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Agnes Chan's debut; ひなげし = corn poppy; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29912",
+    "title_primary": "愛してると言う前に ~星の金貨~",
+    "title_ko": "사랑한다고 말하기 전에 ~별의 금화~",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation incl. drama-name subtitle 星の金貨 (별의 금화) kept in title; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29913",
+    "title_primary": "愛の誓い",
+    "title_ko": "사랑의 맹세",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Clear literal translation (vow of love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29914",
+    "title_primary": "愛の中から",
+    "title_ko": "사랑 속에서",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Tokunaga Hideaki song (from within love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29923",
+    "title_primary": "雨に咲く傘の花",
+    "title_ko": "비에 피는 우산 꽃",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (umbrella flowers blooming in the rain); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29924",
+    "title_primary": "セーラー服を 脱がさないで",
+    "title_ko": "세일러복을 벗기지 말아요",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Onyanko Club's 1985 debut (don't take off the sailor uniform); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29927",
+    "title_primary": "今が好き",
+    "title_ko": "지금이 좋아",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Clear literal translation (I love the present); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29931",
+    "title_primary": "永遠の夢に向かって",
+    "title_ko": "영원한 꿈을 향해",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Oguro Maki song (toward the eternal dream); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29934",
+    "title_primary": "白い花の咲く頃",
+    "title_ko": "하얀 꽃 필 무렵",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Okamoto Atsuro classic (when white flowers bloom); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29936",
+    "title_primary": "女性は愛に生きる",
+    "title_ko": "여성은 사랑에 산다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (women live for love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29940",
+    "title_primary": "愛が止まらない",
+    "title_ko": "사랑이 멈추지 않아",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Wink's 1988 hit (Japanese cover of Kylie Minogue); literal translation; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29941",
+    "title_primary": "朝日を見に行こうよ",
+    "title_ko": "아침 해를 보러 가자",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "SMAP song (let's go see the sunrise); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29943",
+    "title_primary": "大空と大地の中で",
+    "title_ko": "드넓은 하늘과 대지 속에서",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Matsuyama Chiharu classic (within the vast sky and earth); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29947",
+    "title_primary": "この愛に生きて ",
+    "title_ko": "이 사랑에 살며",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Uchiyamada Hiroshi & Cool Five song (living for this love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29948",
+    "title_primary": "最後の言い訳",
+    "title_ko": "마지막 변명",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Tokunaga Hideaki's 1990 song (the last excuse); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29949",
+    "title_primary": "戦争を知らない子供たち ",
+    "title_ko": "전쟁을 모르는 아이들",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Jiro's famous anti-war folk song; literal translation; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29950",
+    "title_primary": "たった二年と二ヶ月で",
+    "title_ko": "겨우 2년 2개월 만에",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Literal translation (in just two years and two months); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29953",
+    "title_primary": "Hello, Again ~昔からある場所~",
+    "title_ko": "Hello, Again ~옛날부터 있던 곳~",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Latin main title kept; Japanese subtitle translated (a place that has been there since long ago); My Little Lover 1995; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29954",
+    "title_primary": "Forever To Me ~終わりなき悲しみ~(眠れぬ夜を抱いて OST)",
+    "title_ko": "Forever To Me ~끝없는 슬픔~",
+    "media_context_ko": "(드라마 '잠 못 이루는 밤을 안고' OST)",
+    "confidence": "medium",
+    "reasoning": "Latin main title kept, subtitle 終わりなき悲しみ translated; drama tag 眠れぬ夜を抱いて rendered as best-effort Korean (no canonical title confirmed); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29955",
+    "title_primary": "もう一度一から出なおします",
+    "title_ko": "다시 한 번 처음부터 시작하겠습니다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kobayashi Akira song (I'll start over from scratch again); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29956",
+    "title_primary": "あー夏休み",
+    "title_ko": "아~ 여름방학",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "TUBE's 1990 song (ah, summer vacation); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29957",
+    "title_primary": "海岸通",
+    "title_ko": "해안 거리",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Iruka song (coastal street); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29958",
+    "title_primary": "愛のうた ",
+    "title_ko": "사랑의 노래",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Strawberry Flower's song (the Pikmin song); literal translation (love song); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29960",
+    "title_primary": "証",
+    "title_ko": "증표",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "ZONE song; 証 = proof/token, rendered 증표; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29961",
+    "title_primary": "アジアの純真",
+    "title_ko": "아시아의 순진",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "PUFFY's 1996 hit; 純真 = pure innocence; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29962",
+    "title_primary": "あなたに",
+    "title_ko": "당신에게",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "MONGOL800 song; clear literal translation (to you); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29963",
+    "title_primary": "あの日にかえりたい",
+    "title_ko": "그날로 돌아가고 싶어",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Arai Yumi's 1975 song (I want to return to that day); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29964",
+    "title_primary": "生きてることって すばらしい",
+    "title_ko": "살아있다는 건 멋진 일",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kuzu song (being alive is wonderful); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29965",
+    "title_primary": "妹",
+    "title_ko": "여동생",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kaguya Hime song; single word (younger sister); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29967",
+    "title_primary": "海その愛",
+    "title_ko": "바다 그 사랑",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kayama Yuzo song (the sea, that love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29969",
+    "title_primary": "大阪ふたりづれ",
+    "title_ko": "오사카 둘이서",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Otsuki Miyako enka; 大阪 place name kept, ふたりづれ = the two of us together; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29970",
+    "title_primary": "おはん",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "low",
+    "reasoning": "おはん is the woman's name 'Ohan' (Uno Chiyo novel); no established Korean form and the phonetic 오한 collides with 오한(chills), so null preferred over transliteration; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29971",
+    "title_primary": "おまえ",
+    "title_ko": "너",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Single-word intimate 'you'; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29972",
+    "title_primary": "想い出まくら",
+    "title_ko": "추억의 베개",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kosaka Kyoko's 1975 song (pillow of memories); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29973",
+    "title_primary": "俺たちの旅 ",
+    "title_ko": "우리들의 여행",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Nakamura Masatoshi TV theme (our journey); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29974",
+    "title_primary": "おんなの夢",
+    "title_ko": "여자의 꿈",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Yashiro Aki enka (a woman's dream); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29975",
+    "title_primary": "おんな道",
+    "title_ko": "여자의 길",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Enka title (woman's path); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29976",
+    "title_primary": "鏡のドレス ",
+    "title_ko": "거울의 드레스",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Sakai Noriko song (mirror dress); ドレス = dress loanword; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29977",
+    "title_primary": "風 ",
+    "title_ko": "바람",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Single word (wind); Hashida Norihiko & Shoberts folk classic; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29978",
+    "title_primary": "花鳥風月",
+    "title_ko": "화조풍월",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Four-character idiom, standard Korean hanja reading 화조풍월; Ketsumeishi song; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29980",
+    "title_primary": "愛が痛い夜",
+    "title_ko": "사랑이 아픈 밤",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Kudo Shizuka song (the night love hurts); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29982",
+    "title_primary": "愛する人と生まれた街へ",
+    "title_ko": "사랑하는 사람과 태어난 거리로",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Da Capo song (to the town where I was born, with my love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29983",
+    "title_primary": "愛する人に歌わせないで",
+    "title_ko": "사랑하는 사람에게 노래하게 하지 말아요",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Moriyama Ryoko song (don't make the one I love sing); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29984",
+    "title_primary": "愛に走って",
+    "title_ko": "사랑을 향해 달려",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Yamaguchi Momoe song (run toward love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29985",
+    "title_primary": "愛の 愛の星",
+    "title_ko": "사랑의 사랑의 별",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "the brilliant green song; literal translation preserving repetition; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29986",
+    "title_primary": "愛の詩を今あなたに",
+    "title_ko": "사랑의 시를 지금 당신에게",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Fuse Akira song (a love poem, to you now); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29987",
+    "title_primary": "愛を巻き戻して",
+    "title_ko": "사랑을 되감아줘",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Sugiyama Kiyotaka & Omega Tribe song (rewind love); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29988",
+    "title_primary": "朝は朝 嘘は嘘",
+    "title_ko": "아침은 아침, 거짓말은 거짓말",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Tanimura Yumi song; literal translation; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29989",
+    "title_primary": "明日はあしたの風が吹く",
+    "title_ko": "내일은 내일의 바람이 분다",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Japanese proverb-as-title (tomorrow is another day); literal translation; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29991",
+    "title_primary": "家へ帰ろう",
+    "title_ko": "집으로 돌아가자",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Yoshida Takuro song (let's go home); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29993",
+    "title_primary": "愛しい人と逢える時",
+    "title_ko": "사랑하는 사람과 만날 수 있을 때",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Daiji Man Brothers Band song (when I can meet my beloved); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29994",
+    "title_primary": "今では...今なら...今も...",
+    "title_ko": "이제는... 지금이라면... 지금도...",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "B'z song; literal translation preserving ellipses; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29997",
+    "title_primary": "ああ無情",
+    "title_ko": "아아 무정",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Ann Lewis song; 無情 = heartlessness (also the JP title for Les Miserables) rendered literally as 무정; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29998",
+    "title_primary": "亜紀子",
+    "title_ko": "아키코",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Woman's given name Akiko; standard Korean rendering of the personal name; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-29999",
+    "title_primary": "おまえとおれ",
+    "title_ko": "너와 나",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Sugi Ryotaro song (you and me); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68018",
+    "title_primary": "鏡花水月(ドラマ'必殺仕事人2009' OST)",
+    "title_ko": "경화수월",
+    "media_context_ko": "(드라마 '필살 시고토닌 2009' OST)",
+    "confidence": "medium",
+    "reasoning": "鏡花水月 = four-char idiom, standard Korean hanja reading 경화수월; searched 必殺仕事人 but found no canonical Korean title, so drama name rendered as recognizable transliteration.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E5%BF%85%E6%AE%BA%E4%BB%95%E4%BA%8B%E4%BA%BA"]
+  },
+  {
+    "id": "tjpdf-68055",
+    "title_primary": "好きになった人",
+    "title_ko": "좋아하게 된 사람",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Miyako Harumi's 1968 hit (the person I came to love); literal translation; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68062",
+    "title_primary": "無限未来(映画'ちはやふる-結び-' OST)",
+    "title_ko": "무한 미래",
+    "media_context_ko": "(영화 '치하야후루 -맺음-' OST)",
+    "confidence": "medium",
+    "reasoning": "無限未来 = infinite future (literal); searched and confirmed the film franchise is 치하야후루 in Korean; subtitle 結び (musubi/binding) rendered 맺음.",
+    "web_sources": ["https://ko.wikipedia.org/wiki/%EC%B9%98%ED%95%98%EC%95%BC%ED%9B%84%EB%A3%A8", "https://namu.wiki/w/%EC%B9%98%ED%95%98%EC%95%BC%ED%9B%84%EB%A3%A8"]
+  },
+  {
+    "id": "tjpdf-68111",
+    "title_primary": "チェリボム",
+    "title_ko": "체리 밤",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Searched and confirmed チェリボム is Silent Siren's 'Cherry Bomb'; rendered as the English-origin loanword in Korean.",
+    "web_sources": ["https://www.uta-net.com/song/201438/", "https://ja.namu.wiki/w/%E3%83%81%E3%82%A7%E3%83%AA%E3%83%9C%E3%83%A0"]
+  },
+  {
+    "id": "tjpdf-68120",
+    "title_primary": "東京ブルース",
+    "title_ko": "도쿄 블루스",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Nishida Sachiko's 1964 song; 東京 = Tokyo, ブルース = blues loanword; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68151",
+    "title_primary": "淋しい熱帯魚",
+    "title_ko": "외로운 열대어",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Wink's 1989 hit (lonely tropical fish); literal translation; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68152",
+    "title_primary": "気まぐれロマンティック(ドラマ'セレブと貧乏太郎 OST)",
+    "title_ko": "변덕스러운 로맨틱",
+    "media_context_ko": "(드라마 '셀럽과 빈보타로' OST)",
+    "confidence": "medium",
+    "reasoning": "Ikimonogakari song 気まぐれロマンティック = whimsical romantic; drama セレブと貧乏太郎 rendered as best-effort Korean (no canonical title confirmed); no web search on drama.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68161",
+    "title_primary": "シンクロニシティ",
+    "title_ko": "싱크로니시티",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Nogizaka46 song; katakana of English 'Synchronicity' rendered as the standard Korean loanword; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68163",
+    "title_primary": "八月の夜",
+    "title_ko": "8월의 밤",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Silent Siren song; clear literal translation (August night); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68165",
+    "title_primary": "俺でいいのか",
+    "title_ko": "나라도 괜찮은 걸까",
+    "media_context_ko": null,
+    "confidence": "medium",
+    "reasoning": "Sakamoto Fuyumi song (is it okay that it's me?); no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68173",
+    "title_primary": "NANIMONO(映画'何者' OST)",
+    "title_ko": null,
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Main title NANIMONO is pure-Latin (romaji) so title_ko=null per rule; could not confirm a canonical Korean title for the film 何者 so media_context left null rather than fabricate; no web search yielded confirmation.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68559",
+    "title_primary": "Remember Me(ドラマ'ラジエーションハウス～放射線科の診断レポート～' OST)",
+    "title_ko": null,
+    "media_context_ko": "(드라마 '라디에이션 하우스 ~방사선과 진단 리포트~' OST)",
+    "confidence": "high",
+    "reasoning": "Main title 'Remember Me' is pure-Latin so title_ko=null; drama ラジエーションハウス = Radiation House rendered with translated subtitle; no web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tjpdf-68767",
+    "title_primary": "Multicolored Sky(ゲーム 'アイドルマスター シャイニーカラーズ' OST)",
+    "title_ko": null,
+    "media_context_ko": "(게임 '아이돌마스터 샤이니컬러즈' OST)",
+    "confidence": "high",
+    "reasoning": "Main title 'Multicolored Sky' is pure-Latin so title_ko=null; game is the well-known The iDOLM@STER Shiny Colors rendered as 아이돌마스터 샤이니컬러즈; no web search.",
+    "web_sources": []
+  }
+]
