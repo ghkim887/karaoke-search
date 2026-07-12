@@ -5,7 +5,7 @@ restructure — only with a diagnostic-replay proof of behavior identity"
 (deliberately skipped 2026-07-10: the replay proof was assumed heavy and the
 v22 sweep was mid-flight; both preconditions have since resolved — the repo
 already ships `scripts/joysound-replay-classifier.mjs`, and the v22 sweep's
-340,653-row decision log exists as the replay corpus). Owner batch go
+352,290-row decision log exists as the replay corpus). Owner batch go
 2026-07-12 ("백로그 처리해보자").
 
 **Hard requirement: behavior identity.** This is a control-flow reshape ONLY.
@@ -73,7 +73,7 @@ inputs, which neutralizes the two inputs the decision log does not capture
 
 1. Corpus copy: `scratchpad/v22-replay/decisions.jsonl` (local copy of
    `Z:\karaoke\runs\data-2026-07-10-v22-fullcatalog\decisions.jsonl`,
-   221.9 MB / 340,653 rows). Never stream from the NAS mount; never write
+   221.9 MB / 352,290 rows). Never stream from the NAS mount; never write
    outputs to the repo tree or the NAS.
 2. Baseline pass: on pre-restructure main, `pnpm build` (replay loads the
    BUILT classifier from packages/crawler/dist via scripts/lib/joysound-dist.mjs),
@@ -87,7 +87,7 @@ inputs, which neutralizes the two inputs the decision log does not capture
 4. Proof = the two outputs are byte-identical (hash compare). Replayed rows
    preserve every input field and rewrite only decision/reason/detailFlipRisk,
    so byte-identity of the outputs == (decision, reason) identity across all
-   340,653 rows. Report sizes + SHA-256 of both files as evidence.
+   352,290 rows. Report sizes + SHA-256 of both files as evidence.
 5. Known harness caveats (do NOT need fixing for this procedure): the
    harness's own flip classifier ignores reason-only changes and its purity
    check is wired to the 2026-06-12 洋楽-veto policy — both are bypassed by
