@@ -755,25 +755,29 @@ Hangul/Han code points above. The Phase-2 divergence points are already pinned a
 their current behaviour in the golden gate's Part B2 — flipping those assertions
 is the Phase-2 change spec.
 
-### Offsite full-corpus backup publication (re-HELD 2026-07-10, owner)
+### Offsite full-corpus backup — DIRECTION DECIDED: PRIVATE (owner, 2026-07-12); execution deferred
 
-Local retention now keeps only current+previous release (README-ops on the
-NAS root), which makes an offsite corpus copy the only protection against
-NAS loss short of a re-crawl (hours). The pipeline is fully built: upload
-`full-corpus.json` as a GitHub Release asset, then dispatch
-`full-corpus.yml` (trust-no-one re-verification -> manifest PR). What is
-held is the DECISION to publish the ~93 MB corpus as a public release
-asset. Unblocked by: owner approval of public publication (the same
-metadata is already publicly queryable through the live API), or choosing
-a private storage target instead.
+**Owner decision (2026-07-12): back up PRIVATELY, not as a public GitHub
+Release.** The public-release path (the built `full-corpus.yml` publish
+workflow) is therefore NOT the mechanism; a private storage target is. What
+remains is EXECUTION (deferred, no date): pick the concrete private store and
+wire an upload. Candidate targets (pick at execution time): a **private GitHub
+repo release/asset** (reuses the existing manifest+verify tooling almost
+as-is — `publish-full-corpus.mjs`/`fetch-full-corpus.mjs` are store-agnostic
+via the manifest `url`), **Cloudflare R2 / S3** (a bucket + credential; the
+manifest `url` becomes the object URL), or an **encrypted copy on a second
+box**. Recommended: private-repo release or R2 — both let the store-agnostic
+manifest do a one-line `url` swap and keep the trust-no-one re-verification.
 
-**Severity note (2026-07-09 verification):** the repo currently has ZERO
-GitHub releases — both tracked manifests point at 404 assets (dangling), so
-`fetch-full-corpus.mjs`/the self-host SQLite build cannot reprovision from
-GitHub at all and the NAS holds the only full-corpus copy. **Owner re-held
-2026-07-10 (no plans for now)** with that risk on record. The dependent
-full-corpus publish workflow (PR-2) and the API-first deploy flip (PR-3)
-stay held with it.
+Current artifact to back up: `data-2026-07-12-v22-fullcatalog/full-corpus.json`
+(~135 MB) — the promoted v22 corpus. Since v22 promotion the NAS again holds
+the ONLY copy.
+
+**Severity note (still true 2026-07-12):** ZERO GitHub releases exist; both
+tracked manifests point at 404 assets (dangling), so `fetch-full-corpus.mjs` /
+the self-host SQLite build cannot reprovision from anywhere but the NAS. The
+private backup, once executed, is the first real offsite copy. The public
+publish workflow (`full-corpus.yml`) stays UNUSED under the private decision.
 
 ### Watchdog alert channel (CLOSED 2026-07-10, owner: no dedicated channel)
 
