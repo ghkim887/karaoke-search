@@ -569,8 +569,19 @@ remain open (marked below).
 - ✅ curated drop lists moved to `packages/crawler/src/curated/` (PR #121,
   2026-07-10; sidecar export wiring + both workflow drift gates re-pathed,
   sidecars byte-identical);
-- ⚪ OPEN — `.tmp_review/` audit artifacts: archive then delete (untracked,
-  multi-GB over time; lives on the NAS prod tree, needs operator care);
+- ✅ `.tmp_review/` audit artifacts: archive then delete — **DONE (2026-07-13,
+  owner-approved execution).** The "multi-GB" concern was already stale: a full
+  measured inventory found ONE remaining entry (the 2026-06 detail-sweep dir,
+  146.5 MB, 99.9% its 236,434-line decision-log.jsonl). Archived as
+  `.tmp_review/joysound-detail-sweep-20260610.tar.gz` (26.6 MB, SHA-256
+  `6CC31486…`, listing verified against the measured inventory) and the
+  originals deleted (~120 MB net reclaimed). NOTE: the archive was placed
+  inside `.tmp_review/` itself because `runs/` is ACL-locked to the oci user
+  over SMB (dir/file creation denied) — relocating to `runs/archive/` is a
+  one-line `mv` on the oci host if ever wanted. The archived June decision-log
+  is the file `build-joysound-candidate.mjs` / `joysound-replay-classifier.mjs`
+  point at by DEFAULT — pass explicit `--in`/paths (or extract) if those
+  defaults are ever exercised again;
 - ✅ the agent-chunk prep/merge shared lib exists (done in `089e8c5`):
   `scripts/lib/agent-chunks.mjs` (transport shared; domain logic deliberately
   stays per-consumer).
@@ -678,17 +689,38 @@ First live rendering happens when the owner-held crawl runs again.
 
 ### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
 
-- **TJ filter seam — a Korean act can be admitted JPN by the per-artist step despite a
-  per-song KOR signal.** `jpn-admit-artist` (FILTER_STEPS step 5) can verdict a Korean act JPN
-  from the artist-scan vote tally seeded by its JP-market catalog entries, even when the
-  per-song `proEnrichmentMap` already carries `nationalcode: KOR` for that exact row. Today only
-  the deterministic drop list catches these (the 2026-07-09 LUCY / Roy Kim / BOYNEXTDOOR leak
-  admitted 168 rows this way). Consider consulting the per-song KOR pro signal before/at the
-  per-artist admit so genuinely-Korean rows self-reject without a hand-maintained drop-list
-  entry. Filter order is load-bearing (`assertPhaseOrder` at module load), so this needs design —
-  e.g. a new KOR-pro-reject step placed among steps 0–3, NOT a reorder of the admit steps.
-  **HELD (2026-07-10, owner): do not start without an explicit owner go**, and in any case not
-  before the #97 crawl gate has soaked at least one weekly crawl.
+- **TJ filter seam — DIRECTION DECIDED (owner, 2026-07-13): script guard inside
+  `jpn-admit-artist`; implement AFTER the verification crawl quantifies the seam.**
+  **Root cause CORRECTED (2026-07-13 recon, cache-verified):** the old framing
+  ("the per-song `proEnrichmentMap` already carries `nationalcode: KOR` for that
+  exact row") described the POST-crawl saved cache, not the classify-time state.
+  At classify time the leaked rows had NO per-song entry — the existing
+  `non-jpn-pro-reject` (step 1) ran and correctly found nothing; the KOR
+  nationalcode is written AFTER classify by the translit pass on the
+  wrongly-admitted rows (lagging signal; verified via cache `lastSeen`
+  timestamps — 33,090 KOR entries from the 04:55 artist-scan harvest vs 169 at
+  08:29 post-classify = the 168-row leak). Consequence: each newly-surfaced
+  Korean row leaks exactly ONE crawl, then self-heals on the next. Therefore any
+  fix reading `proEnrichmentMap` (the original "KOR-pro-reject step" sketch)
+  duplicates step 1 against an empty map and cannot stop the first-crawl leak.
+  **Decided fix:** the #97-gate script predicate (Hangul AND no Japanese script
+  over title+artist) as a guard INSIDE `jpn-admit-artist` returning `pass`
+  (fall-through drop) — artist-vote-only admits get vetoed when the row itself
+  reads as Korean script. Per-song `pro=JPN` admits (step 4) and
+  `reviewed-song-allow` (step 2) sit upstream and are unaffected (Hangul-glossed
+  genuine JP releases like tj-68976 stay admitted); both rescue paths already
+  exclude Hangul rows. `FilterContext` must gain `title` (not threaded today);
+  PHASE_ORDER is unchanged, so the phase-order tests stay untouched. Residual
+  leak class: romaji/Latin-titled Korean rows (no script signal) still leak one
+  crawl — the curated drop list stays as defense-in-depth for that tail.
+  **Sequencing (owner, 2026-07-13):** run the verification crawl FIRST, measure
+  the seam population offline from its #134 `filter-decisions` artifact
+  (`decision=admit AND step=jpn-admit-artist AND Hangul-no-Japanese over
+  title+artist`, minus reviewed-allow ids), then implement with the three
+  incident rows (tj-32100, tj-36707, tj-43349; `proEnrichmentMap` EMPTY) as
+  regression fixtures proving self-reject WITHOUT their drop-list entries.
+  Alternative "classify-time per-song fetch" (C2) was rejected: one HTTP per
+  artist-admitted uncached row, contradicts the cache-driven filter design.
 - **Search-parity baseline regeneration policy** — ✅ **DONE (PR #106, 2026-07-10).**
   The weekly crawl changes corpus identity by design, and
   `apps/web/src/lib/search-parity.golden.test.ts` pins a sha256 + record count, so every
