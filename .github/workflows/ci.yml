@@ -88,9 +88,10 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run Python script tests
-        # All scripts/test_*.py unittest suites (splitter parity, anisong PDF
-        # ingest, title_ko Stage 1, lib helpers). Previously these only ran
-        # weekly in crawl.yml — and only the splitter-parity suite at that.
+        # All scripts/test_*.py unittest suites (splitter parity + behavior
+        # parity, lib helpers). Previously these only ran weekly in crawl.yml —
+        # and only the splitter-parity suite at that. (The tjpdf ingest + its
+        # tests are now JS — see scripts/*.test.mjs run under `pnpm -r test`.)
         run: python -m unittest discover -s scripts -p "test_*.py"
       - name: Build self-host SQLite DB from the committed corpus
         # Corpus gate: `sqlite:build` imports the committed songs.json through

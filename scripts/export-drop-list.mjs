@@ -3,25 +3,24 @@
  * Export the Korean-artist drop list as a JSON sidecar consumable from Python.
  *
  * The TS source of truth is `packages/crawler/src/curated/
- * koreanArtistDropList.ts`. The Python ingest (`scripts/ingest_anisong_pdf.py`)
- * needs the same drop set so it can refuse to insert/patch records whose
- * artist matches a known Korean act. (The corpus cleanup pass moved to
- * `scripts/drop-artist-leaks.mjs`, which imports the crawler dist directly
- * and does not consume this sidecar.) Rather than maintain two copies, this
- * script reads the built
- * dist (`packages/crawler/dist/...`) and writes the pre-normalized lookup keys
- * to a sidecar JSON file alongside the TS source.
+ * koreanArtistDropList.ts`. This sidecar is now a build-time DRIFT-VISIBILITY
+ * guard: the runtime consumers (`scripts/drop-artist-leaks.mjs`,
+ * `scripts/ingest-tjpdf-catalog.mjs`) import the drop-list predicate straight
+ * from the crawler dist, so the sidecar has no runtime reader — keeping it
+ * tracked and co-located just means a TS edit without a regen surfaces as a
+ * one-of-two-files diff at review (and CI byte-compares it after build). This
+ * script reads the built dist (`packages/crawler/dist/...`) and writes the
+ * pre-normalized lookup keys to a sidecar JSON file alongside the TS source.
  *
  * Output location (Fix 2, 2026-05-01): the sidecar lives at
  * `packages/crawler/src/curated/korean-artist-drop-list.json`
  * — co-located with the TS source AND tracked in git. Co-locating means a TS
  * edit without a sidecar regen surfaces as a one-of-two-files diff at code
- * review (the staleness footgun is visible). Tracking in git means ad-hoc
- * local Python runs against the corpus pick up the latest list without first
- * rebuilding the crawler. The previous location under `dist/` was gitignored,
- * so a maintainer who edited the TS source then ran the Python ingest
- * locally without rebuilding would silently use a stale list. The Python
- * loader has been updated to read from the new tracked path.
+ * review (the staleness footgun is visible). The previous location under
+ * `dist/` was gitignored, so a stale sidecar could slip past review; the
+ * tracked, co-located path makes drift visible. (Historically the Python
+ * `ingest_anisong_pdf.py` read this sidecar directly; that ingest was retired
+ * in R7 and runtime consumers now read the built dist.)
  *
  * Output schema (kept minimal — Python only needs the keys for membership):
  *   {

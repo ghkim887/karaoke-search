@@ -9,12 +9,12 @@
  * `packages/crawler/src/clustering-rules.json` — tracked in git, co-located
  * with the module it describes.
  *
- * Why this matters: `scripts/ingest_anisong_pdf.py` contains `_DROP_SPLIT_RE`
+ * Why this matters: `scripts/lib/artist_split.py` contains `DROP_SPLIT_RE`
  * which is a superset of `SPLIT_RE` (it prepends the feat-paren alt so Python's
  * `re.split()` can capture group 1). The delimiter alternations in that regex
  * MUST stay in sync with `SPLIT_RE_SOURCE`. Previously sync was test-only; now
  * it is mechanical — Python reads the delimiter portion from this sidecar and
- * splices it into `_DROP_SPLIT_RE` at import time. Drift → sidecar diverges from
+ * splices it into `DROP_SPLIT_RE` at import time. Drift → sidecar diverges from
  * committed file → `git diff --exit-code` fails in CI.
  *
  * Output schema:

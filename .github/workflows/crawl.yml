@@ -78,7 +78,7 @@ jobs:
 
       - name: Run post-crawl pipeline
         # The 11-step order-load-bearing post-processing chain (atomic rename
-        # → splitter parity → anisong PDF ingest → Stage 1 title_ko strip →
+        # → splitter parity → tjpdf catalog ingest → Stage 1 title_ko strip →
         # merger replay → KPOP drop → Cpop drop → Stage 2 LLM cache replay
         # (continue-on-error inside the runner) → manual title_ko fixes →
         # cache prune → schema validation) lives in the runner's step table —
