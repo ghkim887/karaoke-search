@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
@@ -12,7 +13,7 @@ import { enrichWithTranslit } from './enrichTranslit.js';
 import { parseCatalogShell, rescueJpLikelyDroppedRecords } from './jpLikelyRescue.js';
 import { extractCatalogItems } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
-import { parseCatalogResponse } from './parser.js';
+import { type TjFilterDecisionRecord, parseCatalogResponse } from './parser.js';
 
 // The blog-whitelist subsystem (record type, script-signal rules, builder,
 // default on-disk source) lives in `blogWhitelist.ts`; the JP-likely drop
@@ -191,7 +192,11 @@ export class TJDirectCrawler implements Crawler {
     }
 
     // Step 5: parse + filter.
-    let { records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+    let {
+      records: raw,
+      stats: keepStats,
+      decisions: keepDecisions,
+    } = parseCatalogResponse(json, CATALOG_URL, {
       cache,
       forceIncludeTjNumbers,
     });
@@ -205,7 +210,15 @@ export class TJDirectCrawler implements Crawler {
       );
       if (rescueStats.fetches > 0) cacheMutated = true;
       if (rescueStats.admitted > 0) {
-        ({ records: raw, stats: keepStats } = parseCatalogResponse(json, CATALOG_URL, {
+        // Rescue mutated the cache; re-parse so `raw`/`keepStats`/`keepDecisions`
+        // reflect the newly-admitted rows. Only THIS final parse's decisions are
+        // written below — never the pre-rescue parse — so no row is double-logged
+        // with a contradictory verdict (load-bearing per the design's rescue caveat).
+        ({
+          records: raw,
+          stats: keepStats,
+          decisions: keepDecisions,
+        } = parseCatalogResponse(json, CATALOG_URL, {
           cache,
           forceIncludeTjNumbers,
         }));
@@ -242,6 +255,15 @@ export class TJDirectCrawler implements Crawler {
     console.log(
       `[tj-direct] kept ${keptTotal}: by-artist ${keepStats.admittedByArtist}, by-pro ${keepStats.admittedByPro}, by-song-override ${keepStats.admittedBySongOverride}, by-rescue ${keepStats.admittedByRescue}; dropped ${keepStats.dropped}`,
     );
+
+    // Optional per-row decision log: the FINAL parse's admit/drop attribution
+    // (the `keepDecisions` reassigned above by the rescue re-parse). Written
+    // once, overwrite semantics, ONLY when `--decisions-out` supplied a path.
+    // Fail-soft (warn, don't throw) so a diagnostic-artifact write error can
+    // never abort or change the crawl — this is report-only telemetry.
+    if (options?.decisionsOutPath) {
+      await this.tryWriteDecisions(options.decisionsOutPath, keepDecisions);
+    }
 
     // Step 7: persist enrichment work BEFORE yielding so a downstream
     // consumer's exception (during `yield`) cannot discard hours of bootstrap
@@ -293,6 +315,28 @@ export class TJDirectCrawler implements Crawler {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[tj-search] cache save failed at ${this.cachePath} (${label}): ${msg}`);
       return false;
+    }
+  }
+
+  /**
+   * Write the per-row filter decision log as JSONL (one compact object per
+   * line), overwrite semantics. Fail-soft: a write error is warned, never
+   * thrown — the decision log is report-only telemetry and must not abort the
+   * crawl. The parent dir is created if missing (CI points this at a
+   * RUNNER_TEMP subdir).
+   */
+  private async tryWriteDecisions(
+    outPath: string,
+    decisions: readonly TjFilterDecisionRecord[],
+  ): Promise<void> {
+    try {
+      await mkdir(dirname(outPath), { recursive: true });
+      const body = decisions.map((d) => JSON.stringify(d)).join('\n');
+      await writeFile(outPath, decisions.length > 0 ? `${body}\n` : '', 'utf8');
+      console.log(`[tj-direct] wrote ${decisions.length} filter decisions to ${outPath}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[tj-direct] filter decision-log write failed at ${outPath}: ${msg}`);
     }
   }
 }

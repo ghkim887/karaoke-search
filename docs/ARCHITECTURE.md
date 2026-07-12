@@ -62,6 +62,25 @@ adapters → TJ filter chain → alias resolution (aliases.ts, pre-merge)
   validation). `crawl.yml` invokes it as one step; it also runs locally
   (`--corpus`, `--skip` supported).
 
+### Filter decision logs (crawl-time attribution)
+
+The TJ filter chain and the two `drop-artist-leaks` post-crawl passes emit a
+per-row admit/drop **decision log** (JSONL), so after a crawl a maintainer can
+answer "why was TJ row X dropped / which step admitted it" — not just the five
+aggregate `KeepStats` stdout counters, which die with the Actions log. The
+crawler writes `tj-filter.jsonl` via `--decisions-out` (one
+`{ tj, title, artist, decision, step, reason }` per classified row; `reason` is
+the admit via, the firing step's reject reason, or `no-admit-path` for a silent
+fall-through); the drop passes write dropped-row-only logs when
+`FILTER_DECISIONS_DIR` is set. `crawl.yml` uploads all three as the
+`filter-decisions-<run_id>` artifact (`if: always()`, so a red leakage gate
+still ships them) and `compose-crawl-pr-body.mjs` renders a report-only
+`### TJ filter attribution` section (fail-soft; never reds the crawl). This
+closes the crawl-time observability asymmetry with the `joysound-official`
+full-catalog sweep, which already emits a per-row `DecisionRecord`
+(`adapters/joysound-official/diagnostic.ts`). Report-only: zero effect on
+admit/drop results — omit the flags and every output is byte-identical.
+
 ### Full-corpus distribution (decided)
 
 The post-JOYSOUND **full** corpus (~221k records, ~85 MB) will NOT be

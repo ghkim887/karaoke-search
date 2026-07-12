@@ -82,14 +82,49 @@ interface KeepStats {
 }
 
 /**
+ * One classified TJ catalog row (admit or drop), mirroring the JOYSOUND
+ * `DecisionRecord` idea (`adapters/joysound-official/diagnostic.ts`). Emitted
+ * for every row that reached the filter chain — i.e. every row that survived
+ * the malformed-row guard (missing/empty tj/title/artist rows are skipped and
+ * are NOT decisions). The crawler persists these as a JSONL decision log so a
+ * post-crawl reader can answer "why was TJ row X dropped / which step admitted
+ * it", which the 5 aggregate `KeepStats` stdout counters cannot.
+ */
+export interface TjFilterDecisionRecord {
+  /** TJ catalog number (stable key). */
+  tj: string;
+  /** Raw `indexTitle` (trimmed). */
+  title: string;
+  /** Raw `indexSong` (trimmed) — despite the field name, this is the artist. */
+  artist: string;
+  decision: 'admit' | 'drop';
+  /** `FilterStep.name` that fired; `null` for a no-step fall-through. */
+  step: string | null;
+  /**
+   * admit: the via (`'artist' | 'pro' | 'song-override' | 'rescue'`).
+   * reject: the firing step's reason (`'korean-drop-list' | 'chinese-drop-list'
+   *   | 'pro-non-jpn' | 'reviewed-song-drop' | …`).
+   * fall-through (no step fired): `'no-admit-path'` — a NEW signal separating
+   *   "explicitly rejected by step X" from "no admit path claimed it".
+   */
+  reason: string;
+}
+
+/**
  * Result of parsing a catalog response: the kept records plus the per-path
  * admit counters. Returned as a struct (not just `RawSongRecord[]`) so the
  * crawler can log which path is admitting how many records — useful telemetry
  * for post-pre-seed audits.
+ *
+ * `decisions` is the per-row attribution log (one entry per classified row,
+ * admit and drop alike). It is CONSISTENT with `stats` by construction: the
+ * admit-`reason` tallies equal the `admittedBy*` counters and the drop count
+ * equals `dropped`.
  */
 export interface ParseResult {
   records: RawSongRecord[];
   stats: KeepStats;
+  decisions: TjFilterDecisionRecord[];
 }
 
 export function parseCatalogResponse(
@@ -101,6 +136,7 @@ export function parseCatalogResponse(
   // via `isPlainObject` so the per-item loop can drop its own guard.
   const items = extractCatalogItems(json, 'tj-media-direct parser');
   const records: RawSongRecord[] = [];
+  const decisions: TjFilterDecisionRecord[] = [];
   const force = options.forceIncludeTjNumbers;
   const cache = options.cache;
 
@@ -126,7 +162,18 @@ export function parseCatalogResponse(
 
     if (!tj || !title || !artist) continue;
 
-    const verdict = classifyRecord(tj, artist, cache, force);
+    const { verdict, step, reason } = classifyRecordWithReason(tj, artist, cache, force);
+    // One decision per classified row (admit and drop alike). Recorded with
+    // the RAW trimmed artist (not the per-song render override) so the log
+    // reflects the catalog input the filter actually saw.
+    decisions.push({
+      tj,
+      title,
+      artist,
+      decision: verdict === 'drop' ? 'drop' : 'admit',
+      step,
+      reason,
+    });
     switch (verdict) {
       case 'artist':
         stats.admittedByArtist++;
@@ -161,13 +208,14 @@ export function parseCatalogResponse(
     });
   }
 
-  return { records, stats };
+  return { records, stats, decisions };
 }
 
 /**
  * Which admit path (if any) keeps this record? `'drop'` means none.
  *
- * Exported for unit tests so we can exercise the filter logic directly
+ * The classifiers below (`classifyRecordWithReason` / `classifyRecord`) are
+ * exported for unit tests so the filter logic can be exercised directly
  * without going through the JSON-extraction wrapper.
  *
  * Filter chain (post 2026-06 FP/FN audit) — implemented as a typed
@@ -177,20 +225,52 @@ export function parseCatalogResponse(
  */
 export type KeepVerdict = 'artist' | 'pro' | 'song-override' | 'rescue' | 'drop';
 
+/**
+ * Attribution-rich classifier. Runs the FILTER_STEPS chain exactly like
+ * {@link classifyRecord} but ALSO reports which step fired and why, so
+ * `parseCatalogResponse` can build the per-row decision log without a second
+ * pass over the chain:
+ *   - admit → `{ verdict: <via>, step: <step.name>, reason: <via> }`
+ *   - reject → `{ verdict: 'drop', step: <step.name>, reason: <step reason> }`
+ *   - no step fired → `{ verdict: 'drop', step: null, reason: 'no-admit-path' }`
+ *
+ * The `no-admit-path` reason is a NEW signal — it distinguishes an explicit
+ * step reject from a silent fall-through, which the bare `'drop'` verdict
+ * cannot. Pure telemetry: the returned `verdict` is identical to what
+ * `classifyRecord` returns, so admit/drop behavior is unchanged.
+ */
+export function classifyRecordWithReason(
+  tj: string,
+  artist: string,
+  cache: SearchSongCache,
+  force?: ReadonlySet<string>,
+): { verdict: KeepVerdict; step: string | null; reason: string } {
+  const ctx = buildFilterContext(tj, artist, cache, force);
+  for (const step of FILTER_STEPS) {
+    const verdict = step.evaluate(ctx);
+    if (verdict.decision === 'admit') {
+      return { verdict: verdict.via, step: step.name, reason: verdict.via };
+    }
+    if (verdict.decision === 'reject') {
+      return { verdict: 'drop', step: step.name, reason: verdict.reason };
+    }
+    // 'pass' → continue to next step
+  }
+  return { verdict: 'drop', step: null, reason: 'no-admit-path' };
+}
+
+/**
+ * Which admit path (if any) keeps this record? Thin wrapper over
+ * {@link classifyRecordWithReason} that discards the attribution — kept so
+ * existing callers/tests that only need the keep/drop verdict are unchanged.
+ */
 export function classifyRecord(
   tj: string,
   artist: string,
   cache: SearchSongCache,
   force?: ReadonlySet<string>,
 ): KeepVerdict {
-  const ctx = buildFilterContext(tj, artist, cache, force);
-  for (const step of FILTER_STEPS) {
-    const verdict = step.evaluate(ctx);
-    if (verdict.decision === 'admit') return verdict.via;
-    if (verdict.decision === 'reject') return 'drop';
-    // 'pass' → continue to next step
-  }
-  return 'drop';
+  return classifyRecordWithReason(tj, artist, cache, force).verdict;
 }
 
 // `shouldKeep` was removed in the cleanup wave — call sites use

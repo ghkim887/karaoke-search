@@ -78,10 +78,18 @@
  *   node scripts/drop-artist-leaks.mjs --list korean
  *   node scripts/drop-artist-leaks.mjs --list chinese
  *   node scripts/drop-artist-leaks.mjs --list korean --dry-run
+ *   node scripts/drop-artist-leaks.mjs --list korean --decisions-out drop.jsonl
+ *
+ * --decisions-out <path> (optional): also write a JSONL decision log of the
+ * DROPPED rows only (one `{ id, title, artist, decision:'drop',
+ * step:'drop-artist-leaks', reason }` per line; reason ∈ korean-drop-list |
+ * chinese-drop-list | catalog-anomaly-id). Report-only sidecar; unset = no file
+ * written, behavior unchanged. Wired by scripts/run-post-crawl-pipeline.mjs when
+ * FILTER_DECISIONS_DIR is set.
  */
 
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { isCliInvocation } from './lib/cli.mjs';
 import { loadCorpus, writeCorpusAtomic } from './lib/corpus.mjs';
@@ -121,11 +129,12 @@ export const CATALOG_ANOMALY_IDS = Object.freeze(new Set(['tj-72638', 'tj-71365'
  */
 export const KOREAN_CATALOG_ANOMALY_IDS = Object.freeze(new Set(['tj-70438']));
 
-export const USAGE = 'usage: node scripts/drop-artist-leaks.mjs --list korean|chinese [--dry-run]';
+export const USAGE =
+  'usage: node scripts/drop-artist-leaks.mjs --list korean|chinese [--dry-run] [--decisions-out <path>]';
 
 /** Parse CLI args. Throws on unknown flags, missing values, or bad --list. */
 export function parseArgs(argv) {
-  const parsed = { list: null, dryRun: false, help: false };
+  const parsed = { list: null, dryRun: false, decisionsOut: null, help: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') {
@@ -140,6 +149,11 @@ export function parseArgs(argv) {
       i += 1;
     } else if (arg === '--dry-run') {
       parsed.dryRun = true;
+    } else if (arg === '--decisions-out') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('--decisions-out requires a path argument');
+      parsed.decisionsOut = value;
+      i += 1;
     } else {
       throw new Error(`unknown argument: ${arg}`);
     }
@@ -179,6 +193,7 @@ export async function loadListPredicates(list) {
       keyCount: mod.DROP_KEY_SET.size,
       anomalyIds: KOREAN_CATALOG_ANOMALY_IDS,
       isReviewedAllow: isReviewedTjSongAllow,
+      dropReason: dropReasonForList('korean'),
       normalizeForMatch,
       splitArtistCollab,
     };
@@ -188,28 +203,46 @@ export async function loadListPredicates(list) {
     keyCount: mod.CHINESE_ARTIST_DROP_LIST.size,
     anomalyIds: CATALOG_ANOMALY_IDS,
     isReviewedAllow: isReviewedTjSongAllow,
+    dropReason: dropReasonForList('chinese'),
     normalizeForMatch,
     splitArtistCollab,
   };
 }
 
 /**
- * True when any `splitArtistCollab` component of `artist` matches the drop
- * set. This is the SAME per-component scan `classifyRecord` runs at crawl
- * time (`drop-list-reject`), so corpus cleanup and parser agree by
- * construction.
+ * The drop-list reason token for a given `--list` pass, matching the crawl
+ * chain's `drop-list-reject` reasons (`korean-drop-list` / `chinese-drop-list`).
  */
-export function isArtistDropped(artist, { isDropKey, normalizeForMatch, splitArtistCollab }) {
+export function dropReasonForList(list) {
+  return list === 'korean' ? 'korean-drop-list' : 'chinese-drop-list';
+}
+
+/**
+ * The drop reason when any `splitArtistCollab` component of `artist` matches
+ * the drop set, else `null`. This is the SAME per-component scan
+ * `classifyRecord` runs at crawl time (`drop-list-reject`), so corpus cleanup
+ * and parser agree by construction. The reason (`predicates.dropReason`) tells
+ * the caller WHICH check matched so the decision log can attribute the drop.
+ */
+export function isArtistDropped(
+  artist,
+  { isDropKey, normalizeForMatch, splitArtistCollab, dropReason },
+) {
   for (const component of splitArtistCollab(artist)) {
-    if (isDropKey(normalizeForMatch(component))) return true;
+    if (isDropKey(normalizeForMatch(component))) return dropReason ?? 'drop-list';
   }
-  return false;
+  return null;
 }
 
 /**
  * Partition `records` into kept / dropped per the drop predicate + anomaly
- * IDs. Pure — no I/O. Returns `{ kept, droppedCount, droppedSamples }` where
- * `droppedSamples` is the first 10 `[id, artist]` pairs.
+ * IDs. Pure — no I/O. Returns `{ kept, droppedCount, droppedSamples,
+ * droppedDecisions }` where `droppedSamples` is the first 10 `[id, artist]`
+ * pairs and `droppedDecisions` is one attribution record per dropped row
+ * (`{ id, title, artist, decision:'drop', step:'drop-artist-leaks', reason }`),
+ * mirroring the crawl-time TJ filter decision log. The reason is
+ * `catalog-anomaly-id` for an anomaly-ID drop, else the list's drop reason
+ * (`korean-drop-list` / `chinese-drop-list`).
  *
  * reviewed-song-allow: a row that the artist deny-list would drop is SPARED when
  * its TJ karaoke number is on the reviewed-song allow-list (`isReviewedAllow`).
@@ -222,31 +255,59 @@ export function isArtistDropped(artist, { isDropKey, normalizeForMatch, splitArt
 export function partitionCorpus(records, predicates) {
   const kept = [];
   const droppedSamples = [];
+  const droppedDecisions = [];
   let droppedCount = 0;
-  const recordDrop = (recId, artist) => {
+  const recordDrop = (rec, recId, artist, reason) => {
     droppedCount += 1;
     if (droppedSamples.length < 10) {
       droppedSamples.push([recId === '' ? '<no-id>' : recId, artist]);
     }
+    droppedDecisions.push({
+      id: recId,
+      title: typeof rec.title_primary === 'string' ? rec.title_primary : '',
+      artist,
+      decision: 'drop',
+      step: 'drop-artist-leaks',
+      reason,
+    });
   };
   for (const rec of records) {
     const recId = rec.id == null ? '' : String(rec.id);
     const artist = typeof rec.artist_primary === 'string' ? rec.artist_primary : '';
     if (predicates.anomalyIds.has(recId)) {
-      recordDrop(recId, artist);
+      recordDrop(rec, recId, artist, 'catalog-anomaly-id');
       continue;
     }
-    if (isArtistDropped(artist, predicates)) {
+    const dropReason = isArtistDropped(artist, predicates);
+    if (dropReason !== null) {
       const tj = typeof rec.karaoke_numbers?.tj === 'string' ? rec.karaoke_numbers.tj : '';
       const reviewedAllow = tj !== '' && predicates.isReviewedAllow?.(tj) === true;
       if (!reviewedAllow) {
-        recordDrop(recId, artist);
+        recordDrop(rec, recId, artist, dropReason);
         continue;
       }
     }
     kept.push(rec);
   }
-  return { kept, droppedCount, droppedSamples };
+  return { kept, droppedCount, droppedSamples, droppedDecisions };
+}
+
+/**
+ * Write the dropped-row decision log as JSONL (one compact object per line),
+ * overwrite semantics; an empty file when nothing dropped. The parent dir is
+ * created if missing (CI points this at a RUNNER_TEMP subdir). Fail-soft: a
+ * write error is warned via `log.error` and never propagates — the decision
+ * log is report-only and must not fail the pass.
+ */
+function writeDroppedDecisions(outPath, decisions, log) {
+  try {
+    mkdirSync(dirname(outPath), { recursive: true });
+    const body = decisions.map((d) => JSON.stringify(d)).join('\n');
+    writeFileSync(outPath, decisions.length > 0 ? `${body}\n` : '', 'utf-8');
+    log.log(`wrote ${decisions.length} drop decisions to ${outPath}`);
+  } catch (err) {
+    log.error(`WARN: could not write decision log to ${outPath}: ${err.message}`);
+  }
 }
 
 /**
@@ -258,6 +319,13 @@ export function partitionCorpus(records, predicates) {
  * `predicates` is a test seam: when provided it replaces the
  * `loadListPredicates(list)` result so the zero-key guard is testable
  * without mutating the real dist.
+ *
+ * `decisionsOut` (optional): when set, a JSONL decision log of the DROPPED
+ * rows only is written there (one `{ id, title, artist, decision:'drop',
+ * step:'drop-artist-leaks', reason }` per line; an empty file when nothing
+ * dropped). Admits are the surviving corpus, so logging them here would be
+ * waste. Fail-soft — a write error is warned, never fatal. Unset (the default,
+ * and all local runs) = no file written, behavior unchanged.
  */
 export async function runDropArtistLeaks({
   list,
@@ -265,6 +333,7 @@ export async function runDropArtistLeaks({
   dryRun = false,
   log = console,
   predicates: injectedPredicates = null,
+  decisionsOut = null,
 }) {
   if (!existsSync(corpusPath)) {
     log.error(`ERROR: missing corpus at ${corpusPath}`);
@@ -290,8 +359,19 @@ export async function runDropArtistLeaks({
 
   const corpus = loadCorpus(corpusPath);
   const totalBefore = corpus.length;
-  const { kept, droppedCount, droppedSamples } = partitionCorpus(corpus, predicates);
+  const { kept, droppedCount, droppedSamples, droppedDecisions } = partitionCorpus(
+    corpus,
+    predicates,
+  );
   const totalAfter = kept.length;
+
+  // Write the decision log (dropped rows only) BEFORE the no-op early return so
+  // a clean pass still emits an accurate empty file rather than a missing one.
+  // Independent of dry-run: it reflects what the pass dropped, not the corpus
+  // rewrite.
+  if (decisionsOut) {
+    writeDroppedDecisions(decisionsOut, droppedDecisions, log);
+  }
 
   if (droppedCount === 0) {
     log.log('no records matched the drop list — corpus already clean (no-op)');
@@ -345,6 +425,7 @@ async function main() {
     list: args.list,
     corpusPath,
     dryRun: args.dryRun,
+    decisionsOut: args.decisionsOut ? resolve(args.decisionsOut) : null,
   });
 }
 

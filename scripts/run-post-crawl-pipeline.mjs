@@ -34,7 +34,7 @@
 // non-continueOnError step failed.
 
 import { spawn } from 'node:child_process';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isCliInvocation } from './lib/cli.mjs';
 
@@ -50,9 +50,17 @@ export const DEFAULT_CORPUS = 'apps/web/public/data/songs.json';
  *
  * @param {string} corpus corpus path as passed on the CLI (kept verbatim in
  *   step argv so the default invocation is byte-identical to the old YAML).
+ * @param {string} [filterDecisionsDir] when set (from the FILTER_DECISIONS_DIR
+ *   env var in CI), the two drop-artist-leaks steps additionally emit a
+ *   per-row drop decision log at `<dir>/<step-name>.jsonl` via --decisions-out.
+ *   Unset (local runs) leaves every step's argv byte-identical to before.
  */
-export function buildSteps(corpus = DEFAULT_CORPUS) {
+export function buildSteps(corpus = DEFAULT_CORPUS, filterDecisionsDir = undefined) {
   const node = process.execPath;
+  // Append `--decisions-out <dir>/<step>.jsonl` ONLY when FILTER_DECISIONS_DIR
+  // is set; otherwise an empty tail keeps the drop-step argv unchanged.
+  const decisionsArgs = (stepName) =>
+    filterDecisionsDir ? ['--decisions-out', join(filterDecisionsDir, `${stepName}.jsonl`)] : [];
   return [
     {
       // Preserves the YAML inline exactly:
@@ -90,11 +98,23 @@ export function buildSteps(corpus = DEFAULT_CORPUS) {
     },
     {
       name: 'drop-kpop-leaks',
-      command: [node, 'scripts/drop-artist-leaks.mjs', '--list', 'korean'],
+      command: [
+        node,
+        'scripts/drop-artist-leaks.mjs',
+        '--list',
+        'korean',
+        ...decisionsArgs('drop-kpop-leaks'),
+      ],
     },
     {
       name: 'drop-cpop-leaks',
-      command: [node, 'scripts/drop-artist-leaks.mjs', '--list', 'chinese'],
+      command: [
+        node,
+        'scripts/drop-artist-leaks.mjs',
+        '--list',
+        'chinese',
+        ...decisionsArgs('drop-cpop-leaks'),
+      ],
     },
     {
       // Stage 2 LLM cache replay is a nice-to-have enhancement layer — if a
@@ -272,7 +292,9 @@ async function main() {
     console.log(USAGE);
     return;
   }
-  const steps = buildSteps(args.corpus);
+  // FILTER_DECISIONS_DIR (set by crawl.yml) opts the two drop-artist-leaks
+  // steps into emitting a per-row drop decision log; unset locally = no-op.
+  const steps = buildSteps(args.corpus, process.env.FILTER_DECISIONS_DIR || undefined);
   const { ok, results } = await runSteps(steps, { skip: args.skip, env: buildChildEnv(args) });
   printSummary(console, results);
   process.exitCode = ok ? 0 : 1;
