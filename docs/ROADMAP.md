@@ -180,6 +180,16 @@ i18n, not data translation. No decision blockers; pure implementation.
 
 ## R3. Full-corpus offline (PWA / fallback) — DECIDED direction, opt-in pack (2026-07-04)
 
+> **Feasibility spike ✅ DONE (2026-07-12):** see
+> `docs/research/2026-07-12-offline-pack-spike.md` (PR #130). Headlines:
+> client DB is far smaller than estimated (FTS5 75.1 MiB raw / 21.6 MiB
+> brotli download vs the 150–300 MB guess); HTTP-range transport works
+> (~9 KiB per point query @ 1 KiB pages); FTS5/trigram floor at 3-char CJK
+> confirmed empirically → the parity-complete HYBRID index remains the real
+> design problem; iOS risk = eviction not quota (installed-PWA exemption;
+> opfs-sahpool VFS). Verdicts: OPFS pack GO(needs device test), HTTP-range
+> hybrid GO(needs real-browser follow-up). Implementation stays owner-gated.
+
 **Owner question:** the whole DB is ~1 GB — why not ship it wholesale to the
 PWA/offline fallback?
 
@@ -325,17 +335,22 @@ Preparation checklist:
   (reached over Tailscale Funnel); a wedged origin used to be a silent search
   outage on the public site.
 
-## R7. Replace the tjpdf PDF ingest with a TJ searchSong number-probe (IMPLEMENTED — PR #125 open, merge-held)
+## R7. Replace the tjpdf PDF ingest with a TJ searchSong number-probe (✅ DONE — merged + discovery sweep landed)
 
-**Status (2026-07-12):** implemented per the design below (owner go
-2026-07-10) as **PR #125** — probe (live-validated 635/635) → committed
-`scripts/data/tjpdf-catalog.jsonl` → offline pipeline ingest replacing the
-python; both title_ko guard surfaces realigned (6 manual-fix guards + 353
-Stage-2 cache entries mechanically re-keyed, title_ko 376→376 LOST 0 proven;
-drift-pin tests added). Reviewed APPROVE-W-MINOR (applied), CI green. **Merge
-held**: the original condition was one full weekly-crawl soak of the current
-pipeline, and the weekly crawl is now on indefinite owner hold — merging
-needs an owner call (merge without soak, or wait for the crawl hold to lift).
+**Status (2026-07-12): COMPLETE.** Implemented as **PR #125** (merged with
+owner approval; the upcoming owner-run verification crawl is its live soak):
+probe (live-validated 635/635) → committed `scripts/data/tjpdf-catalog.jsonl`
+→ offline pipeline ingest replacing the python; both title_ko guard surfaces
+realigned (6 manual-fix guards + 353 Stage-2 cache entries, title_ko 376→376
+LOST 0 proven; drift-pin tests added). **Discovery sweep also DONE (PR #131)**:
+ranges 28000–29999 + 68000–70500 probed (4,501 numbers) → 298 corpus-absent
+JPN songs added to the catalog/seed (635→933); ingest slice shows **240
+genuinely-new songs** enter at the next pipeline run while the Korean-artist
+drop list correctly blocks the other 58 (K-pop-in-Japan releases — TWICE/BTS/
+IVE/aespa etc.; individually rescuable via per-song allows like tj-68976 if
+ever wanted). New songs' title_ko flows to the standing Stage-2 LLM backlog.
+Remaining follow-up only: future discovery sweeps over new number blocks as
+TJ's catalog grows.
 
 **Original decision (2026-07-10): document only; implementation was gated on a
 separate go (granted later the same day).** Outcome of a drop-review of the
@@ -475,15 +490,16 @@ translations. Workflow: spot a wrong entry → append a
 pipeline run applies it. Unblocked by: owner review time (incremental — any
 subset helps).
 
-**New finding (2026-07-12, surfaced during R7/PR #125): ~380 tj-* Stage-2
-cache entries are title-drifted** — their cached `title_primary` differs from
-the corpus by spacing/decoration (e.g. cache `"lazy" (けいおん! ED)` with a
-space vs corpus without), so the Stage-2 replay's title guard silently skips
-them every pipeline run. Pre-existing on main, unrelated to R7 (none are
-tjpdf). Impact unassessed: corpus rows may already carry title_ko from earlier
-eras, in which case the skips are harmless no-ops. Work item: measure how many
-of the 380 corpus rows lack title_ko today; if material, apply the same
-mechanical re-key used in R7 Option 2 (translations byte-preserved).
+**Stage-2 cache title drift — measured and largely RESOLVED (PR #129,
+2026-07-12):** of the 380 drifted entries, 169 were real losses; a guarded
+mechanical re-key (`scripts/rekey-llm-translation-titles.mjs`, reusable +
+19 tests) realigned 298 tj- guards → **+149 Korean titles restore at the next
+pipeline run**. Deliberately declined: 57 reassigned blog- ids (different
+songs — positional-id reshuffle), 1 destructive-nullout hold, and **24 tj
+interior-whitespace cases that stay DORMANT** (restoring them needs
+interior-space handling that risks cross-song merges — a future
+harder-guarded pass; e.g. tj-26408 "One more time,One more chance"). Blog
+guards will drift again with future crawls — rerun the re-key tool then.
 
 ### Search-engine dead-schema retirement (RESOLVED 2026-07-08 — by removal)
 
@@ -646,6 +662,11 @@ drop list or the crawl report.
 **Full-corpus calibration (2026-07-12): 0 suspects over the promoted v22
 corpus (313,467 rows)** — the detector stays silent on the entire serving
 catalog, so any future hit is a high-signal leak candidate.
+
+**Crawl-report wiring ✅ DONE (PR #128, 2026-07-12):** the crawl PR body now
+carries a "### Simplified-Chinese audit" section (rendered in the tested
+compose layer, fail-soft — can never red the crawl; detector untouched).
+First live rendering happens when the owner-held crawl runs again.
 
 ### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
 

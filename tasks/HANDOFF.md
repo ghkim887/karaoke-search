@@ -1,98 +1,87 @@
-# 세션 핸드오프 — v22 크롤 가동 + 무결정 배치 완결 (2026-07-11 00:10 KST 체크포인트)
+# 세션 핸드오프 — v22 승격 + 무결정 라운드 2회 완결 (2026-07-12 18:30 KST 체크포인트)
 
-직전 버전(2026-07-09/10 감사 세션)을 갱신. 이번 세션(2026-07-10~11)은
-①B-1 fullCatalog 리스팅 배선(#113) ②v22 풀크롤 발진(+HttpClient 캐시 사고
-치유 #114) ③two-TJ 검증·종결(#115) ④무결정 배치(#116–#123) ⑤오너 결정
-3건 집행(v22 stage-2 사전승인 / R7 구현 go / §9 종결 #124)을 수행.
+직전 체크포인트(2026-07-11 00:10, #124)를 갱신. 이후 진행: ①크롤 게이트 첫
+실전(유출 2행 차단→검증→#126) ②**v22 승격**(오너 go) ③오너 3결정 집행
+④무결정 라운드 2회(#128–#131) ⑤**자동 크롤 무기한 보류**(오너 지시).
 
 ## Current state of record
 
-- **main**: `eea60b2` (#123까지, CI success 확인). 열린 PR: **#124**(docs:
-  §9 종결 + 이 체크포인트) — 머지 승인 대기; **#125**(R7 구현, head bb3c845)
-  — 리뷰 완료(APPROVE-W-MINOR → 마이너 반영), CI green, **주간 크롤 소킹 후
-  머지** 홀드.
-- **v22 풀크롤 LIVE (oci)**: tmux `v22` — 리스팅 **352,290행 완료**(행 게이트
-  ≥280k 통과) 후 detail-sweep 진행 중(체크포인트 시점 9,699 결정, ~2.5/s →
-  **ETA 토요일(7/12) 오전 KST**). tmux `v22stage2` — sweep `code=0` 시
-  **candidate 빌드+커버리지 게이트 자동 실행**(오너 사전승인, 승격 제외).
-  런 디렉터리 `/srv/nas/karaoke/runs/data-2026-07-10-v22-fullcatalog/`
-  (status.txt = 상태기계; 재개 = run-v22.sh 재실행이 항상 안전).
-  stage-2 클론 = oci `~/v22/stage2/karaoke-search` @ eea60b2.
-- **서빙**: oci `db/current → v21`(joysound 306,822 = 커버리지 게이트 기준값,
-  라이브 검증 2026-07-10). 웹 배포 없음.
-- **라이브니스**: `.github/workflows/liveness.yml` 가동(수동 1회 success;
-  스케줄 틱은 GitHub 큐 등록 지연 중 — 첫 자동 run 확인 요).
-- **작업 클론**: scratchpad `kwork`(+ 워크트리 `kw-r7`=R7 author 사용 중).
-  소멸성 — 다음 세션은 fresh clone.
+- **main**: `4ee5527` (#131까지; #131 main push CI는 폴링 중이었음 — 다음 세션
+  `gh run list --branch main --limit 1`로 확인; 직전 #130 상태까지 전부 green).
+  **열린 PR: 0.**
+- **서빙 (oci)**: `db/current → releases/data-2026-07-12-v22-fullcatalog` —
+  **v22 라이브** (313,467곡 / joysound 312,170 / ruby 91.7% / SQLite 2.08GB).
+  공개 체인 검증 완료(meta `dbUpdatedAt 2026-07-12`). 보존: v22+v21(v20 삭제).
+  롤백 = 심링크를 v21로 + `sudo systemctl restart karaoke-api`.
+- **자동 주간 크롤: 무기한 보류(오너)** — workflow `disabled_manually`
+  (스케줄+수동 디스패치 모두 차단). 재활성화 =
+  `gh workflow enable crawl.yml` — **오너의 "배포" 조건 확인 후에만**.
+  오너가 "검증용 크롤은 곧 진행" 예고 — 그 1회가 #125·#126·#128·#129·#131을
+  일괄 실전 검증하게 됨(재활성화→디스패치→관찰→재비활성화 순서 권장).
+- **oci 잔여물**: tmux 세션 0(전부 자연 종료). `~/v22/` 클론들(스윕·stage2·
+  r7probe 워크트리)은 소멸성 — 다음 대형 작업 때 재사용/삭제 자유. NAS 런
+  디렉터리 `runs/data-2026-07-10-v22-fullcatalog/`는 보존(결정로그 340,653행
+  = classifier Phase 2의 외국명 분포 샘플; listing/candidate/discovery 포함).
+- **작업 클론**: scratchpad `kwork` — 소멸성, 다음 세션은 fresh clone.
 
-## Grant Ledger (2026-07-10~11)
+## Grant Ledger (2026-07-12 라운드)
 
-- **B-1 리스팅 배선 구현+PR** — "B-1 리스팅 배선 진행해" → #113 머지("머지
-  직접 진행해"로 명시 승인). oci ssh 재개방(Tailscale 재인증 완료).
-- **v22 크롤 실행** — "전체 리스팅 진행하고 이후에 바로 풀 크롤 돌려" →
-  리스팅+sweep 자동 연쇄 가동. #114 핫픽스 머지 명시 승인.
-- **two-TJ 검증** — "인터넷 검색으로 실제 레코드인지 구분… 무연결 유지+검증만"
-  → 12개 번호 전건 실재 확인, #115 머지 승인.
-- **무결정 배치** — "내 결정 없이 진행할 수 있으면서 v22 지장 없는 것들 모아서
-  처리해" → #116–#122; "전부 머지" 승인. #123(배치 마감 docs) 머지 승인.
-- **오너 결정 3건 (2026-07-10 말)** — ①v22 **candidate 빌드+커버리지 게이트
-  사전승인**(승격은 별도 go) ②**R7 구현 go**(tjpdf→searchSong API 카탈로그)
-  ③**§9 워치독 채널 종결**(전용 채널 없음, #117로 갈음).
-- **미승인(명시적으로 남김)**: v22 승격(db/current 플립·배포), R5 KY 어댑터
-  구현(서베이만 완료), §8 방향, blog-id, TJ filter seam, classifier Phase 2.
+- **v22 승격 go** — "승격하고…" → 빌드→플립→재시작→검증→보존정리 완료.
+- **무결정 일괄 진행** — "내 결정 없이 진행 가능한 것들 전부 진행" →
+  간체 풀코퍼스 캘리브레이션(0/313,467), R1 4쌍 확인(자동해소 안 됨 —
+  ROADMAP 교정), 마감 docs #127.
+- **유출 2행 처리** — "진행해" → 웹검증(IVE Will=일본 원곡 ALLOW /
+  프리큐큐=한국어판 DROP) → #126 머지 → 크롤 재시도 디스패치.
+- **자동 크롤 무기한 보류** — "일단 자동 크롤은 아예 캔슬해버려. 배포
+  전까지는 무기한 보류다." → run 취소 + workflow disable 집행.
+- **6·7·8·9 진행** — R7 발견 스윕 / R3 스파이크 / 간체 크롤 배선 / 캐시
+  드리프트 측정·재키잉 → #128·#129·#130·#131 전부 오너 승인 머지.
+- **#124·#125·#127~#131 머지** 전부 명시 승인("승인." / "전부 머지" /
+  "머지하고 /handoff").
+- **미승인으로 남음**: 크롤 재활성화(오너 "배포" 조건), §8 백업 방향,
+  TJ filter seam·classifier Phase 2 보류 해제, blog-id.
 
-## Completed with evidence (이 세션, 전부 머지·CI green)
+## Completed with evidence (2026-07-11~12)
 
-- **#113** fullCatalog 리스팅 도구(사이드카 재개, 커버리지 하드가드) —
-  author→정적 리뷰 APPROVE→실사용 e2e APPROVE(sweep 소비까지 실증).
-- **#114** HttpClient `cache:'off'`(무한 캐시 → V8 상한 크래시 치유; 488MB
-  캐시 부검 확인) — 리스팅이 1131페이지부터 무손실 재개.
-- **#115** two-TJ 6쌍 = **무연결-by-design 종결**(TJ 공식검색으로 12개 번호
-  전건 실재; 브리지 항목 CLOSED).
-- **#116** ROADMAP 스테일 정리(#107/#100/#106/#109 반영). **#117** R6
-  라이브니스(수동 run success로 검증). **#118** R7 설계 문서(632/632 프로브
-  증거). **#119** App.tsx 훅 추출(리뷰 APPROVE, 불변식 5종). **#120** 간체
-  탐지기 report-only(76자, 리뷰 APPROVE — 전수 문자 대조). **#121** curated
-  이동(드리프트 게이트 이빨 실증; 백로그 3건은 이미 089e8c5에 있었음).
-  **#122** tjpdf 손상 제목 2건 + **#109 가드 정렬**(무음 되돌림 차단; REVISE
-  1라운드). **#123** 배치 마감 docs(R5 KY 서베이 반영 포함).
-- **KY(kysing.kr) 서베이 완료** — 공식 표면/robots 전허용/JSON API 없음/전수=
-  번호 프로브/JP 제목검색 불신뢰. ROADMAP R5에 기록(#123), memory
-  `ky-kysing-source-survey-2026-07-10`.
+- **크롤 게이트 첫 실전**: 토요 정기 run이 #97 게이트에서 유출 2행 차단
+  (크롤 PR 미오픈, main 무사) → TJ 곡 단위 신호 + 웹검증 →
+  **#126**(IVE allow+render 1행 스코프 / CUTIE STREET 곡 단위 드롭).
+- **v22 승격**: 커버리지 게이트 PASS(+5,348) → SQLite 빌드 exit 0 →
+  플립·재시작 → 공개 체인 검증 → prune. 소킹: Tier E #110 5쌍 첫 발효,
+  퍼지 유지, 간체 0/313k.
+- **#127** 마감 docs(승격 기록·크롤 보류·R1 4쌍 교정·가드 규칙 일반화).
+- **#128** 간체 크롤 리포트 배선(compose 계층, fail-soft, 리뷰 마이너 반영).
+- **#129** 캐시 재키잉 — **+149 한국어 제목 복원 대기**(리뷰어가 변환
+  재실행으로 바이트 동일 검증; 24건 interior-ws는 의도적 잠금).
+- **#130** R3 스파이크(클라 DB 75MiB/21.6MiB 다운로드; 2자 CJK에서 FTS5
+  0건 실증 → 하이브리드 필수; GO×2 판정).
+- **#125+#131** R7 완결: PDF 인제스트 은퇴 → API 카탈로그(933곡) +
+  발견 스윕 298곡 추가(실질 신규 240, K-pop 58은 드롭리스트 정상 차단).
 
 ## Open items
 
-- **In-progress ① v22 sweep** (oci, 세션 독립): 완료 감지 = status.txt에
-  `SWEEP EXIT` → stage-2 자동 → `STAGE2 DONE total=… joysound=… coverage=PASS|FAIL`.
-  다음 세션 첫 확인: `ssh ubuntu@oci 'tail -5 /srv/nas/karaoke/runs/data-2026-07-10-v22-fullcatalog/status.txt'`.
-  PASS면 **오너에게 승격 go 요청**(승격 = 새 릴리스 디렉터리 + db/current 플립
-  + 배포; in-place 수정 금지, 보존 current+1, 게이트는 최종 상태에서 재실행).
-- **완료·홀드 ② R7 = PR #125** (head bb3c845): 프로브(635/635 실증)→커밋
-  카탈로그→오프라인 인제스트 교체 + 가드 양 표면 정렬(manual-fix 6건 +
-  Stage-2 캐시 353건 기계적 재키잉 — title_ko 376→376 손실 0 슬라이스 증명,
-  카탈로그↔캐시 드리프트 핀 테스트). 리뷰 APPROVE-W-MINOR → 마이너 반영,
-  CI green. **머지는 주간 크롤(토 18:00Z) 소킹 후**(파이프라인 스텝 교체라
-  소킹 오염 방지). 부수 발견(추적용): main에 기존재하는 tj-* Stage-2 캐시
-  공백 드리프트 380건(미적용 스킵) — R7과 무관, 별도 항목 후보.
-- **Blocked(오너 승인): #124 머지** — §9 종결 + 이 체크포인트.
-- **시간 게이트: 주간 크롤(cron 0 18 * * 6 = 토 18:00Z, 일 03:00 KST) = 관찰 전용.** 첫 실전: #97 게이트,
-  #106 패리티 재생성, #121 사이드카 경로, #122 제목 교정+가드, 라이브니스
-  스케줄. 결과 보고만; 후속 작업은 오너 지시.
-- **Deferred → ROADMAP**: R5 KY 스파이크(제안됨, 미승인), §8 방향(승격 전
-  결정 요청됨), R3 스파이크, 간체 탐지기 배선(소킹 후), classifier 게이트
-  재구조화, .tmp_review 정리, title_ko uncertain 13건.
+- **다음 이벤트 = 오너의 검증용 크롤**: 절차 ①`gh workflow enable crawl.yml`
+  ②`gh workflow run crawl` ③관찰(게이트 통과 여부·크롤 PR의 패리티 델타+
+  간체 섹션·+149 복원·240 신규 tjpdf 유입·#126 렌더) ④크롤 PR 리뷰→오너
+  머지 ⑤**재비활성화**(보류 유지 조건이면). 크롤 PR엔 ci.yml이 안 돌므로
+  게이트가 유일 방어선임을 기억.
+- **오너 결정 대기**: §8 백업 방향(v22 유일본 2.2GB), 크롤 재개 시점,
+  TJ filter seam(3번째 재발로 근거 강화)·classifier Phase 2(전제 충족) 해제.
+- **Deferred → ROADMAP**: R5 KY 스파이크(승인 대기), interior-ws 24건,
+  title_ko uncertain 13건 + 신규 240곡 번역 백로그, R5-DAM, R4-2/-4,
+  classifier 게이트 재구조화, .tmp_review 정리, R3 본구현(스파이크 완료).
 
-## 영구 규칙 delta (이 세션 신규 — PK/ROADMAP에 반영됨)
+## 영구 규칙 delta (이 라운드 신규)
 
-- HttpClient 응답 캐시는 무한 성장 — 대량 열거는 `cache:'off'`(PK).
-- **title_primary를 바꾸면 title-ko-manual-fixes 가드를 같은 변경에서 정렬**
-  (무음 스킵; PK에 규칙+테스트 패턴).
-- blog-* id 불안정/안정키 규칙, pnpm bail, 크롤 PR CI 미트리거 — 기존 유지.
+- title_primary 가드 규칙이 **양 표면**(manual-fixes + Stage-2 캐시)으로
+  일반화됨(PK 반영, #127). 재키잉 도구 `scripts/rekey-llm-translation-titles.mjs`
+  재사용 가능(blog 가드는 크롤마다 다시 드리프트).
+- 크롤 workflow는 오너 보류 중 `disabled_manually` — enable도 오너 게이트.
 
 ## Next first action
 
-1. `ssh ubuntu@oci 'tail -5 /srv/nas/karaoke/runs/data-2026-07-10-v22-fullcatalog/status.txt'` —
-   v22 진행/완료 확인 (STAGE2 DONE + coverage=PASS면 승격 go 질문 준비).
-2. `gh pr list --repo ghkim887/karaoke-search --state open` — #124(+R7 PR)
-   상태 확인; R7 PR이 열려 있으면 리뷰 파이프라인(정적 필수) 후 소킹-홀드 유지.
-3. 주간 크롤(토 18:00Z) run 결과 관찰·보고 (`gh run list --workflow crawl`).
+1. `gh pr list --state open` + `gh run list --branch main --limit 1` —
+   0 PR·#131 CI green 확인.
+2. `ssh ubuntu@oci 'readlink /srv/nas/karaoke/db/current; systemctl is-active karaoke-api'` —
+   v22 서빙 확인.
+3. 오너가 검증용 크롤을 지시하면 위 Open items의 5단계 절차로.
