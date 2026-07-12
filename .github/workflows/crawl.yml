@@ -163,8 +163,28 @@ jobs:
         # acknowledge it before merge.
         run: node scripts/compare-parity-baselines.mjs "${RUNNER_TEMP}/parity-baseline.old.json" apps/web/src/lib/__snapshots__/search-parity.baseline.json > "${RUNNER_TEMP}/parity-delta.md"
 
-      - name: Compose PR body with merge-conflict summary and parity delta
-        run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json "${RUNNER_TEMP}/parity-delta.md" > "${RUNNER_TEMP}/pr_body.md"
+      - name: Audit the crawled corpus for simplified-Chinese leaks (report-only)
+        # REPORT-ONLY companion to the parity delta above: scan the freshly
+        # crawled corpus (the songs.json the post-crawl pipeline just wrote) for
+        # rows whose title/artist carries a simplified-Chinese-only Han character
+        # -- a high-precision Mandopop/Cantopop-leak signal (calibrated to 0 hits
+        # on BOTH the 26k baseline and the 313k v22 corpus, so ANY hit is worth a
+        # human glance). Writes suspects JSONL under RUNNER_TEMP (outside the repo
+        # tree, never staged into the PR); the compose step below renders it.
+        #
+        # This NEVER reds the crawl. Unlike the Korean-script leakage GATE in the
+        # crawler test suite (which is meant to stop the run), this is purely
+        # informational. The `|| true` guarantees the run continues even if the
+        # audit exits non-zero for an operational reason -- its ONLY non-zero exit
+        # is 2 on a missing corpus, in which case no suspects file is written and
+        # the compose step renders a visible "could not read" note in the PR body
+        # rather than silently dropping the section. (continue-on-error is not
+        # used: `|| true` makes the intent explicit at the point of failure and
+        # keeps the step green so the audit's stdout summary stays easy to find.)
+        run: node scripts/audit-simplified-chinese.mjs apps/web/public/data/songs.json --out "${RUNNER_TEMP}/chinese-audit" || true
+
+      - name: Compose PR body with merge-conflict summary, parity delta, and Chinese-leak audit
+        run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json "${RUNNER_TEMP}/parity-delta.md" "${RUNNER_TEMP}/chinese-audit/suspects.jsonl" > "${RUNNER_TEMP}/pr_body.md"
 
       - name: Close prior crawl PRs
         env:

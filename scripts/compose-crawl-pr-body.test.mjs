@@ -99,3 +99,114 @@ describe('parity-delta section (2026-07-10)', () => {
     );
   });
 });
+
+describe('simplified-Chinese audit section (2026-07-12, report-only)', () => {
+  const HEADING = '### Simplified-Chinese audit';
+
+  // JSONL line shape the audit writes: one compact object per suspect row.
+  function suspectLine(fields) {
+    return JSON.stringify(fields);
+  }
+  function writeSuspects(name, lines) {
+    return writeText(name, lines.length === 0 ? '' : `${lines.join('\n')}\n`);
+  }
+
+  it('omits the audit section when no suspects path is passed (byte-parity with old behavior)', () => {
+    expect(composePrBody(join(dir, 'nope.json'))).toBe(BOILERPLATE);
+  });
+
+  it('renders "0 suspects" for an all-clean corpus (empty JSONL file)', () => {
+    const body = composePrBody(join(dir, 'nope.json'), undefined, writeSuspects('s.jsonl', []));
+    expect(body).toBe(`${BOILERPLATE}\n${HEADING}\n\n0 suspects.\n`);
+  });
+
+  it('renders the count and a row table when there are suspects', () => {
+    const path = writeSuspects('s.jsonl', [
+      suspectLine({
+        id: 'tj-42',
+        title_primary: '明天你是否依然爱我',
+        artist_primary: '童安格',
+        matched_chars: ['你', '爱'],
+        matched_fields: ['title_primary'],
+      }),
+    ]);
+    const body = composePrBody(join(dir, 'nope.json'), undefined, path);
+    expect(body).toContain(HEADING);
+    expect(body).toContain('1 suspect row:');
+    expect(body).toContain('| id | title | artist | matched chars |');
+    expect(body).toContain('| tj-42 | 明天你是否依然爱我 | 童安格 | 你 爱 |');
+  });
+
+  it('caps the table at 20 rows and says how many are shown', () => {
+    const lines = Array.from({ length: 25 }, (_, i) =>
+      suspectLine({
+        id: `tj-${i}`,
+        title_primary: `T${i}`,
+        artist_primary: `A${i}`,
+        matched_chars: ['爱'],
+        matched_fields: ['title_primary'],
+      }),
+    );
+    const body = composePrBody(join(dir, 'nope.json'), undefined, writeSuspects('s.jsonl', lines));
+    expect(body).toContain('25 suspect rows (showing first 20):');
+    expect(body).toContain('| tj-19 |');
+    expect(body).not.toContain('| tj-20 |');
+  });
+
+  it('escapes pipe characters so a title cannot break out of the table cell', () => {
+    const path = writeSuspects('s.jsonl', [
+      suspectLine({
+        id: 'tj-1',
+        title_primary: 'a|b',
+        artist_primary: 'c',
+        matched_chars: ['爱'],
+        matched_fields: ['title_primary'],
+      }),
+    ]);
+    const body = composePrBody(join(dir, 'nope.json'), undefined, path);
+    expect(body).toContain('| a\\|b |');
+  });
+
+  it('renders a visible note (never throws) when the suspects file is missing', () => {
+    const body = composePrBody(join(dir, 'nope.json'), undefined, join(dir, 'absent.jsonl'));
+    expect(body).toContain(HEADING);
+    expect(body).toContain('> [!NOTE]');
+    expect(body).toContain('not found');
+    expect(body).toContain('does not block the crawl');
+  });
+
+  it('renders a visible note (never throws) on a malformed JSONL line', () => {
+    const body = composePrBody(
+      join(dir, 'nope.json'),
+      undefined,
+      writeText('bad.jsonl', '{oops\n'),
+    );
+    expect(body).toContain(HEADING);
+    expect(body).toContain('> [!NOTE]');
+    expect(body).toContain('Could not parse');
+  });
+
+  it('never throws on valid-JSON but wrong-shape rows (null line + non-array matched_chars)', () => {
+    // Both lines parse fine but neither is a well-formed suspect: the `null`
+    // line is skipped, and the object with a string matched_chars must render
+    // an empty matched cell instead of throwing on `.join`.
+    const path = writeSuspects('shape.jsonl', [
+      'null',
+      suspectLine({ id: 'tj-9', title_primary: 'T', artist_primary: 'A', matched_chars: '你' }),
+    ]);
+    let body;
+    expect(() => {
+      body = composePrBody(join(dir, 'nope.json'), undefined, path);
+    }).not.toThrow();
+    expect(body).toContain(HEADING);
+    expect(body).toContain('1 suspect row:');
+    expect(body).toContain('| tj-9 | T | A |  |');
+  });
+
+  it('appends the audit section AFTER the parity delta when both are present', () => {
+    const delta = '## Search-parity baseline delta\n\nbody\n';
+    const suspects = writeSuspects('s.jsonl', []);
+    const body = composePrBody(join(dir, 'nope.json'), writeText('delta.md', delta), suspects);
+    expect(body.indexOf('## Search-parity baseline delta')).toBeLessThan(body.indexOf(HEADING));
+  });
+});
