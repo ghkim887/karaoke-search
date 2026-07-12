@@ -140,7 +140,12 @@ function composeChineseAuditSection(suspectsPath) {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
-      .map((line) => JSON.parse(line));
+      .map((line) => JSON.parse(line))
+      // Drop any line that parses but is not a plain object (`null`, arrays,
+      // scalars). Belt-and-suspenders for the "never throws" guarantee: the
+      // real audit only ever writes plain suspect objects, but a wrong-shape
+      // line must not reach the row render (below) and throw.
+      .filter((row) => row !== null && typeof row === 'object' && !Array.isArray(row));
   } catch (err) {
     return chineseAuditNote(
       `Could not parse the audit output (\`${suspectsPath}\`): ${err.message}. Report-only: this does not block the crawl.`,
@@ -160,7 +165,9 @@ function composeChineseAuditSection(suspectsPath) {
     '|---|---|---|---|',
     ...shown.map(
       (s) =>
-        `| ${escapeCell(s.id)} | ${escapeCell(s.title_primary)} | ${escapeCell(s.artist_primary)} | ${escapeCell((s.matched_chars ?? []).join(' '))} |`,
+        // matched_chars is coerced (not `?? []`) so a non-array value — e.g. a
+        // string — can never throw on `.join`; see the "never throws" note.
+        `| ${escapeCell(s.id)} | ${escapeCell(s.title_primary)} | ${escapeCell(s.artist_primary)} | ${escapeCell(Array.isArray(s.matched_chars) ? s.matched_chars.join(' ') : '')} |`,
     ),
   ];
   return `\n${CHINESE_AUDIT_HEADING}\n\n${countLine}\n\n${table.join('\n')}\n`;

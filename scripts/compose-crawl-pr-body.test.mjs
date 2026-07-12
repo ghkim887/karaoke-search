@@ -186,6 +186,23 @@ describe('simplified-Chinese audit section (2026-07-12, report-only)', () => {
     expect(body).toContain('Could not parse');
   });
 
+  it('never throws on valid-JSON but wrong-shape rows (null line + non-array matched_chars)', () => {
+    // Both lines parse fine but neither is a well-formed suspect: the `null`
+    // line is skipped, and the object with a string matched_chars must render
+    // an empty matched cell instead of throwing on `.join`.
+    const path = writeSuspects('shape.jsonl', [
+      'null',
+      suspectLine({ id: 'tj-9', title_primary: 'T', artist_primary: 'A', matched_chars: '你' }),
+    ]);
+    let body;
+    expect(() => {
+      body = composePrBody(join(dir, 'nope.json'), undefined, path);
+    }).not.toThrow();
+    expect(body).toContain(HEADING);
+    expect(body).toContain('1 suspect row:');
+    expect(body).toContain('| tj-9 | T | A |  |');
+  });
+
   it('appends the audit section AFTER the parity delta when both are present', () => {
     const delta = '## Search-parity baseline delta\n\nbody\n';
     const suspects = writeSuspects('s.jsonl', []);
