@@ -7,6 +7,17 @@ from an owner
 review; numbers below were measured against the live serving DB
 (`db/current/songs.sqlite`, release v20, 307,961 songs).
 
+> **Serving state (2026-07-12): release v22 promoted** —
+> `db/current → releases/data-2026-07-12-v22-fullcatalog`: **313,467 songs,
+> joysound 312,170** (v21 306,822 +5,348), `title_ruby` coverage **91.7%**
+> (287,333; was ~77%), reviewedMergePairs Tier E 196 fully applied (the
+> #110 five fired for the first time), 167-row purge holds. Built from the
+> 2026-07-10 fresh fullCatalog listing (352,290 rows) + detail sweep;
+> public-chain verified (meta `dbUpdatedAt 2026-07-12`). Retention: v22+v21.
+>
+> **Weekly automatic crawl: INDEFINITE HOLD (owner, 2026-07-12)** — see the
+> [Open questions](#open-questions) subsection.
+
 ## R1. Songs with a TJ/KY number but no JOYSOUND number (suspected unmerged clusters)
 
 **Owner observation:** a song that TJ or KY carries should essentially always
@@ -52,16 +63,28 @@ with every new provider.
 
 **Status update (2026-07-10, live-API-verified recon):** the "embedded-TJ/KY
 bridge" premise is dead — JOYSOUND-sourced rows never carry TJ/KY numbers (the
-adapter hard-nulls them; the API exposes no competitor numbers). Ground truth:
-4 of the both-vendor pairs (aLIEz, &Z, Astronauts, 天使と悪魔) now resolve by
-plain Tier A at the next corpus build (their blog rows already carry
-tj+ky+joysound, and standalone joysound-source rows exist); **6 songs remain
-genuinely blocked** (the 5 candidate-own-TJ pairs below plus パンダヒーロー,
-whose joy145546 is bound to tj-27416/GUMI) — every one is a two-TJ conflict
-that the single-value-per-vendor data model cannot hold. Also: the Tier F entry
-`['tj','28268','162483']` is INERT (soft-merge claims the joy side before Tier F
-runs) and should be removed/superseded when any mechanism lands; the pair
-comments' `blog-523-9`/`blog-163-90` ids drifted in #95 (now -10/-91).
+adapter hard-nulls them; the API exposes no competitor numbers). **6 songs
+remain genuinely blocked** (the 5 candidate-own-TJ pairs below plus
+パンダヒーロー, whose joy145546 is bound to tj-27416/GUMI) — every one is a
+two-TJ conflict that the single-value-per-vendor data model cannot hold. Also:
+the Tier F entry `['tj','28268','162483']` is INERT (soft-merge claims the joy
+side before Tier F runs) and should be removed/superseded when any mechanism
+lands; the pair comments' `blog-523-9`/`blog-163-90` ids drifted in #95 (now
+-10/-91).
+
+**Correction (2026-07-12, verified against the v22 build):** the earlier claim
+that 4 both-vendor pairs (aLIEz, &Z, Astronauts, 天使と悪魔) would "resolve by
+plain Tier A at the next corpus build" was WRONG. What actually happens (v21
+and v22 both): `build-joysound-candidate`'s existing-number conflict-resolution
+step treats the blog rows' joysound cells as misattributed (the blog↔sweep
+identity match fails on artist rendering differences even though the owner's
+R1 review confirmed the attribution) and NULLS them, so the blog row (tj+ky)
+and the joysound-source row stay SEPARATE records — no Tier A union ever fires.
+Both rows remain individually searchable by their own numbers; this is the
+standing state since June, not a v22 regression, and it is consistent with the
+unlinked-by-design closure above. If ever revisited, the fix is in the
+conflict matcher (`normalizeForConflictMatch` vs owner-reviewed attributions),
+not in Tier A.
 
 **Owner decision (2026-07-10): RESOLVED — the 6 pairs stay separate, unlinked
 records BY DESIGN.** Initially held on the suspicion that the twin TJ numbers
@@ -302,10 +325,21 @@ Preparation checklist:
   (reached over Tailscale Funnel); a wedged origin used to be a silent search
   outage on the public site.
 
-## R7. Replace the tjpdf PDF ingest with a TJ searchSong number-probe (DOCUMENTED 2026-07-10 — not started)
+## R7. Replace the tjpdf PDF ingest with a TJ searchSong number-probe (IMPLEMENTED — PR #125 open, merge-held)
 
-**Owner decision (2026-07-10): document only; implementation needs a separate
-go.** Outcome of a drop-review of the `tjpdf` source.
+**Status (2026-07-12):** implemented per the design below (owner go
+2026-07-10) as **PR #125** — probe (live-validated 635/635) → committed
+`scripts/data/tjpdf-catalog.jsonl` → offline pipeline ingest replacing the
+python; both title_ko guard surfaces realigned (6 manual-fix guards + 353
+Stage-2 cache entries mechanically re-keyed, title_ko 376→376 LOST 0 proven;
+drift-pin tests added). Reviewed APPROVE-W-MINOR (applied), CI green. **Merge
+held**: the original condition was one full weekly-crawl soak of the current
+pipeline, and the weekly crawl is now on indefinite owner hold — merging
+needs an owner call (merge without soak, or wait for the crawl hold to lift).
+
+**Original decision (2026-07-10): document only; implementation was gated on a
+separate go (granted later the same day).** Outcome of a drop-review of the
+`tjpdf` source.
 
 **Context.** `tjpdf-*` is not a crawler: `scripts/ingest_anisong_pdf.py`
 re-inserts (coverage-only, idempotent) ~632 anime/vocaloid TJ numbers parsed
@@ -356,6 +390,24 @@ adapter's production TJ politeness (500ms ± 100ms).
 Live undecided items, with context and what unblocks each. Items referencing
 the JOYSOUND feature branch (`feat/joysound-full-catalog-sweep`) describe
 in-progress work that is NOT on `main` yet.
+
+### Weekly automatic crawl — INDEFINITE HOLD (owner, 2026-07-12)
+
+**Owner directive: the scheduled weekly crawl is cancelled outright and held
+indefinitely ("배포 전까지").** Executed via `gh workflow disable crawl`
+(workflow state `disabled_manually` — blocks the Saturday 18:00 UTC cron AND
+manual dispatch; no code change; reversible with `gh workflow enable
+crawl.yml` but ONLY after confirming the owner's re-enable condition). The
+in-flight 2026-07-12 retry run was cancelled mid-flight.
+
+Context: the first scheduled soak (2026-07-11) worked as designed — the #97
+crawler gate caught two Korean-leak rows and blocked the crawl PR (tj-68976
+IVE "Will" → verified genuine JP release, allowed + render-fixed; tj-70438
+CUTIE STREET "프리큐큐" → verified Korean-language version, per-song dropped;
+both encoded in PR #126, unit-verified). Consequences while held: the tracked
+baseline (offline bundle, TJ/blog freshness) stops updating; #126's live-gate
+validation and #125's full-soak precondition cannot complete. The serving-DB
+lane (v22) is unaffected.
 
 ### Post-JOYSOUND data topology (DECIDED 2026-06-10)
 
@@ -422,6 +474,16 @@ translations. Workflow: spot a wrong entry → append a
 `scripts/data/title-ko-manual-fixes.json` → commit; the next post-crawl
 pipeline run applies it. Unblocked by: owner review time (incremental — any
 subset helps).
+
+**New finding (2026-07-12, surfaced during R7/PR #125): ~380 tj-* Stage-2
+cache entries are title-drifted** — their cached `title_primary` differs from
+the corpus by spacing/decoration (e.g. cache `"lazy" (けいおん! ED)` with a
+space vs corpus without), so the Stage-2 replay's title guard silently skips
+them every pipeline run. Pre-existing on main, unrelated to R7 (none are
+tjpdf). Impact unassessed: corpus rows may already carry title_ko from earlier
+eras, in which case the skips are harmless no-ops. Work item: measure how many
+of the 380 corpus rows lack title_ko today; if material, apply the same
+mechanical re-key used in R7 Option 2 (translations byte-preserved).
 
 ### Search-engine dead-schema retirement (RESOLVED 2026-07-08 — by removal)
 
@@ -578,8 +640,12 @@ JSONL + summary; no exit-code gating). Calibration: 0 hits over the 26,133-row
 baseline (17,257 Han-bearing rows scanned; a naive Han-without-kana scan would
 flag 4,105) while still firing on the known anomaly. Deliberately NOT wired
 into crawl.yml (kept clear of the first #97/#106 gate soak). Next steps
-(owner-gated): run it against fresh crawls / the full corpus, and wire
-confirmed hits into the drop list or the crawl report.
+(owner-gated): run it against fresh crawls, and wire confirmed hits into the
+drop list or the crawl report.
+
+**Full-corpus calibration (2026-07-12): 0 suspects over the promoted v22
+corpus (313,467 rows)** — the detector stays silent on the entire serving
+catalog, so any future hit is a high-signal leak candidate.
 
 ### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
 
