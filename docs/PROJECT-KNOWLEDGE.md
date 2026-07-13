@@ -34,7 +34,18 @@ and **the order is load-bearing — do not reorder**:
    exact TJ number.
 5. `jpn-admit-pro` — per-song JPN `nationalcode` (strongest positive signal).
 6. `jpn-admit-artist` — lead-component-only artist JPN tag (the primary
-   confirmation path by volume).
+   confirmation path by volume). **Its admit branch carries two script
+   vetoes** (both return `pass` → fall-through, added 2026-07-13): a
+   Korean-script veto (Hangul AND no Japanese over `title + artist`,
+   PR #143 — LOCAL regex constants deliberately byte-mirroring the #97
+   leakage gate, NOT the broader shared `hasHangul` which also matches
+   jamo) and a simplified-Chinese veto (`hasSimplifiedOnlyHan` from
+   `@karaoke/search`, PR #148 — deliberately single-sourced with the
+   report-only audit). Rationale: the per-song KOR signal is LAGGING (the
+   translit pass writes it post-classify), so a newly-surfaced Korean row
+   would otherwise leak for exactly one crawl before self-healing;
+   Latin/romaji-titled Korean rows carry no script signal, so the curated
+   drop lists remain load-bearing for that tail.
 7. `blog-rescue` — safety net for TJ-search index gaps. NOT dead code.
 
 Related machinery:
@@ -327,3 +338,19 @@ once the self-host setup stabilizes.
   persist or pin a `blog-*` id across crawls in fixtures, tooling, or features;
   the stable identity is the vendor karaoke number (tj/ky/joysound), with
   title+artist as a cross-check.
+
+## Script detection: kana punctuation is not script
+
+Context: title language classification (Stage-2 eligibility, "Latin-only →
+title_ko null" decisions, any future script predicate).
+Pitfall: the katakana middle dot ・ (U+30FB), its half-width form ･ (U+FF65),
+and the sound marks ゛゜ (U+309B/309C) sit INSIDE the kana Unicode blocks but
+are punctuation/stylization, not script — romanized titles use ・ as a word
+separator ("HI・MI・KO", "Merry・Go・Round"). A naive kana-block regex counts
+them as Japanese; the inverse mistake (an ASCII-focused check that ignores
+kana entirely) mislabeled 22 genuinely-Japanese titles as "pure Latin" with
+an unearned high-confidence null title_ko (recovered 2026-07-13, PR #147).
+Rule: script predicates must exclude U+30FB/FF65/309B/309C from "contains
+kana/Japanese" decisions, and any "Latin-only" verdict must be computed on
+the core title with ALL trailing parenthetical groups removed (depth-counting
+— tie-up parens nest, e.g. "…(激闘!クラッシュギアＴ(ターボ) OP)").

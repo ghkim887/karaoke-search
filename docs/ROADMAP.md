@@ -201,39 +201,39 @@ baseline (offline bundle, TJ/blog freshness) stops updating; #126's live-gate
 validation and #125's full-soak precondition cannot complete. The serving-DB
 lane (v22) is unaffected.
 
-### title_ko review CSV backlog
+### title_ko backlog — residuals only (web-verify pass DONE 2026-07-13)
 
-`scripts/data/llm-review.csv` carries the ~255 medium/low-confidence LLM
-translations. Workflow: spot a wrong entry → append a
-`{id, title_primary, title_ko}` row to
-`scripts/data/title-ko-manual-fixes.json` → commit; the next post-crawl
-pipeline run applies it. Unblocked by: owner review time (incremental — any
-subset helps).
+**The review backlog is substantially RESOLVED (PR #147, owner-directed
+"전곡 웹검색" pass):** every non-high cache entry (442 records incl. 22
+recovered "Latin-only" mislabels) was web-searched by parallel workers —
+49 upgraded to high on cited Korean sources, 16 unearned highs honestly
+downgraded, and the **388 remaining medium/low are confirmed-no-canon**
+(Korean sources use the Japanese titles; each record carries its search
+evidence). The old ~255-row `llm-review.csv` owner-review premise is
+superseded; the manual-fix workflow (`title-ko-manual-fixes.json`) stays
+available for spot corrections.
 
-The 13 uncertain rows are deliberately left no-action. The remainder stays
-incremental owner-review work. (The completed 2026-07-10 pre-review and its
-PR #109 fixes are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).)
-
-**24 tj interior-whitespace cases that stay DORMANT** (restoring them needs
+Residuals: the 13 uncertain rows stay deliberately no-action; the **24 tj
+interior-whitespace cases stay DORMANT** (restoring them needs
 interior-space handling that risks cross-song merges — a future
-harder-guarded pass; e.g. tj-26408 "One more time,One more chance"). The
-measured Stage-2 cache title drift resolution that surfaced them (PR #129,
-2026-07-12) is archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).
+harder-guarded pass; e.g. tj-26408 "One more time,One more chance"); future
+new songs flow through the standing Stage-2 runbook. Full pass narrative in
+[ROADMAP-LOG.md](ROADMAP-LOG.md).
 
-### Chinese-leak detection future work
+### Chinese-leak detection — maintenance only
 
-The flat Chinese drop list + hardcoded catalog-anomaly IDs catch known leaks,
-but TJ surfaces more non-Japanese rows over time. The right detector for
-simplified-Chinese-only rows is a **simplified-Chinese character heuristic**
-(characters that exist only in simplified script — a broad Han-without-kana
-scan false-positives on ~2k kanji-titled Japanese songs and is the wrong
-tool). Grow the catalog-anomaly ID list in `scripts/drop-artist-leaks.mjs` as
-anomalies surface; revisit list structure if the Chinese list grows past ~20
-entries (see PROJECT-KNOWLEDGE, drop lists).
+**The detector is now a classify-time defense (PR #148, 2026-07-13):**
+`hasSimplifiedOnlyHan` (the same curated predicate the report-only audit
+uses) vetoes artist-vote admits inside `jpn-admit-artist`, so
+simplified-Chinese rows self-reject without hand-maintained drop-list
+entries. Remaining live work is pure maintenance: grow the catalog-anomaly
+ID list in `scripts/drop-artist-leaks.mjs` if a leak class the curated
+76-char set cannot see ever surfaces (traditional-script Cantopop, kana-free
+titles outside the set), and revisit list structure if the Chinese list
+grows past ~20 entries (see PROJECT-KNOWLEDGE, drop lists).
 
-(The report-only simplified-Chinese detector, its full-corpus calibration,
-and the crawl-report wiring have shipped — archived in
-[ROADMAP-LOG.md](ROADMAP-LOG.md).)
+(Detector, calibration, crawl-report wiring, and the classify-time
+promotion are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).)
 
 ### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
 
@@ -251,21 +251,6 @@ and the crawl-report wiring have shipped — archived in
 *(The completed parity-baseline-regeneration-policy and smoke-fixture bullets,
 and the filter-seam script guard — SHIPPED 2026-07-13, PR #143 — are archived
 in [ROADMAP-LOG.md](ROADMAP-LOG.md).)*
-
-### Minor backlog (2026-07-13 verification round)
-
-Nits surfaced by the 2026-07-13 verification crawl; none block anything.
-
-1. Prune the now-inert chunk-50 entries tjpdf-28871/28879 (superseded by
-   chunk-62; latent truncated-title quirk if TJ ever unlists the numbers).
-2. tjpdf `crawled_at` churns every crawl (dead harvest; no data loss, but it
-   breaks byte-idempotency — all tjpdf rows re-diff weekly).
-3. 12 tjpdf titles gained whitespace-only changes (catalog-verbatim policy;
-   cosmetic).
-4. 49 Latin-only new tjpdf songs never got a `media_context_ko` pass.
-5. tjpdf→tj id migrations orphan id-keyed cache entries when the bulk feed
-   picks up a number (2 happened 2026-07-13, fixed via chunk-62; watch for
-   recurrence).
 
 ## Completed (archived)
 
@@ -288,3 +273,6 @@ Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).
 - **JOYSOUND classifier predicate unification (Phases 1+2)** — Phase 1 (T5-D); Phase 2 DONE 2026-07-13 (PR #142, 0 flips over the 352,290-row v22 replay).
 - **Offsite full-corpus backup (§8)** — CANCELLED 2026-07-13 (owner): no backup will be made; accepted recovery path = full re-crawl. Supersedes the 2026-07-12 "private" direction.
 - **Post-JOYSOUND data topology** — DECIDED 2026-06-10 → CLOSED 2026-07-13. Release-asset mechanism never used; retired in two phases (phase 1 #149 deleted the publish workflow + fetch/verify + dangling manifest; phase 2 repointed the serving runbook onto `build-sqlite-db.mjs` and deleted the `publish-full-corpus.mjs` wrapper + `lib/manifest.mjs`).
+- **Minor backlog (2026-07-13 verification round)** — ALL 5 CLOSED 2026-07-13: ②③⑤ via PR #146 (deterministic `crawled_at`, 29 edge-trimmed catalog titles + 28 cache realigns, migration-orphan warning), ①④ via PR #147 (inert hipmic prune + 48 media contexts); bonus: 17 stale-Chinese cache prunes + the tjpdf-68315 re-key.
+- **title_ko web-verify pass** — DONE 2026-07-13 (PR #147): 442 non-high/mislabeled records web-searched, 49 canonical upgrades, 16 honest downgrades, 388 confirmed-no-canon remain; cache 3,689 decisions (high 3,301).
+- **Simplified-Chinese classify-time guard** — SHIPPED 2026-07-13 (PR #148): the audit predicate now vetoes artist-vote admits (report-only detector promoted; deny-list/audit/report stay as outer defense).
