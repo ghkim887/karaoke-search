@@ -18,9 +18,14 @@
  *     already carries that TJ number.
  *   - Refresh: every existing `tjpdf-*` row is dropped up-front and re-inserted
  *     from the catalog, so retired numbers fall out and titles refresh.
- *   - crawled_at is harvested from the dropped row (keyed by TJ number) and
- *     carried forward for byte-idempotency; genuinely-new codes get a fresh
- *     ISO timestamp.
+ *   - crawled_at is sourced from the catalog entry's `checkedAt` (the row-
+ *     capture timestamp the probe records), so re-ingesting an unchanged catalog
+ *     is byte-idempotent regardless of the corpus state. It falls back to the
+ *     dropped row's crawled_at (keyed by TJ number) and then to a fresh ISO
+ *     timestamp only for a catalog missing `checkedAt` (e.g. a hand-edited one);
+ *     over the weekly pipeline's FRESH crawl corpus (zero tjpdf-* rows to
+ *     harvest) the old fallback re-stamped every row with now() each week, which
+ *     is the churn `checkedAt` removes.
  *   - artist_aliases are carried forward from the dropped row, but only when the
  *     artist is unchanged (normalizeForMatch equality) — a genuinely-different
  *     artist declines potentially-stale aliases (mirrors the python ingest).
@@ -85,8 +90,8 @@
  * Usage: node scripts/ingest-tjpdf-catalog.mjs [--catalog <path>] [--corpus <path>]
  */
 
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { isCliInvocation } from './lib/cli.mjs';
 import { loadCorpus, writeCorpusAtomic } from './lib/corpus.mjs';
@@ -184,7 +189,13 @@ export function assertCatalogEntry(entry, index) {
 export function buildIngestedCorpus(
   catalogEntries,
   corpus,
-  { isArtistDropped, normalizeForMatch, nowIso = isoUtcNow, sourceUrl = SOURCE_URL },
+  {
+    isArtistDropped,
+    normalizeForMatch,
+    nowIso = isoUtcNow,
+    sourceUrl = SOURCE_URL,
+    idKeyedArtifactIds = new Set(),
+  },
 ) {
   // Validate the catalog up-front: required identifier fields + unique `pro`.
   // The probe writes a unique catalog by construction, but the file is
@@ -237,6 +248,7 @@ export function buildIngestedCorpus(
   let alreadyInCorpus = 0;
   let droppedArtist = 0;
   const titleFallbacks = [];
+  const orphanedIds = [];
   const newRecords = [];
 
   for (let i = 0; i < catalogEntries.length; i += 1) {
@@ -245,6 +257,14 @@ export function buildIngestedCorpus(
 
     if (tjPresent.has(code)) {
       alreadyInCorpus += 1;
+      // Migration-orphan detection: this catalog code is SKIPPED because a
+      // non-tjpdf row already covers its TJ number (the tjpdf→tj id migration).
+      // If an id-keyed artifact (Stage-2 cache / manual-fix entry) still keys by
+      // the now-orphaned `tjpdf-<code>` id, that artifact will silently never
+      // apply — it must be re-keyed to the covering tj- id. Collect it for a
+      // single non-fatal warning in runIngest.
+      const tjpdfId = `tjpdf-${code}`;
+      if (idKeyedArtifactIds.has(tjpdfId)) orphanedIds.push(tjpdfId);
       continue;
     }
     const artist = entry.indexSong;
@@ -273,7 +293,12 @@ export function buildIngestedCorpus(
         ? entry.sortSongKo
         : null;
 
-    const crawledAt = oldCrawledAt.get(code) || nowIso();
+    // crawled_at prefers the catalog's stable per-row capture timestamp
+    // (`checkedAt`) so re-ingesting an unchanged catalog is byte-idempotent;
+    // falls back to the dropped row's value, then a fresh timestamp.
+    const checkedAt =
+      typeof entry.checkedAt === 'string' && entry.checkedAt.trim() !== '' ? entry.checkedAt : null;
+    const crawledAt = checkedAt || oldCrawledAt.get(code) || nowIso();
 
     // Canonical key order (matches the merger emission + the old ingest):
     // id, source_url, title_primary, title_ko, artist_primary, artist_ko,
@@ -301,19 +326,60 @@ export function buildIngestedCorpus(
       droppedArtist,
       inserted: newRecords.length,
       titleFallbacks,
+      orphanedIds,
     },
   };
 }
 
 /**
+ * Scan a data dir for id-keyed artifacts that reference `tjpdf-<code>` ids and
+ * return the set of ids they key by. Sources are the ones cheaply detectable
+ * from committed JSON: the Stage-2 LLM translation cache
+ * (`llm-translations-chunk-*.json`) and the manual title_ko fixes
+ * (`title-ko-manual-fixes.json`). Tolerant by design — this feeds a non-fatal
+ * diagnostic, so a missing dir or unparseable file is skipped (with a warn),
+ * never thrown. `reviewedMergePairs` is intentionally NOT scanned: it lives in
+ * crawler TS source and mentions tjpdf ids only in human comments (its data keys
+ * already use the migrated tj- number), so it carries no machine-readable
+ * tjpdf-* id to orphan.
+ */
+export function loadIdKeyedArtifactIds(dataDir, log = console) {
+  const ids = new Set();
+  let files;
+  try {
+    files = readdirSync(dataDir);
+  } catch {
+    return ids;
+  }
+  for (const f of files) {
+    const isChunk = /^llm-translations-chunk-\d+\.json$/.test(f);
+    if (!isChunk && f !== 'title-ko-manual-fixes.json') continue;
+    let entries;
+    try {
+      entries = JSON.parse(readFileSync(join(dataDir, f), 'utf-8'));
+    } catch (err) {
+      log.error(`WARN: skipped id-keyed artifact ${f} for orphan check: ${err.message}`);
+      continue;
+    }
+    if (!Array.isArray(entries)) continue;
+    for (const e of entries) {
+      if (typeof e?.id === 'string' && e.id.startsWith('tjpdf-')) ids.add(e.id);
+    }
+  }
+  return ids;
+}
+
+/**
  * I/O wrapper around the pure core. `predicates` is a test seam replacing the
- * dist-loaded drop predicates.
+ * dist-loaded drop predicates. `idKeyedArtifactIds` is an optional override for
+ * the migration-orphan check (defaults to scanning the catalog's data dir).
  */
 export function runIngest({
   catalogPath,
   corpusPath,
   predicates,
   nowIso = isoUtcNow,
+  idKeyedArtifactIds,
   log = console,
 }) {
   if (!existsSync(catalogPath)) {
@@ -332,9 +398,15 @@ export function runIngest({
   }
   const corpus = loadCorpus(corpusPath);
 
+  const artifactIds = idKeyedArtifactIds ?? loadIdKeyedArtifactIds(dirname(catalogPath), log);
+
   let result;
   try {
-    result = buildIngestedCorpus(catalogEntries, corpus, { ...predicates, nowIso });
+    result = buildIngestedCorpus(catalogEntries, corpus, {
+      ...predicates,
+      nowIso,
+      idKeyedArtifactIds: artifactIds,
+    });
   } catch (err) {
     log.error(`ERROR: ${err.message}`);
     return 1;
@@ -348,6 +420,14 @@ export function runIngest({
       `already_in_corpus=${s.alreadyInCorpus} inserted=${s.inserted} ` +
       `dropped_artist=${s.droppedArtist} title_fallbacks=${s.titleFallbacks.length}`,
   );
+  // Non-fatal: a skipped catalog code whose orphaned tjpdf-<code> id still has a
+  // Stage-2/manual-fix cache entry. The cached translation will silently never
+  // apply until it is re-keyed to the covering tj- id.
+  if (s.orphanedIds.length > 0) {
+    log.error(
+      `WARN: migration-orphan — ${s.orphanedIds.length} tjpdf id(s) were SKIPPED (a non-tjpdf row already covers the TJ number) but still have an id-keyed Stage-2/manual-fix cache entry: ${s.orphanedIds.join(', ')}. Re-key each cache entry to the covering tj- id (see the chunk-62 precedent).`,
+    );
+  }
   return 0;
 }
 
