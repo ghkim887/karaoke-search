@@ -5,8 +5,8 @@
     "title_ko": "On Your Mark ~빛의 기적~",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Mixed Latin+Japanese; kept 'On Your Mark' and translated the subtitle ヒカリのキセキ=빛의 기적; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Sandaime J Soul Brothers single (theme of drama 検事・鬼島平八郎); kept 'On Your Mark' + ヒカリのキセキ = 光の奇跡 = 빛의 기적; no Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/On_Your_Mark〜ヒカリのキセキ〜", "https://www.uta-net.com/song/105586/"]
   },
   {
     "id": "tjpdf-28554",
@@ -14,8 +14,8 @@
     "title_ko": "지금 달리기 시작하면",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Straightforward literal translation of a clear meaningful title; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Ikimonogakari; straightforward literal 지금 달리기 시작하면; no Korean canonical, current stands.",
+    "web_sources": ["https://www.uta-net.com/song/103209/", "https://utaten.com/lyric/jb51012121/"]
   },
   {
     "id": "tjpdf-28559",
@@ -23,8 +23,8 @@
     "title_ko": "멀리 있어도",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation of a clear title; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Kana Nishino feat. WISE; literal 멀리 있어도 (even if far away); no Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/遠くても", "https://www.uta-net.com/song/76632/"]
   },
   {
     "id": "tjpdf-28561",
@@ -32,17 +32,17 @@
     "title_ko": "달의 뒷면",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (달의 뒷면 = the far side of the moon); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: DiVA debut single; literal 달의 뒷면 (far side of the moon); no Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/月の裏側_(DiVAの曲)", "https://www.uta-net.com/song/113095/"]
   },
   {
     "id": "tjpdf-28569",
     "title_primary": "西瓜BABY",
     "title_ko": "수박 BABY",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "西瓜=수박 (watermelon); kept the Latin BABY; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: independent Korean lyric sites (jieumai, duklyrics) render the title as 수박 BABY (西瓜=수박), matching current.",
+    "web_sources": ["http://jieumai.com/xe/lyrics/591839", "http://duklyrics.blogspot.com/2015/06/not-yet-baby-lyrics.html"]
   },
   {
     "id": "tjpdf-28573",
@@ -50,8 +50,8 @@
     "title_ko": "Sexy Summer에 눈이 내린다",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Mixed Latin+Japanese; kept 'Sexy Summer' and translated 雪が降る=눈이 내린다; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Sexy Zone; kept 'Sexy Summer' + 雪が降る = 눈이 내린다; no Korean canonical, current stands.",
+    "web_sources": ["https://www.uta-net.com/song/136095/", "https://petitlyrics.com/lyrics/911127"]
   },
   {
     "id": "tjpdf-28575",
@@ -59,8 +59,8 @@
     "title_ko": "빛나는 것들",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (ヒカルもの=빛나는 것); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Watanabe Mayu single; ヒカルもの = 光るもの = 빛나는 것; no Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/ヒカルものたち", "https://www.uta-net.com/song/137625/"]
   },
   {
     "id": "tjpdf-28579",
@@ -68,8 +68,8 @@
     "title_ko": "베짱이 인간",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Web search confirmed the title references Aesop's 'The Ant and the Grasshopper'; キリギリス is 베짱이 in the Korean fable, so 베짱이 인간 (best-effort, no official Korean release title).",
-    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%AD%E3%83%AA%E3%82%AE%E3%83%AA%E3%82%B9%E4%BA%BA"]
+    "reasoning": "web-searched: No Sleeves; title references Aesop's grasshopper (キリギリス = 베짱이 in the Korean fable), 人 = 인간; no official Korean release title, best-effort literal stands.",
+    "web_sources": ["https://www.uta-net.com/song/140000/", "https://www.no3b.net/artist/no3b/discography/ESCL-3970"]
   },
   {
     "id": "tjpdf-28582",
@@ -77,8 +77,8 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Web search: portmanteau of 振袖(furisode)+'celebration'; only Korean form found is the phonetic 후리소데이션, so null per no-transliteration policy.",
-    "web_sources": ["https://colorcodedlyrics.com/2013/06/23/kyary-pamyu-pamyu-furisodeshon/", "https://namu.wiki/w/%E3%82%AD%E3%83%9F%E3%81%AB100%E3%83%91%E3%83%BC%E3%82%BB%E3%83%B3%E3%83%88%20/%20%E3%81%B5%E3%82%8A%E3%81%9D%E3%81%A7%E3%83%BC%E3%81%97%E3%82%87%E3%82%93"]
+    "reasoning": "web-searched: Kyary Pamyu Pamyu; portmanteau of 振袖 (furisode) + 'celebration' for the coming-of-age ceremony; only phonetic Korean forms (후리소데이션) exist → null per no-transliteration policy.",
+    "web_sources": ["https://colorcodedlyrics.com/2013/06/23/kyary-pamyu-pamyu-furisodeshon/", "https://www.uta-net.com/song/140146/"]
   },
   {
     "id": "tjpdf-28586",
@@ -86,8 +86,8 @@
     "title_ko": "고양이 중독",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (猫=고양이, 中毒=중독); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Tegomass; literal 고양이 중독 (猫 = 고양이, 中毒 = 중독); no Korean canonical, current stands.",
+    "web_sources": ["https://www.uta-net.com/song/146826/", "https://j-lyric.net/artist/a04caad/l02cec2.html"]
   },
   {
     "id": "tjpdf-28594",
@@ -95,8 +95,8 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Web search: Akimoto Yasushi coined word from the proverb 鴨が葱を背負ってくる (an easy mark); untranslatable pun with no Korean canon, so null.",
-    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%A2%E3%83%8D%E3%82%AE%E3%83%83%E3%82%AF%E3%82%B9", "https://48pedia.org/%E3%82%AB%E3%83%A2%E3%83%8D%E3%82%AE%E3%83%83%E3%82%AF%E3%82%B9"]
+    "reasoning": "web-searched: NMB48; Akimoto Yasushi coined word from the proverb 鴨が葱を背負ってくる (an easy mark / lucky coincidence); untranslatable pun with no Korean canon → null.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/カモネギックス", "https://48pedia.org/カモネギックス"]
   },
   {
     "id": "tjpdf-28597",
@@ -104,17 +104,17 @@
     "title_ko": "겨울 이야기",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (冬物語=겨울 이야기); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Sandaime J Soul Brothers (Blue Impact); literal 겨울 이야기 (winter tale); no Korean canonical, current stands.",
+    "web_sources": ["https://www.kkbox.com/jp/en/song/KqJkPVhh3UapEJN6Jr", "https://musicbox-trans.livejournal.com/94798.html"]
   },
   {
     "id": "tjpdf-28598",
     "title_primary": "太陽の女神(海の上の診療所 OST)",
     "title_ko": "태양의 여신",
-    "media_context_ko": "(바다 위의 진료소 OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation of title (태양의 여신); parenthetical drama 海の上の診療所 rendered literally as 바다 위의 진료소; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Ieiri Leo, Fuji TV drama 海の上の診療所 theme; literal 태양의 여신 (goddess of the sun); no Korean canonical for the song, and no canonical Korean name found for the drama → media null.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/太陽の女神", "https://www.jvcmusic.co.jp/-/Discography/A023686/VICL-36839.html"]
   },
   {
     "id": "tjpdf-28613",
@@ -131,8 +131,8 @@
     "title_ko": "Kiss me 사랑해",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Mixed Latin+Japanese; kept 'Kiss me' and translated 愛してる=사랑해; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: ℃-ute; kept 'Kiss me' + 愛してる = 사랑해; no Korean canonical, current stands.",
+    "web_sources": ["https://www.uta-net.com/song/109238/", "https://helloprolyrics.fandom.com/wiki/Kiss_me_Aishiteru"]
   },
   {
     "id": "tjpdf-28627",
@@ -140,8 +140,8 @@
     "title_ko": "샹그릴라",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "シャングリラ=Shangri-La, a proper noun whose established Korean form is 샹그릴라 (not a Japanese-phonetic transliteration); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Acid Black Cherry; シャングリラ = Shangri-La, whose established Korean form is 샹그릴라; no song-specific Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/シャングリラ_(Acid_Black_Cherryの曲)", "https://www.uta-net.com/song/120550/"]
   },
   {
     "id": "tjpdf-28656",
@@ -156,19 +156,19 @@
     "id": "tjpdf-28679",
     "title_primary": "未来(映画'Orange' OST)",
     "title_ko": "미래",
-    "media_context_ko": "(영화 '오렌지' OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (未来=미래); film Orange released in Korea as 오렌지; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Kobukuro, theme of the film 'orange -オレンジ-'; literal 미래 (future); no Korean song canonical; the film's title is already Latin 'orange', no distinct Korean name surfaced → media null.",
+    "web_sources": ["https://kobukuro.com/news/detail/100540", "https://utaten.com/lyric/sa15120145/"]
   },
   {
     "id": "tjpdf-28681",
     "title_primary": "ロマンスがありあまる(映画'ストレイヤーズクロニクル' 主題歌)",
     "title_ko": "로맨스가 넘쳐난다",
-    "media_context_ko": "(영화 '스트레이어즈 크로니클' 주제가)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ロマンスがありあまる=로맨스가 넘쳐난다 (romance overflows); film ストレイヤーズクロニクル rendered 스트레이어즈 크로니클; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Gesu no Kiwami Otome, film Strayer's Chronicle theme; literal 로맨스가 넘쳐난다 (romance overflows); no Korean canonical for song or film → media null.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/ロマンスがありあまる", "https://www.cinra.net/news/20150316-strayerschronicle"]
   },
   {
     "id": "tjpdf-28702",
@@ -192,10 +192,10 @@
     "id": "tjpdf-28727",
     "title_primary": "恋を知らない君へ(ドラマ'時をかける少女' OST)",
     "title_ko": "사랑을 모르는 그대에게",
-    "media_context_ko": "(드라마 '시간을 달리는 소녀' OST)",
+    "media_context_ko": "시간을 달리는 소녀",
     "confidence": "medium",
-    "reasoning": "恋を知らない君へ=사랑을 모르는 그대에게; 時をかける少女 has the well-established Korean title 시간을 달리는 소녀; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: NEWS, NTV Saturday drama 時をかける少女 ED; literal 사랑을 모르는 그대에게; no Korean song canonical; drama 時をかける少女 has the well-established Korean title 시간을 달리는 소녀.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/恋を知らない君へ", "https://www.cinemacafe.net/article/2016/06/07/41015.html"]
   },
   {
     "id": "tjpdf-28746",
@@ -212,8 +212,8 @@
     "title_ko": "사랑은 아지랑이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "かげろう here is 陽炎 (heat haze)=아지랑이; 사랑은 아지랑이; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Gamu (雅夢) 1980 debut; かげろう is intentionally ambiguous (陽炎 heat-haze / 蜻蛉 mayfly); no Korean canonical, current 아지랑이 (heat-haze reading) stands.",
+    "web_sources": ["https://www.uta-net.com/song/122/", "https://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q11227747756"]
   },
   {
     "id": "tjpdf-29801",
@@ -221,8 +221,8 @@
     "title_ko": "저 종을 울리는 건 당신",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation of the clause; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Wada Akiko 1972 classic; literal 저 종을 울리는 건 당신; no Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/あの鐘を鳴らすのはあなた", "https://www.uta-net.com/song/323/"]
   },
   {
     "id": "tjpdf-29802",
@@ -230,8 +230,8 @@
     "title_ko": "잘 가",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "あばよ is a casual farewell (so long)=잘 가; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Ken Naoko 1976 (written/composed by Miyuki Nakajima); あばよ = casual farewell ('so long') = 잘 가; no Korean canonical, current stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/あばよ_(研ナオコの曲)", "https://www.uta-net.com/song/337/"]
   },
   {
     "id": "tjpdf-29803",
@@ -239,8 +239,8 @@
     "title_ko": "성난 북",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "あばれ (暴れ, raging/wild) + 太鼓 (drum)=성난 북; best-effort, no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon found, literal translation stands (あばれ=성난/wild, 太鼓=북).",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%81%82%E3%81%B0%E3%82%8C%E5%A4%AA%E9%BC%93", "https://www.uta-net.com/song/341/"]
   },
   {
     "id": "tjpdf-29804",
@@ -248,8 +248,8 @@
     "title_ko": "비 내리는 미도스지",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "御堂筋 is a major Osaka avenue (proper noun) rendered 미도스지; 雨の=비 내리는; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: found Korean enka blog listings but no single authoritative canonical Korean title; place name 御堂筋=미도스지 confirmed, literal 비 내리는 미도스지 stands.",
+    "web_sources": ["https://blog.daum.net/hsjin85/category/%E6%97%A5%E6%9C%AC%E9%9F%B3%E6%A8%82%20(%EF%A6%81)/%E6%AC%A7%E9%99%BD%E8%8F%B2%E8%8F%B2", "https://lyricstranslate.com/en/feifei-ouyang-%E9%9B%A8%E3%81%AE%E5%BE%A1%E5%A0%82%E7%AD%8B-ame-no-midosuji-lyrics.html"]
   },
   {
     "id": "tjpdf-29805",
@@ -257,8 +257,8 @@
     "title_ko": "아메리카 다리",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "アメリカ橋 is a named bridge (America-bashi); 橋=다리, so 아메리카 다리; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; アメリカ橋 is a named Ebisu bridge, 橋→다리 literal stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%A1%E3%83%AA%E3%82%AB%E6%A9%8B_(%E5%B1%B1%E5%B7%9D%E8%B1%8A%E3%81%AE%E6%9B%B2)", "https://www.uta-net.com/song/10168/"]
   },
   {
     "id": "tjpdf-29806",
@@ -266,8 +266,8 @@
     "title_ko": "고마워라 가락",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "有難や=archaic 'how grateful' + 節 (tune/melody)=가락; best-effort literal, no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; archaic 有難や=고마워라, 節=가락 stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%9C%89%E9%9B%A3%E3%82%84%E7%AF%80", "https://www.uta-net.com/song/18935/"]
   },
   {
     "id": "tjpdf-29808",
@@ -275,8 +275,8 @@
     "title_ko": "차라리 세레나데",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "いっそ=차라리 (rather/altogether), セレナーデ=세레나데; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; いっそ=차라리, セレナーデ=세레나데.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%81%84%E3%81%A3%E3%81%9D_%E3%82%BB%E3%83%AC%E3%83%8A%E3%83%BC%E3%83%87", "https://www.uta-net.com/song/679/"]
   },
   {
     "id": "tjpdf-29810",
@@ -284,8 +284,8 @@
     "title_ko": "축복의 배",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "祝い船 = celebration/blessing boat = 축복의 배; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese lyric sites (j-lyric, uta-net); no Korean canon found, literal 축복의 배 stands.",
+    "web_sources": ["https://j-lyric.net/artist/a000df0/l0069c0.html", "https://www.uta-net.com/song/351/"]
   },
   {
     "id": "tjpdf-29811",
@@ -293,8 +293,8 @@
     "title_ko": "거짓말",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "うそ=거짓말 (lie); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (joysound, uta-net); no Korean canon; うそ=거짓말 is unambiguous.",
+    "web_sources": ["https://www.joysound.com/web/search/song/350", "https://www.uta-net.com/song/799/"]
   },
   {
     "id": "tjpdf-29812",
@@ -302,17 +302,17 @@
     "title_ko": "에치젠 곶",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "越前岬 is Echizen Cape (Fukui), a place name; 岬=곶, so 에치젠 곶; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: Korean video renders reading as 에치젠미사키; 越前=에치젠 confirmed, 岬→곶 follows the Korean cape-naming convention (cf. 에리모 곶); only a single romanized source, medium retained.",
+    "web_sources": ["https://www.youtube.com/watch?v=2VqwSObm2kk", "https://www.uta-net.com/song/872/"]
   },
   {
     "id": "tjpdf-29813",
     "title_primary": "襟裳岬",
     "title_ko": "에리모 곶",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "襟裳岬 is Cape Erimo (Hokkaido), a place name; 岬=곶, so 에리모 곶; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean enka blog (진형수) and cover/자막 videos render 襟裳岬 as 에리모 곶 (alongside romanized 에리모미사키).",
+    "web_sources": ["https://blog.daum.net/hsjin85/2214", "https://www.youtube.com/watch?v=vAh9VOHuGOw", "https://tv.kakao.com/channel/2689591/cliplink/300675641"]
   },
   {
     "id": "tjpdf-29814",
@@ -320,8 +320,8 @@
     "title_ko": "엔카 형제",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "演歌=엔카 (the genre name is kept), 兄弟=형제; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net); no Korean canon; 演歌=엔카 (genre kept), 兄弟=형제.",
+    "web_sources": ["https://www.uta-net.com/song/15093/"]
   },
   {
     "id": "tjpdf-29815",
@@ -329,8 +329,8 @@
     "title_ko": "오사카 랩소디",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "大阪=오사카, ラプソディー=rhapsody=랩소디; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, jvcmusic); no Korean canon; 大阪=오사카, ラプソディー=랩소디.",
+    "web_sources": ["https://www.uta-net.com/song/947/", "https://www.jvcmusic.co.jp/-/Discography/A000025/VICL-63066.html"]
   },
   {
     "id": "tjpdf-29816",
@@ -338,8 +338,8 @@
     "title_ko": "남자와 여자의 파편",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (破片=파편, fragment); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; literal 破片=파편.",
+    "web_sources": ["https://www.uta-net.com/song/1000/", "https://www.oricon.co.jp/prof/229807/lyrics/250267/"]
   },
   {
     "id": "tjpdf-29817",
@@ -347,26 +347,26 @@
     "title_ko": "어머니",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "おふくろ is an affectionate word for mother=어머니; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; おふくろ=어머니 (affectionate).",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%81%8A%E3%81%B5%E3%81%8F%E3%82%8D%E3%81%95%E3%82%93", "https://www.uta-net.com/song/1051/"]
   },
   {
     "id": "tjpdf-29818",
     "title_primary": "おまえに惚れた",
     "title_ko": "너에게 반했다",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "惚れた=반했다 (fell for you); no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean enka cover video (전광용) and daum enka cafe render おまえに惚れた as 너에게 반했다/너에게 반했어.",
+    "web_sources": ["https://www.youtube.com/watch?v=nB5Mz-CtLTw", "https://m.cafe.daum.net/isbobyb/EhNg/803"]
   },
   {
     "id": "tjpdf-29819",
     "title_primary": "およげ!たいやきくん",
-    "title_ko": "헤엄쳐라! 붕어빵",
+    "title_ko": "헤엄쳐라! 붕어빵군",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "およげ=헤엄쳐라; たいやき is the fish-shaped cake, whose Korean cultural equivalent is 붕어빵; best-effort, no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: was 헤엄쳐라! 붕어빵 → canonical 헤엄쳐라! 붕어빵군 per namu.wiki article (붕어빵 localization for 타이야키, retains -군 for くん).",
+    "web_sources": ["https://namu.wiki/w/%ED%97%A4%EC%97%84%EC%B3%90%EB%9D%BC!%20%EB%B6%95%EC%96%B4%EB%B9%B5%EA%B5%B0"]
   },
   {
     "id": "tjpdf-29820",
@@ -374,8 +374,8 @@
     "title_ko": "내게 시집와요",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "お嫁においで = come be my bride = 내게 시집와요; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, kkbox); no Korean canon; お嫁においで=내게 시집와요.",
+    "web_sources": ["https://www.uta-net.com/song/1122/", "https://www.kkbox.com/jp/en/song/8nNzbI71Mjx8TfZ1Pl"]
   },
   {
     "id": "tjpdf-29821",
@@ -383,8 +383,8 @@
     "title_ko": "여자의 역",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (駅=역, station); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, j-lyric); no Korean canon; 駅=역 literal.",
+    "web_sources": ["https://www.uta-net.com/song/1170/", "https://j-lyric.net/artist/a0005f1/l000723.html"]
   },
   {
     "id": "tjpdf-29822",
@@ -392,17 +392,17 @@
     "title_ko": "여자의 길",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "みち=道=길; 여자의 길; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; みち=道=길.",
+    "web_sources": ["https://www.uta-net.com/song/1197/", "https://www.oricon.co.jp/prof/201667/lyrics/241596/"]
   },
   {
     "id": "tjpdf-29823",
     "title_primary": "喝采",
     "title_ko": "갈채",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "喝采 = applause/acclaim = 갈채 (exact hanja word); no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean lyrics DB (gasazip) titles the song 喝采 (갈채), matching the hanja-word rendering.",
+    "web_sources": ["https://mini.gasazip.com/view.html?no=2432186"]
   },
   {
     "id": "tjpdf-29824",
@@ -410,8 +410,8 @@
     "title_ko": "슬픔 본선 일본해",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "哀しみ=슬픔, 本線=railway main line=본선, 日本海=일본해 (literal); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; literal 哀しみ=슬픔, 本線=본선, 日本海=일본해 stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E5%93%80%E3%81%97%E3%81%BF%E6%9C%AC%E7%B7%9A%E6%97%A5%E6%9C%AC%E6%B5%B7", "https://www.uta-net.com/song/1354/"]
   },
   {
     "id": "tjpdf-29825",
@@ -419,17 +419,17 @@
     "title_ko": "간다 강",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "神田川 is the Kanda River in Tokyo; 川=강, so 간다 강; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 神田=간다 (Tokyo river), 川=강.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E7%A5%9E%E7%94%B0%E5%B7%9D_(%E6%9B%B2)", "https://www.uta-net.com/song/1427/"]
   },
   {
     "id": "tjpdf-29826",
     "title_primary": "関白宣言",
     "title_ko": "관백 선언",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "関白=관백 (historically the chief adviser, figuratively a domineering husband) + 宣言=선언; 관백 선언; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean-subtitled video renders 관백선언 (canon writes it without the space); artist has a namu.wiki page. 관백 선언 confirmed.",
+    "web_sources": ["https://www.youtube.com/watch?v=IEHHIKRH7j8", "https://namu.wiki/w/%EC%82%AC%EB%8B%A4%20%EB%A7%88%EC%82%AC%EC%8B%9C"]
   },
   {
     "id": "tjpdf-29827",
@@ -437,8 +437,8 @@
     "title_ko": "어릴 적처럼",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ガキの頃 = kid/brat days = 어릴 적, のように=처럼; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, ja.wikipedia); no Korean canon; ガキの頃=어릴 적, のように=처럼.",
+    "web_sources": ["https://www.uta-net.com/song/1250/", "https://ja.wikipedia.org/wiki/%E3%82%AC%E3%82%AD%E3%81%AE%E9%A0%83%E3%81%AE%E3%82%88%E3%81%86%E3%81%AB"]
   },
   {
     "id": "tjpdf-29828",
@@ -446,8 +446,8 @@
     "title_ko": "학창 시절",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "学生時代 = student days = 학창 시절; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (dailymotion, youtube); no Korean canon; 学生時代=학창 시절.",
+    "web_sources": ["https://www.dailymotion.com/video/x827z4s", "https://www.youtube.com/watch?v=wI5Axgkl9vc"]
   },
   {
     "id": "tjpdf-29829",
@@ -455,8 +455,8 @@
     "title_ko": "그대야말로 내 생명",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "君こそ=그대야말로, わが命=내 생명; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, j-lyric); no Korean canon; 君こそ=그대야말로, わが命=내 생명.",
+    "web_sources": ["https://www.uta-net.com/song/1541/", "https://j-lyric.net/artist/a002276/l00169d.html"]
   },
   {
     "id": "tjpdf-29830",
@@ -464,8 +464,8 @@
     "title_ko": "너는 마음의 아내니까",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Literal translation (心の妻=마음의 아내, だから=니까); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, joysound); no Korean canon; 心の妻=마음의 아내, だから=니까.",
+    "web_sources": ["https://www.uta-net.com/song/1577/", "https://www.joysound.com/web/search/song/2131"]
   },
   {
     "id": "tjpdf-29831",
@@ -473,8 +473,8 @@
     "title_ko": "교토의 사랑",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "京都=교토, 恋=사랑; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 京都=교토, 恋=사랑.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E4%BA%AC%E9%83%BD%E3%81%AE%E6%81%8B", "https://www.uta-net.com/movie/21202/"]
   },
   {
     "id": "tjpdf-29832",
@@ -482,8 +482,8 @@
     "title_ko": "결혼하자",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "結婚しようよ = let's get married = 결혼하자; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese/English sources (uta-net, EN translation blog); no Korean canon; 結婚しようよ=결혼하자.",
+    "web_sources": ["https://www.uta-net.com/song/1750/", "https://vadasambar.com/post/translations/takuro-yoshida/kekkon-shiyo-yo/"]
   },
   {
     "id": "tjpdf-29833",
@@ -491,8 +491,8 @@
     "title_ko": "사랑의 계절",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "恋の季節 = season of love = 사랑의 계절; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 恋の季節=사랑의 계절.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%81%8B%E3%81%AE%E5%AD%A3%E7%AF%80", "https://www.uta-net.com/song/1819/"]
   },
   {
     "id": "tjpdf-29834",
@@ -500,8 +500,8 @@
     "title_ko": "사랑의 도시 삿포로",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "恋の町=사랑의 도시, 札幌=삿포로 (Sapporo); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; 恋の町=사랑의 도시, 札幌=삿포로.",
+    "web_sources": ["https://www.uta-net.com/song/1840/", "https://www.oricon.co.jp/prof/227610/lyrics/121476/"]
   },
   {
     "id": "tjpdf-29835",
@@ -509,26 +509,26 @@
     "title_ko": "연인도 젖는 길모퉁이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "恋人も濡れる=연인도 젖는, 街角=길모퉁이; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; 恋人も濡れる=연인도 젖는, 街角=길모퉁이.",
+    "web_sources": ["https://www.uta-net.com/song/1869/", "https://www.oricon.co.jp/prof/235636/lyrics/257139/"]
   },
   {
     "id": "tjpdf-29836",
     "title_primary": "心のこり",
     "title_ko": "미련",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "心のこり=心残り (lingering regret/attachment)=미련; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: gasazip lyrics DB glosses 心のこり (코코로노코리) as 미련.",
+    "web_sources": ["https://gasazip.com/view.html?singer2=%E7%B4%B0%E5%B7%9D%E3%81%9F%E3%81%8B%E3%81%97"]
   },
   {
     "id": "tjpdf-29837",
     "title_primary": "秋桜(コスモス)",
     "title_ko": "코스모스",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "秋桜 is read コスモス (the cosmos flower), given by the parenthetical; Korean 코스모스; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: gasazip and lyricstranslate render 秋桜(コスモス) as 코스모스 (reading given by the parenthetical).",
+    "web_sources": ["https://gasazip.com/532904", "https://lyricstranslate.com/en/cosmos-koseumoseu.html"]
   },
   {
     "id": "tjpdf-29838",
@@ -536,26 +536,26 @@
     "title_ko": "벚꽃 (독창)",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "さくら=벚꽃, 独唱=독창 (solo); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, mu-mo); no Korean canon; さくら=벚꽃, 独唱=독창.",
+    "web_sources": ["https://www.uta-net.com/song/17129/", "https://sp-m.mu-mo.net/lyric/2545949/"]
   },
   {
     "id": "tjpdf-29839",
     "title_primary": "重力シンパシー",
     "title_ko": "중력 심퍼시",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "重力=중력, シンパシー=English 'sympathy' rendered 심퍼시; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki article exists and Korean cover/자막 videos render it 중력 심퍼시.",
+    "web_sources": ["https://namu.wiki/w/%E9%87%8D%E5%8A%9B%E3%82%B7%E3%83%B3%E3%83%91%E3%82%B7%E3%83%BC", "https://www.youtube.com/watch?v=N7y2asaZRS0"]
   },
   {
     "id": "tjpdf-29840",
     "title_primary": "さそり座の女",
     "title_ko": "전갈자리의 여자",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "さそり座=Scorpio=전갈자리, 女=여자; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: multiple Korean lyric sites (gasazip, daum enka cafe) render さそり座の女 as 전갈자리(의) 여자.",
+    "web_sources": ["http://gasazip.com/view.html?no=531286", "https://m.cafe.daum.net/jeokhojaemkchoi/PGid/20"]
   },
   {
     "id": "tjpdf-29841",
@@ -563,8 +563,8 @@
     "title_ko": "선인장 꽃",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "サボテン=cactus=선인장, 花=꽃; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; サボテン=선인장, 花=꽃.",
+    "web_sources": ["https://www.uta-net.com/song/2096/", "https://www.oricon.co.jp/prof/105312/lyrics/453/"]
   },
   {
     "id": "tjpdf-29842",
@@ -572,8 +572,8 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Web search: サライ is a coined title from Persian 'sarai' (home/lodging) evoking 心のふるさと; only a phonetic Korean rendering exists, so null per no-transliteration policy.",
-    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%B5%E3%83%A9%E3%82%A4_(%E6%9B%B2)", "https://utaten.com/specialArticle/index/7678"]
+    "reasoning": "web-searched: サライ is a coined title (Persian 'sarai' / evoking 心のふるさと); Korean sources give only a phonetic 사라이, no semantic canon, so null per no-transliteration policy.",
+    "web_sources": ["https://www.hmv.co.jp/en/artist_Yuzo-Kayama-Shinji-Tanimura_000000000008944/item_%E3%82%B5%E3%83%A9%E3%82%A4_19152", "https://www.youtube.com/watch?v=w3HER-qoQh4"]
   },
   {
     "id": "tjpdf-29844",
@@ -581,8 +581,8 @@
     "title_ko": "시클라멘의 향기",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "シクラメン=cyclamen=시클라멘, かほり=archaic かおり (fragrance)=향기; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; シクラメン=시클라멘, かほり(=かおり)=향기.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%82%B7%E3%82%AF%E3%83%A9%E3%83%A1%E3%83%B3%E3%81%AE%E3%81%8B%E3%81%BB%E3%82%8A", "https://www.uta-net.com/song/2408/"]
   },
   {
     "id": "tjpdf-29845",
@@ -590,8 +590,8 @@
     "title_ko": "쇼와 블루스",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "昭和=Showa era=쇼와, ブルース=블루스; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 昭和=쇼와, ブルース=블루스.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%98%AD%E5%92%8C%E3%83%96%E3%83%AB%E3%83%BC%E3%82%B9", "https://www.uta-net.com/song/2584/"]
   },
   {
     "id": "tjpdf-29846",
@@ -599,8 +599,8 @@
     "title_ko": "알고 싶지 않아",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "知りたくないの = I don't want to know = 알고 싶지 않아; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese/English sources (uta-net, mu-mo); no Korean canon; 知りたくないの=알고 싶지 않아.",
+    "web_sources": ["https://www.uta-net.com/song/42644/", "https://sp-m.mu-mo.net/lyric/968067/"]
   },
   {
     "id": "tjpdf-29847",
@@ -608,8 +608,8 @@
     "title_ko": "시레토코 여정",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "知床=Shiretoko (Hokkaido)=시레토코, 旅情=travel sentiment=여정; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 知床=시레토코 (Hokkaido), 旅情=여정.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E7%9F%A5%E5%BA%8A%E6%97%85%E6%83%85", "https://www.uta-net.com/song/2600/"]
   },
   {
     "id": "tjpdf-29848",
@@ -617,8 +617,8 @@
     "title_ko": "하얀 해협",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "白い=하얀, 海峡=해협 (strait); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 白い=하얀, 海峡=해협.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E7%99%BD%E3%81%84%E6%B5%B7%E5%B3%A1", "https://www.uta-net.com/song/2603/"]
   },
   {
     "id": "tjpdf-29849",
@@ -626,8 +626,8 @@
     "title_ko": "하얀 그네",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "白い=하얀, ブランコ=swing=그네; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, j-lyric); no Korean canon; 白い=하얀, ブランコ=그네.",
+    "web_sources": ["https://www.uta-net.com/song/2613/", "https://j-lyric.net/artist/a00078c/l0044a9.html"]
   },
   {
     "id": "tjpdf-29851",
@@ -635,8 +635,8 @@
     "title_ko": "시대에 뒤처진",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "時代おくれ=時代遅れ (behind the times/old-fashioned)=시대에 뒤처진; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, sonymusic); no Korean canon; 時代おくれ(=時代遅れ)=시대에 뒤처진.",
+    "web_sources": ["https://www.uta-net.com/song/2417/", "https://www.sonymusic.co.jp/artist/EigoKawashima/discography/SRDL-3363"]
   },
   {
     "id": "tjpdf-29852",
@@ -644,8 +644,8 @@
     "title_ko": "열아홉의 봄",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "十九の春 = the nineteenth (age 19) spring = 열아홉의 봄; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, note.com); no Korean canon; 十九の春=열아홉의 봄.",
+    "web_sources": ["https://www.uta-net.com/song/2491/", "https://note.com/blues_night/n/nb252d7914253"]
   },
   {
     "id": "tjpdf-29854",
@@ -653,8 +653,8 @@
     "title_ko": "세토의 신부",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "瀬戸=Seto (Inland Sea)=세토, 花嫁=신부 (bride); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 瀬戸=세토 (Inland Sea), 花嫁=신부.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E7%80%AC%E6%88%B8%E3%81%AE%E8%8A%B1%E5%AB%81", "https://www.uta-net.com/song/2819/"]
   },
   {
     "id": "tjpdf-29855",
@@ -662,8 +662,8 @@
     "title_ko": "선생님",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "せんせい=先生=선생님; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon for this song (a gasazip 선생님 hit is 소향's own Korean song, unrelated); せんせい=先生=선생님.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E3%81%9B%E3%82%93%E3%81%9B%E3%81%84_(%E6%A3%AE%E6%98%8C%E5%AD%90%E3%81%AE%E6%9B%B2)", "https://www.uta-net.com/song/6050/"]
   },
   {
     "id": "tjpdf-29856",
@@ -671,8 +671,8 @@
     "title_ko": "소에몬초 블루스",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "宗右衛門町 is Sōemon-chō, an Osaka district=소에몬초, ブルース=블루스; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 宗右衛門町=소에몬초 (Osaka district), ブルース=블루스.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E5%B9%B3%E5%92%8C%E5%8B%9D%E6%AC%A1%E3%81%A8%E3%83%80%E3%83%BC%E3%82%AF%E3%83%9B%E3%83%BC%E3%82%B9", "https://www.uta-net.com/song/2857/"]
   },
   {
     "id": "tjpdf-29857",
@@ -680,8 +680,8 @@
     "title_ko": "나그네 여로",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "旅笠 (traveler's straw hat) + 道中 (on the road) evokes a wanderer's journey=나그네 여로; best-effort, no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; 旅笠+道中 (traveler's journey) rendered 나그네 여로.",
+    "web_sources": ["https://www.uta-net.com/song/2996/", "https://www.oricon.co.jp/prof/240689/lyrics/245852/"]
   },
   {
     "id": "tjpdf-29858",
@@ -689,17 +689,17 @@
     "title_ko": "나그네여",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "旅人よ = O traveler = 나그네여; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, j-lyric); no Korean canon; 旅人よ=나그네여.",
+    "web_sources": ["https://www.uta-net.com/song/460/", "https://j-lyric.net/artist/a0000a7/l005d6b.html"]
   },
   {
     "id": "tjpdf-29859",
     "title_primary": "大都会",
     "title_ko": "대도시",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "大都会 = big city = 대도시; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean music services (Bugs, Apple Music KR) title 大都会 as 대도시.",
+    "web_sources": ["https://music.bugs.co.kr/track/32016184", "https://music.apple.com/kr/song/%E5%A4%A7%E9%83%BD%E4%BC%9A/260610306"]
   },
   {
     "id": "tjpdf-29860",
@@ -707,8 +707,8 @@
     "title_ko": "아무도 없는 바다",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "誰もいない海 = the sea where no one is = 아무도 없는 바다; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 誰もいない海=아무도 없는 바다.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E8%AA%B0%E3%82%82%E3%81%84%E3%81%AA%E3%81%84%E6%B5%B7", "https://www.uta-net.com/song/3005/"]
   },
   {
     "id": "tjpdf-29861",
@@ -716,8 +716,8 @@
     "title_ko": "따라올래?",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ついて来るかい = will you follow me? = 따라올래?; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, j-lyric); no Korean canon; ついて来るかい=따라올래?.",
+    "web_sources": ["https://www.uta-net.com/song/3085/", "https://j-lyric.net/artist/a000d3b/l005711.html"]
   },
   {
     "id": "tjpdf-29862",
@@ -725,17 +725,17 @@
     "title_ko": "날개 꺾인 천사",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "翼の折れた=날개 꺾인, 天使=천사; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon; note the canonical Japanese title is 翼の折れたエンジェル (中村あゆみ) — input uses 天使, so 天使→천사 literal stands.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E7%BF%BC%E3%81%AE%E6%8A%98%E3%82%8C%E3%81%9F%E3%82%A8%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AB", "https://www.uta-net.com/song/484/"]
   },
   {
     "id": "tjpdf-29863",
     "title_primary": "翼をください",
     "title_ko": "날개를 주세요",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "翼をください = please give me wings = 날개를 주세요; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: gasazip, Bugs, and Korean 가사/해석 videos all render 翼をください as 날개를 주세요.",
+    "web_sources": ["https://gasazip.com/339640", "https://music.bugs.co.kr/track/3365600", "https://www.youtube.com/watch?v=8-nrgb9sWLs"]
   },
   {
     "id": "tjpdf-29864",
@@ -743,8 +743,8 @@
     "title_ko": "편지",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "手紙 = letter = 편지; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; 手紙=편지.",
+    "web_sources": ["https://www.uta-net.com/song/3127/", "https://www.oricon.co.jp/prof/253265/lyrics/227557/"]
   },
   {
     "id": "tjpdf-29865",
@@ -752,8 +752,8 @@
     "title_ko": "무당벌레 삼바",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "てんとう虫=ladybug=무당벌레, サンバ=삼바; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, mu-mo); no Korean canon; てんとう虫=무당벌레, サンバ=삼바.",
+    "web_sources": ["https://www.uta-net.com/song/3160/", "https://sp-m.mu-mo.net/lyric/3888728/"]
   },
   {
     "id": "tjpdf-29866",
@@ -761,8 +761,8 @@
     "title_ko": "도쿄 사막",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "東京=도쿄, 砂漠=사막; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 東京=도쿄, 砂漠=사막.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%9D%B1%E4%BA%AC%E7%A0%82%E6%BC%A0_(%E6%9B%B2)", "https://www.uta-net.com/song/3178/"]
   },
   {
     "id": "tjpdf-29867",
@@ -770,8 +770,8 @@
     "title_ko": "도쿄의 꽃 파는 아가씨",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "花売娘 = flower-selling girl = 꽃 파는 아가씨; 도쿄의 꽃 파는 아가씨; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, j-lyric); no Korean canon; 花売娘=꽃 파는 아가씨.",
+    "web_sources": ["https://www.uta-net.com/song/3186/", "https://j-lyric.net/artist/a000bac/l00577d.html"]
   },
   {
     "id": "tjpdf-29868",
@@ -779,17 +779,17 @@
     "title_ko": "도진보",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "東尋坊 is Tōjinbō, the Fukui cliffs (proper noun)=도진보; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (joysound, uta-net); no Korean canon; 東尋坊=도진보 (Fukui cliffs, proper noun).",
+    "web_sources": ["https://www.joysound.com/web/search/song/22008", "https://www.uta-net.com/song/15588/"]
   },
   {
     "id": "tjpdf-29869",
     "title_primary": "年下の男の子",
     "title_ko": "연하의 남자아이",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "年下=연하 (younger), 男の子=남자아이; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki Candies (캔디즈) discography renders 年下の男の子 as 연하의 남자아이.",
+    "web_sources": ["https://namu.wiki/w/%EC%BA%94%EB%94%94%EC%A6%88"]
   },
   {
     "id": "tjpdf-29870",
@@ -797,8 +797,8 @@
     "title_ko": "여름 축제",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "夏まつり = summer festival = 여름 축제; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; 夏まつり=여름 축제 (Inoue Yosui 1972 track, not the JITTERIN'JINN song).",
+    "web_sources": ["https://www.uta-net.com/song/2252/", "https://www.oricon.co.jp/prof/193271/lyrics/184530/"]
   },
   {
     "id": "tjpdf-29871",
@@ -806,8 +806,8 @@
     "title_ko": "눈물군, 안녕",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "涙くん = personified 'Mr. Tears' = 눈물군, さよなら=안녕(goodbye); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; personified 涙くん=눈물군, さよなら=안녕.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%B6%99%E3%81%8F%E3%82%93%E3%81%95%E3%82%88%E3%81%AA%E3%82%89", "https://www.uta-net.com/song/46298/"]
   },
   {
     "id": "tjpdf-29872",
@@ -815,8 +815,8 @@
     "title_ko": "눈물의 정조",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "なみだ=눈물, 操=fidelity/chastity=정조; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, enkara.net); no Korean canon; なみだ=눈물, 操=정조.",
+    "web_sources": ["https://www.uta-net.com/song/3470/", "https://enkara.net/namida-no-misao-tonosamakings/"]
   },
   {
     "id": "tjpdf-29873",
@@ -824,8 +824,8 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Web search: ノラ is 野良 (stray) written in stylized katakana as a metaphor for a woman living wild, but deliberately ambiguous (also reads as the name Nora); no clean Korean form without transliteration, so null.",
-    "web_sources": ["https://www.uta-net.com/song/10471/", "https://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1338414328"]
+    "reasoning": "web-searched: Korean music services (Bugs, gasazip) only transliterate as 노라 (deliberately ambiguous 野良/name Nora); no semantic Korean form, null per no-transliteration policy.",
+    "web_sources": ["https://music.bugs.co.kr/track/2102092", "https://mini.gasazip.com/view.html?title2=%E3%83%8E%E3%83%A9+(%EB%85%B8%EB%9D%BC)"]
   },
   {
     "id": "tjpdf-29874",
@@ -833,8 +833,8 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Web search: 流恋草 is ateji read はぐれそう (from はぐれる, to stray from love); the characters do not match the reading, so no faithful Korean translation exists, hence null.",
-    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%B5%81%E6%81%8B%E8%8D%89"]
+    "reasoning": "web-searched: 流恋草 is ateji read はぐれそう (to stray from love); the kanji do not match the reading, so no faithful Korean translation exists, null.",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E6%B5%81%E6%81%8B%E8%8D%89", "https://ototoy.jp/_/default/p/1552486"]
   },
   {
     "id": "tjpdf-29875",
@@ -842,17 +842,17 @@
     "title_ko": "꽃",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "花 = flower = 꽃 (the Kina Shōkichi Okinawan standard); no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (ja.wikipedia, uta-net); no Korean canon; 花=꽃 (Kina Shokichi Okinawan standard).",
+    "web_sources": ["https://ja.wikipedia.org/wiki/%E8%8A%B1%E3%80%9C%E3%81%99%E3%81%B9%E3%81%A6%E3%81%AE%E4%BA%BA%E3%81%AE%E5%BF%83%E3%81%AB%E8%8A%B1%E3%82%92%E3%80%9C", "https://www.uta-net.com/song/94374/"]
   },
   {
     "id": "tjpdf-29876",
     "title_primary": "花街の母",
     "title_ko": "화류계의 어머니",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "花街 = pleasure/geisha quarter = 화류계, 母=어머니; no web search.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean enka cafe glosses 花街の母 as 화류계의 엄마/어머니 (花街=화류계, 母=어머니 confirmed).",
+    "web_sources": ["https://m.cafe.daum.net/wondosam/AkgP/2032"]
   },
   {
     "id": "tjpdf-29877",
@@ -860,7 +860,7 @@
     "title_ko": "봄이 왔다",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "春が来た = spring has come = 봄이 왔다; no web search.",
-    "web_sources": []
+    "reasoning": "web-searched: only Japanese sources (uta-net, oricon); no Korean canon; 春が来た=봄이 왔다.",
+    "web_sources": ["https://utaten.com/lyric/ja00009465/", "https://www.oricon.co.jp/prof/238381/products/414021/1/"]
   }
 ]

@@ -77,8 +77,11 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
-    "web_sources": []
+    "reasoning": "web-searched: real CHAGE and ASKA song (full title パラシュートの部屋で, ASKA 2009); no Korean canon found; declining to translate stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/13730/",
+      "https://lyricstranslate.com/ja/chage-and-aska-parachute-no-heya-de-lyrics.html"
+    ]
   },
   {
     "id": "tj-25022",
@@ -129,10 +132,13 @@
     "id": "tj-25031",
     "title_primary": "六幻(東京リベンジャーズ OST)",
     "title_ko": "육환",
-    "media_context_ko": "(도쿄리벤저스 OST)",
-    "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "media_context_ko": "도쿄 리벤저스",
+    "confidence": "high",
+    "reasoning": "web-verified: Korean Tokyo Revengers fan-sub channel renders 六幻(육환) (Mikey/Sano Manjiro character song); matches deterministic 六幻→육환 Sino-Korean reading.",
+    "web_sources": [
+      "https://www.youtube.com/watch?v=4h1Sf5OXDXk",
+      "https://namu.wiki/w/도쿄%20리벤저스"
+    ]
   },
   {
     "id": "tj-25032",
@@ -292,9 +298,12 @@
     "title_primary": "ゆらめき(日本一の男の魂 OP)",
     "title_ko": "흔들림",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki DIR EN GREY discography renders ゆらめき as 흔들림 (alongside 残→잔, アクロの丘→아크로 언덕); matches current.",
+    "web_sources": [
+      "https://namu.wiki/w/DIR%20EN%20GREY",
+      "https://lyricstranslate.com/en/dir-en-grey-yurameki-english"
+    ]
   },
   {
     "id": "tj-25086",
@@ -329,8 +338,11 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
-    "web_sources": []
+    "reasoning": "web-searched: confirmed Namie Amuro w/ SUPER MONKEY'S 'TRY ME 〜私を信じて〜' (1995); no Korean canon found for mixed Latin/JP title; declining to translate stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/TRY_ME_%E3%80%9C%E7%A7%81%E3%82%92%E4%BF%A1%E3%81%98%E3%81%A6%E3%80%9C",
+      "https://www.uta-net.com/song/8199/"
+    ]
   },
   {
     "id": "tj-25098",
@@ -626,8 +638,10 @@
     "title_ko": "그래! We're ALIVE",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: namu.wiki entry exists but retains Japanese title (no translated Korean canon); そうだ=그래 + We're ALIVE kept; literal translation stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%81%9D%E3%81%86%E3%81%A0%EF%BC%81We're%20ALIVE"
+    ]
   },
   {
     "id": "tj-25184",
@@ -812,11 +826,14 @@
   {
     "id": "tj-25242",
     "title_primary": "鳥の詩(AIR OP)",
-    "title_ko": null,
-    "media_context_ko": null,
-    "confidence": "low",
-    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
-    "web_sources": []
+    "title_ko": "새의 시",
+    "media_context_ko": "AIR",
+    "confidence": "high",
+    "reasoning": "was: null → canonical: 새의 시, per namu.wiki page titled '새의 시' and Korean community/karaoke usage (침하하, KY '鳥の詩(새의 시)').",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%83%88%EC%9D%98%20%EC%8B%9C",
+      "https://chimhaha.net/comic/578662"
+    ]
   },
   {
     "id": "tj-25244",
@@ -832,9 +849,12 @@
     "title_primary": "シングルベッド(D.N.A2 ED)",
     "title_ko": "싱글 베드",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean sources (namu.wiki 샤란Q, gasazip, 가사/해석 video) render シングルベッド as 싱글 베드; matches current.",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%83%A4%EB%9E%80Q",
+      "https://gasazip.com/157085"
+    ]
   },
   {
     "id": "tj-25252",
@@ -1013,8 +1033,11 @@
     "title_ko": "근사하지",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: FFX theme (RIKKI); Korean renderings vary (멋지지요/멋지지 vs 근사하지), no single authoritative canon; current translation retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E7%B4%A0%E6%95%B5%E3%81%A0%E3%81%AD",
+      "https://www.youtube.com/watch?v=JBBR7SUXQAM"
+    ]
   },
   {
     "id": "tj-25283",
@@ -1184,8 +1207,11 @@
     "title_ko": "Soul Of Rebirth ~시대의 고동이 되어라~",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 影山ヒロノブ, Cyber Formula SIN theme; no Korean canon found; 時代の鼓動になれ=시대의 고동이 되어라 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/movie/48021/",
+      "https://animesongz.com/lyric/2100/8930"
+    ]
   },
   {
     "id": "tj-25317",
@@ -1209,10 +1235,13 @@
     "id": "tj-25323",
     "title_primary": "遠くまで(バンパイアハンターD ED)",
     "title_ko": "멀리까지",
-    "media_context_ko": "(뱀파이어헌터D ED)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: Do As Infinity, Vampire Hunter D ED; no authoritative Korean canon (Korean karaoke listing variant 먼 곳까지 unverified); 遠くまで=멀리까지 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/12890/",
+      "https://utaten.com/lyric/ja00009581/"
+    ]
   },
   {
     "id": "tj-25324",
@@ -1292,8 +1321,11 @@
     "title_ko": "손바닥의 우주",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 岩男潤子, Key the Metal Idol ED; no Korean canon found; 手のひらの宇宙=손바닥의 우주 literal translation stands.",
+    "web_sources": [
+      "https://utaten.com/lyric/yj15121051/",
+      "https://en.wikipedia.org/wiki/Key_the_Metal_Idol"
+    ]
   },
   {
     "id": "tj-25348",
@@ -1389,10 +1421,13 @@
     "id": "tj-25364",
     "title_primary": "まほろDEまんぼー(まほろまてぃっく ED)",
     "title_ko": "마호로데만보",
-    "media_context_ko": "(마호로매틱 ED)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: とりおまてぃっく, Mahoromatic ED; title is wordplay (Mahoro + mambo); no Korean canon found; existing transliteration retained.",
+    "web_sources": [
+      "https://www.joysound.com/web/search/song/39967",
+      "https://animesongz.com/lyric/2354/12252"
+    ]
   },
   {
     "id": "tj-25366",
@@ -1434,10 +1469,13 @@
     "id": "tj-25370",
     "title_primary": "情熱(東京アンダーグラウンド OP)",
     "title_ko": "정열",
-    "media_context_ko": "(도쿄언더그라운드 OP)",
+    "media_context_ko": "도쿄 언더그라운드",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: [iksi:d], Tokyo Underground OP; no song-specific Korean canon; 情熱→정열 Sino-Korean reading (passion) stands.",
+    "web_sources": [
+      "https://www.uta-net.com/movie/72391/",
+      "https://ja.namu.wiki/w/%EB%8F%84%EC%BF%84%20%EC%96%B8%EB%8D%94%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C"
+    ]
   },
   {
     "id": "tj-25371",
@@ -1641,10 +1679,13 @@
     "id": "tj-25413",
     "title_primary": "あの日に…(電影少女 ED)",
     "title_ko": "그날에…",
-    "media_context_ko": null,
+    "media_context_ko": "전영소녀",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 木村真紀, Video Girl Ai ED; one Korean source renders 그날로, current 그날에… retained (both = 'that day'); no single authoritative canon.",
+    "web_sources": [
+      "https://gasazip.com/65058",
+      "https://www.youtube.com/watch?v=DNTZRSWOveE"
+    ]
   },
   {
     "id": "tj-25414",
@@ -1751,8 +1792,10 @@
     "title_ko": "304호실 백사의 벚꽃",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: DIR EN GREY track; only Spotify listing found, no Korean canonical title; literal translation (304호실 + 白死 백사 + 桜 벚꽃) stands.",
+    "web_sources": [
+      "https://open.spotify.com/track/2zDmprtTbYurZzoIrPnjPi"
+    ]
   },
   {
     "id": "tj-25443",
@@ -2495,11 +2538,15 @@
   {
     "id": "tj-25578",
     "title_primary": "白夜~True Light~(D.N.ANGEL OP)",
-    "title_ko": null,
-    "media_context_ko": null,
+    "title_ko": "백야 ~True Light~",
+    "media_context_ko": "디엔엔젤",
     "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "reasoning": "Mislabel correction: was tagged 'pure Latin, no translation needed', but the core title 白夜 (byakuya) is Japanese and only ~True Light~ is Latin. Web search confirms the D.N.ANGEL 1st OP by 宮本駿一; Korean sources (Daum cafe 'D.N.ANGEL OP 디엔엔젤 - 백야', Bugs track listing) render 白夜 as the canonical Korean 백야 (white night / midnight sun). Latin subtitle ~True Light~ kept verbatim per mixed-title rule. Canon found → high.",
+    "web_sources": [
+      "https://namu.wiki/w/%E7%99%BD%E5%A4%9C%EF%BD%9ETrue%20Light%EF%BD%9E",
+      "https://m.cafe.daum.net/cjstkdmlRhfl/JrAA/4",
+      "https://music.bugs.co.kr/track/6178864"
+    ]
   },
   {
     "id": "tj-25580",
@@ -2531,11 +2578,15 @@
   {
     "id": "tj-25586",
     "title_primary": "イタズラなKISS(犬夜叉 主題歌)",
-    "title_ko": null,
-    "media_context_ko": null,
+    "title_ko": "장난스런 KISS",
+    "media_context_ko": "이누야샤",
     "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but イタズラな (mischievous/playful) is Japanese; only KISS is Latin. Web search confirms day after tomorrow's イタズラなKiss, the 6th ED of 犬夜叉 (Inuyasha). Korean lyric/music sources (Bugs '이누야샤 6th ED', gasazip) converge on 장난스런/장난스러운 for イタズラな — same rendering as the well-known drama title 장난스런 키스. Translated the Japanese portion to canon 장난스런, kept Latin KISS verbatim per mixed-title rule. Converging Korean canon → high.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/80023096",
+      "https://gasazip.com/view.html?title2=%E3%82%A4%E3%82%BF%E3%82%BA%E3%83%A9%E3%81%AAKiss",
+      "https://koibanashi.com/itazura-na-kiss-day-after-tomorrow/"
+    ]
   },
   {
     "id": "tj-25588",
@@ -2603,11 +2654,14 @@
   {
     "id": "tj-25598",
     "title_primary": "明日へのbrilliant road(宇宙のステルヴィア OP)",
-    "title_ko": null,
-    "media_context_ko": "(우주의 스텔비아 OP)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "내일로의 brilliant road",
+    "media_context_ko": "우주의 스텔비아",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but 明日への (to/toward tomorrow) is Japanese; only 'brilliant road' is Latin. Web search confirms angela's debut single, OP of 宇宙のステルヴィア (Stellvia of the Universe). No canonical Korean title found; natural literal of the Japanese portion 明日への → 내일로의, Latin 'brilliant road' kept verbatim per mixed-title rule → medium.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%98%8E%E6%97%A5%E3%81%B8%E3%81%AEbrilliant_road",
+      "https://angela-official.com/news/4963"
+    ]
   },
   {
     "id": "tj-25601",
@@ -2658,10 +2712,13 @@
     "id": "tj-25612",
     "title_primary": "花園キネマ(神世紀伝マーズ OP)",
     "title_ko": "꽃동산 키네마",
-    "media_context_ko": "(신세기전마즈 OP)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: PENICILLIN, Shinseikiden Mars OP; no Korean canon found; 花園=꽃동산, キネマ=키네마(cinema) literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/16082/",
+      "https://dic.pixiv.net/a/%E7%A5%9E%E4%B8%96%E7%B4%80%E4%BC%9D%E3%83%9E%E3%83%BC%E3%82%BA"
+    ]
   },
   {
     "id": "tj-25613",
@@ -2693,11 +2750,13 @@
   {
     "id": "tj-25620",
     "title_primary": "My Heart 言い出せない, Your Heart 確かめたい(ああっ女神さまっOP)",
-    "title_ko": null,
-    "media_context_ko": "(오 나의 여신님 OP)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "My Heart 말 꺼내지 못해, Your Heart 확인하고 싶어",
+    "media_context_ko": "오! 나의 여신님",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but the title is a Latin+Japanese hybrid — 言い出せない (can't bring myself to say) and 確かめたい (want to make sure) are Japanese. Web search confirms it as the ああっ女神さまっ (Ah! My Goddess) OP by GODDESS FAMILY CLUB. No Korean canon found; kept the Latin 'My Heart'/'Your Heart' verbatim and gave natural literals for the Japanese clauses (言い出せない → 말 꺼내지 못해, 確かめたい → 확인하고 싶어). Media 오! 나의 여신님 is the established Korean title. Literal, no canon → medium.",
+    "web_sources": [
+      "https://kheresy.wordpress.com/2008/06/22/my-heart-%E8%A8%80%E3%81%84%E5%87%BA%E3%81%9B%E3%81%AA%E3%81%84-your-heart-%E7%A2%BA%E3%81%8B%E3%82%81%E3%81%9F%E3%81%84/"
+    ]
   },
   {
     "id": "tj-25621",
@@ -2775,10 +2834,13 @@
     "id": "tj-25640",
     "title_primary": "ひとりぼっちのハブラシ(ムコ殿 OST)",
     "title_ko": "혼자만의 칫솔",
-    "media_context_ko": "(무코도노 OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 桜庭裕一郎 (TOKIO/Nagase), drama Muko-dono insert song by Tsunku; no Korean canon found; ひとりぼっち=혼자, ハブラシ=칫솔 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/13039/",
+      "https://ja.wikipedia.org/wiki/%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8/%E3%81%B2%E3%81%A8%E3%82%8A%E3%81%BC%E3%81%A3%E3%81%A1%E3%81%AE%E3%83%8F%E3%83%96%E3%83%A9%E3%82%B7"
+    ]
   },
   {
     "id": "tj-25642",
@@ -2846,11 +2908,14 @@
   {
     "id": "tj-25652",
     "title_primary": "消せない罪(鋼の錬金術師 ED)",
-    "title_ko": null,
-    "media_context_ko": "(강철의연금술사 ED)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "지울 수 없는 죄",
+    "media_context_ko": "강철의 연금술사",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but 消せない罪 (Kesenai Tsumi) is fully Japanese. Web search confirms 北出菜奈's debut single, the 1st ED of 鋼の錬金術師 (Fullmetal Alchemist, 2003). Meaning is unambiguous — 消せない (that cannot be erased) + 罪 (sin/guilt) → 지울 수 없는 죄. Widely used by Korean FMA fans but I found no Korean-language title citation, so natural literal → medium. Media 강철의 연금술사 is the established Korean title.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%B6%88%E3%81%9B%E3%81%AA%E3%81%84%E7%BD%AA",
+      "https://www.uta-net.com/song/18186/"
+    ]
   },
   {
     "id": "tj-25655",
@@ -2918,11 +2983,14 @@
   {
     "id": "tj-25665",
     "title_primary": "アシタヘカエル",
-    "title_ko": null,
+    "title_ko": "내일로 돌아가",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
-    "web_sources": []
+    "reasoning": "correction: current null was mis-normalized as 'Latin-only' but title is katakana Japanese (明日へ帰る = 'return to tomorrow', CHEMISTRY 2003); no Korean canon found; literal translation provided.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%A2%E3%82%B7%E3%82%BF%E3%83%98%E3%82%AB%E3%82%A8%E3%83%AB/Us",
+      "https://www.uta-net.com/song/17621/"
+    ]
   },
   {
     "id": "tj-25666",
@@ -3017,11 +3085,14 @@
   {
     "id": "tj-25684",
     "title_primary": "扉をあけて(カードキャプターさくら OP)",
-    "title_ko": null,
-    "media_context_ko": "(카드캡터체리 OP)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "문을 열고",
+    "media_context_ko": "카드캡터 사쿠라",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but 扉をあけて is fully Japanese. Web search confirms ANZA's single, the 2nd OP of カードキャプターさくら (Cardcaptor Sakura). Meaning is a plain 扉を (door) + あけて (open, -te form) → 문을 열고. No firm Korean canon confirmed (a '문을 열고서' rendering circulates but is not clearly official), so natural literal → medium. Media 카드캡터 사쿠라 (Korean broadcast also localized as 카드캡터 체리).",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%89%89%E3%82%92%E3%81%82%E3%81%91%E3%81%A6_(%E6%9B%B2)",
+      "https://www.uta-net.com/song/145255/"
+    ]
   },
   {
     "id": "tj-25685",
@@ -3153,10 +3224,13 @@
     "id": "tj-25711",
     "title_primary": "瞳の中の迷宮(ヤミと帽子と本の旅人 OP)",
     "title_ko": "눈동자 속의 미궁",
-    "media_context_ko": "(야미와모자와책의여행자 OP)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 嘉陽愛子, Yami to Boushi to Hon no Tabibito OP; no Korean canon found; 瞳の中の迷宮=눈동자 속의 미궁 literal translation stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E7%9E%B3%E3%81%AE%E4%B8%AD%E3%81%AE%E8%BF%B7%E5%AE%AE",
+      "https://utaten.com/lyric/jb41303062/"
+    ]
   },
   {
     "id": "tj-25712",
@@ -3188,11 +3262,14 @@
   {
     "id": "tj-25715",
     "title_primary": "恋しさとせつなさと心強さと(ストリートファイター2nd 主題歌)",
-    "title_ko": null,
-    "media_context_ko": "(극장판 스트리트 파이터 2 주제가)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "그리움과 애달픔과 든든함과",
+    "media_context_ko": "스트리트 파이터 II",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but the title is fully Japanese. Web search confirms 篠原涼子 with t.komuro's mega-hit, theme of the Street Fighter II MOVIE (ストリートファイター2nd = Street Fighter II). Literal of the three-noun structure 恋しさ (longing) と せつなさ (wistfulness/sorrow) と 心強さ (reassurance) と → 그리움과 애달픔과 든든함과, mirroring the repeated と/과. No single Korean canon title → medium.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%81%8B%E3%81%97%E3%81%95%E3%81%A8_%E3%81%9B%E3%81%A4%E3%81%AA%E3%81%95%E3%81%A8_%E5%BF%83%E5%BC%B7%E3%81%95%E3%81%A8",
+      "https://www.uta-net.com/song/5154/"
+    ]
   },
   {
     "id": "tj-25716",
@@ -3296,11 +3373,13 @@
   {
     "id": "tj-25729",
     "title_primary": "アニメタル(アニメタル 主題歌)",
-    "title_ko": null,
+    "title_ko": "애니메탈",
     "media_context_ko": null,
-    "confidence": "low",
-    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "was: null → canonical: 애니메탈, per namu.wiki band page titled '애니메탈' (self-titled 1996 single; anime+metal coinage).",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%95%A0%EB%8B%88%EB%A9%94%ED%83%88"
+    ]
   },
   {
     "id": "tj-25730",
@@ -3423,19 +3502,25 @@
     "id": "tj-25754",
     "title_primary": "ビバ★ロック(NARUTO-ナルト-疾風伝 ED)",
     "title_ko": "비바 록",
-    "media_context_ko": "(나루토-질풍전 ED)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: ORANGE RANGE, NARUTO ED (ビバ★ロック〜japanese side〜); no song-specific Korean canon; loanword title 'Viva Rock'→비바 록 stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%93%E3%83%90%E2%98%85%E3%83%AD%E3%83%83%E3%82%AF",
+      "https://www.uta-net.com/song/18162/"
+    ]
   },
   {
     "id": "tj-25755",
     "title_primary": "心晴れて夜も明けて(十兵衛ちゃん2~シベリア柳生の逆襲 OST)",
     "title_ko": "마음 개고 밤도 밝아서",
-    "media_context_ko": "(쥬베짱2~시베리아야규의역습OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 堀江由衣, Jubei-chan 2 ED; one Korean blog variant found (마음이 밝아지면 밤도 밝아지고), no authoritative canon; current literal translation (晴れて=개다) retained.",
+    "web_sources": [
+      "https://www.uta-net.com/song/18781/",
+      "https://www.youtube.com/watch?v=iMQtZDBGlfw"
+    ]
   },
   {
     "id": "tj-25756",
@@ -3468,10 +3553,13 @@
     "id": "tj-25761",
     "title_primary": "ハッスルマッスル (HUTLE MUSCLE)(キン肉マンII世 OP)",
     "title_ko": "허슬 머슬",
-    "media_context_ko": null,
+    "media_context_ko": "쾌걸 근육맨 2세",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: Kinnikuman Nisei OP (aired in Korea as 쾌걸 근육맨 2세 on Tooniverse); no song-specific Korean canon; loanword 'Hustle Muscle'→허슬 머슬 stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%BE%8C%EA%B1%B8%20%EA%B7%BC%EC%9C%A1%EB%A7%A8%202%EC%84%B8",
+      "https://ko.wikipedia.org/wiki/%EC%BE%8C%EA%B1%B8_%EA%B7%BC%EC%9C%A1%EB%A7%A8_2%EC%84%B8"
+    ]
   },
   {
     "id": "tj-25766",
@@ -3506,8 +3594,11 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
-    "web_sources": []
+    "reasoning": "web-searched: 奥井雅美 'only one, No.1' (actually Di Gi Charat OP; tie-up label appears mismatched); Latin/English-only title, no Korean translation needed; null stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/Only_one,_No.1",
+      "https://www.uta-net.com/song/14336/"
+    ]
   },
   {
     "id": "tj-25774",
@@ -3782,11 +3873,14 @@
   {
     "id": "tj-25823",
     "title_primary": "暁の車(機動戦士ガンダムSEED)",
-    "title_ko": null,
-    "media_context_ko": "(기동전사건담 SEED)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "새벽의 마차",
+    "media_context_ko": "기동전사 건담 SEED",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but 暁の車 is fully Japanese. Web search confirms FictionJunction YUUKA's insert song for 機動戦士ガンダムSEED (Kajiura Yuki). 暁 (dawn/daybreak) の 車 (here the poetic 'chariot') → 새벽의 마차, the rendering Korean fans converge on. Natural literal with converging fan usage but no official Korean release title → medium. Media 기동전사 건담 SEED is the established Korean title.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%9A%81%E3%81%AE%E8%BB%8A",
+      "https://www.jvcmusic.co.jp/flyingdog/-/Discography/A018153/VTCL-35152.html"
+    ]
   },
   {
     "id": "tj-25824",
@@ -3810,10 +3904,13 @@
     "id": "tj-25827",
     "title_primary": "迷Q!?-迷宮-MAKE★YOU-(探偵学園Q OP)",
     "title_ko": "미Q!? -미궁- MAKE★YOU-",
-    "media_context_ko": "(탐정학원Q OP)",
+    "media_context_ko": "탐정학원Q",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 岸本早未, Detective Academy Q OP; Korean sources reference OP by its Japanese title (no translated canon); 迷宮→미궁 rendering retained.",
+    "web_sources": [
+      "https://namu.wiki/w/%ED%83%90%EC%A0%95%ED%95%99%EC%9B%90Q",
+      "https://ko.wikipedia.org/wiki/%ED%83%90%EC%A0%95%ED%95%99%EC%9B%90_Q"
+    ]
   },
   {
     "id": "tj-25831",
@@ -3854,20 +3951,26 @@
   {
     "id": "tj-25835",
     "title_primary": "ソラアイ",
-    "title_ko": null,
+    "title_ko": "하늘빛",
     "media_context_ko": null,
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin/loanword', but ソラ (空) + アイ are Japanese morphemes, not an English loanword. Japanese Wikipedia glosses the katakana title as the compound 空合い (soraai) = 'the look/state of the sky', figuratively 'how things turn out'. Rendered as the natural evocative literal 하늘빛; the fuller '상황의 흐름' nuance and the deliberate katakana ambiguity (also readable as 空+愛, sky+love) don't map cleanly to one Korean word, so → medium rather than high. Every Little Thing single, no tie-up → media null.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%BD%E3%83%A9%E3%82%A2%E3%82%A4",
+      "https://j-lyric.net/artist/a00061c/l0024f4.html"
+    ]
   },
   {
     "id": "tj-25836",
     "title_primary": "明日へ架ける橋",
-    "title_ko": null,
+    "title_ko": "내일로 놓는 다리",
     "media_context_ko": null,
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but 明日へ架ける橋 is fully Japanese. Web search confirms 倉木麻衣's single (Detective Conan tie-up, though no parenthetical is present in this record so no media_context is salvaged). Literal: 明日へ (to tomorrow) + 架ける橋 (bridge to build/span) → 내일로 놓는 다리; the title echoes 明日に架ける橋 (JP title of 'Bridge over Troubled Water'). No Korean canon title → medium.",
+    "web_sources": [
+      "https://www.uta-net.com/song/19039/",
+      "https://music.apple.com/jp/album/%E6%98%8E%E6%97%A5%E3%81%B8%E6%9E%B6%E3%81%91%E3%82%8B%E6%A9%8B-single/1714225140"
+    ]
   },
   {
     "id": "tj-25838",
@@ -3917,20 +4020,25 @@
   {
     "id": "tj-25844",
     "title_primary": "いとしい人",
-    "title_ko": null,
+    "title_ko": "사랑스러운 사람",
     "media_context_ko": null,
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but いとしい人 is fully Japanese. Web search confirms CHEMISTRY's song (single ver. was the theme of the film '69 sixty nine'). Literal: いとしい (beloved/dear) + 人 (person) → 사랑스러운 사람 (also 사랑하는 사람). No tie-up parenthetical in this record → media null. Natural literal, no canon → medium.",
+    "web_sources": [
+      "https://www.uta-net.com/song/18565/",
+      "https://ja.wikipedia.org/wiki/Mirage_in_blue/%E3%81%84%E3%81%A8%E3%81%97%E3%81%84%E4%BA%BA_(Single_Ver.)"
+    ]
   },
   {
     "id": "tj-25845",
     "title_primary": "ファンダメンタル・ラブ",
-    "title_ko": null,
+    "title_ko": "펀더멘탈 러브",
     "media_context_ko": null,
     "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "reasoning": "Mislabel correction: previously tagged 'pure Latin, no translation needed'. The title is pure-katakana English loanword (fundamental love), which per the loanword convention IS rendered in Korean loanword form: ファンダメンタル → 펀더멘탈, ラブ → 러브 → 펀더멘탈 러브. Every Little Thing single, no tie-up → media null. Deterministic loanword mapping → high.",
+    "web_sources": [
+      "https://www.uta-net.com/artist/2116/"
+    ]
   },
   {
     "id": "tj-25846",
@@ -3990,10 +4098,13 @@
     "id": "tj-25863",
     "title_primary": "冷たい海(名探偵コナン ED)",
     "title_ko": null,
-    "media_context_ko": "(명탐정코난 ED)",
+    "media_context_ko": "명탐정 코난",
     "confidence": "low",
-    "reasoning": "Genuinely uncertain; declining to translate to avoid fabrication.",
-    "web_sources": []
+    "reasoning": "web-searched: confirmed Mai Kuraki, Detective Conan ED '冷たい海' (2001); no Korean canonical title found; declining to translate stands.",
+    "web_sources": [
+      "https://en.wikipedia.org/wiki/Tsumetai_Umi/Start_in_My_Life",
+      "https://www.uta-net.com/song/12800/"
+    ]
   },
   {
     "id": "tj-25865",
@@ -4151,11 +4262,14 @@
   {
     "id": "tj-25890",
     "title_primary": "青のレクイエム(Samurai Deeper Kyo OP)",
-    "title_ko": null,
-    "media_context_ko": "(사무라이 디퍼 쿄우 OP)",
-    "confidence": "high",
-    "reasoning": "Title is pure Latin/English; no Korean translation needed.",
-    "web_sources": []
+    "title_ko": "푸른 레퀴엠",
+    "media_context_ko": "사무라이 디퍼 쿄",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure Latin', but 青の (blue) is Japanese; レクイエム is a katakana loanword (requiem). Web search confirms 坪倉唯子's single, OP of SAMURAI DEEPER KYO. 青の → 푸른, レクイエム → loanword 레퀴엠 → 푸른 레퀴엠. Media 사무라이 디퍼 쿄 is the common Korean rendering of the Latin-titled anime. Natural literal + loanword, no canon → medium.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E9%9D%92%E3%81%AE%E3%83%AC%E3%82%AF%E3%82%A4%E3%82%A8%E3%83%A0_(%E5%9D%AA%E5%80%89%E5%94%AF%E5%AD%90%E3%81%AE%E6%9B%B2)",
+      "https://www.uta-net.com/song/16094/"
+    ]
   },
   {
     "id": "tj-25893",
@@ -4269,10 +4383,13 @@
     "id": "tj-25908",
     "title_primary": "普遍(SAMURAI７ ED)",
     "title_ko": "보편",
-    "media_context_ko": null,
+    "media_context_ko": "사무라이 7",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: Rin', Samurai 7 ED; no song-specific Korean canon; 普遍→보편 Sino-Korean reading (universality) stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%82%AC%EB%AC%B4%EB%9D%BC%EC%9D%B4%207",
+      "https://ko.wikipedia.org/wiki/%EC%82%AC%EB%AC%B4%EB%9D%BC%EC%9D%B4_7"
+    ]
   },
   {
     "id": "tj-25909",
@@ -4323,19 +4440,25 @@
     "id": "tj-25917",
     "title_primary": "Re-sublimity(神無月の巫女 OP)",
     "title_ko": null,
-    "media_context_ko": "(신무월의무녀 OP)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "normalized: Latin-only title_ko nulled (no Korean translation needed)",
-    "web_sources": []
+    "reasoning": "web-searched: KOTOKO, Kannazuki no Miko OP; Latin/English-only title, no Korean translation needed; null stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/21065/",
+      "https://utaten.com/lyric/jb30801126/"
+    ]
   },
   {
     "id": "tj-25918",
     "title_primary": "スクランブル(スクールランブル OP)",
     "title_ko": "스크램블",
-    "media_context_ko": "(스쿠루람브루 OP)",
+    "media_context_ko": "스쿨럼블",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: 堀江由衣 with UNSCANDAL, School Rumble OP; no song-specific Korean canon; loanword 'Scramble'→스크램블 stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%B9%E3%82%AF%E3%83%A9%E3%83%B3%E3%83%96%E3%83%AB_(%E5%A0%80%E6%B1%9F%E7%94%B1%E8%A1%A3_with_UNSCANDAL%E3%81%AE%E6%9B%B2)",
+      "https://www.uta-net.com/song/87610/"
+    ]
   },
   {
     "id": "tj-25919",
@@ -4424,17 +4547,23 @@
     "title_ko": "차인 기분으로 Rock'n Roll",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: DROPS, Doki Doki School Hours ED (TOM★CAT cover); no Korean canon found; ふられ気分=차인 기분, Rock'n Roll kept; literal translation stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%81%B5%E3%82%89%E3%82%8C%E6%B0%97%E5%88%86%E3%81%A7Rock'n'_Roll",
+      "https://animesongz.com/lyric/1235/13701"
+    ]
   },
   {
     "id": "tj-25933",
     "title_primary": "ココロオドル(SDガンダムフォース ED)",
     "title_ko": "코코로 오도루",
-    "media_context_ko": "(SD건담포스 ED)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: nobodyknows+, SD Gundam Force ED; namu.wiki/벅스 keep Japanese katakana title (心躍る 'heart dances'); some Korean sources transliterate 코코로오도루; current transliteration retained.",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%82%B3%E3%82%B3%E3%83%AD%E3%82%AA%E3%83%89%E3%83%AB",
+      "https://music.bugs.co.kr/track/80206348"
+    ]
   },
   {
     "id": "tj-25935",
@@ -4494,10 +4623,13 @@
     "id": "tj-25942",
     "title_primary": "～アスタリスク～(BLEACH OP)",
     "title_ko": "~아스타리스크~",
-    "media_context_ko": null,
+    "media_context_ko": "블리치",
     "confidence": "medium",
-    "reasoning": "Best-effort literal translation; no canonical Korean form located.",
-    "web_sources": []
+    "reasoning": "web-searched: ORANGE RANGE, Bleach OP1 (*〜Asterisk〜); no song-specific Korean title canon surfaced; current katakana-based rendering 아스타리스크 retained.",
+    "web_sources": [
+      "https://utaten.com/lyric/ja00011971/",
+      "https://bleach.fandom.com/wiki/*~Asterisk~"
+    ]
   },
   {
     "id": "tj-25945",
@@ -4559,8 +4691,10 @@
     "title_ko": "입수 소망",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Tokyo Jihen; 入水願い = wish to drown/enter water.",
-    "web_sources": []
+    "reasoning": "web-searched: 東京事変 (도쿄지헨), from album 教育; namu.wiki covers the song (glossed 입수소원); current 입수 소망 (소망=소원 synonym) retained; no exact authoritative title.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%8F%84%EC%BF%84%EC%A7%80%ED%97%A8"
+    ]
   },
   {
     "id": "tj-25956",
@@ -4640,8 +4774,11 @@
     "title_ko": "익애 로직",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "溺愛ロジック; doumoto tsuyoshi.",
-    "web_sources": []
+    "reasoning": "web-searched: 堂本剛 debut single; Bugs lists Japanese title only, no Korean translation; 溺愛→익애 Sino-Korean reading + 로직(logic) stands.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/1142834",
+      "https://ja.wikipedia.org/wiki/%E8%A1%97/%E6%BA%BA%E6%84%9B%E3%83%AD%E3%82%B8%E3%83%83%E3%82%AF"
+    ]
   },
   {
     "id": "tj-25968",
@@ -4784,8 +4921,11 @@
     "title_ko": "사실은 말이지.",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ほんとはね = honestly/really.",
-    "web_sources": []
+    "reasoning": "web-searched: ソニン 2004 single; a found Korean lyric page was for a different song (Aqua Timez), no canon for this title; ほんとはね='the truth is'→사실은 말이지 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/18665/",
+      "https://www.joysound.com/web/search/song/27251"
+    ]
   },
   {
     "id": "tj-25993",
@@ -4856,8 +4996,11 @@
     "title_ko": "뭐 그런 사랑을 하고 있어 YOU KNOW?",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "なんちゅう恋をやってるぅ Berryz Koubou.",
-    "web_sources": []
+    "reasoning": "web-searched: Berryz工房 (베리즈코보) 7th single; no Korean title canon found; Kansai-dialect phrase 'what kind of love are you doing'→뭐 그런 사랑을 하고 있어 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/26328/",
+      "https://ko.wikipedia.org/wiki/Berryz%EC%BD%94%EB%B3%B4"
+    ]
   },
   {
     "id": "tj-26005",
@@ -4937,8 +5080,11 @@
     "title_ko": "기타노 고반초",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "北の五番町 (place name).",
-    "web_sources": []
+    "reasoning": "web-searched: 細川たかし enka (place-name song, 五番町/Gobanchō); no Korean canon found; place-name transliteration 기타노 고반초 retained.",
+    "web_sources": [
+      "https://www.uta-net.com/song/14565/",
+      "https://www.billboard-japan.com/goods/detail/155155"
+    ]
   },
   {
     "id": "tj-26022",
@@ -5018,8 +5164,11 @@
     "title_ko": "문득 깨닫고 보면 당신",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "気がつけば あなた.",
-    "web_sources": []
+    "reasoning": "web-searched: 松浦亜弥 17th single (Kirin CM song); no Korean canon found; 気がつけば='when I realize'→문득 깨닫고 보면, あなた=당신 literal translation stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%B0%97%E3%81%8C%E3%81%A4%E3%81%91%E3%81%B0_%E3%81%82%E3%81%AA%E3%81%9F",
+      "https://www.uta-net.com/song/29611/"
+    ]
   },
   {
     "id": "tj-26039",
@@ -5027,8 +5176,11 @@
     "title_ko": "방랑 프릭",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "放浪フリーク = wandering freak.",
-    "web_sources": []
+    "reasoning": "web-searched: GRAPEVINE 2005 single; no Korean canon found; 放浪=방랑(wandering), フリーク=프릭(freak) literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/30847/",
+      "https://music.apple.com/jp/album/%E6%94%BE%E6%B5%AA%E3%83%95%E3%83%AA%E3%83%BC%E3%82%AF-single/260392201"
+    ]
   },
   {
     "id": "tj-26042",
@@ -5162,8 +5314,11 @@
     "title_ko": null,
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "はぐれコキリコ enka; 'kokiriko' is a folk instrument; uncertain canonical KO.",
-    "web_sources": []
+    "reasoning": "web-searched: 成世昌平, based on Toyama folk song コキリコ節 (kokiriko = folk instrument); no Korean canon found; declining to translate stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%81%AF%E3%81%90%E3%82%8C%E3%82%B3%E3%82%AD%E3%83%AA%E3%82%B3",
+      "https://www.uta-net.com/song/16048/"
+    ]
   },
   {
     "id": "tj-26060",
@@ -5171,8 +5326,11 @@
     "title_ko": "이자카야 츠루가",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "居酒屋敦賀 (place).",
-    "web_sources": []
+    "reasoning": "web-searched: 香西かおり (title 居酒屋「敦賀」); 敦賀=Tsuruga (Fukui place); no Korean canon found; 居酒屋=이자카야 + 츠루가 transliteration stands.",
+    "web_sources": [
+      "https://www.universal-music.co.jp/kouzai-kaori/products/upch-5307/",
+      "https://www.uta-net.com/song/26031/"
+    ]
   },
   {
     "id": "tj-26061",
@@ -5180,8 +5338,11 @@
     "title_ko": "에즈리코의 여자",
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "江釣子 obscure place name; uncertain.",
-    "web_sources": []
+    "reasoning": "web-searched: 竹川美子 debut; 江釣子=Ezuriko (place in Kitakami, Iwate) — reading confirmed; no Korean canonical title; current transliteration retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E7%AB%B9%E5%B7%9D%E7%BE%8E%E5%AD%90",
+      "https://www.uta-net.com/song/41399/"
+    ]
   },
   {
     "id": "tj-26062",
@@ -5243,8 +5404,11 @@
     "title_ko": "고노선",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "五能線 JR train line.",
-    "web_sources": []
+    "reasoning": "web-searched: 水森かおり, 五能線 = JR Gonō railway line (Aomori/Akita); no Korean canon found; 고노선 (Gonō + 線 선) rendering retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E4%BA%94%E8%83%BD%E7%B7%9A_(%E6%B0%B4%E6%A3%AE%E3%81%8B%E3%81%8A%E3%82%8A%E3%81%AE%E6%9B%B2)",
+      "https://www.uta-net.com/song/25760/"
+    ]
   },
   {
     "id": "tj-26073",
@@ -5252,8 +5416,11 @@
     "title_ko": "조가시마 우정",
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "城ヶ島雨情; obscure.",
-    "web_sources": []
+    "reasoning": "web-searched: 長保有紀; 城ヶ島=Jōgashima (island, Kanagawa) — reading confirmed; no Korean canonical title; 조가시마(place) + 우정(雨情 reading) retained.",
+    "web_sources": [
+      "https://www.uta-net.com/song/26310/",
+      "https://www.hmv.co.jp/en/artist_Yuki-Nagaho_000000000027750/item_Nagaho-Yuki-Enka-Zanmai-Kaen-Jougashima-Ujou_4193007"
+    ]
   },
   {
     "id": "tj-26074",
@@ -5288,8 +5455,11 @@
     "title_ko": "키노사키 연가",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "城崎恋歌.",
-    "web_sources": []
+    "reasoning": "web-searched: 細川たかし; 城崎=Kinosaki (Hyogo onsen town) — reading confirmed via '城崎(きのさき)恋歌'; no Korean title canon; 키노사키 + 恋歌 연가 retained.",
+    "web_sources": [
+      "https://music.apple.com/jp/song/%E5%9F%8E%E5%B4%8E-%E3%81%8D%E3%81%AE%E3%81%95%E3%81%8D-%E6%81%8B%E6%AD%8C/1802533296",
+      "https://www.uta-net.com/song/25355/"
+    ]
   },
   {
     "id": "tj-26078",
@@ -5297,8 +5467,11 @@
     "title_ko": "모래의 강",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "沙の川 = sand river.",
-    "web_sources": []
+    "reasoning": "web-searched: 原田悠里 enka; no Korean canon found; 沙の川 = 'sand river' → 모래의 강 literal translation stands.",
+    "web_sources": [
+      "https://j-lyric.net/artist/a000544/l00422a.html",
+      "https://www.youtube.com/watch?v=vpWgIrUBj18"
+    ]
   },
   {
     "id": "tj-26079",
@@ -5306,8 +5479,11 @@
     "title_ko": "에치젠 닌도",
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "越前忍冬 obscure.",
-    "web_sources": []
+    "reasoning": "web-searched: 角川博; 越前=Echizen (Fukui), 忍冬=honeysuckle (Korean 인동초); no Korean canonical title; current transliteration retained (semantic 인동 not sourced as title).",
+    "web_sources": [
+      "https://www.uta-net.com/song/26037/",
+      "https://www.neowing.co.jp/product/KICM-884"
+    ]
   },
   {
     "id": "tj-26080",
@@ -5315,8 +5491,11 @@
     "title_ko": "존카라 온나부시",
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "じょんから女節 enka folk.",
-    "web_sources": []
+    "reasoning": "web-searched: 長山洋子; じょんから = Tsugaru Jongara shamisen folk style, 女節 = woman's tune; no Korean canonical title; folk-term transliteration retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%81%98%E3%82%87%E3%82%93%E3%81%8B%E3%82%89%E5%A5%B3%E7%AF%80",
+      "https://www.uta-net.com/song/17588/"
+    ]
   },
   {
     "id": "tj-26081",
@@ -5378,8 +5557,11 @@
     "title_ko": "부두의 시구레",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "波止場しぐれ.",
-    "web_sources": []
+    "reasoning": "web-searched: 石川さゆり (1985, Shodoshima port song); no Korean canon found; 波止場=부두(wharf), しぐれ=시구레 (late-autumn drizzle, no single Korean word) retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%B3%A2%E6%AD%A2%E5%A0%B4%E3%81%97%E3%81%90%E3%82%8C",
+      "https://www.uta-net.com/song/3645/"
+    ]
   },
   {
     "id": "tj-26088",
@@ -5548,9 +5730,12 @@
     "title_primary": "暗夜航路",
     "title_ko": "암야항로",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "暗夜航路.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: 暗夜航路→암야항로 (deterministic Sino-Korean reading) used in Korean sources for Kim Yeon-ja (김연자)'s song; artist is Korean, fan references render 암야항로.",
+    "web_sources": [
+      "https://www.youtube.com/watch?v=hSeKXD431Ck",
+      "https://ko.wikipedia.org/wiki/%EA%B9%80%EC%97%B0%EC%9E%90"
+    ]
   },
   {
     "id": "tj-26110",
@@ -5591,11 +5776,13 @@
   {
     "id": "tj-26114",
     "title_primary": "ピリリと行こう！",
-    "title_ko": "매콤하게 가자!",
+    "title_ko": "알싸하게 가자!",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ピリリと行こう (piri-piri = spicy/tingling).",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "was: 매콤하게 가자! → canonical: 알싸하게 가자!, per genie.co.kr official Korean title for Berryz Kobo's ピリリと行こう!.",
+    "web_sources": [
+      "https://www.genie.co.kr/detail/songInfo?xgnm=74374379"
+    ]
   },
   {
     "id": "tj-26118",
@@ -5729,8 +5916,11 @@
     "title_ko": "노",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "櫂 = oar/paddle.",
-    "web_sources": []
+    "reasoning": "web-searched: 原田ゆかり/香田晋 duet enka (1992); no Korean canon found; 櫂 = oar/paddle → 노 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/1229/",
+      "https://www.oricon.co.jp/prof/207025/products/271170/1/"
+    ]
   },
   {
     "id": "tj-26141",
@@ -5801,8 +5991,11 @@
     "title_ko": "당신에게 맡기는 밤이라서",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "あなたまかせの夜だから.",
-    "web_sources": []
+    "reasoning": "web-searched: 大木英夫/二宮善子 duet; no Korean canon found; あなたまかせ='leaving it to you' + 夜だから='because it's night' literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/315/",
+      "https://petitlyrics.com/lyrics/2556299"
+    ]
   },
   {
     "id": "tj-26149",
@@ -5810,8 +6003,11 @@
     "title_ko": "그래도 어쩌면...꿈속에서",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "でもネ かもネ...夢の中.",
-    "web_sources": []
+    "reasoning": "web-searched: 瑞ゆかり&コロッケ duet (comp. 五木ひろし); no Korean canon found; でもネ='but' + かもネ='maybe' + 夢の中='in a dream' literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/2345/",
+      "https://www.joysound.com/web/search/song/17813"
+    ]
   },
   {
     "id": "tj-26150",
@@ -5828,8 +6024,10 @@
     "title_ko": "두 번째 술 ~이자카야 Part II~",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "二枚目酒 ～居酒屋PartⅡ～.",
-    "web_sources": []
+    "reasoning": "web-searched: 五木ひろし&田中好子, sequel to duet 居酒屋 ('Izakaya Part II'); 二枚目酒 is wordplay; no Korean canon; interpretive translation ('second round of sake') retained.",
+    "web_sources": [
+      "https://www.amazon.co.jp/-/en/%E5%B1%85%E9%85%92%E5%B1%8BPartII-%E4%BA%8C%E6%9E%9A%E7%9B%AE%E9%85%92-%E7%94%B0%E4%B8%AD%E5%A5%BD%E5%AD%90-%E4%BA%94%E6%9C%A8%E3%81%B2%E3%82%8D%E3%81%97/dp/B00005GHL7"
+    ]
   },
   {
     "id": "tj-26152",
@@ -5837,8 +6035,11 @@
     "title_ko": "오사카 사랑 순례",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "大阪恋めぐり.",
-    "web_sources": []
+    "reasoning": "web-searched: 増位山太志郎&日野美歌 duet (1984); no Korean canon found; 大阪 오사카 + 恋めぐり='love tour'→사랑 순례 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/926/",
+      "https://www.discogs.com/release/21066253"
+    ]
   },
   {
     "id": "tj-26153",
@@ -5855,8 +6056,11 @@
     "title_ko": "동쪽 남자와 나니와의 여자",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "あづま男と浪花のおんな.",
-    "web_sources": []
+    "reasoning": "web-searched: 北島三郎&中村美律子 duet; no Korean canon found; あづま男='Eastern (Edo) man'→동쪽 남자, 浪花=Naniwa(Osaka)→나니와 literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/16638/",
+      "http://www.kitajima-music.co.jp/release/detail.html?id=257"
+    ]
   },
   {
     "id": "tj-26156",
@@ -5882,8 +6086,11 @@
     "title_ko": "오사카 비밀의 만남",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "大阪しのび逢い.",
-    "web_sources": []
+    "reasoning": "web-searched: 桂銀淑 (계은숙, Korean enka singer in Japan); no Korean canon for this title (search surfaced 大阪暮色=오사카 황혼); しのび逢い='secret meeting'→비밀의 만남 literal translation stands.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/%EA%B3%84%EC%9D%80%EC%88%99",
+      "https://blog.daum.net/hsjin85/6744"
+    ]
   },
   {
     "id": "tj-26159",
@@ -5891,8 +6098,11 @@
     "title_ko": "남자와 여자의 술집 순례",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "男と女のはしご酒.",
-    "web_sources": []
+    "reasoning": "web-searched: 武田鉄矢&芦川よしみ duet (1987); no Korean canon found; はしご酒=bar-hopping→술집 순례 literal translation stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E7%94%B7%E3%81%A8%E5%A5%B3%E3%81%AE%E3%81%AF%E3%81%97%E3%81%94%E9%85%92",
+      "https://www.uta-net.com/song/1001/"
+    ]
   },
   {
     "id": "tj-26160",
@@ -6008,8 +6218,11 @@
     "title_ko": "월광접",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "月光蝶 = moonlight butterfly.",
-    "web_sources": []
+    "reasoning": "web-searched: あさき (BEMANI/Konami); no Korean canon found; 月光蝶='moonlight butterfly'→월광접 Sino-Korean reading stands.",
+    "web_sources": [
+      "https://remywiki.com/Gekkou_chou",
+      "https://bemani.fandom.com/wiki/Asaki"
+    ]
   },
   {
     "id": "tj-26176",
@@ -6060,10 +6273,13 @@
     "id": "tj-26181",
     "title_primary": "月の呪縛(カース)(LOVELESS OP)",
     "title_ko": "달의 주박 (저주)",
-    "media_context_ko": null,
+    "media_context_ko": "러브리스",
     "confidence": "medium",
-    "reasoning": "月の呪縛(カース) LOVELESS OP.",
-    "web_sources": []
+    "reasoning": "web-searched: 翁鈴佳, LOVELESS OP; namu.wiki LOVELESS page covers song but in Japanese (no translated canon); 月の呪縛=달의 주박(呪縛) + カース=저주(curse) retained.",
+    "web_sources": [
+      "https://namu.wiki/w/LOVELESS(%EB%A7%8C%ED%99%94)",
+      "https://www.amazon.co.jp/dp/B0008JH75E"
+    ]
   },
   {
     "id": "tj-26184",
@@ -6107,8 +6323,11 @@
     "title_ko": "프렌저",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "フレンジャー Otsuka Ai (friend+ranger).",
-    "web_sources": []
+    "reasoning": "web-searched: 大塚愛 11th single; coined word 'Frienger' (friend+ranger, Otsuka's neologism); no Korean canon found; transliteration 프렌저 retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%95%E3%83%AC%E3%83%B3%E3%82%B8%E3%83%A3%E3%83%BC",
+      "https://avex.jp/ai/discography/detail.php?id=47"
+    ]
   },
   {
     "id": "tj-26193",
@@ -6476,8 +6695,11 @@
     "title_ko": "아이스크림과 My 푸딩",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "愛すクリ～ムとMyプリン (love-cream pun).",
-    "web_sources": []
+    "reasoning": "web-searched: 美勇伝 (V-u-den) 7th single; pun title (愛すクリーム = 'love-cream' punning アイスクリーム/ice cream); no Korean canon; current 아이스크림과 My 푸딩 retained.",
+    "web_sources": [
+      "https://www.uta-net.com/movie/48315/",
+      "https://www.cdjournal.com/i/disc/-/4206100001"
+    ]
   },
   {
     "id": "tj-26264",
@@ -6762,10 +6984,13 @@
     "id": "tj-26312",
     "title_primary": "勇侠青春謳(コードギアス反逆のルルーシュ ED)",
     "title_ko": "용협청춘구",
-    "media_context_ko": "(코드기어스 반역의를르슈 ED)",
+    "media_context_ko": "코드기어스: 반역의 를르슈",
     "confidence": "medium",
-    "reasoning": "勇侠青春謳 Code Geass ALI PROJECT (kanji-direct reading).",
-    "web_sources": []
+    "reasoning": "web-searched: ALI PROJECT, Code Geass ED; namu.wiki page keeps kanji title (勇侠青春謳); no translated Korean canon; 勇侠青春謳→용협청춘구 Sino-Korean reading retained.",
+    "web_sources": [
+      "https://namu.wiki/w/%E5%8B%87%E4%BE%A0%E9%9D%92%E6%98%A5%E8%AC%B3",
+      "https://ja.wikipedia.org/wiki/%E5%8B%87%E4%BE%A0%E9%9D%92%E6%98%A5%E8%AC%B3"
+    ]
   },
   {
     "id": "tj-26314",
@@ -6870,10 +7095,13 @@
     "id": "tj-26334",
     "title_primary": "魔神見参!!(マジンカイザー OST)",
     "title_ko": "마신 견참!!",
-    "media_context_ko": "(마징카이져 2기 OST)",
+    "media_context_ko": "마징카이저",
     "confidence": "medium",
-    "reasoning": "魔神見参!! Mazinkaiser.",
-    "web_sources": []
+    "reasoning": "web-searched: JAM Project feat. 遠藤正明, Mazinkaiser insert song; no Korean canon found; 魔神見参→마신 견참 Sino-Korean reading retained.",
+    "web_sources": [
+      "https://www.uta-net.com/movie/107039/",
+      "https://animesongz.com/lyric/2303/11847"
+    ]
   },
   {
     "id": "tj-26335",
@@ -6989,8 +7217,11 @@
     "title_ko": "순연가",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "純恋歌 Shounan no Kaze.",
-    "web_sources": []
+    "reasoning": "web-searched: 湘南乃風; reading confirmed じゅんれんか (not a pun); no dedicated Korean title canon; 純恋歌→순연가 Sino-Korean reading stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E7%B4%94%E6%81%8B%E6%AD%8C",
+      "https://www.uta-net.com/song/37486/"
+    ]
   },
   {
     "id": "tj-26355",
@@ -6998,8 +7229,11 @@
     "title_ko": "미소 YES 누드",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "笑顔YESヌード Morning Musume.",
-    "web_sources": []
+    "reasoning": "web-searched: モーニング娘。32nd single; namu.wiki keeps Japanese title (no translated canon); 笑顔=미소/웃는얼굴 (variant), ヌード=누드; current 미소 YES 누드 retained.",
+    "web_sources": [
+      "https://namu.wiki/w/%E7%AC%91%E9%A1%94YES%E3%83%8C%E3%83%BC%E3%83%89",
+      "https://ja.wikipedia.org/wiki/%E7%AC%91%E9%A1%94YES%E3%83%8C%E3%83%BC%E3%83%89"
+    ]
   },
   {
     "id": "tj-26356",
@@ -7265,11 +7499,14 @@
   {
     "id": "tj-26407",
     "title_primary": "ビオライト",
-    "title_ko": "바이올렛",
+    "title_ko": null,
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ビオライト = violet/violite.",
-    "web_sources": []
+    "confidence": "low",
+    "reasoning": "was: 바이올렛 (mistranslated as 'violet') → title is coined wordplay 'be all right' (ビ=be + オ=all + ライト=right), per official JOYSOUND annotation 'means be all right' (今日からマ王 character song); untranslatable pun, null per no-transliteration policy.",
+    "web_sources": [
+      "https://www.joysound.com/web/search/song/80959",
+      "https://utaten.com/lyric/iz16122112/"
+    ]
   },
   {
     "id": "tj-26408",
@@ -7447,9 +7684,13 @@
     "title_primary": "高架線",
     "title_ko": "고가선",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "高架線 ELLEGARDEN = elevated railway.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: 고가선 used consistently by Korean music platforms (Bugs, Genie, Melon) and namu.wiki for ELLEGARDEN's 高架線; matches current.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/1564836",
+      "https://www.genie.co.kr/detail/songInfo?xgnm=84985935",
+      "https://www.melon.com/song/detail.htm?songId=1526980"
+    ]
   },
   {
     "id": "tj-26447",
@@ -8139,10 +8380,13 @@
     "id": "tj-26565",
     "title_primary": "荒野流転(幕末機 いろはにほへと OP)",
     "title_ko": "황야유전",
-    "media_context_ko": "(막말기관설 OP)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "荒野流転 Bakumatsu Kikansetsu OP.",
-    "web_sources": []
+    "reasoning": "web-searched: FictionJunction YUUKA, Bakumatsu Kikansetsu Irohanihoheto OP; no Korean canon found; 荒野流転→황야유전 Sino-Korean reading (流転=유전, vicissitude) stands.",
+    "web_sources": [
+      "https://www.jvcmusic.co.jp/flyingdog/-/Discography/A018153/VICL-36177.html",
+      "https://utaten.com/lyric/yr15111205/"
+    ]
   },
   {
     "id": "tj-26566",
@@ -8726,8 +8970,11 @@
     "title_ko": "돌바닥의 진홍빛 샤이탄",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "石畳の緋きシャイタン Sound Horizon.",
-    "web_sources": []
+    "reasoning": "web-searched: Sound Horizon (Elysion; orig 石畳の緋き悪魔 with シャイタン/Shaitan ruby); no definitive Korean canon (karaoke variant 돌의 붉은 마 unofficial); current literal translation retained.",
+    "web_sources": [
+      "https://namu.wiki/w/Sound%20Horizon",
+      "https://open.spotify.com/intl-ja/track/2semsFS3Aokn387iPkfucZ"
+    ]
   },
   {
     "id": "tj-26672",
@@ -9093,10 +9340,13 @@
     "id": "tj-26737",
     "title_primary": "まっがーれ↓スペクタクル(涼宮ハルヒの憂鬱 古泉一 Character Song)",
     "title_ko": "맛가-레↓스펙터클",
-    "media_context_ko": "(스즈미야 하루히의 우울 코이즈미 잇키 캐릭터송)",
+    "media_context_ko": "스즈미야 하루히의 우울",
     "confidence": "medium",
-    "reasoning": "Stylized wordplay; transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: 古泉一樹(CV.小野大輔) Haruhi character song; まっがーれ↓ is a coined ad-lib exclamation from an episode preview + スペクタクル; no Korean canon; transliteration retained.",
+    "web_sources": [
+      "https://dic.nicovideo.jp/a/%E3%81%BE%E3%81%A3%E3%81%8C%E3%83%BC%E3%82%8C%E2%86%93%E3%82%B9%E3%83%9A%E3%82%AF%E3%82%BF%E3%82%AF%E3%83%AB",
+      "https://www.uta-net.com/song/52722/"
+    ]
   },
   {
     "id": "tj-26740",
@@ -9221,8 +9471,11 @@
     "title_ko": "지리리키테루",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Stylized onomatopoeic title; transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: Berryz工房 10th single (actual title ジリリ キテル); onomatopoeia ジリリ + 来てる ('it's coming'); no Korean canon; transliteration retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%B8%E3%83%AA%E3%83%AA_%E3%82%AD%E3%83%86%E3%83%AB",
+      "https://www.uta-net.com/song/38198/"
+    ]
   },
   {
     "id": "tj-26763",
@@ -9913,10 +10166,13 @@
     "id": "tj-26914",
     "title_primary": "感じてKnight(マジンガーZ OP)",
     "title_ko": "느껴봐 Knight",
-    "media_context_ko": "(마징가Z OP)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Mixed wordplay (kanjite/kanji=Knight).",
-    "web_sources": []
+    "reasoning": "web-searched: ULTIMATE LAZY for MAZINGER, Shin Mazinger Shougeki! Z-hen OP (1980 LAZY remake); no Korean canon; 感じて='feel it'→느껴봐 + Knight kept; literal translation stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%84%9F%E3%81%98%E3%81%A6Knight",
+      "https://www.uta-net.com/song/79054/"
+    ]
   },
   {
     "id": "tj-26915",
@@ -11373,8 +11629,11 @@
     "title_ko": "츠부사니코이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Stylized wordplay; transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: 関ジャニ∞ 19th single; wordplay on 具に恋 (tsubusa ni koi = 'wholehearted love'); no Korean canon; transliteration retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%84%E3%83%96%E3%82%B5%E3%83%8B%E3%82%B3%E3%82%A4",
+      "https://www.uta-net.com/song/117638/"
+    ]
   },
   {
     "id": "tj-27218",
@@ -11598,8 +11857,11 @@
     "title_ko": "페라페라페라오",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Stylized wordplay; transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: Not yet (AKB48 unit) 3rd single; coined word (ペラペラ='chatty/fluent' + playful nonsense ending), intentionally foreign-sounding; no Korean canon; transliteration retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%9A%E3%83%A9%E3%83%9A%E3%83%A9%E3%83%9A%E3%83%A9%E3%82%AA",
+      "https://www.uta-net.com/song/121945/"
+    ]
   },
   {
     "id": "tj-27269",
@@ -11769,8 +12031,11 @@
     "title_ko": "나기이치",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Stylized wordplay; transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: NMB48 4th single; abbreviation of '渚で一番かわいいGIRL' (cutest girl on the beach; 渚 nagi + 一 ichi); no Korean canon; transliteration retained.",
+    "web_sources": [
+      "https://en.wikipedia.org/wiki/Nagiichi",
+      "https://akb48.fandom.com/wiki/Nagiichi"
+    ]
   },
   {
     "id": "tj-27313",
@@ -11832,8 +12097,11 @@
     "title_ko": "사랑해러블!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Wordplay aishite+lovable.",
-    "web_sources": []
+    "reasoning": "web-searched: SKE48 9th single; wordplay 愛してる('I love you') + lovable (アイシテル+アイラブユー=アイシテラブル); no Korean canon; current pun-rendering 사랑해러블 (사랑해+러블) retained.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%A2%E3%82%A4%E3%82%B7%E3%83%86%E3%83%A9%E3%83%96%E3%83%AB!",
+      "https://www.cdjournal.com/main/news/ske48/44584"
+    ]
   },
   {
     "id": "tj-27320",
@@ -11949,8 +12217,11 @@
     "title_ko": "찬카파나",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Coined word; transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: NEWS 2012 single; coined word meaning '愛する人/beloved person' (deliberately meaningless-sounding); no Korean canon; transliteration retained.",
+    "web_sources": [
+      "https://note.com/shimoayu16/n/ne2977bf4292c",
+      "https://linkco.re/E9CM0SfT"
+    ]
   },
   {
     "id": "tj-27344",
@@ -12219,8 +12490,11 @@
     "title_ko": "츠케마 츠케루",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Famous Kyary; tsukema(인조속눈썹)+tsukeru(붙이다); transliterate per common idiom.",
-    "web_sources": []
+    "reasoning": "web-searched: きゃりーぱみゅぱみゅ; namu.wiki page keeps Japanese hiragana title (no translated canon); つけま(付けまつげ, false eyelashes) + つける(put on); transliteration retained.",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%81%A4%E3%81%91%E3%81%BE%E3%81%A4%E3%81%91%E3%82%8B",
+      "https://www.uta-net.com/song/123218/"
+    ]
   },
   {
     "id": "blog-1229-17",
@@ -12714,8 +12988,11 @@
     "title_ko": "난부 매미 시구레",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Region+seasonal noun; literal.",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon found (ja.wikipedia/uta-net only); 蝉しぐれ = cicada chorus idiom, literal translation stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E5%8D%97%E9%83%A8%E8%9D%89%E3%81%97%E3%81%90%E3%82%8C",
+      "https://www.uta-net.com/song/137140/"
+    ]
   },
   {
     "id": "tj-27488",
@@ -13002,8 +13279,11 @@
     "title_ko": "젠고의 바다",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Historic figure name + sea; literal.",
-    "web_sources": []
+    "reasoning": "web-searched: 銭五 = Zenigo, confirmed nickname of Edo merchant 銭屋五兵衛; no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/27290/",
+      "https://ja.wikipedia.org/wiki/%E9%8A%AD%E5%B1%8B%E4%BA%94%E5%85%B5%E8%A1%9B"
+    ]
   },
   {
     "id": "tj-27529",
@@ -13065,8 +13345,10 @@
     "title_ko": "심산 시구레",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "miyama=깊은산; shigure=가을비.",
-    "web_sources": []
+    "reasoning": "web-searched: Kadowaki Rikuo enka b-side (2004); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.crownrecord.co.jp/s/c01/artist/kadowaki/discography"
+    ]
   },
   {
     "id": "tj-27544",
@@ -13153,10 +13435,13 @@
     "id": "tjpdf-27561",
     "title_primary": "ユラユラ(NARUTO-ナルト- OP)",
     "title_ko": "유라유라",
-    "media_context_ko": null,
+    "media_context_ko": "나루토",
     "confidence": "medium",
-    "reasoning": "ユラユラ = swaying (Hearts Grow, Naruto)",
-    "web_sources": []
+    "reasoning": "web-searched: Hearts Grow, Naruto OP9; ユラユラ = swaying onomatopoeia; no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://jpop.fandom.com/wiki/Yura_Yura",
+      "https://www.lyrical-nonsense.com/lyrics/hearts-grow/yura-yura/"
+    ]
   },
   {
     "id": "tjpdf-27563",
@@ -13614,8 +13899,11 @@
     "title_ko": "암야의 동반자살 맹세",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "心中立て=동반자살 맹세 (literary); 暗夜=암야",
-    "web_sources": []
+    "reasoning": "web-searched: Shiina Ringo-penned 2014 Ishikawa Sayuri song; 心中立て = Edo courtesan pledge of devotion (not strictly double-suicide); no Korean canon found.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%9A%97%E5%A4%9C%E3%81%AE%E5%BF%83%E4%B8%AD%E7%AB%8B%E3%81%A6",
+      "https://www.uta-net.com/song/161936/"
+    ]
   },
   {
     "id": "tj-27639",
@@ -13710,20 +13998,26 @@
   {
     "id": "tjpdf-27653",
     "title_primary": "なないろびより(のんのんびより OP)",
-    "title_ko": "일곱빛 좋은 날",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "なないろ=seven-color, びより=fine day (nano.RIPE Non Non Biyori)",
-    "web_sources": []
+    "title_ko": "일곱빛깔 비요리",
+    "media_context_ko": "논논비요리",
+    "confidence": "high",
+    "reasoning": "web-verified: was '일곱빛 좋은 날' → canonical '일곱빛깔 비요리' per namu.wiki (논논비요리/애니메이션) and Korean fan-subs (nanairo = 일곱빛깔, biyori kept transliterated).",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%85%BC%EB%85%BC%EB%B9%84%EC%9A%94%EB%A6%AC/%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98",
+      "https://www.youtube.com/watch?v=ZselbOgQGrA"
+    ]
   },
   {
     "id": "tj-27655",
     "title_primary": "ミライボウル(ドラゴンクライシス! ED)",
     "title_ko": "미라이 볼",
-    "media_context_ko": "(드래곤크라이시스! ED)",
+    "media_context_ko": "드래곤 크라이시스!",
     "confidence": "medium",
-    "reasoning": "ミライボウル = Mirai Bowl, transliteration is standard for Momoclo",
-    "web_sources": []
+    "reasoning": "web-searched: official English romanization 'Mirai Bowl' confirmed (Momoclo, Dragon Crisis! ED); no Korean-specific canonical for 볼/보울.",
+    "web_sources": [
+      "https://en.wikipedia.org/wiki/Mirai_Bowl_/_Chai_Maxx",
+      "https://www.oricon.co.jp/prof/484876/products/903953/1/"
+    ]
   },
   {
     "id": "tj-27657",
@@ -13810,10 +14104,13 @@
     "id": "tj-27673",
     "title_primary": "がむしゃら行進曲(地獄先生ぬ~べ~ OST)",
     "title_ko": "무모한 행진곡",
-    "media_context_ko": null,
+    "media_context_ko": "지옥선생 누베",
     "confidence": "medium",
-    "reasoning": "がむしゃら=무모한/저돌적인; 행진곡=march",
-    "web_sources": []
+    "reasoning": "web-searched: Kanjani8, Jigoku Sensei Nube drama theme; がむしゃら = 무모한/저돌적인; no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%81%8C%E3%82%80%E3%81%97%E3%82%83%E3%82%89%E8%A1%8C%E9%80%B2%E6%9B%B2",
+      "https://www.uta-net.com/song/175601/"
+    ]
   },
   {
     "id": "tj-27674",
@@ -14001,8 +14298,10 @@
     "title_ko": "후유코의 블루스",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "冬子=후유코 (woman name); 블루스",
-    "web_sources": []
+    "reasoning": "web-searched: Masuiyama enka (2014), 冬子 = woman-name Fuyuko; no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/170178/"
+    ]
   },
   {
     "id": "tj-27712",
@@ -14044,10 +14343,13 @@
     "id": "tj-27716",
     "title_primary": "もんだいガール(問題のあるレストラン OST)",
     "title_ko": "문제 걸",
-    "media_context_ko": "(문제있는 레스토랑 OST)",
+    "media_context_ko": "문제 있는 레스토랑",
     "confidence": "medium",
-    "reasoning": "もんだいガール = problem girl/문제걸",
-    "web_sources": []
+    "reasoning": "web-searched: Kyary Pamyu Pamyu, drama theme; official English 'Mondai Girl'; no Korean canon found for translated form.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%82%E3%82%93%E3%81%A0%E3%81%84%E3%82%AC%E3%83%BC%E3%83%AB",
+      "https://www.uta-net.com/song/178009/"
+    ]
   },
   {
     "id": "tj-27719",
@@ -14055,8 +14357,11 @@
     "title_ko": "바람 멈추지 않고",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "風やまず literal",
-    "web_sources": []
+    "reasoning": "web-searched: Fukuda Kohei enka (南部おろしの風やまず); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/137139/",
+      "https://utaten.com/lyric/ye15032411/"
+    ]
   },
   {
     "id": "tj-27720",
@@ -14070,11 +14375,15 @@
   {
     "id": "tj-27722",
     "title_primary": "夏色えがおで 1, 2, Jump!(ラブライブ! OST)",
-    "title_ko": null,
-    "media_context_ko": "(러브라이브 OST)",
-    "confidence": "medium",
-    "reasoning": "mixed Latin+Japanese; \"夏色えがおで\" hard literal: 여름빛 미소로 1,2,Jump",
-    "web_sources": []
+    "title_ko": "여름빛 미소로 1, 2, Jump!",
+    "media_context_ko": "러브라이브!",
+    "confidence": "high",
+    "reasoning": "web-verified: was null → canonical '여름빛 미소로 1, 2, Jump!' per namu.wiki + Korean Wikipedia + Love Live Inven (three converging Korean sources).",
+    "web_sources": [
+      "https://namu.wiki/w/%E5%A4%8F%E8%89%B2%E3%81%88%E3%81%8C%E3%81%8A%E3%81%A71,2,Jump%EF%BC%81(%EA%B3%A1)",
+      "https://ko.wikipedia.org/wiki/%EC%97%AC%EB%A6%84%EB%B9%9B_%EB%AF%B8%EC%86%8C%EB%A1%9C_1,_2,_Jump!",
+      "http://lovelive.inven.co.kr/dataninfo/music/detail.php?d=3&c=5"
+    ]
   },
   {
     "id": "tj-27723",
@@ -14082,17 +14391,22 @@
     "title_ko": "코케티시 정체 중",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "コケティッシュ=coquettish; 渋滞中=정체 중",
-    "web_sources": []
+    "reasoning": "web-searched: namu.wiki keeps the Japanese title コケティッシュ渋滞中 (no Korean translation canon); SKE48 17th single; literal stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%82%B3%E3%82%B1%E3%83%86%E3%82%A3%E3%83%83%E3%82%B7%E3%83%A5%E6%B8%8B%E6%BB%9E%E4%B8%AD"
+    ]
   },
   {
     "id": "tj-27725",
     "title_primary": "マジLOVE 1000%(うたの☆プリンスさまっ♪マジLOVE1000% OST)",
-    "title_ko": null,
-    "media_context_ko": "(노래의 왕자님 마지LOVE 1000% OST)",
-    "confidence": "high",
-    "reasoning": "Latin+stylized; keep transliteration",
-    "web_sources": []
+    "title_ko": "진짜 LOVE 1000%",
+    "media_context_ko": "우타노 프린스사마♪ 마지LOVE1000%",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'Latin+stylized, keep transliteration', but マジ is Japanese slang, not Latin. Web search confirms ST☆RISH's theme for うたの☆プリンスさまっ♪ マジLOVE1000%. マジ (seriously/for real) → 진짜; LOVE (Latin) and 1000% kept verbatim → 진짜 LOVE 1000%. No Korean-language title canon found (Korean fandom often just transliterates 마지LOVE, but that is transliteration, not translation) → medium. Media given as the recognizable Korean-fandom rendering of the franchise.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%9E%E3%82%B8LOVE1000%25",
+      "https://www.uta-net.com/song/116417/"
+    ]
   },
   {
     "id": "tj-27726",
@@ -14109,8 +14423,10 @@
     "title_ko": "한 목소리 일대",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "一声一代 literary expression",
-    "web_sources": []
+    "reasoning": "web-searched: Tendo Yoshimi enka (pun on 一世一代); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/158342/"
+    ]
   },
   {
     "id": "tj-27729",
@@ -14154,8 +14470,11 @@
     "title_ko": "나가모치 축하 노래",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "長持祝い唄 traditional wedding song",
-    "web_sources": []
+    "reasoning": "web-searched: Sen Masao wedding celebration song; 長持 = traditional dowry chest; no Korean canon found.",
+    "web_sources": [
+      "https://www.uta-net.com/song/162063/",
+      "https://www.tkma.co.jp/enka_release_detail/sen.html?rid=5039"
+    ]
   },
   {
     "id": "tj-27736",
@@ -14180,9 +14499,11 @@
     "title_primary": "チュムチュム",
     "title_ko": "츄무츄무",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "チュムチュム = NEWS song, transliteration",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: Korean Wikipedia article title is exactly 츄무츄무 (NEWS 18th single).",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/%EC%B8%84%EB%AC%B4%EC%B8%84%EB%AC%B4"
+    ]
   },
   {
     "id": "tj-27743",
@@ -14233,10 +14554,13 @@
     "id": "tj-27750",
     "title_primary": "カタルリズム(黒子のバスケ ED)",
     "title_ko": "카타르 리듬",
-    "media_context_ko": "(쿠로코의 농구 ED)",
+    "media_context_ko": "쿠로코의 농구",
     "confidence": "medium",
-    "reasoning": "カタルリズム invented word; transliterate",
-    "web_sources": []
+    "reasoning": "web-searched: OLDCODEX, Kuroko no Basket ED; official coined romanization is one word 'Catalrhythm'; namu keeps Japanese/romaji, no Korean translation canon (current segmentation questionable).",
+    "web_sources": [
+      "https://jpop.fandom.com/wiki/Catalrhythm",
+      "https://namu.wiki/w/OLDCODEX"
+    ]
   },
   {
     "id": "tj-27753",
@@ -14271,8 +14595,11 @@
     "title_ko": "쿠루쿠루",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "クルクル = onomatopoeic, transliteration",
-    "web_sources": []
+    "reasoning": "web-searched: E-girls 7th single; namu.wiki/ja.wikipedia keep Japanese title, onomatopoeia; no Korean canon, transliteration stands.",
+    "web_sources": [
+      "https://namu.wiki/w/E-girls",
+      "https://ja.wikipedia.org/wiki/%E3%82%AF%E3%83%AB%E3%82%AF%E3%83%AB"
+    ]
   },
   {
     "id": "tj-27759",
@@ -14352,8 +14679,11 @@
     "title_ko": "홀로 사쓰마 길",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "薩摩=사쓰마(지역)",
-    "web_sources": []
+    "reasoning": "web-searched: Mizumori Kaori enka travelogue (Satsuma/Kagoshima); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%81%B2%E3%81%A8%E3%82%8A%E8%96%A9%E6%91%A9%E8%B7%AF",
+      "https://www.uta-net.com/song/52607/"
+    ]
   },
   {
     "id": "tj-27778",
@@ -14386,10 +14716,12 @@
     "id": "tj-27790",
     "title_primary": "ヒャダインのカカカタ☆ カタオモイ-C(日常 OP)",
     "title_ko": "햐다인의 카카카타☆카타오모이-C",
-    "media_context_ko": "(일상 OP)",
+    "media_context_ko": "일상",
     "confidence": "medium",
-    "reasoning": "transliteration; 카타오모이=짝사랑",
-    "web_sources": []
+    "reasoning": "web-searched: Nichijou OP; namu.wiki keeps the Japanese title (no Korean translation canon); transliteration stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%83%92%E3%83%A3%E3%83%80%E3%82%A4%E3%83%B3%E3%81%AE%E3%82%AB%E3%82%AB%E3%82%AB%E3%82%BF%E2%98%86%E3%82%AB%E3%82%BF%E3%82%AA%E3%83%A2%E3%82%A4-C"
+    ]
   },
   {
     "id": "tj-27791",
@@ -14494,10 +14826,12 @@
     "id": "tj-27821",
     "title_primary": "はなまるぴっぴは よいこだけ(おそ松さん OP)",
     "title_ko": "하나마루핏피는 좋은 아이만",
-    "media_context_ko": "(오소마츠상 OP)",
+    "media_context_ko": "오소마츠 상",
     "confidence": "medium",
-    "reasoning": "はなまるぴっぴ nonsense; transliteration",
-    "web_sources": []
+    "reasoning": "web-searched: Osomatsu-san 1st OP; namu.wiki keeps the Japanese title (no Korean translation canon).",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%81%AF%E3%81%AA%E3%81%BE%E3%82%8B%E3%81%B4%E3%81%A3%E3%81%B4%E3%81%AF%E3%82%88%E3%81%84%E3%81%93%E3%81%A0%E3%81%91"
+    ]
   },
   {
     "id": "tj-27823",
@@ -14548,10 +14882,12 @@
     "id": "tj-27828",
     "title_primary": "全力バタンキュー(おそ松さん 2nd OP)",
     "title_ko": "전력 쾅 큐~",
-    "media_context_ko": "(오소마츠상 2기 OP)",
+    "media_context_ko": "오소마츠 상",
     "confidence": "medium",
-    "reasoning": "全力バタンキュー = 전력 쾅 쿵 (onomatopoeic for collapsing in exhaustion)",
-    "web_sources": []
+    "reasoning": "web-searched: Osomatsu-san 2nd OP; namu.wiki keeps Japanese title; バタンキュー = collapse-from-exhaustion onomatopoeia; no Korean canon.",
+    "web_sources": [
+      "https://namu.wiki/w/%E5%85%A8%E5%8A%9B%E3%83%90%E3%82%BF%E3%83%B3%E3%82%AD%E3%83%A5%E3%83%BC"
+    ]
   },
   {
     "id": "tj-27829",
@@ -14620,10 +14956,13 @@
     "id": "tj-27838",
     "title_primary": "アクセンティア(デジモンワールド-next 0rder-OST)",
     "title_ko": "악센티아",
-    "media_context_ko": "(디지몬월드 -next 0rder- OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "アクセンティア = Accentier/Accentia, invented word",
-    "web_sources": []
+    "reasoning": "web-searched: Eir Aoi, Digimon World Next Order; coined word 'Accentier' (Accent + -ier); no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://www.lisani.jp/0000012078/",
+      "https://www.discogs.com/release/11459908"
+    ]
   },
   {
     "id": "tj-27839",
@@ -14655,11 +14994,14 @@
   {
     "id": "tj-27843",
     "title_primary": "こだまことだま(のんのんびより りぴーと OP)",
-    "title_ko": "메아리와 영혼",
-    "media_context_ko": "(논논비요리 리피트 OP)",
-    "confidence": "medium",
-    "reasoning": "こだまことだま = 메아리와 言霊(말의 영혼) wordplay",
-    "web_sources": []
+    "title_ko": "코다마코토다마",
+    "media_context_ko": "논논비요리 리피트",
+    "confidence": "high",
+    "reasoning": "web-verified: was '메아리와 영혼' → canonical transliteration '코다마코토다마' per namu.wiki (논논비요리 리피트/nano.RIPE); Korean refs transliterate the wordplay rather than translate.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%85%BC%EB%85%BC%EB%B9%84%EC%9A%94%EB%A6%AC%20%EB%A6%AC%ED%94%BC%ED%8A%B8",
+      "https://namu.wiki/w/nano.RIPE"
+    ]
   },
   {
     "id": "blog-168-11",
@@ -14710,10 +15052,14 @@
     "id": "tj-27852",
     "title_primary": "ゆりゆらららら ゆるゆり大事件(ゆるゆり OP)",
     "title_ko": "유리유라라라라 유루유리 대사건",
-    "media_context_ko": "(유루유리 OP)",
-    "confidence": "medium",
-    "reasoning": "ゆりゆらららら nonsense onomatopoeic",
-    "web_sources": []
+    "media_context_ko": "유루유리",
+    "confidence": "high",
+    "reasoning": "web-verified: official Korean release title (Bugs) and kakaoTV both use '유리유라라라라유루유리 대사건'; matches current form.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/30985738",
+      "https://tv.kakao.com/channel/2958719/cliplink/381869279",
+      "https://namu.wiki/w/%EC%9C%A0%EB%A3%A8%EC%9C%A0%EB%A6%AC/%EC%9D%8C%EB%B0%98%20%EB%AA%A9%EB%A1%9D"
+    ]
   },
   {
     "id": "tj-27853",
@@ -14757,8 +15103,11 @@
     "title_ko": "계속해서 잇따라",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "次々続々 = 잇따라 잇따라/계속해서",
-    "web_sources": []
+    "reasoning": "web-searched: ANGERME triple-A-side (2016); no namu/Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/207205/",
+      "https://helloproject.fandom.com/ja/wiki/%E6%AC%A1%E3%80%85%E7%B6%9A%E3%80%85"
+    ]
   },
   {
     "id": "tj-27859",
@@ -14772,11 +15121,13 @@
   {
     "id": "tjpdf-27864",
     "title_primary": "リンゴ日和 ∼The Wolf Whistling Song~(狼と香辛料 ED)",
-    "title_ko": "사과 좋은 날 ~The Wolf Whistling~",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "リンゴ=apple, 日和=fine day; ROCKY CHACK Spice and Wolf canonical",
-    "web_sources": []
+    "title_ko": "사과 먹기 좋은 날 ~The Wolf Whistling Song~",
+    "media_context_ko": "늑대와 향신료",
+    "confidence": "high",
+    "reasoning": "web-verified: was '사과 좋은 날' → canonical '사과 먹기 좋은 날' per namu.wiki (늑대와 향신료/OST); 日和 rendered idiomatically as '~하기 좋은 날'.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%8A%91%EB%8C%80%EC%99%80%20%ED%96%A5%EC%8B%A0%EB%A3%8C/OST"
+    ]
   },
   {
     "id": "tjpdf-27867",
@@ -14800,10 +15151,13 @@
     "id": "tjpdf-27869",
     "title_primary": "コトダマ(シゴフミ OP)",
     "title_ko": "코토다마",
-    "media_context_ko": null,
+    "media_context_ko": "시고후미",
     "confidence": "medium",
-    "reasoning": "コトダマ = 言霊 (ALI PROJECT)",
-    "web_sources": []
+    "reasoning": "web-searched: ALI PROJECT, Shigofumi OP; コトダマ = 言霊 (deliberately katakana, matching the anime's katakana styling); no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%B3%E3%83%88%E3%83%80%E3%83%9E",
+      "http://lantis.jp/release-item/_LHCM-1039.html"
+    ]
   },
   {
     "id": "tjpdf-27870",
@@ -14827,28 +15181,36 @@
     "id": "tjpdf-27875",
     "title_primary": "Break+Your+Destiny(絶対可憐チルドレン ED)",
     "title_ko": null,
-    "media_context_ko": null,
+    "media_context_ko": "절대가련 칠드런",
     "confidence": "low",
-    "reasoning": "Title equals artist string (proper-noun cluster: 兵部京介vs皆本光一with賢木修二starring 遊佐浩二). Treating as null.",
-    "web_sources": []
+    "reasoning": "web-searched: Zettai Karen Children 3rd ED; title is a pure English/Latin phrase, so title_ko stays null; confidence unchanged.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/Break+Your+Destiny",
+      "https://www.uta-net.com/song/110821/"
+    ]
   },
   {
     "id": "tjpdf-27878",
     "title_primary": "？でわっしょい(ひだまりスケッチ OP)",
     "title_ko": "? 로 왓쇼이",
-    "media_context_ko": null,
+    "media_context_ko": "히다마리 스케치×365",
     "confidence": "medium",
-    "reasoning": "？でわっしょい = wasshoi (festival chant) with question mark (Hidamari Sketch)",
-    "web_sources": []
+    "reasoning": "web-searched: Hidamari Sketch ×365 OP; わっしょい = festival chant; namu keeps the Japanese title (no Korean translation canon).",
+    "web_sources": [
+      "https://namu.wiki/w/%ED%9E%88%EB%8B%A4%EB%A7%88%EB%A6%AC%20%EC%8A%A4%EC%BC%80%EC%B9%98%C3%97365"
+    ]
   },
   {
     "id": "tjpdf-27879",
     "title_primary": "サクラキミニエム(D.C.Ⅱ～ダ・カーポⅡ OST)",
     "title_ko": "벚꽃 너에게 새기다",
-    "media_context_ko": null,
+    "media_context_ko": "다카포 II",
     "confidence": "medium",
-    "reasoning": "サクラ=cherry blossom, キミニ=to you, エム=engrave (yozuca*)",
-    "web_sources": []
+    "reasoning": "web-searched: yozuca*, Da Capo II OP; namu keeps the Japanese title; エム likely 笑む (smile), so the current '새기다 (engrave)' interpretation is uncertain; no Korean canon.",
+    "web_sources": [
+      "https://namu.wiki/w/yozuca*",
+      "https://namu.wiki/w/%EB%8B%A4%EC%B9%B4%ED%8F%AC(%EA%B2%8C%EC%9E%84)/%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98"
+    ]
   },
   {
     "id": "tj-27882",
@@ -14919,8 +15281,11 @@
     "title_ko": "카자하네",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "カザハネ proper name (Shimotsuki Haruka song)",
-    "web_sources": []
+    "reasoning": "web-searched: Shimotsuki Haruka, H2O ED; カザハネ = coined poetic word (風羽根/wind-feather); no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E9%9C%9C%E6%9C%88%E3%81%AF%E3%82%8B%E3%81%8B",
+      "https://www.uta-net.com/song/69812/"
+    ]
   },
   {
     "id": "tj-27894",
@@ -14943,11 +15308,15 @@
   {
     "id": "tj-27896",
     "title_primary": "独りんぼエンヴィー",
-    "title_ko": "히토림보 엔비",
+    "title_ko": "혼자 놀이 엔비",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "独りんぼエンヴィー = solo envy/외톨이 envy; vocaloid title commonly transliterated",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: was '히토림보 엔비' → canonical '혼자 놀이 엔비' per namu.wiki main article (독りんぼ = 외톨이/혼자 놀기 double-meaning + envy); Project Sekai KR lyrics agree.",
+    "web_sources": [
+      "https://namu.wiki/w/%ED%98%BC%EC%9E%90%20%EB%86%80%EC%9D%B4%20%EC%97%94%EB%B9%84",
+      "http://vocaro.wikidot.com/find-one-envy",
+      "https://www.postype.com/@projectsekailyrics/post/17421463"
+    ]
   },
   {
     "id": "tj-27897",
@@ -15151,19 +15520,25 @@
     "id": "tj-27931",
     "title_primary": "SIX SHAME FACES ~今夜も最高!!!!!!~(おそ松さん ED)",
     "title_ko": null,
-    "media_context_ko": "(오소마츠상 ED)",
+    "media_context_ko": "오소마츠 상",
     "confidence": "medium",
-    "reasoning": "pure-Latin SIX SHAME FACES",
-    "web_sources": []
+    "reasoning": "web-searched: Latin-dominant title kept null per convention; namu renders only the subtitle (~오늘 밤은 최고!!!!!!~), main title stays Latin.",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%98%A4%EC%86%8C%EB%A7%88%EC%B8%A0%20%EC%83%81/%EB%AF%B8%EB%94%94%EC%96%B4%20%EB%AF%B9%EC%8A%A4/%EC%9D%8C%EB%B0%98",
+      "https://osomatsu.fandom.com/wiki/Six_Shame_Faces_~Tonight_is_Also_the_Best!!!!!!~"
+    ]
   },
   {
     "id": "tj-27932",
     "title_primary": "バイバイ YESTERDAY(暗殺教室 OP)",
-    "title_ko": null,
-    "media_context_ko": "(암살교실 OP)",
+    "title_ko": "바이바이 YESTERDAY",
+    "media_context_ko": "암살교실",
     "confidence": "high",
-    "reasoning": "pure-Latin Bye Bye YESTERDAY",
-    "web_sources": []
+    "reasoning": "Mislabel correction: tagged 'pure-Latin', but バイバイ is katakana. Web search confirms 3年E組うた担's OP for 暗殺教室 SECOND SEASON (Assassination Classroom). バイバイ is a pure-katakana English loanword (bye bye) → Korean loanword form 바이바이; YESTERDAY (Latin) kept verbatim → 바이바이 YESTERDAY. Media 암살교실 is the established Korean title. Deterministic loanword + Latin → high.",
+    "web_sources": [
+      "https://www.uta-net.com/song/208561/",
+      "https://www.cdjournal.com/i/i_disc.php?dno=4116030387"
+    ]
   },
   {
     "id": "tj-27934",
@@ -15240,11 +15615,14 @@
   {
     "id": "tj-27952",
     "title_primary": "SAKURAスキップ(NEW GAME! OP)",
-    "title_ko": null,
-    "media_context_ko": "(NEW GAME! OP)",
+    "title_ko": "SAKURA 스킵",
+    "media_context_ko": "NEW GAME!",
     "confidence": "high",
-    "reasoning": "pure-Latin SAKURA Skip",
-    "web_sources": []
+    "reasoning": "Mislabel correction: tagged 'pure-Latin', but スキップ is katakana. Web search confirms Fourfolium's OP for NEW GAME!. SAKURA is Latin (kept verbatim); スキップ is a pure-katakana English loanword (skip) → Korean loanword form 스킵 → SAKURA 스킵. NEW GAME! is Latin-titled and used as-is in Korean → media kept verbatim. Latin + deterministic loanword → high.",
+    "web_sources": [
+      "https://utaten.com/karaoke/new-game/",
+      "https://www.uta-net.com/artist/24462/"
+    ]
   },
   {
     "id": "tj-27954",
@@ -15294,20 +15672,25 @@
   {
     "id": "tj-27964",
     "title_primary": "ホシアイ",
-    "title_ko": "별의 사랑",
+    "title_ko": "호시아이",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ホシアイ = 星愛/星合 = 별 만남/별의 사랑",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: was '별의 사랑' → canonical '호시아이' per namu.wiki article title; 星合 = Tanabata star-meeting (Vega/Altair), so 별의 사랑 was a mistranslation.",
+    "web_sources": [
+      "https://namu.wiki/w/%ED%98%B8%EC%8B%9C%EC%95%84%EC%9D%B4",
+      "https://vocadb.net/Al/15149"
+    ]
   },
   {
     "id": "tj-27966",
     "title_primary": "チュルリラ・チュルリラ・ダッダッダ!",
-    "title_ko": "추루리라 추루리라 닷닷다!",
+    "title_ko": "츄루리라·츄루리라·땃땃따!",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "チュムチュム-style nonsense; transliteration",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: was '추루리라 추루리라 닷닷다!' → canonical '츄루리라·츄루리라·땃땃따!' per namu.wiki article title (kurageP feat. Yuzuki Yukari).",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%B8%84%EB%A3%A8%EB%A6%AC%EB%9D%BC%C2%B7%EC%B8%84%EB%A3%A8%EB%A6%AC%EB%9D%BC%C2%B7%EB%95%83%EB%95%83%EB%94%B0!"
+    ]
   },
   {
     "id": "tj-27967",
@@ -15394,10 +15777,13 @@
     "id": "tjpdf-27988",
     "title_primary": "リフレインボーイ(モブサイコ100 ED)",
     "title_ko": "리프레인 보이",
-    "media_context_ko": null,
+    "media_context_ko": "모브 사이코 100",
     "confidence": "medium",
-    "reasoning": "リフレインボーイ = Refrain Boy (All OFF Mob Psycho canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: All OFF, Mob Psycho 100 ED; 'Refrain Boy' English phrase in katakana; standard transliteration, no namu Korean title.",
+    "web_sources": [
+      "https://jpop.fandom.com/wiki/Refrain_Boy",
+      "https://www.uta-net.com/song/213458/"
+    ]
   },
   {
     "id": "tj-27990",
@@ -15448,10 +15834,13 @@
     "id": "tj-28005",
     "title_primary": "SIX SAME FACES ~今夜も最高!!!!!!~(おそ松さん ED)",
     "title_ko": null,
-    "media_context_ko": "(오소마츠상 ED)",
+    "media_context_ko": "오소마츠 상",
     "confidence": "medium",
-    "reasoning": "pure-Latin SIX SAME FACES",
-    "web_sources": []
+    "reasoning": "web-searched: Latin-dominant title kept null per convention; namu renders only the subtitle (~오늘 밤은 최고!!!!!!~), main title stays Latin.",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%98%A4%EC%86%8C%EB%A7%88%EC%B8%A0%20%EC%83%81/%EB%AF%B8%EB%94%94%EC%96%B4%20%EB%AF%B9%EC%8A%A4/%EC%9D%8C%EB%B0%98",
+      "https://osomatsu.fandom.com/wiki/Six_Same_Faces_~Tonight_is_the_Best!!!!!!~"
+    ]
   },
   {
     "id": "tj-28009",
@@ -15556,10 +15945,13 @@
     "id": "tjpdf-28166",
     "title_primary": "アナタMAGIC(銀魂 OP)",
     "title_ko": "아나타 매직",
-    "media_context_ko": null,
+    "media_context_ko": "은혼",
     "confidence": "medium",
-    "reasoning": "アナタ=you, MAGIC (monobright Soul Eater)",
-    "web_sources": []
+    "reasoning": "web-searched: monobright, Gintama OP; アナタ = あなた (you) + MAGIC; no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%8A%E3%82%BFMAGIC",
+      "https://gintama.fandom.com/wiki/Anata_MAGIC"
+    ]
   },
   {
     "id": "tjpdf-28168",
@@ -15727,10 +16119,13 @@
     "id": "tjpdf-28193",
     "title_primary": "ギー太に首ったけ(けいおん! OST)",
     "title_ko": "기타에 푹 빠져",
-    "media_context_ko": null,
+    "media_context_ko": "케이온!",
     "confidence": "medium",
-    "reasoning": "ギー太=Gita (guitar nickname), に首ったけ=head over heels for (K-On!)",
-    "web_sources": []
+    "reasoning": "web-searched: K-On! image song (Yui); ギー太 = the nickname of Yui's guitar (pun on ギター/기타), 首ったけ = head over heels; translation reasonable, no namu Korean title.",
+    "web_sources": [
+      "https://ja.chordwiki.org/wiki/%E3%82%AE%E3%83%BC%E5%A4%AA%E3%81%AB%E9%A6%96%E3%81%A3%E3%81%9F%E3%81%91",
+      "https://www.uta-net.com/song/80931/"
+    ]
   },
   {
     "id": "tjpdf-28194",
@@ -15747,8 +16142,10 @@
     "title_ko": "그대여 죽지 마오",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "キミシニタモウコトナカレ = 君死にたまふことなかれ (May'n)",
-    "web_sources": []
+    "reasoning": "web-searched: song = Yosano Akiko anti-war poem phrase 君死にたまふことなかれ ('thou shalt not die'), Shangri-La OP by May'n; meaning matches current but no Korean canonical release title found; literal translation stands.",
+    "web_sources": [
+      "https://www.youtube.com/watch?v=JBcNYaw8NOo"
+    ]
   },
   {
     "id": "tjpdf-28196",
@@ -15801,8 +16198,11 @@
     "title_ko": "쿠후후의 후~나와 계약~",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "クフフのフ playful syllables; 僕と契約=contract with me",
-    "web_sources": []
+    "reasoning": "web-searched: Mukuro Rokudo (六道骸) image song from Katekyo Hitman Reborn!; クフフ=Mukuro's signature laugh, 僕と契約=나와 계약; no Korean canonical found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/64978/",
+      "https://nana-music.com/sounds/04da9293"
+    ]
   },
   {
     "id": "tjpdf-28202",
@@ -15852,20 +16252,26 @@
   {
     "id": "tjpdf-28209",
     "title_primary": "サヤエンドウ(ワンピース OST)",
-    "title_ko": "사야 콩",
+    "title_ko": "깍지완두",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "サヤエンドウ = snow pea (NEWS One Piece canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: サヤエンドウ is a single word (莢豌豆 = snow/snap pea), used as a pea-pod=pirate-ship metaphor in this One Piece movie ED (NEWS); was '사야 콩' (mis-split treating サヤ as a name) → 깍지완두 (snow pea); no official Korean release title, medium.",
+    "web_sources": [
+      "https://onepiece.fandom.com/wiki/Sayaendo",
+      "https://ja.wikipedia.org/wiki/サヤエンドウ/裸足のシンデレラボーイ"
+    ]
   },
   {
     "id": "tjpdf-28210",
     "title_primary": "シアワセネイロ(コードギアス反逆のルルーシュR2 ED)",
-    "title_ko": "시아와세 네이로",
+    "title_ko": "행복의 음색",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "シアワセ=happiness, ネイロ=tone color (ORANGE RANGE Bleach)",
-    "web_sources": []
+    "reasoning": "web-searched: Code Geass R2 ED by ORANGE RANGE; vocalist RYO said the title = 幸せ(の)音色 ('the tone color of happiness'); replaced katakana transliteration 시아와세 네이로 with confirmed-meaning translation 행복의 음색 (no-transliteration policy); no Korean canonical title string, medium.",
+    "web_sources": [
+      "https://recochoku.jp/song/S20154429/",
+      "https://www.sonymusic.co.jp/artist/orangerange/info/236467"
+    ]
   },
   {
     "id": "tjpdf-28211",
@@ -15972,8 +16378,11 @@
     "title_ko": "연결되리요",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "つながリーヨ = connecting (T-Pistonz Inazuma Eleven)",
-    "web_sources": []
+    "reasoning": "web-searched: Inazuma Eleven GO Galaxy OP by T-Pistonz+KMC; playful spelling of つながり (connect); no Korean canonical, playful literal stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/つながリーヨ",
+      "https://www.uta-net.com/song/86041/"
+    ]
   },
   {
     "id": "tjpdf-28228",
@@ -16026,8 +16435,11 @@
     "title_ko": "하트 리얼라이즈",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ハートリアライズ = Heart Realize (loan, Tia)",
-    "web_sources": []
+    "reasoning": "web-searched: Noragami ED by Tia (composed by ryo/supercell); English-loan title 'Heart Realize'; no distinct Korean canonical, transliteration of English loan stands.",
+    "web_sources": [
+      "https://jpop.fandom.com/wiki/Heart_Realize",
+      "https://noragami.fandom.com/wiki/Heart_Realize"
+    ]
   },
   {
     "id": "tjpdf-28237",
@@ -16044,26 +16456,35 @@
     "title_ko": "해피니~뉴~냐",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "はっぴぃ=happy, にゅう=new, にゃあ=meow (cat-themed)",
-    "web_sources": []
+    "reasoning": "web-searched: Mayoi Neko Overrun! OP; playful pun on 'Happy New' + にゃあ (cat meow); untranslatable wordplay, no Korean canonical; current phonetic form stands.",
+    "web_sources": [
+      "https://dic.pixiv.net/a/はっぴぃにゅうにゃあ",
+      "https://www.joysound.com/web/search/song/153961"
+    ]
   },
   {
     "id": "tjpdf-28239",
     "title_primary": "ハナノイロ(花咲くいろは OP)",
-    "title_ko": "하나노이로",
+    "title_ko": "꽃의 색",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ハナノイロ = color of flower (nano.RIPE Hanasaku Iroha OP)",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: ハナノイロ = 花の色 (color of flowers), Hanasaku Iroha OP by nano.RIPE; Korean fan-sub canon renders 꽃의 색 across independent uploads and it is the literal meaning; was transliteration 하나노이로 → 꽃의 색.",
+    "web_sources": [
+      "https://www.youtube.com/watch?v=a-dgVxJlgOk",
+      "https://www.youtube.com/watch?v=aZPK073SL4s",
+      "https://namu.wiki/w/nano.RIPE"
+    ]
   },
   {
     "id": "tjpdf-28240",
     "title_primary": "ハナマル☆ センセイション(こどものじかん ED)",
-    "title_ko": "하나마루☆센세이션",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ハナマル=hanamaru/excellent, センセイション=sensation (Little Non Working!! canonical)",
-    "web_sources": []
+    "title_ko": "칭찬표☆센세이션",
+    "media_context_ko": "아이들의 시간",
+    "confidence": "high",
+    "reasoning": "web-verified: Korean Wikipedia has an article titled 칭찬표☆센세이션 for this exact Little Non song (Kodomo no Jikan 1st ED); ハナマル (good-work stamp) = 칭찬표; was 하나마루☆센세이션 → 칭찬표☆센세이션, per ko.wikipedia.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/칭찬표☆센세이션"
+    ]
   },
   {
     "id": "tjpdf-28241",
@@ -16071,8 +16492,11 @@
     "title_ko": "꽃을 푸~응",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "はなをぷーん = sniff a flower (Kira Pika)",
-    "web_sources": []
+    "reasoning": "web-searched: Kirarin Revolution OP by Kira Pika; playful pun on はな (花 flower / 鼻 nose ambiguity) + ぷーん onomatopoeia; no Korean canonical, current literal stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/きらりん☆レボリューション",
+      "https://www.uta-net.com/song/55753/"
+    ]
   },
   {
     "id": "tjpdf-28242",
@@ -16089,8 +16513,11 @@
     "title_ko": "패러독시컬 ZOO",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "パラドキシカル=Paradoxical, ZOO (AKINO bless4)",
-    "web_sources": []
+    "reasoning": "web-searched: Aquarion EVOL OP by AKINO with bless4; English-loan 'Paradoxical ZOO'; no distinct Korean canonical, transliteration stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/130063/",
+      "https://utaten.com/lyric/jb51402003/"
+    ]
   },
   {
     "id": "tjpdf-28245",
@@ -16098,8 +16525,11 @@
     "title_ko": "하루카",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ハルカ = 遥か / proper name (Pierrot Naruto canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Kamikaze Kaitou Jeanne ED by Pierrot; paired single ハルカ…/カナタヘ… hints at 遥か (faraway), but the title is ambiguous between a name and the adverb; no Korean canonical, name-style transliteration stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/ハルカ…/カナタヘ…",
+      "https://lineup.toei-anim.co.jp/ja/tv/jeanne/song/"
+    ]
   },
   {
     "id": "tjpdf-28246",
@@ -16134,8 +16564,10 @@
     "title_ko": "햐다인의 죠~죠~유~",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ヒャダイン proper name; じょーじょーゆー catchphrase (Nichijou OP canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Nichijou OP2; ヒャダイン = artist name 햐다인, じょーじょーゆーじょー = playful wordplay on 上々 (excellent) + 友情 (friendship); namu.wiki keeps the Japanese title (no Korean translation canon), current stands.",
+    "web_sources": [
+      "https://namu.wiki/w/ヒャダインのじょーじょーゆーじょー"
+    ]
   },
   {
     "id": "tjpdf-28253",
@@ -16194,11 +16626,14 @@
   {
     "id": "tjpdf-28260",
     "title_primary": "ベリーメロン ~私の心をつかんだ良いメロン~(金色のガッシュベ OST)",
-    "title_ko": "베리 멜론~내 마음을 사로잡은",
+    "title_ko": "베리 멜론 ~내 마음을 사로잡은 좋은 멜론~",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ベリーメロン=Very Melon, 私の心を=my heart, つかんだ=caught",
-    "web_sources": []
+    "reasoning": "web-searched: Konjiki no Gash Bell character song (Victoream, CV Wakamoto Norio); current title_ko was truncated → completed to include 良いメロン=좋은 멜론 → 베리 멜론 ~내 마음을 사로잡은 좋은 멜론~; no Korean canonical, medium.",
+    "web_sources": [
+      "https://animesongz.com/lyric/857/4903",
+      "https://www.joysound.com/web/search/song/48717"
+    ]
   },
   {
     "id": "tjpdf-28261",
@@ -16206,8 +16641,11 @@
     "title_ko": "포와종 KISS",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ポワゾン = Poison (French/loan), KISS kept Latin (QUARTET NIGHT)",
-    "web_sources": []
+    "reasoning": "web-searched: Uta no Prince-sama insert song by QUARTET NIGHT; ポワゾン = poison (French pronunciation), KISS kept in Latin; no Korean canonical, transliteration stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/149113/",
+      "https://www.joysound.com/web/search/song/297710"
+    ]
   },
   {
     "id": "tjpdf-28262",
@@ -16260,8 +16698,11 @@
     "title_ko": "맛가레↓스펙터클",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "まっがーれ=flip over, スペクタクル=Spectacle (Ono Daisuke Hetalia)",
-    "web_sources": []
+    "reasoning": "web-searched: Melancholy of Haruhi Suzumiya character song (Koizumi Itsuki / Ono Daisuke); まっがーれ = playful 曲がれ (bend/curve), スペクタクル = spectacle; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/52722/",
+      "https://www.joysound.com/web/search/song/102006"
+    ]
   },
   {
     "id": "tjpdf-28270",
@@ -16305,8 +16746,11 @@
     "title_ko": "유니버설 버니",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ユニバーサル・バニー = Universal Bunny (Macross Frontier)",
-    "web_sources": []
+    "reasoning": "web-searched: Macross F movie song (Sheryl Nome starring May'n); English-loan 'Universal Bunny'; no distinct Korean canonical, transliteration stands.",
+    "web_sources": [
+      "https://dic.pixiv.net/a/ユニバーサル・バニー",
+      "https://www.jvcmusic.co.jp/flyingdog/-/Discography/A021682/VTCL-60177.html"
+    ]
   },
   {
     "id": "tjpdf-28277",
@@ -16350,8 +16794,10 @@
     "title_ko": "러브 노벨스",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ラブノベルス = Love Novels (BiBi Love Live)",
-    "web_sources": []
+    "reasoning": "web-searched: Love Live! subunit BiBi; English-loan 'Love Novels'; no Korean canonical, transliteration stands.",
+    "web_sources": [
+      "https://love-live.fandom.com/wiki/Love_Novels"
+    ]
   },
   {
     "id": "tjpdf-28284",
@@ -16359,8 +16805,11 @@
     "title_ko": "롯타라 롯타라",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ロッタラロッタラ playful (Buono! Shugo Chara)",
-    "web_sources": []
+    "reasoning": "web-searched: Shugo Chara!! Doki ED by Buono!; ロッタラ coined from '(whole) lotta love' (Led Zeppelin); no Korean canonical, playful reduplication stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/ロッタラ_ロッタラ",
+      "https://www.uta-net.com/song/72582/"
+    ]
   },
   {
     "id": "tjpdf-28286",
@@ -16368,8 +16817,11 @@
     "title_ko": "내 옥같은 악의 꽃",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "わが=my, 臈たし=elegant, 悪の華=flower of evil (ALI PROJECT Aku no Hana)",
-    "web_sources": []
+    "reasoning": "web-searched: Code Geass R2 2nd ED by ALI PROJECT; 臈たし = archaic 'elegant/refined/lovely' (not literally jade), 悪の華 = flower of evil; no Korean canonical, current literal stands (note the 臈たし nuance).",
+    "web_sources": [
+      "https://www.uta-net.com/song/69352/",
+      "https://ja.wikipedia.org/wiki/わが﨟たし悪の華"
+    ]
   },
   {
     "id": "tjpdf-28287",
@@ -16422,8 +16874,11 @@
     "title_ko": "공상 메소로기이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "空想=fantasy, メソロギヰ=Methologie (Yousei Teikoku Future Diary canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Mirai Nikki OP by Yousei Teikoku; 空想 = 공상 (fantasy), メソロギヰ = coined word transliterated; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/空想メソロギヰ",
+      "https://www.uta-net.com/song/121076/"
+    ]
   },
   {
     "id": "tjpdf-28296",
@@ -16503,8 +16958,11 @@
     "title_ko": "대상 a",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "対象a = object a (anNina Boogiepop canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Higurashi Kai ED by anNina; 対象a = Lacan's 'objet petit a', whose standard Korean rendering is 대상 a; no song-specific Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/対象a",
+      "https://dic.pixiv.net/a/対象a"
+    ]
   },
   {
     "id": "tjpdf-28307",
@@ -16566,8 +17024,11 @@
     "title_ko": "사랑☆카나",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "恋☆カナ (Kirari Tsukishima canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Kirarin Revolution OP1 (Tsukishima Kirari); 恋 = 사랑, カナ = playful (name / かな 'I wonder' particle); no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/恋☆カナ",
+      "https://dic.pixiv.net/a/恋☆カナ"
+    ]
   },
   {
     "id": "tjpdf-28314",
@@ -16584,17 +17045,23 @@
     "title_ko": "사랑의 히메히메 펫탕코",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "恋=love, ヒメヒメ playful princess, ぺったんこ=flat (Tamura Yukari)",
-    "web_sources": []
+    "reasoning": "web-searched: Yowamushi Pedal in-universe 'Love☆Hime' insert song (Himeno Kocho / Tamura Yukari); ヒメヒメ = princess wordplay, ぺったんこ = playful onomatopoeia; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://silentblue.remywiki.com/Koi_no_hime_hime_pettanko",
+      "https://www.youtube.com/watch?v=X4cIPp6Kp_A"
+    ]
   },
   {
     "id": "tjpdf-28316",
     "title_primary": "恋は渾沌の隷也(這いよれ! ニャル子さんW OP)",
-    "title_ko": "사랑은 혼돈의 종이니라",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "恋は=love is, 渾沌=chaos, 隷也=servant of (Haiyore Nyaruko-san canonical)",
-    "web_sources": []
+    "title_ko": "사랑은 혼돈의 노예",
+    "media_context_ko": "기어와라! 냐루코 양 W",
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki states the widely-known Korean title is 사랑은 혼돈의 노예 (archaic ending 也 dropped, 隷=노예); multiple Korean lyric sites confirm; was 사랑은 혼돈의 종이니라 → 사랑은 혼돈의 노예.",
+    "web_sources": [
+      "https://namu.wiki/w/恋は渾沌の隷也",
+      "https://gasazip.com/553708"
+    ]
   },
   {
     "id": "tjpdf-28317",
@@ -16620,8 +17087,11 @@
     "title_ko": "사과 따자 빔!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "林檎=apple, もぎれ=pluck, ビーム=beam (Sayonara Zetsubou Sensei)",
-    "web_sources": []
+    "reasoning": "web-searched: Zan Sayonara Zetsubou Sensei OP; the title is a pun on 'リンゴ送れ、C'; literal 林檎もぎれ = 사과 따라/따자, ビーム = beam; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/林檎もぎれビーム!",
+      "https://www.uta-net.com/song/82995/"
+    ]
   },
   {
     "id": "tjpdf-28321",
@@ -16743,20 +17213,24 @@
   {
     "id": "tjpdf-28339",
     "title_primary": "死せる乙女その 手には水月",
-    "title_ko": "죽은 소녀 그 손에는 수월",
+    "title_ko": "죽은 소녀 그 손에는 달 그림자",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "死せる乙女=dead maiden, 水月=water-moon (Sound Horizon)",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: official Korean licensed-release title (Bugs Korea) renders 水月 as 달 그림자; was '죽은 소녀 그 손에는 수월' → '죽은 소녀 그 손에는 달 그림자', per Bugs.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/2381798"
+    ]
   },
   {
     "id": "tjpdf-28340",
     "title_primary": "死せる者達の物語",
     "title_ko": "죽은 자들의 이야기",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "死せる者達=the dead ones, 物語=story (Sound Horizon)",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: official Korean licensed-release title (Bugs Korea) = 죽은 자들의 이야기, matching current.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/2381796"
+    ]
   },
   {
     "id": "tjpdf-28341",
@@ -16806,11 +17280,13 @@
   {
     "id": "tjpdf-28349",
     "title_primary": "星屑の革紐",
-    "title_ko": "별가루의 가죽끈",
+    "title_ko": "별들의 가죽끈",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "星屑=stardust, 革紐=leather strap (Sound Horizon)",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: official Korean licensed-release title (Bugs Korea) = 별들의 가죽끈; was '별가루의 가죽끈' → '별들의 가죽끈', per Bugs.",
+    "web_sources": [
+      "https://music.bugs.co.kr/track/2022738"
+    ]
   },
   {
     "id": "tjpdf-28350",
@@ -16935,8 +17411,11 @@
     "title_ko": "이자요이의 눈물",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "十六夜=16th night moon, 涙=tears (Yoshioka Aika Hakuoki canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Hakuoki OP by Yoshioka Aika; 十六夜 read izayoi (16th-night moon) → 이자요이, 涙 = 눈물; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/十六夜涙",
+      "https://www.team-e.co.jp/gnca-7927/"
+    ]
   },
   {
     "id": "tjpdf-28366",
@@ -17061,8 +17540,11 @@
     "title_ko": "안타까운계 이웃부 ★★☆",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "残念系=disappointing-type, 隣人部=neighbor club (Boku wa Tomodachi ED)",
-    "web_sources": []
+    "reasoning": "web-searched: Boku wa Tomodachi ga Sukunai (Haganai) OP; 残念系 = disappointing-type, 隣人部 = 이웃부 (Neighbors Club), ★★☆ = 星二つ半; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/僕は友達が少ないのディスコグラフィ",
+      "https://utaten.com/lyric/jd51112070/"
+    ]
   },
   {
     "id": "tjpdf-28385",
@@ -17070,8 +17552,11 @@
     "title_ko": "장미옥 소녀",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "薔薇獄=rose prison, 乙女=maiden (ALI PROJECT Rozen Maiden)",
-    "web_sources": []
+    "reasoning": "web-searched: Rozen Maiden Ouvertüre OP by ALI PROJECT; 薔薇獄 = rose prison, 乙女 = maiden ('The Maiden Jailed in Roses'); no Korean canonical, current literal stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/薔薇獄乙女",
+      "https://www.uta-net.com/song/49848/"
+    ]
   },
   {
     "id": "tjpdf-28387",
@@ -17106,8 +17591,11 @@
     "title_ko": "절망성: 히어로 치료약",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "絶望性=despair-property, ヒーロー=hero, 治療薬=cure (Suzumu vocaloid)",
-    "web_sources": []
+    "reasoning": "web-searched: Danganronpa: The Animation ED (Suzumu feat. Soraru); 絶望性 = 절망성 (despair-nature), ヒーロー治療薬 = 히어로 치료약; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://dic.nicovideo.jp/a/絶望性:ヒーロー治療薬",
+      "https://www.uta-net.com/song/151994/"
+    ]
   },
   {
     "id": "tjpdf-28391",
@@ -17133,8 +17621,11 @@
     "title_ko": "지옥의 사정도 너 하기 나름",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "地獄の沙汰=hell's judgment, 君次第=depends on you (Hozuki no Reitetsu canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Hozuki no Reitetsu OP; title puns the proverb 地獄の沙汰も金次第 → 君次第 ('depends on you'); no Korean canonical, current literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/159790/",
+      "https://www.youtube.com/watch?v=ePSz2NODsdc"
+    ]
   },
   {
     "id": "tjpdf-28395",
@@ -17151,8 +17642,11 @@
     "title_ko": "창상 이노센스",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "創傷=wound, イノセンス=innocence (Uchida Maaya Strike the Blood)",
-    "web_sources": []
+    "reasoning": "web-searched: Akuma no Riddle OP (Uchida Maaya debut single); 創傷 = 창상/상처 (wound), イノセンス = innocence loan; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/創傷イノセンス",
+      "https://www.uta-net.com/song/163016/"
+    ]
   },
   {
     "id": "tjpdf-28398",
@@ -17160,8 +17654,11 @@
     "title_ko": "천양을 나는 자들",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "天壌=heaven and earth, 翔る=soar (Love Planet Five Reborn!)",
-    "web_sources": []
+    "reasoning": "web-searched: Gekijouban Shakugan no Shana theme (Love Planet Five, I've unit); 天壌 = 천양 (heaven and earth), 翔る = 날다/비상; no Korean canonical, current literal stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/天壌を翔る者たち",
+      "https://www.uta-net.com/song/123452/"
+    ]
   },
   {
     "id": "tjpdf-28400",
@@ -17169,8 +17666,11 @@
     "title_ko": "청춘 살벌론",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "青春=youth, サツバツ=殺伐=brutal (Assassination Classroom)",
-    "web_sources": []
+    "reasoning": "web-searched: Assassination Classroom OP (Class 3-E unit); サツバツ = 殺伐 (brutal) = 살벌, 論 = 론; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://www.ansatsu-anime.com/2014-2016/discography/detail_1st.php?id=1009321",
+      "https://utaten.com/lyric/yg15030301/"
+    ]
   },
   {
     "id": "tjpdf-28401",
@@ -17214,8 +17714,11 @@
     "title_ko": "자・도・야 리셋!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "寝=sleep, 逃げ=escape, でリセット=reset (Hidamari Sketch)",
-    "web_sources": []
+    "reasoning": "web-searched: Lucky Star character song (Tsukasa Hiiragi / Fukuhara Kaori); 寝逃げ = sleep-escape wordplay, リセット = 리셋; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.chordwiki.org/wiki/寝・逃・げでリセット！",
+      "https://www.uta-net.com/song/69568/"
+    ]
   },
   {
     "id": "tjpdf-28408",
@@ -17229,11 +17732,14 @@
   {
     "id": "tjpdf-28409",
     "title_primary": "太陽曰く燃えよカオス(這いよれ！ニャル子さん OP)",
-    "title_ko": "태양이 가로되 불타올라라 카오스",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "太陽曰く=sun says, 燃えよ=burn, カオス=chaos (Haiyore Nyaruko-san OP canonical)",
-    "web_sources": []
+    "title_ko": "태양 가라사대 불타라 카오스",
+    "media_context_ko": "기어와라! 냐루코 양",
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki article titled 태양 가라사대 불타라 카오스 (Haiyore Nyaruko-san S1 OP); Korean Wikipedia uses 태양이 말하길 불타라 카오스; adopted the namu canonical form; was 태양이 가로되 불타올라라 카오스.",
+    "web_sources": [
+      "https://namu.wiki/w/太陽曰く燃えよカオス",
+      "https://ko.wikipedia.org/wiki/태양이_말하길_불타라_카오스"
+    ]
   },
   {
     "id": "tjpdf-28410",
@@ -17241,8 +17747,11 @@
     "title_ko": "폭주 몽가",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "爆走=rampage, 夢歌=dream song (Diggy-MO' Soul Eater canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Soul Eater ED by Diggy-MO'; 爆走 = 폭주, 夢歌 rendered by its sino-Korean reading 몽가 (dream song); no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/爆走夢歌",
+      "https://www.uta-net.com/song/72713/"
+    ]
   },
   {
     "id": "tjpdf-28411",
@@ -17331,8 +17840,11 @@
     "title_ko": "확신적 메타모르포제",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "かくしん=core/conviction, めたまるふぉ~ぜっ=metamorphose (loan)",
-    "web_sources": []
+    "reasoning": "web-searched: Himouto! Umaru-chan OP; かくしん的 = pun (確信/革新) = 확신적, めたまるふぉ~ぜっ = metamorphose; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/かくしん的☆めたまるふぉ〜ぜっ!",
+      "https://www.uta-net.com/song/192617/"
+    ]
   },
   {
     "id": "tjpdf-28423",
@@ -17376,8 +17888,11 @@
     "title_ko": "개그 100회분 사랑해주세요",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ギャグ=gag, 100回分=for 100 times, 愛して=love (Berryz Kobo Pretty Cure canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Futari wa Pretty Cure Max Heart 2 movie ED by Berryz Kobo; literal 개그 100회분 사랑해주세요; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/ギャグ100回分愛してください",
+      "https://www.uta-net.com/song/35850/"
+    ]
   },
   {
     "id": "tjpdf-28449",
@@ -17385,17 +17900,23 @@
     "title_ko": "겟츄~! 러브러브?!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ゲッチュウ=getchu/get-you, らぶらぶ=love-love (Pretty Cure canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Futari wa Pretty Cure ED by Gojo Mayumi; English-loan wordplay 'get you love love'; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/42488/",
+      "https://www.joysound.com/web/search/song/43626"
+    ]
   },
   {
     "id": "tj-28450",
     "title_primary": "自分REST@RT(THE IDOLM@STER 2nd OP)",
-    "title_ko": null,
-    "media_context_ko": "(아이돌마스터 2기 OP)",
-    "confidence": "high",
-    "reasoning": "pure-Latin 自分REST@RT (stylization preserved)",
-    "web_sources": []
+    "title_ko": "자신 REST@RT",
+    "media_context_ko": "아이돌마스터",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure-Latin', but 自分 is Japanese; only REST@RT is Latin (stylized RESTART with @). Web search confirms 765PRO ALLSTARS's OP for THE IDOLM@STER 2. 自分 (oneself/myself) → 자신; REST@RT kept verbatim to preserve the @ stylization → 자신 REST@RT. Media 아이돌마스터 is the established Korean title. Literal Japanese portion + kept Latin stylization, no canon → medium.",
+    "web_sources": [
+      "https://music765plus.com/765%E3%83%97%E3%83%ADALLSTARS%E6%A5%BD%E6%9B%B2",
+      "https://project-imas.wiki/765PRO_ALLSTARS"
+    ]
   },
   {
     "id": "tjpdf-28451",
@@ -17421,8 +17942,11 @@
     "title_ko": "엉뚱한 잇큐상",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "とんちんかんちん=mismatched, 一休さん=Ikkyu (canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Ikkyu-san OP; とんちんかんちん = playful/nonsense phrase (also a とんち 'wit' pun), 一休さん = 잇큐상; no Korean song-title canonical, current stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/5546/",
+      "https://ja.chordwiki.org/wiki/とんちんかんちん一休さん"
+    ]
   },
   {
     "id": "tjpdf-28454",
@@ -17475,8 +17999,11 @@
     "title_ko": "미니햄즈의 사랑 노래",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ミニハムず=Mini-Hams, 愛の唄=love song (Mini Moni Hamtaro canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Tottoko Hamtaro movie ED by Mini Hams (Minimoni); ミニハムず = proper group name 미니햄즈, 愛の唄 = 사랑 노래; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/ミニハムずの愛の唄",
+      "https://www.uta-net.com/song/14919/"
+    ]
   },
   {
     "id": "tjpdf-28461",
@@ -17610,8 +18137,11 @@
     "title_ko": "월식 그랑기뇰",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "月蝕=lunar eclipse, グランギニョル=Grand Guignol (ALI PROJECT Rozen Maiden Träumend)",
-    "web_sources": []
+    "reasoning": "web-searched: Avenger OP by ALI PROJECT; 月蝕 = 월식 (lunar eclipse), グランギニョル = Grand Guignol (그랑기뇰); no song-specific Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/月蝕グランギニョル",
+      "https://www.jvcmusic.co.jp/flyingdog/-/Discography/A009555/VICL-35577.html"
+    ]
   },
   {
     "id": "tjpdf-28476",
@@ -17625,11 +18155,14 @@
   {
     "id": "tjpdf-28477",
     "title_primary": "紫陽花アイ愛物語(パタリロ西遊記! OP)",
-    "title_ko": "서유기 수국 아이 사랑 이야기",
+    "title_ko": "수국 아이 사랑 이야기",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "紫陽花=hydrangea, アイ愛物語=I-love story (Biyuden)",
-    "web_sources": []
+    "reasoning": "web-searched: Patalliro Saiyuki! OP by Biyuden; current wrongly prepended 서유기 (the anime name 西遊記 leaked into the title); actual title is 紫陽花(수국) + アイ愛 (ai-love katakana/kanji wordplay) + 物語; removed the leak → 수국 아이 사랑 이야기; no Korean canonical.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/紫陽花アイ愛物語",
+      "https://utaten.com/lyric/yk16022204/"
+    ]
   },
   {
     "id": "tjpdf-28478",
@@ -17736,8 +18269,11 @@
     "title_ko": "나 퀘스트",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "僕クエスト = my quest (Golden Bomber)",
-    "web_sources": []
+    "reasoning": "web-searched: Yu-Gi-Oh! ZEXAL ED by Golden Bomber; 僕 = 나 (I), クエスト = 퀘스트, RPG-style compound; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/僕クエスト",
+      "https://www.uta-net.com/song/113937/"
+    ]
   },
   {
     "id": "tjpdf-28497",
@@ -17790,8 +18326,11 @@
     "title_ko": "DT 버려라",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "DT (slang) 捨テル=discard (Golden Bomber)",
-    "web_sources": []
+    "reasoning": "web-searched: Ixion Saga DT OP (Golden Bomber collab); DT = slang kept as-is, 捨テル = 捨てる (버리다); no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/DT捨テル/レッツゴーED",
+      "https://www.uta-net.com/song/136862/"
+    ]
   },
   {
     "id": "tjpdf-28505",
@@ -17808,8 +18347,11 @@
     "title_ko": "서룰리언",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "セルリアン = Cerulean (BACK-ON)",
-    "web_sources": []
+    "reasoning": "web-searched: Gundam Build Fighters Try OP by BACK-ON; セルリアン = Cerulean (English color word) loan; no Korean canonical, transliteration stands.",
+    "web_sources": [
+      "https://www.gundam.info/news/video-music/news_video-music_20141217_12127p.html",
+      "https://www.uta-net.com/song/176220/"
+    ]
   },
   {
     "id": "tjpdf-28509",
@@ -17817,8 +18359,11 @@
     "title_ko": "꿈빛 체이서",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "夢色=dream-colored, チェイサー=chaser (Ayukawa Mami)",
-    "web_sources": []
+    "reasoning": "web-searched: Metal Armor Dragonar OP by Ayukawa Mami; 夢色 = 꿈빛 (dream-colored), チェイサー = chaser loan; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://dic.pixiv.net/a/夢色チェイサー",
+      "https://www.uta-net.com/song/28050/"
+    ]
   },
   {
     "id": "tjpdf-28511",
@@ -17933,9 +18478,10 @@
     "title_ko": "뷴뷴! 토큐저",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Ending theme of Ressha Sentai ToQger (열차전대 토큐저, confirmed by Namu Wiki/KO Wikipedia). 'ビュンビュン' is an onomatopoeia (whoosh/zoom); standard Korean transliteration is '뷴뷴'. 'トッキュウジャー' is established as '토큐저' in Korean tokusatsu fandom. No single source pin for the exact title string, hence medium.",
+    "reasoning": "web-searched: Ressha Sentai ToQger ED by Project.R; トッキュウジャー = 토큐저 (fandom transliteration), ビュンビュン = zoom/whoosh onomatopoeia; no exact Korean song-title canonical, current stands.",
     "web_sources": [
-      "https://namu.wiki/w/%EC%97%B4%EC%B0%A8%EC%A0%84%EB%8C%80%20%ED%86%A0%ED%81%90%EC%A0%80(%EB%85%B8%EB%9E%98)"
+      "https://ja.wikipedia.org/wiki/烈車戦隊トッキュウジャー/ビュンビュン!トッキュウジャー",
+      "https://www.uta-net.com/song/161306/"
     ]
   },
   {
@@ -17992,8 +18538,11 @@
     "title_ko": "건전 로보 다이미다라",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "健全=wholesome, ロボ=robot, ダイミダラー proper name",
-    "web_sources": []
+    "reasoning": "web-searched: Kenzen Robo Daimidaler OP by Endokai; 健全 = 건전, ロボ = 로보, ダイミダラー = proper mecha name 다이미다라; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/健全ロボ_ダイミダラー_(曲)",
+      "https://www.hmv.co.jp/en/artist_Endoukai_000000000555742/item_Kenzen-Robo-Daimidaler_5680759"
+    ]
   },
   {
     "id": "tjpdf-28542",
@@ -18163,8 +18712,11 @@
     "title_ko": "츠키요미",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ツキヨミ = 月読 (phatmans after school)",
-    "web_sources": []
+    "reasoning": "web-searched: Yozakura Quartet ~Hana no Uta~ ED by phatmans after school; ツキヨミ = 月読 (Shinto moon deity Tsukuyomi), proper-noun transliteration 츠키요미; no Korean song canonical, current stands.",
+    "web_sources": [
+      "https://utaten.com/lyric/yf15042808/",
+      "https://www.joysound.com/web/search/song/301269"
+    ]
   },
   {
     "id": "tjpdf-28603",
@@ -18199,8 +18751,11 @@
     "title_ko": "꽃은 춤춰라 이로하니호",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "花ハ=flower, 踊レヤ=dance, いろはにほ=Iroha (Hanayamata canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Hanayamata OP by Team Hanayamata; 花ハ踊レヤ = 꽃은 춤춰라 (flowers, dance!), いろはにほ = Iroha syllabary (이로하니호); no Korean canonical, current stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/169216/",
+      "https://dic.nicovideo.jp/a/花ハ踊レヤいろはにほ"
+    ]
   },
   {
     "id": "tj-28621",
@@ -18244,8 +18799,11 @@
     "title_ko": "초처현모 선언",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "超妻賢母 (good wife wise mother), 宣言=declaration",
-    "web_sources": []
+    "reasoning": "web-searched: Kyouran Kazoku Nikki OP by MOSAIC.WAV; the title puns 良妻賢母 (현모양처) → 超妻賢母, 宣言 = 선언; no Korean canonical, current sino-Korean literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/65245/",
+      "https://www.mosaicwav.com/archives/1017531053.html"
+    ]
   },
   {
     "id": "tjpdf-28639",
@@ -18361,8 +18919,11 @@
     "title_ko": "체체체크 원투!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "チェチェ・チェック・ワンツー = check-check, one-two (Kurage-P vocaloid)",
-    "web_sources": []
+    "reasoning": "web-searched: KurageP (Wada Takeaki) feat. Yuzuki Yukari, Vocaloid; 'che-che check one-two' mic-check phrase; no Korean canonical, current transliteration stands.",
+    "web_sources": [
+      "https://utaten.com/lyric/iz16122604/",
+      "https://vocadb.net/S/129113"
+    ]
   },
   {
     "id": "tj-28677",
@@ -18388,8 +18949,11 @@
     "title_ko": "안티 클락와이즈",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "アンチクロックワイズ = Anticlockwise (After the Rain)",
-    "web_sources": []
+    "reasoning": "web-searched: Clockwork Planet ED by After the Rain (Soraru×Mafumafu); English-loan 'Anticlockwise'; no Korean canonical, transliteration stands.",
+    "web_sources": [
+      "https://www.lyrical-nonsense.com/lyrics/after-the-rain/anti-clockwise/",
+      "https://www.uta-net.com/song/227663/"
+    ]
   },
   {
     "id": "tj-28689",
@@ -18476,10 +19040,13 @@
     "id": "tj-28709",
     "title_primary": "アイオクリ(Movie Ver.)(映画'君と100回目の恋' OST)",
     "title_ko": "사랑 보내기 (Movie Ver.)",
-    "media_context_ko": "(영화 '너와 100번째의 사랑' OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "アイオクリ = 愛贈り = love-giving/사랑 보내기",
-    "web_sources": []
+    "reasoning": "web-searched: 愛贈り (love-giving), also an anagram of the characters' names (Aomi+Riku), lyrics by Miwa; no namu Korean title, literal stands.",
+    "web_sources": [
+      "https://www.sakuraost.com/2019/08/the-stroboscorp-aiokuri.html",
+      "https://eigaland.com/topics/?p=32706"
+    ]
   },
   {
     "id": "tj-28711",
@@ -18718,11 +19285,14 @@
   {
     "id": "tj-28780",
     "title_primary": "Doors -勇気の軌跡-(ドラマ'先に生まれただけの僕' OST)",
-    "title_ko": null,
-    "media_context_ko": "(드라마 '먼저 태어났을 뿐인 나' OST)",
-    "confidence": "high",
-    "reasoning": "pure-Latin Doors",
-    "web_sources": []
+    "title_ko": "Doors -용기의 궤적-",
+    "media_context_ko": "먼저 태어났을 뿐인 나",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure-Latin Doors', but the subtitle 勇気の軌跡 is Japanese. Web search confirms 嵐 (Arashi)'s single, theme of the NTV drama 先に生まれただけの僕. Doors kept verbatim (Latin); subtitle 勇気の軌跡 (trajectory of courage) → 용기의 궤적, keeping the -...- delimiters → Doors -용기의 궤적-. Media is a literal rendering of the drama title 先に生まれただけの僕 → 먼저 태어났을 뿐인 나 (no confirmed official Korean broadcast title). Literal, no canon → medium.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/Doors_%E3%80%9C%E5%8B%87%E6%B0%97%E3%81%AE%E8%BB%8C%E8%B7%A1%E3%80%9C",
+      "https://natalie.mu/music/news/250551"
+    ]
   },
   {
     "id": "tjpdf-28784",
@@ -18737,10 +19307,12 @@
     "id": "tj-28786",
     "title_primary": "にめんせい☆ ウラオモテライフ!(干物妹!うまるちゃん OST)",
     "title_ko": "양면성 ☆ 우라오모테 라이프!",
-    "media_context_ko": "(말린생선 여동생 우마루짱 OST)",
+    "media_context_ko": "건어물 여동생! 우마루짱",
     "confidence": "medium",
-    "reasoning": "にめんせい literal 二面性=양면성; ウラオモテ=表裏=앞뒤",
-    "web_sources": []
+    "reasoning": "web-searched: Himouto! Umaru-chan R 2nd OP; namu.wiki keeps the Japanese title (no Korean translation canon).",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%81%AB%E3%82%81%E3%82%93%E3%81%9B%E3%81%84%E2%98%86%E3%82%A6%E3%83%A9%E3%82%AA%E3%83%A2%E3%83%86%E3%83%A9%E3%82%A4%E3%83%95%EF%BC%81"
+    ]
   },
   {
     "id": "tj-28787",
@@ -18802,8 +19374,11 @@
     "title_ko": "보나페티 S",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ぼなぺてぃーと=Bon Appétit, S (Blend A canonical)",
-    "web_sources": []
+    "reasoning": "web-searched: Blend S OP by Blend A; ぼなぺてぃーと = buon appetito (Italian); namu.wiki keeps the Japanese title (no Korean translation canon), transliteration stands.",
+    "web_sources": [
+      "https://namu.wiki/w/ぼなぺてぃーと♡S",
+      "https://blend-s.jp/music/"
+    ]
   },
   {
     "id": "tj-28801",
@@ -18856,8 +19431,11 @@
     "title_ko": "그대 위태로움 가까이 다가오시라",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "君氏危うくも=you-sir-perilously, 近うよれ=come closer (A応P)",
-    "web_sources": []
+    "reasoning": "web-searched: Osomatsu-san S2 OP by A応P; title puns the proverb 君子危うきに近寄らず (a wise man keeps away from danger) inverted to 'come closer despite danger', with 君氏 as an Osomatsu pun; no Korean canonical, current stands.",
+    "web_sources": [
+      "https://dic.pixiv.net/a/君氏危うくも近うよれ",
+      "https://www.uta-net.com/song/239924/"
+    ]
   },
   {
     "id": "tj-28814",
@@ -18881,10 +19459,13 @@
     "id": "tj-28821",
     "title_primary": "ルンがピカッと光ったら(マクロスΔ ED)",
     "title_ko": "룬이 반짝 빛나면",
-    "media_context_ko": "(마크로스 Δ ED)",
+    "media_context_ko": "마크로스 델타",
     "confidence": "medium",
-    "reasoning": "ルンがピカッと光ったら; ルン invented species/word in Macross Δ",
-    "web_sources": []
+    "reasoning": "web-searched: Walküre, Macross Δ ED; ルン = invented word (Windermerean gem/marking); no namu Korean title, literal stands.",
+    "web_sources": [
+      "https://www.jvcmusic.co.jp/flyingdog/-/Discography/A025373/VTCL-35226.html",
+      "https://dic.pixiv.net/a/%E3%83%AB%E3%83%B3%E3%81%8C%E3%83%94%E3%82%AB%E3%83%83%E3%81%A8%E5%85%89%E3%81%A3%E3%81%9F%E3%82%89"
+    ]
   },
   {
     "id": "blog-101-2",
@@ -18935,10 +19516,13 @@
     "id": "tj-28836",
     "title_primary": "笑一笑~シャオイーシャオ!~(映画'クレヨンしんちゃん爆盛! カンフーボーイズ~拉麺大乱~' OST)",
     "title_ko": "소일소 ~샤오이샤오~",
-    "media_context_ko": "(영화 '짱구는 못말려 폭성! 쿵푸 보이즈 ~라면 대란~' OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "笑一笑 Chinese phrase 一笑而过/laugh; transliteration of シャオイーシャオ as 샤오이샤오",
-    "web_sources": []
+    "reasoning": "web-searched: Momoclo, Crayon Shin-chan movie theme; 笑一笑 = Chinese 'smile/laugh'; no namu Korean title found for the song.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E7%AC%91%E4%B8%80%E7%AC%91_%E3%80%9C%E3%82%B7%E3%83%A3%E3%82%AA%E3%82%A4%E3%83%BC%E3%82%B7%E3%83%A3%E3%82%AA!%E3%80%9C",
+      "https://www.uta-net.com/song/247366/"
+    ]
   },
   {
     "id": "tj-28837",
@@ -19076,15 +19660,6 @@
     "web_sources": []
   },
   {
-    "id": "tjpdf-28871",
-    "title_primary": "ヒプノシスマイク -DIVISION BATTLE ANTHEM-",
-    "title_ko": "히프노시스 마이크-DIVISION",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ヒプノシスマイク = Hypnosis Mic canonical",
-    "web_sources": []
-  },
-  {
     "id": "tj-28876",
     "title_primary": "奇跡(映画'今夜、ロマンス劇場で' OST)",
     "title_ko": "기적",
@@ -19109,15 +19684,6 @@
     "media_context_ko": "(러브라이브 선샤인 OST)",
     "confidence": "high",
     "reasoning": "pure-Latin Awaken the power",
-    "web_sources": []
-  },
-  {
-    "id": "tjpdf-28879",
-    "title_primary": "ヒプノシスマイク -DIVISION RAP BATTLE-",
-    "title_ko": "히프노시스 마이크-DIVISION RAP",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ヒプノシスマイク = Hypnosis Mic canonical",
     "web_sources": []
   },
   {
@@ -19260,9 +19826,12 @@
     "title_primary": "卑怯戦隊うろたんだー",
     "title_ko": "비겁전대 우로탄다",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "卑怯戦隊うろたんだー parody name; 우로탄다 transliteration",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki article title is exactly 비겁전대 우로탄다 (kobapie feat. KAITO); matches current.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%B9%84%EA%B2%81%EC%A0%84%EB%8C%80%20%EC%9A%B0%EB%A1%9C%ED%83%84%EB%8B%A4",
+      "https://thewiki.kr/w/%EB%B9%84%EA%B2%81%EC%A0%84%EB%8C%80%20%EC%9A%B0%EB%A1%9C%ED%83%84%EB%8B%A4"
+    ]
   },
   {
     "id": "tj-28903",
@@ -19493,10 +20062,13 @@
     "id": "tj-28960",
     "title_primary": "熱色スターマイン(BanG Dream! OST)",
     "title_ko": "열색 스타마인",
-    "media_context_ko": "(BanG Dream! OST)",
+    "media_context_ko": "뱅드림!",
     "confidence": "medium",
-    "reasoning": "熱色スターマイン = hot-color starmine (firework type)",
-    "web_sources": []
+    "reasoning": "web-searched: Roselia; namu.wiki keeps the Japanese title 熱色スターマイン (no Korean translation canon).",
+    "web_sources": [
+      "https://namu.wiki/w/%E7%86%B1%E8%89%B2%E3%82%B9%E3%82%BF%E3%83%BC%E3%83%9E%E3%82%A4%E3%83%B3",
+      "https://bandori.fandom.com/wiki/Nesshoku_Starmine"
+    ]
   },
   {
     "id": "tj-28964",
@@ -19528,11 +20100,14 @@
   {
     "id": "tj-28973",
     "title_primary": "ツナグ、ソラモヨウ(BanG Dream! OST)",
-    "title_ko": "잇닿는 하늘 모양",
-    "media_context_ko": "(BanG Dream! OST)",
-    "confidence": "medium",
-    "reasoning": "ツナグ、ソラモヨウ = 잇다, 하늘 모양 (Afterglow)",
-    "web_sources": []
+    "title_ko": "이어진 하늘 모양",
+    "media_context_ko": "뱅드림!",
+    "confidence": "high",
+    "reasoning": "web-verified: was '잇닿는 하늘 모양' → canonical '이어진 하늘 모양' per official Korean release (Bugs) and namu.wiki redirect (Afterglow).",
+    "web_sources": [
+      "https://music.bugs.co.kr/album/20265722",
+      "https://namu.wiki/w/%E3%83%84%E3%83%8A%E3%82%B0%E3%80%81%E3%82%BD%E3%83%A9%E3%83%A2%E3%83%A8%E3%82%A6"
+    ]
   },
   {
     "id": "tj-28977",
@@ -19574,10 +20149,13 @@
     "id": "tj-28982",
     "title_primary": "チグリジア(ヒプノシスマイク)",
     "title_ko": "치그리지아",
-    "media_context_ko": "(힙노시스마이크)",
+    "media_context_ko": "힙노시스 마이크",
     "confidence": "medium",
-    "reasoning": "チグリジア = Tigridia (flower)/치그리지아",
-    "web_sources": []
+    "reasoning": "web-searched: Hypnosis Mic character song (Kannonzaka Doppo); チグリジア = Tigridia flower; no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://www.lyrical-nonsense.com/lyrics/eir-aoi/accentier/",
+      "https://lyricstranslate.com/en/hypnosis-microphone-%E3%83%81%E3%82%B0%E3%83%AA%E3%82%B8%E3%82%A2-tigridia-lyrics.html"
+    ]
   },
   {
     "id": "blog-174-8",
@@ -19609,11 +20187,14 @@
   {
     "id": "tj-28988",
     "title_primary": "STAR BEAT!ホシノコドウ(BanG Dream! OST)",
-    "title_ko": null,
-    "media_context_ko": "(BanG Dream! OST)",
-    "confidence": "high",
-    "reasoning": "pure-Latin STAR BEAT (subtitle ホシノコドウ = 별의 고동)",
-    "web_sources": []
+    "title_ko": "STAR BEAT! 별의 고동",
+    "media_context_ko": "뱅드림!",
+    "confidence": "medium",
+    "reasoning": "Mislabel correction: tagged 'pure-Latin', but the subtitle ホシノコドウ is Japanese (katakana for 星の鼓動). Web search confirms Poppin'Party's 2nd single (BanG Dream!), officially 'STAR BEAT!〜ホシノコドウ〜'. STAR BEAT! kept verbatim (Latin); ホシノコドウ = 星の鼓動 (heartbeat of the stars) → 별의 고동 → STAR BEAT! 별의 고동. Media 뱅드림! is the common Korean rendering. Latin + clear literal subtitle, no canon → medium.",
+    "web_sources": [
+      "https://bang-dream.com/discographies/23/",
+      "https://www.uta-net.com/song/212441/"
+    ]
   },
   {
     "id": "tj-28990",
@@ -19792,8 +20373,10 @@
     "title_ko": "네네네네네네네네! 대폭주",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ねねねねねねねね reduplication of name; transliteration",
-    "web_sources": []
+    "reasoning": "web-searched: Hololive Momosuzu Nene 1st original; namu.wiki keeps the Japanese title (no Korean translation canon).",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%81%AD%E3%81%AD%E3%81%AD%E3%81%AD%E3%81%AD%E3%81%AD%E3%81%AD%E3%81%AD!%E5%A4%A7%E7%88%86%E8%B5%B0"
+    ]
   },
   {
     "id": "blog-114-23",
@@ -19880,10 +20463,13 @@
     "id": "tj-52471",
     "title_primary": "壱雫空(アニメ 'BanG Dream! It's MyGO!!!!!' OST)",
     "title_ko": "한 방울의 하늘",
-    "media_context_ko": "(애니메이션 'BanG Dream! It's MyGO!!!!!' OST)",
+    "media_context_ko": "뱅드림! It's MyGO!!!!!",
     "confidence": "medium",
-    "reasoning": "壱雫空 invented compound, literal: 一滴+空",
-    "web_sources": []
+    "reasoning": "web-searched: MyGO!!!!! (read ひとしずく); namu.wiki keeps the Japanese title 壱雫空 (no Korean translation canon), literal stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%E5%A3%B1%E9%9B%AB%E7%A9%BA",
+      "https://namu.wiki/w/MyGO!!!!!/%EC%9D%8C%EC%95%85"
+    ]
   },
   {
     "id": "blog-371-4",
@@ -20071,8 +20657,11 @@
     "title_ko": "너와의 버릇",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "君と癖 literal: 너와 버릇",
-    "web_sources": []
+    "reasoning": "web-searched: yutori (2021); namu.wiki and Bugs keep the Japanese title 君と癖 (no Korean translation canon), literal stands.",
+    "web_sources": [
+      "https://namu.wiki/w/%E5%90%9B%E3%81%A8%E7%99%96",
+      "https://music.bugs.co.kr/track/82085097"
+    ]
   },
   {
     "id": "tj-52740",
@@ -20123,10 +20712,13 @@
     "id": "tj-52758",
     "title_primary": "め組のひと('UQ mobile' CM)",
     "title_ko": "메구미의 사람",
-    "media_context_ko": "('UQ mobile' CM)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "め組=메구미(소방대명); のひと=의 사람 (RATS&STAR classic)",
-    "web_sources": []
+    "reasoning": "web-searched: RATS&STAR 1983 classic; め組 (read 'megumi') = Edo fire brigade, not a personal name; no Korean canon found.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%81%E7%B5%84%E3%81%AE%E3%81%B2%E3%81%A8",
+      "https://www.uta-net.com/song/4472/"
+    ]
   },
   {
     "id": "tj-52759",
@@ -20456,10 +21048,13 @@
     "id": "tj-52865",
     "title_primary": "メタルなかよし('VS.超特急' ED)",
     "title_ko": "메탈 친구",
-    "media_context_ko": "('VS. 초특급' ED)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "メタルなかよし = metal + 仲良し(친구)",
-    "web_sources": []
+    "reasoning": "web-searched: Bullet Train (超特急) 2025 song; なかよし = 仲良し (friend); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.billboard-japan.com/d_news/detail/148098",
+      "https://www.uta-net.com/song/371928/"
+    ]
   },
   {
     "id": "tj-52867",
@@ -20683,8 +21278,10 @@
     "title_ko": "특별츄, 해줘",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "とくべチュ = 특별 + 츄(키스)",
-    "web_sources": []
+    "reasoning": "web-searched: =LOVE 18th single; namu.wiki keeps the Japanese title; pun とくべつ(special)+チュ(kiss); current rendering preserves the pun.",
+    "web_sources": [
+      "https://namu.wiki/w/%E3%81%A8%E3%81%8F%E3%81%B9%E3%83%81%E3%83%A5%E3%80%81%E3%81%97%E3%81%A6%EF%BC%8F%E6%81%8B%E4%BA%BA%E4%BB%A5%E4%B8%8A%E3%80%81%E5%A5%BD%E3%81%8D%E6%9C%AA%E6%BA%80"
+    ]
   },
   {
     "id": "blog-274-20",
@@ -20780,10 +21377,13 @@
     "id": "tj-52978",
     "title_primary": "けっかおーらい(TVアニメ 'ヴィジランテ -僕のヒーローアカデミア ILLEGALS-' OST)",
     "title_ko": "결과 올라이트",
-    "media_context_ko": "(TV 애니메이션 '비질란테 -나의 히어로 아카데미아 ILLEGALS-' OST)",
+    "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "けっかおーらい = 結果オーライ = 결과 OK/올라이트",
-    "web_sources": []
+    "reasoning": "web-searched: kocchinokento, MHA Vigilantes OP; 結果オーライ (result all-right); Korean fan videos use '결과 올라이/All Right' only (single/weak), no canon.",
+    "web_sources": [
+      "https://www.youtube.com/watch?v=eX8MVB8sfQQ",
+      "https://otoiku-media.com/kocchinokento-kekkaorai/"
+    ]
   },
   {
     "id": "tj-52981",
@@ -20836,26 +21436,11 @@
     "title_ko": "특자생존 원더라다-!!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "特者生存ワンダラダ Hololive Amane Kanata invented phrase",
-    "web_sources": []
-  },
-  {
-    "id": "tj-54607",
-    "title_primary": "天若有情(锦绣未央 主题曲)",
-    "title_ko": "천약유정",
-    "media_context_ko": "(금수미앙 주제곡)",
-    "confidence": "medium",
-    "reasoning": "天若有情 Chinese phrase = 하늘이 정이 있다면 / 천약유정 (kanji-reading)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-54767",
-    "title_primary": "水上灯",
-    "title_ko": "수상등",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "水上灯 = water-surface lamp/수상등",
-    "web_sources": []
+    "reasoning": "web-searched: Hololive Amane Kanata (prod. Tomoya Tabuchi); 特者生存 = pun on 適者生存 (survival of the fittest); no namu Korean title, current preserves the pun.",
+    "web_sources": [
+      "https://hololive.hololivepro.com/en/music/%E7%89%B9%E8%80%85%E7%94%9F%E5%AD%98%E3%83%AF%E3%83%B3%E3%83%80%E3%83%A9%E3%83%80%E3%83%BC%EF%BC%81%EF%BC%81/",
+      "https://www.uta-net.com/song/324733/"
+    ]
   },
   {
     "id": "tj-6101",
@@ -21592,8 +22177,11 @@
     "title_ko": "신주쿠에서 자란",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "そだち = upbringing; literal '신주쿠 자람/자라기'. Used '신주쿠에서 자란' for naturalness.",
-    "web_sources": []
+    "reasoning": "web-searched: 1968 Oki Hideo/Tsuyama Yoko classic; そだち = 育ち (upbringing); no Korean canon found.",
+    "web_sources": [
+      "https://www.uta-net.com/song/18950/",
+      "https://www.oricon.co.jp/prof/237657/lyrics/249968/"
+    ]
   },
   {
     "id": "tj-6193",
@@ -21835,8 +22423,11 @@
     "title_ko": "듀오-비밀스러운 만남",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "デュオ-しのび逢い = duo-secret meeting/tryst.",
-    "web_sources": []
+    "reasoning": "web-searched: Itsuki Hiroshi & Marie duet (2000); しのび逢い = 忍び逢い (secret tryst); no Korean canon found.",
+    "web_sources": [
+      "https://www.uta-net.com/song/3141/",
+      "https://petitlyrics.com/lyrics/190005"
+    ]
   },
   {
     "id": "tj-6220",
@@ -22060,8 +22651,11 @@
     "title_ko": "혼자 일어선 노래",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "いっぽんどっこ = standing alone/independent; classical idiom.",
-    "web_sources": []
+    "reasoning": "web-searched: Suizenji Kiyoko 1966 million-seller; いっぽんどっこ (一本独鈷) = self-reliant person facing hardship alone (from Hakata-ori 독고 pattern); rendering captures the meaning, no Korean canon.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%81%84%E3%81%A3%E3%81%BD%E3%82%93%E3%81%A9%E3%81%A3%E3%81%93%E3%81%AE%E5%94%84",
+      "https://crd.ndl.go.jp/reference/entry/index.php?id=1000186440&page=ref_view"
+    ]
   },
   {
     "id": "tj-6245",
@@ -22096,7 +22690,7 @@
     "title_ko": "2100년이 채핀키드",
     "media_context_ko": null,
     "confidence": "low",
-    "reasoning": "Niche children's song; unable to verify Korean rendering.",
+    "reasoning": "web-searched: no usable info found for this niche children's song; unable to verify a Korean rendering, literal stands and confidence unchanged.",
     "web_sources": []
   },
   {
@@ -22591,8 +23185,10 @@
     "title_ko": "쉼터",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "とまり木 = perch/resting branch; metaphorically watering hole.",
-    "web_sources": []
+    "reasoning": "web-searched: Kobayashi Sachiko enka; とまり木 = 止まり木 (a bird's perch, metaphor for a resting place); no Korean canon found.",
+    "web_sources": [
+      "https://www.uta-net.com/song/3284/"
+    ]
   },
   {
     "id": "tj-6309",
@@ -22654,8 +23250,11 @@
     "title_ko": "아기고양이 시냥",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "こねこ = kitten; しーにゃん = name.",
-    "web_sources": []
+    "reasoning": "web-searched: Hirake! Ponkikki children's song (Tanaka Mayumi); こねこ = kitten, しーにゃん = name; no Korean canon found.",
+    "web_sources": [
+      "https://www.uta-net.com/song/7510/",
+      "https://recochoku.jp/song/S1003390315/"
+    ]
   },
   {
     "id": "tj-6317",
@@ -22933,8 +23532,11 @@
     "title_ko": "아만",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Foreign loanword (likely Aman); transliterate.",
-    "web_sources": []
+    "reasoning": "web-searched: Sugawara Yoichi & Sylvia 1983 duet; アマン is an unclear loanword/name (meaning debated even in JP); no Korean canon, transliteration stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/359/",
+      "https://www.joysound.com/web/search/song/2165"
+    ]
   },
   {
     "id": "tj-6353",
@@ -23482,8 +24084,11 @@
     "title_ko": "코무기짱",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "小麦 means wheat but here used as a personal name (Komugi-chan).",
-    "web_sources": []
+    "reasoning": "web-searched: Oyoneez '小麦ちゃん ～それからの麦畑～'; 小麦 used as the daughter's name Komugi (Aomori-dialect song); no Korean canon, name transliteration stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/1966/",
+      "https://www.oricon.co.jp/prof/52070/lyrics/I004276/"
+    ]
   },
   {
     "id": "tj-6423",
@@ -23868,9 +24473,12 @@
     "title_primary": "珍道物語",
     "title_ko": "진도 이야기",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "珍道 = unusual journey/road; Tendo Yoshimi song.",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: song is 珍島物語 (title_primary is an OCR variant using 珍道); 珍島 = 진도, a real Korean island (Jeollanam-do), the famous 1996 Tendo Yoshimi enka about the Jindo sea-parting; canonical Korean title is 진도 이야기.",
+    "web_sources": [
+      "https://www.uta-net.com/song/8968/",
+      "https://utaten.com/specialArticle/index/8231"
+    ]
   },
   {
     "id": "tj-6475",
@@ -23923,8 +24531,11 @@
     "title_ko": "노후우조",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "野風増 = idiomatic; commonly transliterated.",
-    "web_sources": []
+    "reasoning": "web-searched: 野風増 is ateji for Okayama dialect のふうぞ (cheeky/wild, 생의기·제멋대로); untranslatable dialect ateji, transliteration stands; no Korean canon.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E9%87%8E%E9%A2%A8%E5%A2%97",
+      "https://www.weblio.jp/content/%E9%87%8E%E9%A2%A8%E5%A2%97"
+    ]
   },
   {
     "id": "tj-6482",
@@ -24400,8 +25011,10 @@
     "title_ko": "몽취침",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "夢酔枕 = sino-Japanese poetic compound.",
-    "web_sources": []
+    "reasoning": "web-searched: Horiuchi Takao, read ゆめよいまくら (dream-drunk pillow); no Korean canon; Sino-Korean reading rendering stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/7883/"
+    ]
   },
   {
     "id": "tj-6539",
@@ -24418,8 +25031,11 @@
     "title_ko": "취하길 기다리는 술",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "酔い待ち酒 = sake while waiting to get drunk.",
-    "web_sources": []
+    "reasoning": "web-searched: Yoshi Ikuzo, read よいまちざけ (酔い待ち酒); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/4745/",
+      "https://www.kkbox.com/hk/tc/song/r75pg0k909K1nMry1nMry0PL-index.html"
+    ]
   },
   {
     "id": "tj-6541",
@@ -24616,8 +25232,11 @@
     "title_ko": "사랑의 더부살이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "やどり = lodging/dwelling.",
-    "web_sources": []
+    "reasoning": "web-searched: Owase Yoshito 1989 debut; やどり = 宿り (taking shelter/lodging), so nuance is 'sheltering' rather than freeloading; no Korean canon found.",
+    "web_sources": [
+      "https://www.uta-net.com/song/1885/",
+      "https://ja.wikipedia.org/wiki/%E5%B0%BE%E9%B7%B2%E7%BE%A9%E4%BA%BA"
+    ]
   },
   {
     "id": "tj-6564",
@@ -24805,8 +25424,11 @@
     "title_ko": "이데유 다리",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "いでゆ = 出湯 = hot spring.",
-    "web_sources": []
+    "reasoning": "web-searched: Taki Satomi enka; いでゆ = 出湯 (hot spring); no Korean canon, transliteration of the place-like name stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/696/",
+      "https://www.joysound.com/web/search/song/1323"
+    ]
   },
   {
     "id": "tj-6590",
@@ -24985,8 +25607,10 @@
     "title_ko": "이데유 다리",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "出で湯 = hot spring outflow; another reading of いでゆ橋.",
-    "web_sources": []
+    "reasoning": "web-searched: Okawa Eisaku; 出で湯 = hot spring (same reading いでゆ as tj-6589); song not individually documented, no Korean canon.",
+    "web_sources": [
+      "https://www.joysound.com/web/search/artist/6213"
+    ]
   },
   {
     "id": "tj-6612",
@@ -25810,11 +26434,14 @@
   {
     "id": "tj-6730",
     "title_primary": "フレンズ",
-    "title_ko": null,
+    "title_ko": "프렌즈",
     "media_context_ko": null,
     "confidence": "high",
-    "reasoning": "'Friends' is pure Latin/loanword title.",
-    "web_sources": []
+    "reasoning": "Mislabel correction: previously tagged 'pure Latin/loanword, no translation'. The title is a pure-katakana English loanword (Friends), which per the loanword convention IS rendered in Korean loanword form: フレンズ → 프렌즈. Web search confirms レベッカ (REBECCA)'s 1985 signature hit. No tie-up parenthetical → media null. Deterministic loanword mapping → high.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%95%E3%83%AC%E3%83%B3%E3%82%BA_(%E3%83%AC%E3%83%99%E3%83%83%E3%82%AB%E3%81%AE%E6%9B%B2)",
+      "https://j-lyric.net/artist/a002380/l005b22.html"
+    ]
   },
   {
     "id": "tj-6732",
@@ -26432,10 +27059,12 @@
     "id": "tj-68042",
     "title_primary": "チカっとチカ千花っ(かぐや様は告らせたい〜天才たちの恋愛頭脳戦〜 ED)",
     "title_ko": "치카핫 치카치카하",
-    "media_context_ko": "(카구야님은 고백받고 싶어~천재들의 연애두뇌전~ED)",
+    "media_context_ko": "카구야 님은 고백받고 싶어 ~천재들의 연애 두뇌전~",
     "confidence": "medium",
-    "reasoning": "Kaguya-sama ED 'Chika Chika Chika'; Korean fan blogs use various transliterations.",
-    "web_sources": []
+    "reasoning": "web-searched: Kaguya-sama ep3 ED, wordplay on Chika/千花; namu keeps the Japanese title in the album list (no clean Korean canon), current rendering unverified.",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%B9%B4%EA%B5%AC%EC%95%BC%20%EB%8B%98%EC%9D%80%20%EA%B3%A0%EB%B0%B1%EB%B0%9B%EA%B3%A0%20%EC%8B%B6%EC%96%B4%20~%EC%B2%9C%EC%9E%AC%EB%93%A4%EC%9D%98%20%EC%97%B0%EC%95%A0%20%EB%91%90%EB%87%8C%EC%A0%84~/%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98"
+    ]
   },
   {
     "id": "tjpdf-68044",
@@ -26576,10 +27205,13 @@
     "id": "tj-68097",
     "title_primary": "マッチョアネーム?(ダンベル何キロ持てる？ ED)",
     "title_ko": "머쵸 어 네임?",
-    "media_context_ko": null,
+    "media_context_ko": "덤벨 몇 킬로까지 들 수 있어?",
     "confidence": "medium",
-    "reasoning": "Dumbbell ED 'Macho a Name'; transliteration.",
-    "web_sources": []
+    "reasoning": "web-searched: How Heavy Are the Dumbbells You Lift? ED (Ishikawa Kaito); transliteration of 'Macho a Name?'; no namu Korean song title.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%8D%A4%EB%B2%A8%20%EB%AA%87%20%ED%82%AC%EB%A1%9C%EA%B9%8C%EC%A7%80%20%EB%93%A4%20%EC%88%98%20%EC%9E%88%EC%96%B4%3F",
+      "https://namu.wiki/w/%EB%A7%88%EC%B9%98%EC%98%A4%20%EB%82%98%EB%A3%A8%EC%A1%B0"
+    ]
   },
   {
     "id": "tj-68099",
@@ -26965,8 +27597,11 @@
     "title_ko": "침략하는 자 당하는 자",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "侵略する者=invader, される者=invaded (Sound Horizon)",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon found (Sound Horizon, from album 聖戦のイベリア); only Japanese/English sources; literal translation stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/55861/",
+      "https://sound-horizon-lyrics.fandom.com/wiki/The_Invaders_and_the_Invaded"
+    ]
   },
   {
     "id": "tj-6819",
@@ -27106,11 +27741,15 @@
   {
     "id": "tj-68214",
     "title_primary": "決戦スピリット(ハイキュー!! TO THE TOP ED)",
-    "title_ko": null,
-    "media_context_ko": "(하이큐!! TO THE TOP ED)",
-    "confidence": "high",
-    "reasoning": "Pure-Latin 'Hello Alone'.",
-    "web_sources": []
+    "title_ko": "결전 스피릿",
+    "media_context_ko": "하이큐!! TO THE TOP",
+    "confidence": "medium",
+    "reasoning": "SPECIAL CASE: the cached reasoning ('Pure-Latin Hello Alone') was a copy-paste error about a different song and is discarded. Verified from scratch: 決戦スピリット is CHiCO with HoneyWorks' 12th single, the ED of ハイキュー!! TO THE TOP (Haikyuu!! To The Top S4), released 2020-02-26 — matching the record's own parenthetical (the erroneous HUNTER×HUNTER hint in the dispatch does NOT apply). 決戦 (decisive battle) → Sino-Korean 결전; スピリット is a katakana English loanword (spirit) → 스피릿 → 결전 스피릿. Media 하이큐!! TO THE TOP (하이큐 is the established Korean title). Literal + loanword, no explicit Korean title citation → medium.",
+    "web_sources": [
+      "https://honeyworks.jp/release/cwhw12th/",
+      "https://www.animate-onlineshop.jp/pd/1734631/",
+      "https://utaten.com/lyric/qk20020087/"
+    ]
   },
   {
     "id": "tj-68216",
@@ -27170,10 +27809,13 @@
     "id": "tjpdf-68225",
     "title_primary": "アイモ(マクロスF OST)",
     "title_ko": "아이모",
-    "media_context_ko": null,
+    "media_context_ko": "마크로스 프론티어",
     "confidence": "medium",
-    "reasoning": "アイモ = Aimo (Macross Frontier canonical, Ranka Lee)",
-    "web_sources": []
+    "reasoning": "web-verified media context: マクロスF is 마크로스 프론티어 in Korean (namu.wiki / ko.wikipedia); アイモ is an invented in-story word (Ranka Lee's theme), rendered 아이모, no separate Korean canon so kept at medium.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%A7%88%ED%81%AC%EB%A1%9C%EC%8A%A4%20%ED%94%84%EB%A1%A0%ED%8B%B0%EC%96%B4",
+      "https://ko.wikipedia.org/wiki/%EB%A7%88%ED%81%AC%EB%A1%9C%EC%8A%A4_%ED%94%84%EB%A1%A0%ED%8B%B0%EC%96%B4"
+    ]
   },
   {
     "id": "tj-68228",
@@ -27215,10 +27857,14 @@
     "id": "tj-68234",
     "title_primary": "美に入り彩を穿つ(M@STER VERSION))(アイドルマスターシンデレラガールズスターライトステージ OST)",
     "title_ko": null,
-    "media_context_ko": null,
-    "confidence": "high",
-    "reasoning": "Pure-Latin/Japanese hybrid; '美に入り彩を穿つ' is too literary; keep romanization or null.",
-    "web_sources": []
+    "media_context_ko": "아이돌마스터 신데렐라 걸즈 스타라이트 스테이지",
+    "confidence": "low",
+    "reasoning": "Mislabel correction: tagged 'keep romanization or null'. Verified: this is a 羽衣小町 (小早川紗枝/塩見周子) unit song from アイドルマスター シンデレラガールズ スターライトステージ (デレステ). The title is a deliberate coined pun (造語) on the idiom 微に入り細を穿つ (bi-ni-iri sai-o ugatsu, 'attend to the minutest detail'), swapping homophones 微→美 (beauty) and 細→彩 (color/hue). The wordplay and the idiom cannot survive translation into Korean, and no Korean canon exists; any literal ('아름다움에 들어 색채를 꿰뚫다') reads as gibberish and matches no real usage. Per the coined-wordplay rule → title_ko null, low. Media rendered as the standard Korean franchise name.",
+    "web_sources": [
+      "https://dic.nicovideo.jp/a/%E7%BE%8E%E3%81%AB%E5%85%A5%E3%82%8A%E5%BD%A9%E3%82%92%E7%A9%BF%E3%81%A4",
+      "https://dic.pixiv.net/a/%E7%BE%8E%E3%81%AB%E5%85%A5%E3%82%8A%E5%BD%A9%E3%82%92%E7%A9%BF%E3%81%A4",
+      "https://www.uta-net.com/song/263370/"
+    ]
   },
   {
     "id": "tj-68235",
@@ -27352,8 +27998,11 @@
     "title_ko": "비밀의 트와레",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "秘密=secret, トワレ=toilette/eau de toilette (Aihara Kotomi)",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon found (iM@S Cinderella Girls, char. Ichinose Shiki); トワレ = French 'toilette' loanword rendered 트와레; 秘密の literal; translation stands.",
+    "web_sources": [
+      "https://dic.pixiv.net/a/%E7%A7%98%E5%AF%86%E3%81%AE%E3%83%88%E3%83%AF%E3%83%AC",
+      "https://fujiwarahaji.me/music/cg/72"
+    ]
   },
   {
     "id": "tj-68263",
@@ -27644,13 +28293,15 @@
     "web_sources": []
   },
   {
-    "id": "tjpdf-68315",
-    "title_primary": "シス×ラブ",
+    "id": "tj-68315",
+    "title_primary": "シス×ラブ(HoneyWorks Premium Live(ハニプレ) OST)",
     "title_ko": "시스×러브",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "シス=sister, ラブ=love (HoneyWorks)",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon found (HoneyWorks 2020, game ハニプレ OP); シス=sis, ラブ=love rendered via English-origin loanwords; literal translation stands. [Re-keyed tjpdf-68315 -> tj-68315: TJ bulk feed now lists number 68315 as a tj- row (chunk-62 precedent); title_primary sourced byte-verbatim from the corpus tj-68315 row.]",
+    "web_sources": [
+      "https://www.uta-net.com/song/292582/"
+    ]
   },
   {
     "id": "tj-68316",
@@ -27685,8 +28336,10 @@
     "title_ko": "포기해라 여자",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Kadogawa Hiroshi 'Akiramete Onna' literal.",
-    "web_sources": []
+    "reasoning": "web-searched: Kadokawa Hiroshi enka (refrain 女女あきらめて女); no Korean canon found, literal stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/210/"
+    ]
   },
   {
     "id": "tj-68320",
@@ -28207,8 +28860,10 @@
     "title_ko": "구다후와 에브리데이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ぐだふわ=lazy-fluffy, エブリデー=Everyday (Yuki Aoi)",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon found (Yuki Aoi 2021); ぐだふわ is a coined word (lazy+fluffy) rendered 구다후와, エブリデー=Everyday; no Korean title surfaced for the anime tie-up either.",
+    "web_sources": [
+      "https://utaten.com/lyric/qk21034059/"
+    ]
   },
   {
     "id": "tj-68433",
@@ -28457,10 +29112,13 @@
     "id": "tj-68492",
     "title_primary": "レナセールセレナーデ(アニメ '転生したらスライムだった件 第3期' OST)",
     "title_ko": "레나세루 세레나데",
-    "media_context_ko": null,
+    "media_context_ko": "전생했더니 슬라임이었던 건",
     "confidence": "medium",
-    "reasoning": "Momoiro Clover Z 'Renaseru Serenade' (Renasel Serenade) - transliteration.",
-    "web_sources": []
+    "reasoning": "web-searched: Momoclo, Tensura S3 OP; official romanization 'renacer serenade' (renacer = Spanish 'rebirth'); no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%83%AC%E3%83%8A%E3%82%BB%E3%83%BC%E3%83%AB%E3%82%BB%E3%83%AC%E3%83%8A%E3%83%BC%E3%83%87",
+      "https://mcz-release.com/sound/renacer-serenade/"
+    ]
   },
   {
     "id": "tj-68493",
@@ -28666,8 +29324,10 @@
     "title_ko": "아칸타레",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Yashiro Aki 'Akantare' Kansai dialect for weak/timid; transliteration.",
-    "web_sources": []
+    "reasoning": "web-searched: Yashiro Aki; あかんたれ = Osaka dialect for a weak/spineless person (겁쟁이/못난이); untranslatable dialect, transliteration stands; no Korean canon.",
+    "web_sources": [
+      "https://www.uta-net.com/song/6231/"
+    ]
   },
   {
     "id": "tj-68530",
@@ -28736,10 +29396,12 @@
     "id": "tjpdf-68560",
     "title_primary": "トーキョーワンダー。(東京リベンジャーズ ED)",
     "title_ko": "도쿄 원더.",
-    "media_context_ko": null,
+    "media_context_ko": "도쿄 리벤저스",
     "confidence": "medium",
-    "reasoning": "トーキョー=Tokyo, ワンダー=Wonder (Nakimushi)",
-    "web_sources": []
+    "reasoning": "web-verified media context: 東京リベンジャーズ is 도쿄 리벤저스 in Korean (namu.wiki); the song title itself (トーキョーワンダー = Tokyo Wonder, by Nakimushi) has no Korean canon, so literal rendering kept at medium.",
+    "web_sources": [
+      "https://namu.wiki/w/%EB%8F%84%EC%BF%84%20%EB%A6%AC%EB%B2%A4%EC%A0%80%EC%8A%A4"
+    ]
   },
   {
     "id": "tj-68563",
@@ -29401,11 +30063,13 @@
   {
     "id": "tj-68745",
     "title_primary": "カナデトモスソラ('プロジェクトセカイ カラフルステージ！ feat. 初音ミク' OST)",
-    "title_ko": "카나데토 모스 소라",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "Project Sekai 'Kanade Tomosu Sora' (Sky We Play Together); literal segments.",
-    "web_sources": []
+    "title_ko": "카나데토모스소라",
+    "media_context_ko": "프로젝트 세카이 컬러풀 스테이지! feat. 하츠네 미쿠",
+    "confidence": "high",
+    "reasoning": "web-verified: was '카나데토 모스 소라' → canonical '카나데토모스소라' per namu.wiki article title and Project Sekai Korean-server official (which chose transliteration over 의역 for this deliberately ambiguous title).",
+    "web_sources": [
+      "https://namu.wiki/w/%EC%B9%B4%EB%82%98%EB%8D%B0%ED%86%A0%EB%AA%A8%EC%8A%A4%EC%86%8C%EB%9D%BC"
+    ]
   },
   {
     "id": "tjpdf-68746",
@@ -29413,8 +30077,10 @@
     "title_ko": "아주 아프게 아파하고 싶어 (커버)",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "とても痛い=very painful, 痛がりたい=want to be in pain (EZFG vocaloid)",
-    "web_sources": []
+    "reasoning": "web-searched: no Korean canon found (EZFG Vocaloid song, cover feat. 灯油); only Japanese/Vocaloid-wiki sources; literal translation stands.",
+    "web_sources": [
+      "https://vocaloid.fandom.com/wiki/%E3%81%A8%E3%81%A6%E3%82%82%E7%97%9B%E3%81%84%E7%97%9B%E3%81%8C%E3%82%8A%E3%81%9F%E3%81%84_(Totemo_Itai_Itagaritai)"
+    ]
   },
   {
     "id": "blog-1491-0",
@@ -29528,10 +30194,13 @@
     "id": "tj-68782",
     "title_primary": "ヒトミナカ(ツルネ －つながりの一射－ ED)",
     "title_ko": "히토미나카",
-    "media_context_ko": "(츠루네-이어짐의 한 발- ED)",
+    "media_context_ko": "츠루네",
     "confidence": "medium",
-    "reasoning": "Tei Tsurune ED 'Hitominaka' transliteration of poetic title.",
-    "web_sources": []
+    "reasoning": "web-searched: Tsurune S2 ED by 丁; poetic coined title; no namu Korean title, transliteration stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/335633/",
+      "https://www.lyrical-nonsense.com/global/lyrics/tei/hitominaka/"
+    ]
   },
   {
     "id": "blog-215-133",
@@ -29726,10 +30395,13 @@
     "id": "tj-68833",
     "title_primary": "ビビっとラブ(アニメ '理系が恋に落ちたので証明してみた。r=1-sinθ (ハート)' ED)",
     "title_ko": "비비ㅅ 러브",
-    "media_context_ko": null,
+    "media_context_ko": "이과가 사랑에 빠졌기에 증명해보았다",
     "confidence": "medium",
-    "reasoning": "Rikei ga Koi ni Ochita node Shoumeishitemita ED 'Bibitto Love' onomatopoeia.",
-    "web_sources": []
+    "reasoning": "web-searched: CHiCO with HoneyWorks meets Mafumafu, Rikekoi ED; ビビっと = spark/love-at-first-sight onomatopoeia; no namu Korean title. NOTE: current value appears malformed (dangling ㅅ; likely intended 비빗 러브) but left unchanged absent a Korean canonical source.",
+    "web_sources": [
+      "https://namu.wiki/w/CHiCO/%EC%9D%8C%EB%B0%98",
+      "https://jpop.fandom.com/wiki/Bibitto_Love"
+    ]
   },
   {
     "id": "blog-153-23",
@@ -29842,11 +30514,14 @@
   {
     "id": "tj-68869",
     "title_primary": "アレキシサイミアスペア(映画 'Psycho-PASS サイコパス PROVIDENCE' OST)",
-    "title_ko": "알렉시사이미아 페어",
-    "media_context_ko": null,
+    "title_ko": "알렉시사이미아 스페어",
+    "media_context_ko": "사이코패스 PROVIDENCE",
     "confidence": "medium",
-    "reasoning": "Ling Tosite Sigure Psycho-Pass Providence OST 'Alexisaymia Pair'; transliteration of made-up term.",
-    "web_sources": []
+    "reasoning": "web-searched: Ling Tosite Sigure, Psycho-Pass Providence theme; アレキシサイミア = alexithymia, スペア = spare. Corrected reading: was '알렉시사이미아 페어' (misread スペア as pair) → '스페어'; no namu Korean canonical (reading fix only).",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%AC%E3%82%AD%E3%82%B7%E3%82%B5%E3%82%A4%E3%83%9F%E3%82%A2%E3%82%B9%E3%83%9A%E3%82%A2",
+      "https://natalie.mu/music/news/513219"
+    ]
   },
   {
     "id": "tj-6887",
@@ -30427,11 +31102,14 @@
   {
     "id": "tj-68990",
     "title_primary": "愛染橋",
-    "title_ko": "아이조메바시",
+    "title_ko": "아이젠바시",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "愛染橋 is a proper place name (bridge in Osaka); transliterated",
-    "web_sources": []
+    "reasoning": "web-verified reading: 愛染橋 reads あいぜんばし (Osaka Aizen bridge, per ja.wikipedia), so current '아이조메바시' was a misreading; corrected to '아이젠바시' (proper bridge-name transliteration); no Korean-source canonical.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E6%84%9B%E6%9F%93%E6%A9%8B",
+      "https://www.uta-net.com/song/65/"
+    ]
   },
   {
     "id": "tj-68991",
@@ -30619,8 +31297,11 @@
     "title_ko": "더☆피~스!",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ザ☆ピ~ス! = The☆Peace! - Morning Musume; transliterated playful title",
-    "web_sources": []
+    "reasoning": "web-searched: Morning Musume 12th single; official 'The☆Peace!'; no Korean canonical surfaced, transliteration stands.",
+    "web_sources": [
+      "https://www.uta-net.com/movie/13633/",
+      "https://recochoku.jp/song/S13900550/"
+    ]
   },
   {
     "id": "tj-6959",
@@ -30673,8 +31354,11 @@
     "title_ko": "부부 젠자이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "夫婦善哉 is a famous title (Osaka novel/film); proper name kept transliterated",
-    "web_sources": []
+    "reasoning": "web-searched: Ishikawa Sayuri 1987; 夫婦善哉 (めおとぜんざい) = famous Osaka Hozenji zenzai shop / Oda Sakunosuke novel; proper-noun 젠자이 transliteration; no Korean canon.",
+    "web_sources": [
+      "https://ja.wikipedia.org/wiki/%E5%A4%AB%E5%A9%A6%E5%96%84%E5%93%89_(%E7%9F%B3%E5%B7%9D%E3%81%95%E3%82%86%E3%82%8A%E3%81%AE%E6%9B%B2)",
+      "https://www.uta-net.com/song/4464/"
+    ]
   },
   {
     "id": "tj-6974",
@@ -30736,8 +31420,11 @@
     "title_ko": "나마이키 (건방지게)",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ナマイキ = cheeky/saucy",
-    "web_sources": []
+    "reasoning": "web-searched: SPEED; ナマイキ = 生意気 (cheeky/건방짐); no Korean canonical found, transliteration + gloss stands.",
+    "web_sources": [
+      "https://www.uta-net.com/song/10092/",
+      "https://www.nautiljon.com/paroles/speed+(j-pop)/namaiki.html"
+    ]
   },
   {
     "id": "tj-6986",
@@ -30791,141 +31478,6 @@
     "media_context_ko": null,
     "confidence": "high",
     "reasoning": "彼女の=her; \"Modern...\" kept Latin",
-    "web_sources": []
-  },
-  {
-    "id": "tj-77006",
-    "title_primary": "心如止水",
-    "title_ko": "심여지수",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "心如止水 = heart like still water (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-77250",
-    "title_primary": "唯你之光",
-    "title_ko": "오직 너만의 빛",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "唯你之光 = light only of you (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-78037",
-    "title_primary": "梦蝶：一百万个可能",
-    "title_ko": "몽접: 백만 가지 가능",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "梦蝶：一百万个可能 = dream butterfly: a million possibilities",
-    "web_sources": []
-  },
-  {
-    "id": "tj-78375",
-    "title_primary": "北京昨夜下了雪",
-    "title_ko": "베이징 어젯밤 눈이 내렸다",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "北京昨夜下了雪 (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-78512",
-    "title_primary": "断线",
-    "title_ko": "단선",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "断线 = cut line (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-78514",
-    "title_primary": "妈妈的话",
-    "title_ko": "엄마의 말씀",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "妈妈的话 (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-80141",
-    "title_primary": "一千零一个愿望",
-    "title_ko": "천 한 가지 소원",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "一千零一个愿望 = 1001 wishes (4 In Love Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-81554",
-    "title_primary": "你休想",
-    "title_ko": "꿈도 꾸지 마",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "你休想 = don't even think about it (4 In Love Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-82387",
-    "title_primary": "Tasty(貘)",
-    "title_ko": "Tasty (맥)",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "Tasty kept Latin; 貘=baku (mythical tapir creature) → 맥",
-    "web_sources": []
-  },
-  {
-    "id": "tj-83738",
-    "title_primary": "只有我",
-    "title_ko": "나만이",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "只有我 = only me (Energy Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-86795",
-    "title_primary": "无助",
-    "title_ko": "무력함",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "无助 = helpless (Beyond Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-90021",
-    "title_primary": "堕",
-    "title_ko": "추락",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "堕 = fall/depravity (Zyboy Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-90139",
-    "title_primary": "把回忆拼好给你",
-    "title_ko": "추억을 이어 너에게",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "把回忆拼好给你 (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-90915",
-    "title_primary": "别回头",
-    "title_ko": "뒤돌아보지 마",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "别回头 = don't look back (Chinese)",
-    "web_sources": []
-  },
-  {
-    "id": "tj-90916",
-    "title_primary": "打火机",
-    "title_ko": "라이터",
-    "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "打火机 = lighter (Chinese)",
     "web_sources": []
   },
   {
@@ -31078,8 +31630,11 @@
     "title_ko": "비밀 기분",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "ひみつ=secret, 気分=mood/feeling (なきそ vocaloid)",
-    "web_sources": []
+    "reasoning": "web-searched: なきそ vocaloid single (feat. 歌愛ユキ); found lyric/DB pages (vocadb, lyricstranslate) but no Korean canonical title; ひみつ=비밀, 気分=기분 literal translation stands.",
+    "web_sources": [
+      "https://vocadb.net/S/646432",
+      "https://lyricstranslate.com/en/nakiso-himitsu-kibun-lyrics"
+    ]
   },
   {
     "id": "blog-484-11",
@@ -31096,17 +31651,22 @@
     "title_ko": "색채 미래",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "イロドリ=coloring/イロドリ vivid, ミライ=future (八王子P vocaloid)",
-    "web_sources": []
+    "reasoning": "web-searched: 八王子P feat. 初音ミク (album GRAPHIX); no Korean canonical title found; イロドリ(彩り)=색채, ミライ(未来)=미래 literal translation stands.",
+    "web_sources": [
+      "https://vocadb.net/S/246038",
+      "https://www.uta-net.com/song/273229/"
+    ]
   },
   {
     "id": "blog-432-22",
     "title_primary": "ガラクタ・パレード",
     "title_ko": "잡동사니 퍼레이드",
     "media_context_ko": null,
-    "confidence": "medium",
-    "reasoning": "ガラクタ=junk, パレード=parade (Neru vocaloid)",
-    "web_sources": []
+    "confidence": "high",
+    "reasoning": "web-verified: namu.wiki Neru discography lists Korean title 잡동사니 퍼레이드 (album 세계정복/World Conquest); matches current.",
+    "web_sources": [
+      "https://namu.wiki/w/Neru"
+    ]
   },
   {
     "id": "blog-520-107",
@@ -31132,8 +31692,11 @@
     "title_ko": "결락 오토메이션",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "欠落=missing/lack, オートメーション=automation (ONE OK ROCK)",
-    "web_sources": []
+    "reasoning": "web-searched: ONE OK ROCK 'The Beginning' B-side; no Korean canonical title found; 欠落(=缺落)→결락 Sino-Korean reading + 오토메이션(automation) stands.",
+    "web_sources": [
+      "https://oneokrock.fandom.com/wiki/Ketsuraku_Automation_(song)",
+      "https://www.joysound.com/web/search/song/243094"
+    ]
   },
   {
     "id": "blog-163-21",

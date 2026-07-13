@@ -1,0 +1,552 @@
+[
+  {
+    "id": "tjpdf-26670",
+    "title_primary": "GO MY WAY!(THE IDOLM@STER ED)",
+    "title_ko": null,
+    "media_context_ko": "(아이돌마스터 ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'THE IDOLM@STER' (Bandai Namco idol franchise/anime), role ED. Canonical Korean name is 아이돌마스터 (Korean Wikipedia / namu.wiki). Role tag ED preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/아이돌마스터_신데렐라_걸즈",
+      "https://namu.wiki/w/아이돌 마스터 신데렐라 걸즈"
+    ]
+  },
+  {
+    "id": "tjpdf-27601",
+    "title_primary": "Ft.(Fairy Tail OP)",
+    "title_ko": null,
+    "media_context_ko": "(페어리 테일 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Fairy Tail' (Hiro Mashima anime/manga), role OP. Canonical Korean name is 페어리 테일 (namu.wiki / Korean Wikipedia). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/페어리 테일",
+      "https://ko.wikipedia.org/wiki/페어리_테일"
+    ]
+  },
+  {
+    "id": "tjpdf-27708",
+    "title_primary": "Just Awake(HUNTER×HUNTER ED)",
+    "title_ko": null,
+    "media_context_ko": "(헌터×헌터 ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'HUNTER×HUNTER' (Yoshihiro Togashi anime/manga), role ED. Canonical Korean name is 헌터×헌터 (namu.wiki). Role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/헌터×헌터"
+    ]
+  },
+  {
+    "id": "tjpdf-27880",
+    "title_primary": "Tears Infection(MYSELF;YOURSELF OP)",
+    "title_ko": null,
+    "media_context_ko": "(MYSELF;YOURSELF OP)",
+    "confidence": "medium",
+    "reasoning": "Tie-up 'Myself; Yourself' (2007 game/anime), role OP. No official Korean broadcast/localized title; namu.wiki keeps the Latin title (Korean Wikipedia gives a transliteration 마이셀프 ; 유어셀프). Retained the Latin name; niche so confidence medium.",
+    "web_sources": [
+      "https://namu.wiki/w/Myself; Yourself",
+      "https://ko.wikipedia.org/wiki/마이셀프_;_유어셀프"
+    ]
+  },
+  {
+    "id": "tjpdf-27881",
+    "title_primary": "NOBODY KNOWS(×××HOLIC OP)",
+    "title_ko": null,
+    "media_context_ko": "(xxx홀릭 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'xxxHOLiC' (CLAMP anime/manga), role OP. Official Korean name is xxx홀릭 (Korean Wikipedia / Apple TV KR / namu.wiki). Role tag OP preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/Xxx_HOLIC",
+      "https://namu.wiki/w/홀릭 xxxHOLiC"
+    ]
+  },
+  {
+    "id": "tjpdf-28011",
+    "title_primary": "Ambiguous(KILL la KILL 2nd OP)",
+    "title_ko": null,
+    "media_context_ko": "(킬라킬 2nd OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'KILL la KILL' (Trigger anime), role '2nd OP'. Canonical Korean name is 킬라킬 (namu.wiki). Role tag '2nd OP' preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/킬라킬"
+    ]
+  },
+  {
+    "id": "tjpdf-28021",
+    "title_primary": "Brightdown(D.Gray-man 2nd OP)",
+    "title_ko": null,
+    "media_context_ko": "(디 그레이맨 2nd OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'D.Gray-man' (Katsura Hoshino anime/manga), role '2nd OP'. Aired dubbed on Animax Korea; Korean name is 디 그레이맨 (namu.wiki shows this reading). Role tag '2nd OP' preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/D.Gray-man",
+      "https://namu.wiki/w/D.Gray-man(애니메이션)"
+    ]
+  },
+  {
+    "id": "tjpdf-28029",
+    "title_primary": "Colorless Wind(Sola OP)",
+    "title_ko": null,
+    "media_context_ko": "(Sola OP)",
+    "confidence": "medium",
+    "reasoning": "Tie-up 'sola' (2007 anime; manga released in Korea by 대원씨아이), role OP. Anime not broadcast in Korea; namu.wiki keeps the Latin/romaji title 'sola' (read 소라), no distinct Hangul title. Retained the Latin name; niche so confidence medium.",
+    "web_sources": [
+      "https://namu.wiki/w/sola"
+    ]
+  },
+  {
+    "id": "tjpdf-28045",
+    "title_primary": "Dried Up Youthful Fame(Eternal Summer OP)",
+    "title_ko": null,
+    "media_context_ko": "(Free! -Eternal Summer- OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Eternal Summer' = Free! -Eternal Summer- (Kyoto Animation, Free! season 2, 2014); this OLDCODEX song is its OP. Korean name keeps the Latin franchise title Free! -Eternal Summer- (namu.wiki). Expanded the season subtitle to the full work name; role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/Free! -Eternal Summer-",
+      "https://namu.wiki/w/Free!"
+    ]
+  },
+  {
+    "id": "tjpdf-28055",
+    "title_primary": "Fly So High(BLUE DRAGON ED)",
+    "title_ko": null,
+    "media_context_ko": "(블루 드래곤 ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BLUE DRAGON' (anime based on the game, Toriyama designs), role ED. Canonical Korean name is 블루 드래곤 (namu.wiki). Role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/블루 드래곤"
+    ]
+  },
+  {
+    "id": "tjpdf-28057",
+    "title_primary": "Future Fish(Free!-Eternal Summer- ED)",
+    "title_ko": null,
+    "media_context_ko": "(Free! -Eternal Summer- ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Free! -Eternal Summer-' (Kyoto Animation, Free! season 2), role ED. Korean name keeps the Latin franchise title Free! -Eternal Summer- (namu.wiki). Role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/Free! -Eternal Summer-",
+      "https://namu.wiki/w/Free!"
+    ]
+  },
+  {
+    "id": "tjpdf-28069",
+    "title_primary": "Heavenly Blue(ALDNOAH ZERO OP)",
+    "title_ko": null,
+    "media_context_ko": "(알드노아. 제로 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'ALDNOAH.ZERO' (A-1 Pictures/TROYCA anime), role OP. Canonical Korean name is 알드노아. 제로 (namu.wiki). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/알드노아. 제로"
+    ]
+  },
+  {
+    "id": "tjpdf-28074",
+    "title_primary": "Ideal White(Fate/stay night OP)",
+    "title_ko": null,
+    "media_context_ko": "(Fate/stay night OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Fate/stay night' (TYPE-MOON franchise; ufotable UBW anime), role OP. In Korea the work is written by its Latin title Fate/stay night (namu.wiki keeps the Latin title). Retained the Latin name; role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/Fate/stay night"
+    ]
+  },
+  {
+    "id": "tjpdf-28078",
+    "title_primary": "Kings(K OP)",
+    "title_ko": null,
+    "media_context_ko": "(K OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'K' (GoHands/GoRA original anime, 2012), role OP. The title is the single Latin letter K in Korea too (namu.wiki 'K(애니메이션)'). Korean name IS the Latin name; role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/K(애니메이션)"
+    ]
+  },
+  {
+    "id": "tjpdf-28085",
+    "title_primary": "Little Braver(Angel Beats! OP)",
+    "title_ko": null,
+    "media_context_ko": "(Angel Beats! OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Angel Beats!' (Key/P.A.Works anime, simulcast on Aniplus Korea), role OP. Commonly written by its Latin title in Korea (namu.wiki keeps 'Angel Beats!'; Korean Wikipedia transliterates 엔젤 비트). Retained the Latin name; role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/Angel Beats!",
+      "https://ko.wikipedia.org/wiki/엔젤_비트"
+    ]
+  },
+  {
+    "id": "tjpdf-28094",
+    "title_primary": "No Pain, No Game(BTOOOM! OP)",
+    "title_ko": null,
+    "media_context_ko": "(BTOOOM! OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BTOOOM!' (Madhouse anime, aired on Aniplus Korea), role OP. Written by its Latin title in Korea (namu.wiki keeps 'BTOOOM!'; read 브툼). Retained the Latin name; role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BTOOOM!"
+    ]
+  },
+  {
+    "id": "tjpdf-28102",
+    "title_primary": "Parallel Hearts(Pandora Hearts OP)",
+    "title_ko": null,
+    "media_context_ko": "(판도라 하츠 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Pandora Hearts' (Jun Mochizuki anime/manga), role OP. Canonical Korean name is 판도라 하츠 (namu.wiki / Korean Wikipedia). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/판도라 하츠",
+      "https://ko.wikipedia.org/wiki/판도라_하츠"
+    ]
+  },
+  {
+    "id": "tjpdf-28113",
+    "title_primary": "Ready!!(M@STER VERSION)(THE IDOLM@STER OP)",
+    "title_ko": null,
+    "media_context_ko": "(아이돌마스터 OP)",
+    "confidence": "high",
+    "reasoning": "Two parentheticals: '(M@STER VERSION)' is a version tag (part of song), '(THE IDOLM@STER OP)' is the tie-up. Canonical Korean name of the franchise is 아이돌마스터 (Korean Wikipedia / namu.wiki). Role tag OP preserved; version tag ignored.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/아이돌마스터_신데렐라_걸즈",
+      "https://namu.wiki/w/아이돌 마스터 신데렐라 걸즈"
+    ]
+  },
+  {
+    "id": "tjpdf-28115",
+    "title_primary": "Redemption(Dirge of Cerberus OST)",
+    "title_ko": null,
+    "media_context_ko": "(더지 오브 케르베로스 파이널 판타지 VII OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Dirge of Cerberus' = Dirge of Cerberus -Final Fantasy VII- (Square Enix game, 2006), role OST. Canonical Korean name is 더지 오브 케르베로스 파이널 판타지 VII (namu.wiki). Role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/더지 오브 케르베로스 파이널 판타지 VII"
+    ]
+  },
+  {
+    "id": "tjpdf-28121",
+    "title_primary": "Rose(NANA OP)",
+    "title_ko": null,
+    "media_context_ko": "(나나 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'NANA' (Ai Yazawa anime/manga), role OP. Canonical Korean name is 나나 (namu.wiki '나나(만화)'). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/나나(만화)/애니메이션"
+    ]
+  },
+  {
+    "id": "tjpdf-28125",
+    "title_primary": "Shine(THE IDOLM@STER OP)",
+    "title_ko": null,
+    "media_context_ko": "(아이돌마스터 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'THE IDOLM@STER', role OP. Canonical Korean name is 아이돌마스터 (Korean Wikipedia / namu.wiki). Role tag OP preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/아이돌마스터_신데렐라_걸즈",
+      "https://namu.wiki/w/아이돌 마스터 신데렐라 걸즈"
+    ]
+  },
+  {
+    "id": "tjpdf-28132",
+    "title_primary": "Someone Else(WORKING!! OP)",
+    "title_ko": null,
+    "media_context_ko": "(WORKING!! OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'WORKING!!' (A-1 Pictures anime), role OP. Written by its Latin title in Korea (namu.wiki keeps 'WORKING!!'; read 워킹). Retained the Latin name; role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/WORKING!!"
+    ]
+  },
+  {
+    "id": "tjpdf-28133",
+    "title_primary": "Splash Free(Free ED)",
+    "title_ko": null,
+    "media_context_ko": "(Free! ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Free' = Free! (Kyoto Animation swimming anime, season 1); this STYLE FIVE song is its ED. Korean name keeps the Latin title Free! (namu.wiki). Retained the Latin name (official styling has the '!'); role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/Free!"
+    ]
+  },
+  {
+    "id": "tjpdf-28134",
+    "title_primary": "Star!!(THE IDOLM@STER CINDERELLA GIRLS OST)",
+    "title_ko": null,
+    "media_context_ko": "(아이돌마스터 신데렐라 걸즈 OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'THE IDOLM@STER CINDERELLA GIRLS', role OST. Canonical Korean name is 아이돌마스터 신데렐라 걸즈 (Korean Wikipedia / namu.wiki). Role tag OST preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/아이돌마스터_신데렐라_걸즈",
+      "https://namu.wiki/w/아이돌 마스터 신데렐라 걸즈"
+    ]
+  },
+  {
+    "id": "tjpdf-28135",
+    "title_primary": "Starless Night(NANA ED)",
+    "title_ko": null,
+    "media_context_ko": "(나나 ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'NANA' (Ai Yazawa anime/manga), role ED. Canonical Korean name is 나나 (namu.wiki). Role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/나나(만화)/애니메이션"
+    ]
+  },
+  {
+    "id": "tjpdf-28146",
+    "title_primary": "Tonight, Tonight, Tonight(BLEACH 4th OP)",
+    "title_ko": null,
+    "media_context_ko": "(블리치 4th OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BLEACH' (Tite Kubo anime/manga), role '4th OP'. Canonical Korean name is 블리치 (namu.wiki). Role tag '4th OP' preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/블리치"
+    ]
+  },
+  {
+    "id": "tjpdf-28156",
+    "title_primary": "Why(Crisis Core - Final Fantasy VII OST)",
+    "title_ko": null,
+    "media_context_ko": "(크라이시스 코어 파이널 판타지 VII OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Crisis Core - Final Fantasy VII' (Square Enix PSP game, 2007), role OST. Canonical Korean name is 크라이시스 코어 파이널 판타지 VII (namu.wiki). Role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/크라이시스 코어 파이널 판타지 VII"
+    ]
+  },
+  {
+    "id": "tjpdf-28157",
+    "title_primary": "Wish(NANA OP)",
+    "title_ko": null,
+    "media_context_ko": "(나나 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'NANA' (Ai Yazawa anime/manga), role OP. Canonical Korean name is 나나 (namu.wiki). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/나나(만화)/애니메이션"
+    ]
+  },
+  {
+    "id": "tjpdf-28425",
+    "title_primary": "Be As One(FAIRY TAIL ED)",
+    "title_ko": null,
+    "media_context_ko": "(페어리 테일 ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'FAIRY TAIL' (Hiro Mashima anime/manga), role ED. Canonical Korean name is 페어리 테일 (namu.wiki / Korean Wikipedia). Role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/페어리 테일",
+      "https://ko.wikipedia.org/wiki/페어리_테일"
+    ]
+  },
+  {
+    "id": "tjpdf-28431",
+    "title_primary": "Get Wild(CITY HUNTER ED）",
+    "title_ko": null,
+    "media_context_ko": "(시티헌터 ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'CITY HUNTER' (Tsukasa Hojo anime/manga), role ED. Canonical Korean name is 시티헌터 (namu.wiki). Role tag ED preserved. (Input title_primary keeps its fullwidth closing paren.)",
+    "web_sources": [
+      "https://namu.wiki/w/시티헌터",
+      "https://namu.wiki/w/시티헌터/애니메이션"
+    ]
+  },
+  {
+    "id": "tjpdf-28433",
+    "title_primary": "HIT IN THE USA(BECK OP)",
+    "title_ko": null,
+    "media_context_ko": "(벡 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BECK' (Harold Sakuishi anime/manga), role OP. Officially released in Korea as 벡 (학산문화사 manga; Kakao Page / Lezhin). Role tag OP preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/BECK_(만화)",
+      "https://page.kakao.com/content/48498218"
+    ]
+  },
+  {
+    "id": "tjpdf-28508",
+    "title_primary": "Last Kiss(GANTZ~the first stage~ED)",
+    "title_ko": null,
+    "media_context_ko": "(간츠 ~the first stage~ ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'GANTZ ~the first stage~' (Gonzo anime, aired dubbed on Animebox Korea), role ED. Canonical Korean name is 간츠 (namu.wiki / Korean Wikipedia). Kept the '~the first stage~' qualifier; role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/간츠",
+      "https://ko.wikipedia.org/wiki/간츠"
+    ]
+  },
+  {
+    "id": "tjpdf-28529",
+    "title_primary": "RUNNING TO HORIZON(CITY HUNTER3 OP)",
+    "title_ko": null,
+    "media_context_ko": "(시티헌터 3 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'CITY HUNTER3' = City Hunter 3 (third TV series), role OP. Canonical Korean name is 시티헌터 (namu.wiki), season number 3 kept. Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/시티헌터",
+      "https://namu.wiki/w/시티헌터/애니메이션"
+    ]
+  },
+  {
+    "id": "tjpdf-28538",
+    "title_primary": "killy Killy JOKER(Selector Infected WIXOSS OP)",
+    "title_ko": null,
+    "media_context_ko": "(Selector Infected WIXOSS OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'selector infected WIXOSS' (J.C.Staff anime, subbed on Aniplus Korea), role OP. Written by its Latin title in Korea (namu.wiki keeps the Latin title). Retained the Latin name; role tag OP preserved.",
+    "web_sources": [
+      "https://en.namu.wiki/w/selector infected WIXOSS",
+      "https://www.animenewsnetwork.com/encyclopedia/anime.php?id=15894"
+    ]
+  },
+  {
+    "id": "tjpdf-28540",
+    "title_primary": "Next Chance To Move On(Persona 4 the Golden OP)",
+    "title_ko": null,
+    "media_context_ko": "(페르소나 4 더 골든 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Persona 4 the Golden' (Atlus game, 2012 Vita edition), role OP. Canonical Korean name is 페르소나 4 더 골든 (namu.wiki / Nintendo Store KR). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/페르소나 4 더 골든"
+    ]
+  },
+  {
+    "id": "tjpdf-28548",
+    "title_primary": "Euphoric Field(English Ver.)(Ef a tale of memories OP)",
+    "title_ko": null,
+    "media_context_ko": "(ef - a tale of memories OP)",
+    "confidence": "medium",
+    "reasoning": "Two parentheticals: '(English Ver.)' is a version/language tag (part of song), '(Ef a tale of memories OP)' is the tie-up. namu.wiki keeps the Latin title 'ef - a tale of memories.' (Shaft anime, 2007); not broadcast in Korea, low recognition, no Hangul title. Retained the Latin name; role tag OP preserved; version tag ignored. Confidence medium (niche).",
+    "web_sources": [
+      "https://namu.wiki/w/ef - a tale of memories."
+    ]
+  },
+  {
+    "id": "tjpdf-28565",
+    "title_primary": "HARUKAZE(BLEACH OP)",
+    "title_ko": null,
+    "media_context_ko": "(블리치 OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BLEACH' (Tite Kubo anime/manga), role OP. Canonical Korean name is 블리치 (namu.wiki). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/블리치"
+    ]
+  },
+  {
+    "id": "tjpdf-28649",
+    "title_primary": "Changin'(D.Gray-man 8th ED)",
+    "title_ko": null,
+    "media_context_ko": "(디 그레이맨 8th ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'D.Gray-man' (Katsura Hoshino anime/manga), role '8th ED'. Aired dubbed on Animax Korea; Korean name is 디 그레이맨 (namu.wiki shows this reading). Role tag '8th ED' preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/D.Gray-man",
+      "https://namu.wiki/w/D.Gray-man(애니메이션)"
+    ]
+  },
+  {
+    "id": "tjpdf-28759",
+    "title_primary": "Desir(Fate/Apocrypha ED)",
+    "title_ko": null,
+    "media_context_ko": "(Fate/Apocrypha ED)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'Fate/Apocrypha' (TYPE-MOON; A-1 Pictures anime, 2017), role ED. In Korea the work is written by its Latin title Fate/Apocrypha (namu.wiki keeps the Latin title). Retained the Latin name; role tag ED preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/Fate/Apocrypha"
+    ]
+  },
+  {
+    "id": "tjpdf-28970",
+    "title_primary": "ONENESS(BanG Dream! OST)",
+    "title_ko": null,
+    "media_context_ko": "(BanG Dream! OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BanG Dream!' (Bushiroad multimedia band franchise), role OST. Written by its Latin franchise title in Korea (namu.wiki keeps 'BanG Dream!'; colloquial 뱅드림/반도리). Retained the Latin name; role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BanG Dream!"
+    ]
+  },
+  {
+    "id": "tjpdf-28999",
+    "title_primary": "FREEDOM(KING OF PRISM by PrettyRhythm OST)",
+    "title_ko": null,
+    "media_context_ko": "(킹 오브 프리즘 OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'KING OF PRISM by PrettyRhythm' (Tatsunoko film, 2016), role OST. Officially released theatrically in Korea as 킹 오브 프리즘 (Korean Wikipedia / cine21 / namu.wiki). Role tag OST preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/킹_오브_프리즘",
+      "https://namu.wiki/w/킹 오브 프리즘 시리즈"
+    ]
+  },
+  {
+    "id": "tjpdf-29000",
+    "title_primary": "pride -Louis Ver.-(KING OF PRISM by PrettyRhythm OST)",
+    "title_ko": null,
+    "media_context_ko": "(킹 오브 프리즘 OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'KING OF PRISM by PrettyRhythm', role OST ('-Louis Ver.-' is a version tag on the song title). Officially released theatrically in Korea as 킹 오브 프리즘 (Korean Wikipedia / cine21 / namu.wiki). Role tag OST preserved.",
+    "web_sources": [
+      "https://ko.wikipedia.org/wiki/킹_오브_프리즘",
+      "https://namu.wiki/w/킹 오브 프리즘 시리즈"
+    ]
+  },
+  {
+    "id": "tjpdf-68109",
+    "title_primary": "R·I·O·T(BanG Dream! OST)",
+    "title_ko": null,
+    "media_context_ko": "(BanG Dream! OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BanG Dream!' (Bushiroad band franchise), role OST. Written by its Latin franchise title in Korea (namu.wiki keeps 'BanG Dream!'). Retained the Latin name; role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BanG Dream!"
+    ]
+  },
+  {
+    "id": "tjpdf-68121",
+    "title_primary": "Sanctuary(BanG Dream! OST)",
+    "title_ko": null,
+    "media_context_ko": "(BanG Dream! OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BanG Dream!' (Bushiroad band franchise), role OST. Written by its Latin franchise title in Korea (namu.wiki keeps 'BanG Dream!'). Retained the Latin name; role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BanG Dream!"
+    ]
+  },
+  {
+    "id": "tjpdf-68129",
+    "title_primary": "NO GIRL NO CRY(BanG Dream! OST)",
+    "title_ko": null,
+    "media_context_ko": "(BanG Dream! OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BanG Dream!' (Bushiroad band franchise), role OST. Written by its Latin franchise title in Korea (namu.wiki keeps 'BanG Dream!'). Retained the Latin name; role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BanG Dream!"
+    ]
+  },
+  {
+    "id": "tjpdf-68162",
+    "title_primary": "Dreamers Go!(BanG Dream! OST)",
+    "title_ko": null,
+    "media_context_ko": "(BanG Dream! OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BanG Dream!' (Bushiroad band franchise), role OST. Written by its Latin franchise title in Korea (namu.wiki keeps 'BanG Dream!'). Retained the Latin name; role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BanG Dream!"
+    ]
+  },
+  {
+    "id": "tjpdf-68729",
+    "title_primary": "Sonorous(BanG Dream! OST)",
+    "title_ko": null,
+    "media_context_ko": "(BanG Dream! OST)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'BanG Dream!' (Bushiroad band franchise), role OST. Written by its Latin franchise title in Korea (namu.wiki keeps 'BanG Dream!'). Retained the Latin name; role tag OST preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/BanG Dream!"
+    ]
+  },
+  {
+    "id": "tjpdf-6899",
+    "title_primary": "Driver's High(GTO OP)",
+    "title_ko": null,
+    "media_context_ko": "(GTO OP)",
+    "confidence": "high",
+    "reasoning": "Tie-up 'GTO' (Great Teacher Onizuka anime), role OP. Aired dubbed on Tooniverse Korea under the original title GTO; Korean name IS the Latin name (namu.wiki / Korean Wikipedia). Role tag OP preserved.",
+    "web_sources": [
+      "https://namu.wiki/w/GTO(만화)/애니메이션",
+      "https://ko.wikipedia.org/wiki/GTO_(만화)"
+    ]
+  }
+]
