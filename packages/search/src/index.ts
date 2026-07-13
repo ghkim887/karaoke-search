@@ -270,9 +270,12 @@ export const SIMPLIFIED_ONLY_HAN: ReadonlySet<string> = new Set(
 
 /**
  * Whether `value` contains any curated simplified-Chinese-only Han character
- * (see {@link SIMPLIFIED_ONLY_HAN}). REPORT-ONLY signal for surfacing suspected
- * non-Japanese (Mandopop/Cantopop) rows for human review — it does NOT and must
- * NOT feed the crawl filter chain, classifier, or any admit/drop decision.
+ * (see {@link SIMPLIFIED_ONLY_HAN}). Precision-first leak signal (calibrated
+ * 0 hits over the 313k v22 corpus) with two sanctioned consumers: the
+ * report-only simplified-Chinese audit, and — owner-approved 2026-07-13 — the
+ * TJ `jpn-admit-artist` classify-time veto (fall-through `pass`, mirroring the
+ * Korean-script seam guard). It must NOT gate any other admit/drop path (in
+ * particular the JOYSOUND classifier) without a fresh owner decision.
  */
 export function hasSimplifiedOnlyHan(value: string): boolean {
   for (const character of value) {
