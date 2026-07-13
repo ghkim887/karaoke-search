@@ -764,3 +764,44 @@ tracked manifests point at 404 assets (dangling)
 the self-host SQLite build cannot reprovision from anywhere but the NAS. The
 private backup, once executed, is the first real offsite copy. The public
 publish workflow (`full-corpus.yml`) stays UNUSED under the private decision.
+
+## Minor backlog (2026-07-13 verification round) — ALL CLOSED 2026-07-13
+
+Archived 2026-07-13. The five nits surfaced by the verification crawl, all
+closed the same day: (1) inert chunk-50 Hypnosis-Mic entries pruned (PR #147);
+(2) tjpdf crawled_at made deterministic via the catalog checkedAt field
+(PR #146 — re-ingesting an unchanged catalog is byte-identical); (3) 29
+catalog titles edge-trimmed at source with 28 cache guards realigned in the
+same commit (PR #146; the probe trims edges going forward); (4) the 49
+Latin-only discovery-sweep songs got a web-verified media_context_ko pass
+(48 contexts, chunk-63, PR #147); (5) tjpdf-to-tj id migrations now emit a
+non-fatal ingest warning listing orphaned id-keyed cache artifacts with the
+re-key hint (PR #146). Bonus closures in the same round: 17 stale-Chinese
+cache entries pruned (their corpus rows died in the Chinese-leak cleanup)
+and the old tjpdf-68315 migration orphan re-keyed to tj-68315.
+
+## title_ko web-verify pass — DONE 2026-07-13 (PR #147)
+
+Owner directive: web-search the ENTIRE non-high backlog; only genuinely
+unverifiable entries may remain below high. Executed with 6 parallel
+web-search workers over 442 records (420 non-high + 22 recovered mislabels
+whose core titles were Japanese but had been marked "pure Latin" by a
+punctuation-as-script bug: the katakana middle dot and sound marks counted
+as kana). Outcomes: 49 canonical upgrades to high (cited Korean sources —
+licensed release titles on Bugs/Genie/Melon, namu.wiki/ko.wikipedia canon,
+official annotations), 16 unearned highs honestly downgraded, 2 prior
+mistranslations corrected, and 388 medium/low confirmed-no-canon (Korean
+sources use the Japanese titles; every record carries its search evidence).
+Cache after: 3,689 decisions — high 3,301 / medium 370 / low 18. The old
+llm-review.csv owner-review queue premise is superseded by this pass.
+
+## Simplified-Chinese classify-time guard — SHIPPED 2026-07-13 (PR #148)
+
+The report-only detector was promoted to a classify-time defense: the same
+curated hasSimplifiedOnlyHan predicate the audit uses now vetoes artist-vote
+admits inside jpn-admit-artist (fall-through pass, mirroring the #143
+Korean-script seam guard). False vetoes on Japanese titles are structurally
+excluded (the 76-char set omits shinjitai-shared and traditional glyphs;
+calibrated 0 hits over the 313k v22 corpus). The deny-list, post-crawl
+audit, and the crawl-PR report section stay as the outer defense. The
+predicate contract docstring records the two sanctioned consumers.
