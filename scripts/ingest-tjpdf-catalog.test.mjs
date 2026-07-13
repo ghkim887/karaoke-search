@@ -84,6 +84,42 @@ describe('buildIngestedCorpus', () => {
     expect(stats).toMatchObject({ alreadyInCorpus: 1, inserted: 1, droppedOld: 0 });
   });
 
+  it('pipeline case: over a tjpdf-FREE corpus, re-inserts source artist_ko from catalog sortSongKo (empty→null); title_ko stays null', () => {
+    // The weekly pipeline hands this ingest a FRESH crawl corpus carrying ZERO
+    // tjpdf-* rows, so nothing is ever harvested — artist_ko must come from the
+    // catalog entry's sortSongKo or every re-minted row loses it.
+    const corpus = [
+      {
+        id: 'tj-900',
+        source_url: 'x',
+        title_primary: 'kept',
+        title_ko: null,
+        artist_primary: 'A',
+        artist_ko: null,
+        karaoke_numbers: { tj: '900', ky: null, joysound: null },
+        crawled_at: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    const catalog = [
+      catEntry('800', { sortSongKo: '가수 이름' }), // reading kept verbatim (internal space)
+      catEntry('801', { sortSongKo: '' }), // empty string → null
+      catEntry('802', { sortSongKo: '   ' }), // whitespace-only → null
+      catEntry('803', { sortSongKo: null }), // absent reading → null
+    ];
+    const { corpus: out, stats } = buildIngestedCorpus(catalog, corpus, {
+      ...predicates(),
+      nowIso: FIXED_NOW,
+    });
+    expect(stats.droppedOld).toBe(0); // nothing to drop — the corpus had no tjpdf rows
+    expect(stats.inserted).toBe(4);
+    const r800 = out.find((r) => r.id === 'tjpdf-800');
+    expect(r800.artist_ko).toBe('가수 이름'); // sourced verbatim from the catalog
+    expect(r800.title_ko).toBeNull(); // Stage-2 owns title_ko; ingest keeps it null
+    expect(out.find((r) => r.id === 'tjpdf-801').artist_ko).toBeNull();
+    expect(out.find((r) => r.id === 'tjpdf-802').artist_ko).toBeNull();
+    expect(out.find((r) => r.id === 'tjpdf-803').artist_ko).toBeNull();
+  });
+
   it('title_primary is verbatim indexTitle, title_ko null, artist_primary is indexSong, API source_url', () => {
     const catalog = [
       catEntry('28477', {
@@ -125,12 +161,17 @@ describe('buildIngestedCorpus', () => {
     ]);
   });
 
-  it('refresh: drops all existing tjpdf rows, preserves crawled_at + artist_ko for re-inserts', () => {
+  it('refresh: drops all existing tjpdf rows, sources artist_ko from the catalog (not the dropped row)', () => {
     const corpus = [
-      tjpdfRow('300', { artist_ko: '아티스트300', crawled_at: '2025-05-05T05:05:05.005Z' }),
+      // Dropped-row artist_ko values that must NOT survive: the re-insert takes
+      // the catalog reading uniformly, even when a stale row already had one.
+      tjpdfRow('300', { artist_ko: '스테일리딩', crawled_at: '2025-05-05T05:05:05.005Z' }),
       tjpdfRow('301', { artist_ko: null }),
     ];
-    const catalog = [catEntry('300'), catEntry('301')];
+    const catalog = [
+      catEntry('300', { sortSongKo: '카탈로그삼백' }),
+      catEntry('301', { sortSongKo: '카탈로그삼백일' }),
+    ];
     const { corpus: out, stats } = buildIngestedCorpus(catalog, corpus, {
       ...predicates(),
       nowIso: FIXED_NOW,
@@ -138,13 +179,13 @@ describe('buildIngestedCorpus', () => {
     expect(stats.droppedOld).toBe(2);
     expect(stats.inserted).toBe(2);
     const r300 = out.find((r) => r.id === 'tjpdf-300');
-    expect(r300.crawled_at).toBe('2025-05-05T05:05:05.005Z'); // preserved
-    expect(r300.artist_ko).toBe('아티스트300'); // preserved
+    expect(r300.crawled_at).toBe('2025-05-05T05:05:05.005Z'); // crawled_at still carried forward
+    expect(r300.artist_ko).toBe('카탈로그삼백'); // from catalog sortSongKo, NOT the dropped row's '스테일리딩'
     const r301 = out.find((r) => r.id === 'tjpdf-301');
-    expect(r301.artist_ko).toBeNull();
+    expect(r301.artist_ko).toBe('카탈로그삼백일'); // dropped row had null; catalog fills it
   });
 
-  it('artist-identity guard: drops preserved artist_ko + aliases when the artist changed', () => {
+  it('artist-identity guard: drops stale aliases when the artist changed; artist_ko is catalog-sourced', () => {
     const corpus = [
       tjpdfRow('400', {
         artist_primary: 'OLD ARTIST',
@@ -152,19 +193,19 @@ describe('buildIngestedCorpus', () => {
         artist_aliases: ['OldAlias'],
       }),
     ];
-    // Catalog now reports a different artist for 400.
-    const catalog = [catEntry('400', { indexSong: 'NEW ARTIST' })];
+    // Catalog now reports a different artist (and its own reading) for 400.
+    const catalog = [catEntry('400', { indexSong: 'NEW ARTIST', sortSongKo: '뉴아티스트' })];
     const { corpus: out } = buildIngestedCorpus(catalog, corpus, {
       ...predicates(),
       nowIso: FIXED_NOW,
     });
     const rec = out.find((r) => r.id === 'tjpdf-400');
     expect(rec.artist_primary).toBe('NEW ARTIST');
-    expect(rec.artist_ko).toBeNull(); // stale reading dropped
-    expect(rec.artist_aliases).toBeUndefined(); // stale aliases dropped
+    expect(rec.artist_ko).toBe('뉴아티스트'); // fresh catalog reading, not the dropped row's '올드아티스트'
+    expect(rec.artist_aliases).toBeUndefined(); // stale aliases still dropped by the identity guard
   });
 
-  it('artist-identity guard: keeps artist_ko + aliases when the artist is unchanged (case/space/NFKC)', () => {
+  it('artist-identity guard: keeps aliases when the artist is unchanged (case/space/NFKC); artist_ko from catalog', () => {
     const corpus = [
       tjpdfRow('401', {
         artist_primary: '奥華子',
@@ -172,14 +213,14 @@ describe('buildIngestedCorpus', () => {
         artist_aliases: ['奥 華子'],
       }),
     ];
-    const catalog = [catEntry('401', { indexSong: '奥華子' })];
+    const catalog = [catEntry('401', { indexSong: '奥華子', sortSongKo: '오쿠 하나코' })];
     const { corpus: out } = buildIngestedCorpus(catalog, corpus, {
       ...predicates(),
       nowIso: FIXED_NOW,
     });
     const rec = out.find((r) => r.id === 'tjpdf-401');
-    expect(rec.artist_ko).toBe('오쿠 하나코');
-    expect(rec.artist_aliases).toEqual(['奥 華子']);
+    expect(rec.artist_ko).toBe('오쿠 하나코'); // catalog sortSongKo (matches the previous reading)
+    expect(rec.artist_aliases).toEqual(['奥 華子']); // aliases still carried forward (artist unchanged)
   });
 
   it('drop-list: a matching artist never mints a tjpdf row', () => {

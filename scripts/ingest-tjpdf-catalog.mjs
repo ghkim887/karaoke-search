@@ -56,13 +56,21 @@
  *     existing tjpdf translation, and a consistency pin
  *     (ingest-tjpdf-catalog.test.mjs) keeps the cache and the catalog from
  *     drifting apart. See the PR body's cache-keying finding.
- *   - artist_ko      = PRESERVED from the dropped `tjpdf-*` row (keyed by TJ
- *     number, artist-identity-guarded like artist_aliases); genuinely-new
- *     discovery codes get null. Rationale: artist_ko is a phonetic Hangul
- *     reading (same class as `sortSongKo`), NOT a translation and NOT on any
- *     LLM lane, so re-sourcing it from the API would only churn ~348 records'
- *     surface forms with no semantic gain. Preserving keeps the field populated
- *     and the refresh byte-stable.
+ *   - artist_ko      = catalog `sortSongKo` VERBATIM (empty/whitespace → null).
+ *     This is the TJ Korean phonetic reading of the artist and is exactly the
+ *     field `tj-*` rows already source from the same API
+ *     (adapters/tj-media-direct/normalizer.ts:47 `sortSongKo ?? null`), so tjpdf
+ *     now matches its sibling channel. artist_ko IS the phonetic reading, NOT a
+ *     translation, and is on NO LLM lane — the "phonetic reading, not a
+ *     translation" rule that (correctly) keeps title_ko null for the Stage-2
+ *     lane above was previously over-applied here.  The prior "preserve from the
+ *     dropped row" scheme is empirically DEAD in the weekly pipeline: the ingest
+ *     runs over a FRESH crawl corpus carrying ZERO `tjpdf-*` rows, so nothing is
+ *     ever harvested and every re-minted row got artist_ko=null unless a
+ *     same-artist merger happened to refill it (crawl #138: 181 readings lost).
+ *     Sourcing from the catalog row keeps the field genuinely populated. No
+ *     staleness guard is needed — `sortSongKo` and `indexSong` come from the
+ *     same catalog row, so an artist change updates the reading in lockstep.
  *   - source_url     = the searchSong API URL (the data's actual source now),
  *     replacing the old poster-PDF support URL.
  *
@@ -193,10 +201,10 @@ export function buildIngestedCorpus(
   }
 
   // Harvest carry-forward fields from existing tjpdf-* rows, keyed by TJ number.
+  // (artist_ko is NOT harvested — it is sourced fresh from the catalog below.)
   const oldCrawledAt = new Map();
   const oldAliases = new Map();
   const oldArtistPrimary = new Map();
-  const oldArtistKo = new Map();
   for (const r of corpus) {
     if (!String(r.id ?? '').startsWith('tjpdf-')) continue;
     const tj = r.karaoke_numbers?.tj;
@@ -206,7 +214,6 @@ export function buildIngestedCorpus(
       oldAliases.set(tj, [...r.artist_aliases]);
     }
     if (r.artist_primary) oldArtistPrimary.set(tj, r.artist_primary);
-    if (r.artist_ko != null) oldArtistKo.set(tj, r.artist_ko);
   }
 
   // Idempotent pre-pass: drop every existing tjpdf-* row.
@@ -258,10 +265,13 @@ export function buildIngestedCorpus(
     let aliases = oldAliases.get(code);
     if (aliases && artistChanged) aliases = undefined;
 
-    // artist_ko preserved from the dropped row unless the artist changed
-    // (a stale phonetic reading of a different artist is worse than null).
-    let artistKo = oldArtistKo.has(code) ? oldArtistKo.get(code) : null;
-    if (artistChanged) artistKo = null;
+    // artist_ko = the catalog's TJ phonetic reading (sortSongKo), the same field
+    // tj-* rows carry. Empty / whitespace-only → null. No staleness guard: it
+    // comes from the same catalog row as indexSong, so it can never be stale.
+    const artistKo =
+      typeof entry.sortSongKo === 'string' && entry.sortSongKo.trim() !== ''
+        ? entry.sortSongKo
+        : null;
 
     const crawledAt = oldCrawledAt.get(code) || nowIso();
 
