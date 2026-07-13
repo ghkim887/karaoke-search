@@ -280,30 +280,6 @@ and the crawl-report wiring have shipped — archived in
 and the filter-seam script guard — SHIPPED 2026-07-13, PR #143 — are archived
 in [ROADMAP-LOG.md](ROADMAP-LOG.md).)*
 
-### Offsite full-corpus backup — DIRECTION DECIDED: PRIVATE (owner, 2026-07-12); execution deferred
-
-**Owner decision (2026-07-12): back up PRIVATELY, not as a public GitHub
-Release.** The public-release path (the built `full-corpus.yml` publish
-workflow) is therefore NOT the mechanism; a private storage target is. What
-remains is EXECUTION (deferred, no date): pick the concrete private store and
-wire an upload. Candidate targets (pick at execution time): a **private GitHub
-repo release/asset** (reuses the existing manifest+verify tooling almost
-as-is — `publish-full-corpus.mjs`/`fetch-full-corpus.mjs` are store-agnostic
-via the manifest `url`), **Cloudflare R2 / S3** (a bucket + credential; the
-manifest `url` becomes the object URL), or an **encrypted copy on a second
-box**. Recommended: private-repo release or R2 — both let the store-agnostic
-manifest do a one-line `url` swap and keep the trust-no-one re-verification.
-
-Current artifact to back up: `data-2026-07-12-v22-fullcatalog/full-corpus.json`
-(~135 MB) — the promoted v22 corpus. Since v22 promotion the NAS again holds
-the ONLY copy.
-
-**Severity note (still true 2026-07-12):** ZERO GitHub releases exist; both
-tracked manifests point at 404 assets (dangling), so `fetch-full-corpus.mjs` /
-the self-host SQLite build cannot reprovision from anywhere but the NAS. The
-private backup, once executed, is the first real offsite copy. The public
-publish workflow (`full-corpus.yml`) stays UNUSED under the private decision.
-
 ### Minor backlog (2026-07-13 verification round)
 
 Nits surfaced by the 2026-07-13 verification crawl; none block anything.
@@ -338,3 +314,4 @@ Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).
 - **Watchdog alert channel** — CLOSED 2026-07-10 (owner: no dedicated channel).
 - **TJ filter-seam script guard** — SHIPPED 2026-07-13 (PR #143): Option-C veto inside `jpn-admit-artist`; incident clones self-reject without drop-list entries; Latin-titled residual tail stays on the drop list.
 - **JOYSOUND classifier predicate unification (Phases 1+2)** — Phase 1 (T5-D); Phase 2 DONE 2026-07-13 (PR #142, 0 flips over the 352,290-row v22 replay).
+- **Offsite full-corpus backup (§8)** — CANCELLED 2026-07-13 (owner): no backup will be made; accepted recovery path = full re-crawl. Supersedes the 2026-07-12 "private" direction.
