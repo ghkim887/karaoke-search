@@ -49,9 +49,18 @@
  *
  * The catalog JSONL is a committed, deterministic artifact: one line per code,
  * fields {pro, indexTitle, subTitle, indexSong, sortTitleKo, sortSongKo,
- * nationalcode, publishdate} in that order, sorted by numeric `pro`. No probe
- * timestamp is stored — provenance lives in git history — so re-probing an
- * unchanged catalog is byte-idempotent.
+ * nationalcode, publishdate, checkedAt} in that order, sorted by numeric `pro`.
+ * `checkedAt` is an ISO-8601 UTC timestamp recording when the row's content was
+ * last (re)captured from the API; the offline ingest carries it into each
+ * `tjpdf-*` row's `crawled_at` so re-ingesting an unchanged catalog is byte-
+ * idempotent (without it the ingest would re-stamp every row with now() each
+ * week — the corpus-harvest fallback is empirically dead over a fresh crawl).
+ * It is PRESERVED (not re-stamped) when a re-probe returns byte-identical
+ * content for an existing code, so re-probing an unchanged catalog is itself
+ * byte-idempotent; only genuinely new or content-changed rows get a fresh
+ * `checkedAt`. `indexTitle` is edge-trimmed on capture (leading/trailing
+ * whitespace only — interior spacing is preserved) so the API's stray trailing
+ * spaces never churn corpus titles downstream.
  *
  * Usage:
  *   node scripts/probe-tjpdf-catalog.mjs                 # refresh the seed catalog
@@ -85,7 +94,9 @@ export const JITTER_MS = 100;
 export const MAX_RETRIES = 3;
 export const RETRY_BASE_DELAY_MS = 500;
 
-// Emitted catalog field order (one line per code).
+// Emitted catalog field order (one line per code). `checkedAt` (last field) is
+// the row-capture timestamp the offline ingest carries into `crawled_at`; it is
+// not part of the API item and is assigned/preserved by runProbe.
 export const CATALOG_FIELDS = Object.freeze([
   'pro',
   'indexTitle',
@@ -95,7 +106,15 @@ export const CATALOG_FIELDS = Object.freeze([
   'sortSongKo',
   'nationalcode',
   'publishdate',
+  'checkedAt',
 ]);
+
+// Content fields compared to decide whether a re-probe changed a row (i.e. all
+// catalog fields EXCEPT the `checkedAt` provenance timestamp). Kept in sync with
+// CATALOG_FIELDS via a filter so a future field is included automatically.
+export const CATALOG_CONTENT_FIELDS = Object.freeze(
+  CATALOG_FIELDS.filter((f) => f !== 'checkedAt'),
+);
 
 export const USAGE =
   'usage: node scripts/probe-tjpdf-catalog.mjs [--seed <path>] [--catalog <path>] ' +
@@ -110,10 +129,30 @@ export function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** `indexTitle`/`indexSong` are round-tripped verbatim (trim:false parity). */
+/** `indexSong` is round-tripped verbatim (trim:false parity); `indexTitle` is
+ *  additionally edge-trimmed in `mapItem` (see `trimTitleEdges`). */
 export function coerceNonEmptyString(v) {
   if (typeof v !== 'string') return null;
   return v === '' ? null : v;
+}
+
+/** ISO-8601 UTC ms + Z, matching JS `toISOString()`. */
+export function isoUtcNow() {
+  return new Date().toISOString();
+}
+
+/**
+ * Edge-trim a catalog title: strip LEADING/TRAILING whitespace only — interior
+ * spacing is preserved (`String.prototype.trim` never touches the middle). A
+ * value that is null or trims to empty becomes null (an all-whitespace title is
+ * not a usable title). The TJ API occasionally returns titles with a stray
+ * trailing space (e.g. `"ハロ/ハワユ "`); left verbatim these churn corpus
+ * `title_primary` every crawl, so they are normalized at the source on capture.
+ */
+export function trimTitleEdges(v) {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  return t === '' ? null : t;
 }
 
 export function coerceProString(v) {
@@ -168,7 +207,9 @@ export function collectTjItems(data) {
 export function mapItem(raw) {
   if (!isPlainObject(raw)) return null;
   const pro = coerceProString(raw.pro);
-  const indexTitle = coerceNonEmptyString(raw.indexTitle);
+  // indexTitle is edge-trimmed on capture (interior preserved); indexSong stays
+  // verbatim.
+  const indexTitle = trimTitleEdges(coerceNonEmptyString(raw.indexTitle));
   const indexSong = coerceNonEmptyString(raw.indexSong);
   if (pro === null || indexTitle === null || indexSong === null) return null;
   return {
@@ -214,6 +255,29 @@ export function toCatalogEntry(item) {
   const out = {};
   for (const f of CATALOG_FIELDS) out[f] = item[f] ?? null;
   return out;
+}
+
+/** True when two catalog entries carry identical CONTENT (ignoring `checkedAt`). */
+export function catalogContentEqual(a, b) {
+  if (!a || !b) return false;
+  for (const f of CATALOG_CONTENT_FIELDS) {
+    if ((a[f] ?? null) !== (b[f] ?? null)) return false;
+  }
+  return true;
+}
+
+/**
+ * Decide a freshly-probed entry's `checkedAt`. Preserves the prior row's
+ * timestamp when the re-probe returned byte-identical content (so re-probing an
+ * unchanged catalog is byte-idempotent); stamps `now()` for a genuinely new code
+ * or a content change. A prior row missing `checkedAt` (pre-field catalog) is
+ * treated as changed so it gets a real timestamp.
+ */
+export function resolveCheckedAt(prior, fresh, nowIso = isoUtcNow) {
+  if (prior?.checkedAt && catalogContentEqual(prior, fresh)) {
+    return prior.checkedAt;
+  }
+  return nowIso();
 }
 
 // ---------------------------------------------------------------------------
@@ -362,6 +426,7 @@ export function loadSeedCodes(path) {
  * @param {typeof fetch} [opts.fetchFn]
  * @param {(ms:number)=>Promise<void>} [opts.sleep]
  * @param {()=>number} [opts.rng]
+ * @param {()=>string} [opts.nowIso]  injectable clock for `checkedAt` (tests)
  * @param {Console} [opts.log]
  */
 export async function runProbe({
@@ -373,11 +438,16 @@ export async function runProbe({
   fetchFn = fetch,
   sleep = defaultSleep,
   rng = Math.random,
+  nowIso = isoUtcNow,
   log = console,
 }) {
-  const existing = fresh ? [] : readCatalog(catalogPath);
+  // On `--fresh` we re-probe every code but still read the existing catalog so
+  // an unchanged row keeps its `checkedAt` (byte-idempotent re-probe); the
+  // scope/skip decision below uses `fresh` independently.
+  const existing = readCatalog(catalogPath);
+  const priorByPro = new Map(existing.map((e) => [normalizeProQuery(e.pro), e]));
   // Preserve every pre-existing entry (resume + out-of-scope discovery hits).
-  const byPro = new Map(existing.map((e) => [normalizeProQuery(e.pro), e]));
+  const byPro = fresh ? new Map() : new Map(priorByPro);
 
   const scope = fresh ? codes : codes.filter((c) => !byPro.has(normalizeProQuery(c)));
   const toProbe = Number.isFinite(limit) ? scope.slice(0, limit) : scope;
@@ -412,8 +482,12 @@ export async function runProbe({
       if (mode === 'seed') stats.misses.push(code);
       continue;
     }
+    const norm = normalizeProQuery(hit.pro);
     const entry = toCatalogEntry(hit);
-    byPro.set(normalizeProQuery(hit.pro), entry);
+    // Preserve `checkedAt` when the re-probe returned identical content; stamp a
+    // fresh one for a new code or a content change.
+    entry.checkedAt = resolveCheckedAt(priorByPro.get(norm), entry, nowIso);
+    byPro.set(norm, entry);
     stats.found += 1;
     stats.hits.push(entry);
     if (entry.nationalcode !== 'JPN')

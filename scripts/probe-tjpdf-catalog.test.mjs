@@ -133,6 +133,20 @@ describe('mapItem', () => {
     expect(mapItem(rawItem(9, { pro: '' }))).toBeNull();
     expect(mapItem('not an object')).toBeNull();
   });
+
+  it('edge-trims indexTitle (leading/trailing only) but preserves interior spacing and indexSong', () => {
+    const item = mapItem(
+      rawItem(9, { indexTitle: '  ハロ / ハワユ ', indexSong: '  spaced artist  ' }),
+    );
+    // Edges trimmed, the interior ` / ` space kept.
+    expect(item.indexTitle).toBe('ハロ / ハワユ');
+    // indexSong stays verbatim (trim:false parity).
+    expect(item.indexSong).toBe('  spaced artist  ');
+  });
+
+  it('drops an item whose indexTitle is whitespace-only (trims to empty)', () => {
+    expect(mapItem(rawItem(9, { indexTitle: '   ' }))).toBeNull();
+  });
 });
 
 describe('selectExactPro', () => {
@@ -269,7 +283,7 @@ describe('serializeCatalog', () => {
     const lines = out.trimEnd().split('\n');
     expect(JSON.parse(lines[0]).pro).toBe('6899');
     expect(JSON.parse(lines[1]).pro).toBe('68430');
-    // Canonical field order + null-fill for absent fields.
+    // Canonical field order + null-fill for absent fields (incl. checkedAt).
     expect(Object.keys(JSON.parse(lines[0]))).toEqual([
       'pro',
       'indexTitle',
@@ -279,8 +293,10 @@ describe('serializeCatalog', () => {
       'sortSongKo',
       'nationalcode',
       'publishdate',
+      'checkedAt',
     ]);
     expect(JSON.parse(lines[0]).nationalcode).toBeNull();
+    expect(JSON.parse(lines[0]).checkedAt).toBeNull();
     expect(out.endsWith('\n')).toBe(true);
   });
 });
@@ -418,6 +434,85 @@ describe('runProbe', () => {
     });
     expect(stats.toProbe).toBe(2);
     expect(stats.found).toBe(2);
+  });
+
+  it('stamps checkedAt on a new code, preserves it on an unchanged --fresh re-probe, re-stamps on content change', async () => {
+    const log = { error() {}, log() {} };
+    const fetchFn = async (_url, opts) =>
+      resp(flatEnvelope([rawItem(new URLSearchParams(opts.body).get('searchTxt'))]));
+
+    // New code → fresh checkedAt (T1).
+    await runProbe({
+      mode: 'seed',
+      codes: ['1'],
+      catalogPath,
+      fetchFn,
+      sleep: noSleep,
+      rng,
+      nowIso: () => 'T1',
+      log,
+    });
+    expect(readCatalog(catalogPath).find((e) => e.pro === '1').checkedAt).toBe('T1');
+
+    // --fresh re-probe, identical content, DIFFERENT clock → checkedAt preserved.
+    await runProbe({
+      mode: 'seed',
+      codes: ['1'],
+      catalogPath,
+      fresh: true,
+      fetchFn,
+      sleep: noSleep,
+      rng,
+      nowIso: () => 'T2',
+      log,
+    });
+    expect(readCatalog(catalogPath).find((e) => e.pro === '1').checkedAt).toBe('T1');
+
+    // Content change (new title) → checkedAt re-stamped (T3).
+    const fetchChanged = async (_url, opts) =>
+      resp(
+        flatEnvelope([
+          rawItem(new URLSearchParams(opts.body).get('searchTxt'), {
+            indexTitle: 'title-1-CHANGED',
+          }),
+        ]),
+      );
+    await runProbe({
+      mode: 'seed',
+      codes: ['1'],
+      catalogPath,
+      fresh: true,
+      fetchFn: fetchChanged,
+      sleep: noSleep,
+      rng,
+      nowIso: () => 'T3',
+      log,
+    });
+    const after = readCatalog(catalogPath).find((e) => e.pro === '1');
+    expect(after.indexTitle).toBe('title-1-CHANGED');
+    expect(after.checkedAt).toBe('T3');
+  });
+
+  it('re-probing unchanged content is byte-idempotent even with a changing clock', async () => {
+    const log = { error() {}, log() {} };
+    const fetchFn = async (_url, opts) =>
+      resp(flatEnvelope([rawItem(new URLSearchParams(opts.body).get('searchTxt'))]));
+    const opts = (nowIso) => ({
+      mode: 'seed',
+      codes: ['1', '2'],
+      catalogPath,
+      fresh: true,
+      fetchFn,
+      sleep: noSleep,
+      rng,
+      nowIso,
+      log,
+    });
+    await runProbe(opts(() => 'T1'));
+    const a = readFileSync(catalogPath);
+    await runProbe(opts(() => 'T2')); // different clock, same content
+    const b = readFileSync(catalogPath);
+    expect(b.equals(a)).toBe(true);
   });
 });
 

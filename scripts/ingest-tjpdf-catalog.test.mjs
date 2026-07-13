@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   SOURCE_URL,
   buildIngestedCorpus,
+  loadIdKeyedArtifactIds,
   localNormalizeForMatch,
   runIngest,
 } from './ingest-tjpdf-catalog.mjs';
@@ -49,6 +50,21 @@ function tjpdfRow(code, over = {}) {
     title_primary: `old-title-${code}`,
     title_ko: null,
     artist_primary: `artist-${code}`,
+    artist_ko: null,
+    karaoke_numbers: { tj: String(code), ky: null, joysound: null },
+    crawled_at: '2026-01-01T00:00:00.000Z',
+    ...over,
+  };
+}
+
+/** A non-tjpdf corpus row that COVERS a TJ number (coverage-only skip source). */
+function tjRow(code, over = {}) {
+  return {
+    id: `tj-${code}`,
+    source_url: 'x',
+    title_primary: `tj-title-${code}`,
+    title_ko: null,
+    artist_primary: `tj-artist-${code}`,
     artist_ko: null,
     karaoke_numbers: { tj: String(code), ky: null, joysound: null },
     crawled_at: '2026-01-01T00:00:00.000Z',
@@ -236,6 +252,47 @@ describe('buildIngestedCorpus', () => {
     expect(stats.droppedArtist).toBe(1);
   });
 
+  it('crawled_at is sourced from the catalog checkedAt (beats the dropped-row harvest and now())', () => {
+    const corpus = [
+      // Dropped row carries an OLD crawled_at that must NOT win over checkedAt.
+      tjpdfRow('300', { crawled_at: '2025-05-05T05:05:05.005Z' }),
+    ];
+    const catalog = [
+      catEntry('300', { checkedAt: '2026-07-12T00:00:00.000Z' }), // dropped-row code
+      catEntry('301', { checkedAt: '2026-07-12T00:00:00.000Z' }), // brand-new code
+      catEntry('302'), // NO checkedAt → falls back to nowIso for a new code
+    ];
+    const { corpus: out } = buildIngestedCorpus(catalog, corpus, {
+      ...predicates(),
+      nowIso: FIXED_NOW,
+    });
+    expect(out.find((r) => r.id === 'tjpdf-300').crawled_at).toBe('2026-07-12T00:00:00.000Z');
+    expect(out.find((r) => r.id === 'tjpdf-301').crawled_at).toBe('2026-07-12T00:00:00.000Z');
+    // Missing checkedAt on a brand-new code → fresh timestamp fallback.
+    expect(out.find((r) => r.id === 'tjpdf-302').crawled_at).toBe('2026-07-11T00:00:00.000Z');
+  });
+
+  it('reports orphanedIds only for SKIPPED (already-covered) codes that have an id-keyed artifact', () => {
+    const corpus = [tjRow('100')]; // covers 100 → tjpdf-100 is skipped
+    const catalog = [catEntry('100'), catEntry('200')]; // 200 is inserted
+    const { stats } = buildIngestedCorpus(catalog, corpus, {
+      ...predicates(),
+      nowIso: FIXED_NOW,
+      // 100 skipped + has artifact → orphan; 200 inserted (not skipped) → no
+      // orphan even though it has an artifact; 999 not in catalog → ignored.
+      idKeyedArtifactIds: new Set(['tjpdf-100', 'tjpdf-200', 'tjpdf-999']),
+    });
+    expect(stats.alreadyInCorpus).toBe(1);
+    expect(stats.orphanedIds).toEqual(['tjpdf-100']);
+  });
+
+  it('reports no orphans when the injected artifact set is empty (default)', () => {
+    const corpus = [tjRow('100')];
+    const catalog = [catEntry('100')];
+    const { stats } = buildIngestedCorpus(catalog, corpus, { ...predicates(), nowIso: FIXED_NOW });
+    expect(stats.orphanedIds).toEqual([]);
+  });
+
   it('throws on a malformed catalog entry', () => {
     expect(() =>
       buildIngestedCorpus([{ pro: '1', indexSong: 'x' }], [], {
@@ -296,12 +353,165 @@ describe('runIngest (file I/O)', () => {
     expect(corpus.find((r) => r.id === 'tjpdf-601')).toBeTruthy();
   });
 
+  it('is byte-idempotent over a tjpdf-FREE corpus (pipeline case) with a MOVING clock, sourcing crawled_at from checkedAt', () => {
+    // The weekly pipeline hands the ingest a FRESH crawl corpus carrying ZERO
+    // tjpdf-* rows, so nothing is harvested; without a stable per-row timestamp
+    // every run re-stamps crawled_at with now() and re-diffs every tjpdf row.
+    // Sourcing crawled_at from the catalog checkedAt makes the output identical
+    // run to run even though the clock advances between runs.
+    writeCatalog([
+      catEntry('600', { checkedAt: '2026-07-12T00:00:00.000Z' }),
+      catEntry('601', { checkedAt: '2026-07-12T00:00:00.000Z' }),
+    ]);
+    writeCorpus([tjRow('900')]); // no tjpdf rows to harvest
+    let tick = 0;
+    const movingNow = () => `2026-07-${20 + tick++}T00:00:00.000Z`; // different every call
+    const opts = {
+      catalogPath,
+      corpusPath,
+      predicates: predicates(),
+      nowIso: movingNow,
+      log: { error() {}, log() {} },
+    };
+
+    expect(runIngest(opts)).toBe(0);
+    const after1 = readFileSync(corpusPath);
+    expect(runIngest(opts)).toBe(0);
+    const after2 = readFileSync(corpusPath);
+    expect(after2.equals(after1)).toBe(true);
+
+    const corpus = JSON.parse(after1.toString('utf-8'));
+    expect(corpus.find((r) => r.id === 'tjpdf-600').crawled_at).toBe('2026-07-12T00:00:00.000Z');
+    expect(corpus.find((r) => r.id === 'tjpdf-601').crawled_at).toBe('2026-07-12T00:00:00.000Z');
+  });
+
   it('exits 2 on missing catalog or corpus, 1 on empty catalog', () => {
     const log = { error() {}, log() {} };
     expect(runIngest({ catalogPath, corpusPath, predicates: predicates(), log })).toBe(2); // no catalog
     writeCatalog([]);
     writeCorpus([]);
     expect(runIngest({ catalogPath, corpusPath, predicates: predicates(), log })).toBe(1); // empty catalog
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Migration-orphan warning (#5): when a catalog code is SKIPPED because a
+// non-tjpdf row already covers its TJ number, but an id-keyed artifact still
+// keys by the orphaned `tjpdf-<code>` id (its cached translation would silently
+// never apply), the ingest emits ONE non-fatal stderr warning. Fixture: the
+// 2026-07-13 case (tjpdf-28871/28879 skipped while chunk-50 entries existed).
+// ---------------------------------------------------------------------------
+describe('runIngest migration-orphan warning', () => {
+  let dir;
+  let catalogPath;
+  let corpusPath;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'ingest-orphan-'));
+    catalogPath = join(dir, 'tjpdf-catalog.jsonl');
+    corpusPath = join(dir, 'songs.json');
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  function writeCatalog(entries) {
+    writeFileSync(catalogPath, `${entries.map((e) => JSON.stringify(e)).join('\n')}\n`, 'utf-8');
+  }
+  function writeCorpus(records) {
+    writeFileSync(corpusPath, `${JSON.stringify(records, null, 2)}\n`, 'utf-8');
+  }
+  function writeChunk(name, entries) {
+    writeFileSync(join(dir, name), JSON.stringify(entries), 'utf-8');
+  }
+  function run() {
+    const warns = [];
+    const code = runIngest({
+      catalogPath,
+      corpusPath,
+      predicates: predicates(),
+      nowIso: FIXED_NOW,
+      log: { error: (m) => warns.push(m), log() {} },
+    });
+    return { code, orphanWarns: warns.filter((w) => /migration-orphan/.test(w)) };
+  }
+
+  it('warns once, listing the orphaned ids + remediation hint, for skipped codes with a chunk entry', () => {
+    writeCatalog([catEntry('28871'), catEntry('28879'), catEntry('28900')]);
+    // tj- rows cover 28871/28879 (→ SKIPPED); 28900 is uncovered (→ inserted).
+    writeCorpus([tjRow('28871'), tjRow('28879')]);
+    // Stage-2 cache still keys by the orphaned tjpdf- ids (28900 too, but it is
+    // inserted so it is not an orphan).
+    writeChunk('llm-translations-chunk-50.json', [
+      { id: 'tjpdf-28871', title_primary: 'a' },
+      { id: 'tjpdf-28879', title_primary: 'b' },
+      { id: 'tjpdf-28900', title_primary: 'c' },
+    ]);
+    const { code, orphanWarns } = run();
+    expect(code).toBe(0); // non-fatal
+    expect(orphanWarns).toHaveLength(1);
+    expect(orphanWarns[0]).toContain('tjpdf-28871');
+    expect(orphanWarns[0]).toContain('tjpdf-28879');
+    expect(orphanWarns[0]).not.toContain('tjpdf-28900'); // inserted, not orphaned
+    expect(orphanWarns[0]).toMatch(/chunk-62/); // remediation precedent hint
+  });
+
+  it('also detects an orphan from a manual-fix entry', () => {
+    writeCatalog([catEntry('28871')]);
+    writeCorpus([tjRow('28871')]);
+    writeFileSync(
+      join(dir, 'title-ko-manual-fixes.json'),
+      JSON.stringify([{ id: 'tjpdf-28871', title_primary: 'a', title_ko: 'x' }]),
+      'utf-8',
+    );
+    const { orphanWarns } = run();
+    expect(orphanWarns).toHaveLength(1);
+    expect(orphanWarns[0]).toContain('tjpdf-28871');
+  });
+
+  it('is silent when a skipped code has no id-keyed artifact', () => {
+    writeCatalog([catEntry('28871')]);
+    writeCorpus([tjRow('28871')]); // skipped, but no chunk/fixes files present
+    expect(run().orphanWarns).toHaveLength(0);
+  });
+
+  it('is silent when the code with an artifact is INSERTED (not skipped)', () => {
+    writeCatalog([catEntry('28900')]);
+    writeCorpus([]); // 28900 uncovered → inserted
+    writeChunk('llm-translations-chunk-50.json', [{ id: 'tjpdf-28900', title_primary: 'c' }]);
+    expect(run().orphanWarns).toHaveLength(0);
+  });
+});
+
+describe('loadIdKeyedArtifactIds', () => {
+  let dir;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'artifact-ids-'));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('collects tjpdf ids from chunk files + manual-fixes, ignoring non-tjpdf ids', () => {
+    writeFileSync(
+      join(dir, 'llm-translations-chunk-50.json'),
+      JSON.stringify([{ id: 'tjpdf-1' }, { id: 'tj-2' }, { id: 'blog-3-0' }]),
+      'utf-8',
+    );
+    writeFileSync(
+      join(dir, 'title-ko-manual-fixes.json'),
+      JSON.stringify([{ id: 'tjpdf-9' }, { id: 'tj-8' }]),
+      'utf-8',
+    );
+    // A non-artifact file is ignored.
+    writeFileSync(join(dir, 'tjpdf-catalog.jsonl'), '{"pro":"1"}\n', 'utf-8');
+    const ids = loadIdKeyedArtifactIds(dir, { error() {} });
+    expect([...ids].sort()).toEqual(['tjpdf-1', 'tjpdf-9']);
+  });
+
+  it('returns an empty set for a missing directory (tolerant)', () => {
+    const ids = loadIdKeyedArtifactIds(join(dir, 'does-not-exist'), { error() {} });
+    expect(ids.size).toBe(0);
   });
 });
 
