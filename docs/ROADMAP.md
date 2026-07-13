@@ -201,50 +201,6 @@ baseline (offline bundle, TJ/blog freshness) stops updating; #126's live-gate
 validation and #125's full-soak precondition cannot complete. The serving-DB
 lane (v22) is unaffected.
 
-### Post-JOYSOUND data topology (DECIDED 2026-06-10)
-
-> **Update 2026-07-13 — release-asset mechanism RETIRED (in part).** No
-> full-corpus release was ever published, and the live serving route
-> (self-hosted Node + SQLite behind a Cloudflare Pages proxy, v22 live)
-> superseded the web deploy flip this plan assumed. Phase 1 (2026-07-13)
-> deleted the publish workflow (`full-corpus.yml`), the `fetch`/`verify`
-> consumers, and the dangling `data/full-corpus.manifest.json`, and dropped
-> the per-PR manifest-shape gate from `ci.yml`. The only live remnant is
-> `scripts/publish-full-corpus.mjs` + `scripts/lib/manifest.mjs`, kept as the
-> serving-DB build wrapper. **Phase 2 (owner-gated):** repoint the serving
-> runbook off that wrapper, then delete it. The 2026-06-10 decision below is
-> retained for provenance.
-
-**Decision (owner-approved, hybrid):** the tracked
-`apps/web/public/data/songs.json` baseline (~25.8k) stays exactly as today
-(offline bundle + weekly crawl PR diff); the post-JOYSOUND full corpus
-(~221k, ~85 MB) lives OUTSIDE git as a GitHub Release asset, and git tracks
-only a small manifest (`data/full-corpus.manifest.json`:
-sha256/url/sizeBytes/record+vendor counts). The self-host SQLite build
-consumes the release asset via the manifest. Rationale: the
-full corpus breaks both git limits (85 MB vs the 100 MB hard block) and
-client-side index-build UX (~316 MB heap / ~5.7 s on desktop Node — worse
-on phones), while a Release asset needs zero new secrets and the
-store-agnostic manifest makes a later R2 swap a one-line `url` change.
-
-Tooling landed (PR-1): `scripts/publish-full-corpus.mjs` (validate →
-manifest [+ optional SQLite]) and `scripts/fetch-full-corpus.mjs`
-(download → sha256+size verify → atomic write), shared logic in
-`scripts/lib/manifest.mjs`. Status of the remaining sub-items (see the
-2026-07-13 retirement note above):
-
-- **PR-2 (workflow): RETIRED 2026-07-13.** The `workflow_dispatch`
-  full-corpus pipeline (`full-corpus.yml`) and the `fetch`/`verify` consumers
-  were deleted unused; `publish-full-corpus.mjs` + `lib/manifest.mjs` remain
-  only as the serving-DB build wrapper (phase 2: repoint the runbook, then
-  delete). Weekly `crawl.yml` stays unchanged (baseline path preserved).
-- **PR-3 (first publish/import): SUPERSEDED.** No release was ever published;
-  the self-host SQLite build is fed from the composed corpus on the NAS, the
-  self-host API is live, and the web "deploy flip" happened via the live
-  self-host + Cloudflare Pages proxy route (v22 live, same-origin
-  `PUBLIC_KARAOKE_API_BASE_URL=/` with Pages Functions proxying to the
-  self-host API origin) rather than a release-asset import.
-
 ### title_ko review CSV backlog
 
 `scripts/data/llm-review.csv` carries the ~255 medium/low-confidence LLM
@@ -331,3 +287,4 @@ Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).
 - **TJ filter-seam script guard** — SHIPPED 2026-07-13 (PR #143): Option-C veto inside `jpn-admit-artist`; incident clones self-reject without drop-list entries; Latin-titled residual tail stays on the drop list.
 - **JOYSOUND classifier predicate unification (Phases 1+2)** — Phase 1 (T5-D); Phase 2 DONE 2026-07-13 (PR #142, 0 flips over the 352,290-row v22 replay).
 - **Offsite full-corpus backup (§8)** — CANCELLED 2026-07-13 (owner): no backup will be made; accepted recovery path = full re-crawl. Supersedes the 2026-07-12 "private" direction.
+- **Post-JOYSOUND data topology** — DECIDED 2026-06-10 → CLOSED 2026-07-13. Release-asset mechanism never used; retired in two phases (phase 1 #149 deleted the publish workflow + fetch/verify + dangling manifest; phase 2 repointed the serving runbook onto `build-sqlite-db.mjs` and deleted the `publish-full-corpus.mjs` wrapper + `lib/manifest.mjs`).

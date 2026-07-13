@@ -28,7 +28,6 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | `compose-crawl-pr-body.mjs` | CI / crawl PR-body composer | Weekly | In `crawl.yml`, stdout redirected to `$RUNNER_TEMP/pr_body.md` |
 | `export-drop-list.mjs` | Build chain (Korean drop-list JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
 | `export-clustering-rules.mjs` | Build chain (`SPLIT_RE` splitter-pattern JSON sidecar) | On every crawler `pnpm build` | Auto-invoked by `@karaoke/crawler` `build` script |
-| `publish-full-corpus.mjs` | Full-corpus publish (validate → `data/full-corpus.manifest.json` [+ optional SQLite via the worker's `build-sqlite-db.mjs`]) | Manual | Kept only as the serving-build wrapper; the release-asset publish path is **RETIRED** (phase 1, 2026-07-13 — `full-corpus.yml`/`fetch-full-corpus.mjs`/`verify-manifest.mjs` deleted). **Phase-2 pending:** repoint the serving runbook off this wrapper, then delete. Manual only (`--url PENDING` dry-runs, `--search-hints`) |
 | `audit-corpus-guardrails.mjs` | Ad-hoc corpus audit | As-needed | Manual |
 | `audit-crawler-quality.mjs` | Ad-hoc crawler-quality report | As-needed | Manual |
 | `manual-fix-title-ko.mjs` | Ad-hoc single-record title_ko fix | As-needed | Manual |
