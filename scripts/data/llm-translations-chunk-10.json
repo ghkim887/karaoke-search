@@ -27,10 +27,10 @@
     "title_ko": "안녕 거짓말쟁이",
     "media_context_ko": null,
     "confidence": "medium",
-    "reasoning": "Web search found Japanese lyric sites and the Blade & Soul anime OP credit but no stable Korean canonical title; produced a natural literal translation (サヨナラ=안녕, 嘘ツキ=거짓말쟁이).",
+    "reasoning": "web-searched: Blade & Soul anime OP by みみめめMIMI; サヨナラ = 안녕 (goodbye), 嘘ツキ = 거짓말쟁이 (liar); no Korean canonical found, literal stands.",
     "web_sources": [
-      "https://ja.wikipedia.org/wiki/%E3%82%B5%E3%83%A8%E3%83%8A%E3%83%A9%E5%98%98%E3%83%84%E3%82%AD",
-      "https://www.uta-net.com/song/164350/"
+      "https://ja.wikipedia.org/wiki/サヨナラ嘘ツキ",
+      "https://www.animate-onlineshop.jp/pd/1261716/"
     ]
   },
   {
