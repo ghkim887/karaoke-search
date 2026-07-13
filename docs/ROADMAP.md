@@ -265,45 +265,6 @@ and the crawl-report wiring have shipped — archived in
 
 ### TJ filter-seam + parity-baseline systemic follow-ups (2026-07-09 audit)
 
-- **TJ filter seam — DIRECTION DECIDED (owner, 2026-07-13): script guard inside
-  `jpn-admit-artist`; implement AFTER the verification crawl quantifies the seam.**
-  **Root cause CORRECTED (2026-07-13 recon, cache-verified):** the old framing
-  ("the per-song `proEnrichmentMap` already carries `nationalcode: KOR` for that
-  exact row") described the POST-crawl saved cache, not the classify-time state.
-  At classify time the leaked rows had NO per-song entry — the existing
-  `non-jpn-pro-reject` (step 1) ran and correctly found nothing; the KOR
-  nationalcode is written AFTER classify by the translit pass on the
-  wrongly-admitted rows (lagging signal; verified via cache `lastSeen`
-  timestamps — 33,090 KOR entries from the 04:55 artist-scan harvest vs 169 at
-  08:29 post-classify = the 168-row leak). Consequence: each newly-surfaced
-  Korean row leaks exactly ONE crawl, then self-heals on the next. Therefore any
-  fix reading `proEnrichmentMap` (the original "KOR-pro-reject step" sketch)
-  duplicates step 1 against an empty map and cannot stop the first-crawl leak.
-  **Decided fix:** the #97-gate script predicate (Hangul AND no Japanese script
-  over title+artist) as a guard INSIDE `jpn-admit-artist` returning `pass`
-  (fall-through drop) — artist-vote-only admits get vetoed when the row itself
-  reads as Korean script. Per-song `pro=JPN` admits (step 4) and
-  `reviewed-song-allow` (step 2) sit upstream and are unaffected (Hangul-glossed
-  genuine JP releases like tj-68976 stay admitted); both rescue paths already
-  exclude Hangul rows. `FilterContext` must gain `title` (not threaded today);
-  PHASE_ORDER is unchanged, so the phase-order tests stay untouched. Residual
-  leak class: romaji/Latin-titled Korean rows (no script signal) still leak one
-  crawl — the curated drop list stays as defense-in-depth for that tail.
-  **Sequencing (owner, 2026-07-13):** run the verification crawl FIRST, measure
-  the seam population offline from its #134 `filter-decisions` artifact
-  (`decision=admit AND step=jpn-admit-artist AND Hangul-no-Japanese over
-  title+artist`, minus reviewed-allow ids), then implement with the three
-  incident rows (tj-32100, tj-36707, tj-43349; `proEnrichmentMap` EMPTY) as
-  regression fixtures proving self-reject WITHOUT their drop-list entries.
-  Alternative "classify-time per-song fetch" (C2) was rejected: one HTTP per
-  artist-admitted uncached row, contradicts the cache-driven filter design.
-
-  **Post-crawl measurement (2026-07-13):** the #140 verification crawl's
-  decision log shows admit-via-artist = 1 row (Japanese-titled, not a seam
-  candidate), so measured live exposure was ZERO this crawl (the warm
-  per-song cache decides nearly everything). The fix spec stays ready
-  (Option C); the priority/hold decision is pending owner.
-
 - **PRODUCT: `blog-*` record ids are positional and reshuffle each crawl.** #95
   re-assigned the Utada page ids wholesale (e.g. `blog-301-13` was 光, is now a different
   song). Device favorites (localStorage `karaoke-favorites:v1`) and `/api/songs` lookups
@@ -315,52 +276,9 @@ and the crawl-report wiring have shipped — archived in
   resolve to ids at load, one-time v1 migration) stays available for when this
   is picked up.
 
-*(The completed parity-baseline-regeneration-policy and smoke-fixture bullets
-from this section are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).)*
-
-### JOYSOUND classifier safe-predicate unification — Phase 2 (deferred)
-
-The JOYSOUND classifier
-(`packages/crawler/src/adapters/joysound-official/classifier.ts`) historically
-carried its own script-detection regexes that drifted from the shared
-`@karaoke/search` predicates. T5-D unified this in two phases, gated by a golden
-regression harness
-(`packages/crawler/test/adapters/joysound-official/classifierGolden.test.ts`).
-
-**Phase 1 (DONE, T5-D):** the three *safe* predicates were swapped to the shared
-`@karaoke/search` functions —
-- `RE_ASCII_LETTER` → `hasLatinLetter` (byte-identical, zero behaviour change);
-- `hasKanaScript` (admit path) → `hasKana`;
-- `RE_KANA` (foreign-name echo path) → `hasKana`.
-
-The only behavioural effect is a strict *widening* of kana recognition, verified
-by the golden gate's Part B1 (change spec) and the always-on Part C differential:
-Katakana Phonetic Extensions (U+31F0–31FF) now admit as `admit-jpop-kana`, and a
-Han foreign-name whose only kana is half-width (U+FF66–FF9F) or phonetic-ext is
-now recognised as a Japanese-title echo (suppressing `foreign-chinese`). Both
-are DROP→ADMIT flips, so genuine-JP dropout is structurally impossible. A full
-`songs.json` differential (98,772 distinct strings, current corpus) showed **0
-flips** in either direction for all three predicates — the widening is latent
-for today's catalog and only affects future rows carrying those code points.
-
-**Phase 2 (deferred — HELD 2026-07-10, owner: do not start without an explicit
-owner go; technical precondition unchanged — proceed only after the golden gate
-has soaked one crawl cycle):** unify the remaining three predicates, which sit
-on ADMIT/DROP-critical paths whose real JOYSOUND foreign-name distribution is
-not yet validated:
-- `RE_HANGUL` → `hasHangul` (`\p{Script=Hangul}`): adds half-width Hangul and
-  Jamo Extended-A/B → widens the `foreign-korean` DROP directly;
-- `RE_HAN_FOREIGN` → `hasHan` (`\p{Script=Han}`): adds supplementary-plane Han →
-  changes the `foreign-chinese` DROP directly;
-- `RE_HAN` (drop-reason split) → `hasHan`: adds CJK-compat / supplementary-plane
-  Han and drops the Yijing-hexagram block → shifts `drop-han-only` vs
-  `drop-no-signal`.
-
-Phase 2 is unblocked by: a fresh crawl cycle confirming the Phase-1 gate holds in
-production, plus a real JOYSOUND foreign-name-field distribution sample for the
-Hangul/Han code points above. The Phase-2 divergence points are already pinned at
-their current behaviour in the golden gate's Part B2 — flipping those assertions
-is the Phase-2 change spec.
+*(The completed parity-baseline-regeneration-policy and smoke-fixture bullets,
+and the filter-seam script guard — SHIPPED 2026-07-13, PR #143 — are archived
+in [ROADMAP-LOG.md](ROADMAP-LOG.md).)*
 
 ### Offsite full-corpus backup — DIRECTION DECIDED: PRIVATE (owner, 2026-07-12); execution deferred
 
@@ -418,3 +336,5 @@ Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).
 - **Chinese-leak detection — shipped detector/calibration/crawl-report wiring** — #120 (2026-07-10), calibration 2026-07-12, #128 (2026-07-12). Growing the anomaly list remains live.
 - **TJ filter-seam + parity — completed items** — search-parity baseline regeneration policy (PR #106, 2026-07-10) + smoke-fixture stable-key re-pin (2026-07-10). Filter-seam + blog-id bullets remain live.
 - **Watchdog alert channel** — CLOSED 2026-07-10 (owner: no dedicated channel).
+- **TJ filter-seam script guard** — SHIPPED 2026-07-13 (PR #143): Option-C veto inside `jpn-admit-artist`; incident clones self-reject without drop-list entries; Latin-titled residual tail stays on the drop list.
+- **JOYSOUND classifier predicate unification (Phases 1+2)** — Phase 1 (T5-D); Phase 2 DONE 2026-07-13 (PR #142, 0 flips over the 352,290-row v22 replay).
