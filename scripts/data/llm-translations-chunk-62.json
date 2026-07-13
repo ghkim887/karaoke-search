@@ -1,0 +1,20 @@
+[
+  {
+    "id": "tj-28871",
+    "title_primary": "ヒプノシスマイク -DIVISION BATTLE ANTHEM-",
+    "title_ko": "히프노시스 마이크 -DIVISION BATTLE ANTHEM-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Re-key of the orphaned tjpdf-28871 translation after the id migrated to tj-28871 (TJ bulk feed now lists the number); 히프노시스 마이크 is the established Korean franchise name. No web search.",
+    "web_sources": []
+  },
+  {
+    "id": "tj-28879",
+    "title_primary": "ヒプノシスマイク -DIVISION RAP BATTLE-",
+    "title_ko": "히프노시스 마이크 -DIVISION RAP BATTLE-",
+    "media_context_ko": null,
+    "confidence": "high",
+    "reasoning": "Re-key of the orphaned tjpdf-28879 translation after the id migrated to tj-28879 (TJ bulk feed now lists the number); 히프노시스 마이크 is the established Korean franchise name. No web search.",
+    "web_sources": []
+  }
+]
