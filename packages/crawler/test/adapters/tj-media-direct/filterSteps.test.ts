@@ -25,6 +25,7 @@ import { splitArtistCollab } from '../../../src/adapters/tj-media-direct/normali
 function makeCtx(overrides: Partial<FilterContext> = {}): FilterContext {
   return {
     tj: '1',
+    title: 'TestTitle',
     artist: 'TestArtist',
     components: splitArtistCollab('TestArtist'),
     cache: emptyCache(),
@@ -52,8 +53,14 @@ function enrichmentEntry(nationalcode: string) {
   };
 }
 
-function runReducer(tj: string, artist: string, cache = emptyCache(), force?: ReadonlySet<string>) {
-  const ctx = buildFilterContext(tj, artist, cache, force);
+function runReducer(
+  tj: string,
+  artist: string,
+  cache = emptyCache(),
+  force?: ReadonlySet<string>,
+  title = '',
+) {
+  const ctx = buildFilterContext(tj, title, artist, cache, force);
   for (const step of FILTER_STEPS) {
     const verdict = step.evaluate(ctx);
     if (verdict.decision === 'admit') return verdict.via;
@@ -270,6 +277,64 @@ describe('jpn-admit-artist step', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Step 5: jpn-admit-artist — filter-seam script guard (#97-gate discriminator)
+// ---------------------------------------------------------------------------
+
+describe('jpn-admit-artist step — filter-seam script guard', () => {
+  const step = getStep('jpn-admit-artist');
+
+  it('vetoes an artist-vote admit when the row reads as Korean script (Hangul, no Japanese)', () => {
+    // Synthetic Korean act NOT on any drop list, mis-tagged JPN by the artist
+    // scan (the lagging-signal seam). Without the guard, jpn-admit-artist would
+    // admit via 'artist'; the guard makes the step fall through instead.
+    const cache = emptyCache();
+    cache.artistNationalityMap.가상밴드 = jpnArtistEntry();
+    const artist = '가상밴드';
+    const ctx = makeCtx({
+      title: '가상의 노래',
+      artist,
+      components: splitArtistCollab(artist),
+      cache,
+    });
+    expect(step.evaluate(ctx).decision).toBe('pass');
+  });
+
+  it("still admits a Japanese-titled row via 'artist' (Ado「ビバリウム」 — the real measured case)", () => {
+    // Kana title + Latin artist: no Hangul in `${title} ${artist}` → the guard
+    // is a no-op → normal artist admit. This is the one admit-via-artist row
+    // measured in the 2026-07-13 verification crawl.
+    const cache = emptyCache();
+    cache.artistNationalityMap.ado = jpnArtistEntry();
+    const ctx = makeCtx({
+      title: 'ビバリウム',
+      artist: 'Ado',
+      components: splitArtistCollab('Ado'),
+      cache,
+    });
+    const v = step.evaluate(ctx);
+    expect(v.decision).toBe('admit');
+    if (v.decision === 'admit') expect(v.via).toBe('artist');
+  });
+
+  it('does not veto a mixed-script row that also carries Japanese script (kanji/kana present)', () => {
+    // `${title} ${artist}` has Hangul AND Japanese script → NOT a Korean-script
+    // row by the #97 discriminator → the admit stands. Guards against the guard
+    // over-firing on genuine JP rows that happen to carry a Hangul gloss.
+    const cache = emptyCache();
+    cache.artistNationalityMap.yoasobi = jpnArtistEntry();
+    const ctx = makeCtx({
+      title: '밤에 달리다 (夜に駆ける)',
+      artist: 'YOASOBI',
+      components: splitArtistCollab('YOASOBI'),
+      cache,
+    });
+    const v = step.evaluate(ctx);
+    expect(v.decision).toBe('admit');
+    if (v.decision === 'admit') expect(v.via).toBe('artist');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Step 4: jpn-admit-pro
 // ---------------------------------------------------------------------------
 
@@ -348,7 +413,7 @@ describe('reducer short-circuit semantics', () => {
     const cache = emptyCache();
     cache.proEnrichmentMap['999999'] = enrichmentEntry('JPN');
     cache.artistNationalityMap.bts = jpnArtistEntry();
-    const ctx = buildFilterContext('999999', 'BTS', cache, new Set(['999999']));
+    const ctx = buildFilterContext('999999', '', 'BTS', cache, new Set(['999999']));
 
     const reached: string[] = [];
     const finalVerdict = runVerdict(ctx, reached);
@@ -371,7 +436,7 @@ describe('reducer short-circuit semantics', () => {
     // releases still get in even though the artist is on the drop list.
     const cache = emptyCache();
     cache.proEnrichmentMap['68048'] = enrichmentEntry('JPN');
-    const ctx = buildFilterContext('68048', 'BTS', cache, new Set(['68048']));
+    const ctx = buildFilterContext('68048', '', 'BTS', cache, new Set(['68048']));
 
     const reached: string[] = [];
     const finalVerdict = runVerdict(ctx, reached);
@@ -387,7 +452,7 @@ describe('reducer short-circuit semantics', () => {
     const cache = emptyCache();
     cache.proEnrichmentMap['99'] = enrichmentEntry('ENG');
     cache.artistNationalityMap.yoasobi = jpnArtistEntry();
-    const ctx = buildFilterContext('99', 'YOASOBI', cache, new Set(['99']));
+    const ctx = buildFilterContext('99', '', 'YOASOBI', cache, new Set(['99']));
 
     let stepsReached = 0;
     for (const step of FILTER_STEPS) {
@@ -402,7 +467,7 @@ describe('reducer short-circuit semantics', () => {
   it('stops at jpn-admit-artist (step 5) and does NOT reach rescue', () => {
     const cache = emptyCache();
     cache.artistNationalityMap.yoasobi = jpnArtistEntry();
-    const ctx = buildFilterContext('99', 'YOASOBI', cache, new Set(['99']));
+    const ctx = buildFilterContext('99', '', 'YOASOBI', cache, new Set(['99']));
 
     let stepsReached = 0;
     for (const step of FILTER_STEPS) {
@@ -418,7 +483,7 @@ describe('reducer short-circuit semantics', () => {
     const cache = emptyCache();
     cache.proEnrichmentMap['99'] = enrichmentEntry('JPN');
     // No artist entry — drop-list passes, pro admits before jpn-admit-artist.
-    const ctx = buildFilterContext('99', 'UnknownAct', cache, new Set(['99']));
+    const ctx = buildFilterContext('99', '', 'UnknownAct', cache, new Set(['99']));
 
     let stepsReached = 0;
     for (const step of FILTER_STEPS) {
@@ -432,7 +497,7 @@ describe('reducer short-circuit semantics', () => {
 
   it('reaches blog-rescue (step 6) only when all prior steps pass', () => {
     // Empty cache + unknown artist + rescue whitelist → only rescue fires
-    const ctx = buildFilterContext('99', 'UnknownAct', emptyCache(), new Set(['99']));
+    const ctx = buildFilterContext('99', '', 'UnknownAct', emptyCache(), new Set(['99']));
 
     let stepsReached = 0;
     for (const step of FILTER_STEPS) {
@@ -470,7 +535,7 @@ describe('reducer short-circuit semantics', () => {
   });
 
   it('falls through all steps with pass and returns drop when nothing admits', () => {
-    const ctx = buildFilterContext('99', 'UnknownAct', emptyCache(), undefined);
+    const ctx = buildFilterContext('99', '', 'UnknownAct', emptyCache(), undefined);
     let allPass = true;
     for (const step of FILTER_STEPS) {
       const v = step.evaluate(ctx);
@@ -489,20 +554,25 @@ describe('reducer short-circuit semantics', () => {
 
 describe('buildFilterContext', () => {
   it('pre-computes components from artist string', () => {
-    const ctx = buildFilterContext('1', 'imase & なとり', emptyCache(), undefined);
+    const ctx = buildFilterContext('1', 'SomeTitle', 'imase & なとり', emptyCache(), undefined);
     // splitArtistCollab always places whole string at index 0
     expect(ctx.components[0]).toBe('imase & なとり');
     expect(ctx.components.length).toBeGreaterThan(1);
   });
 
+  it('carries the raw title through unchanged (used by the jpn-admit-artist guard)', () => {
+    const ctx = buildFilterContext('1', 'ビバリウム', 'Ado', emptyCache(), undefined);
+    expect(ctx.title).toBe('ビバリウム');
+  });
+
   it('preserves force set reference', () => {
     const force = new Set(['1', '2']);
-    const ctx = buildFilterContext('1', 'artist', emptyCache(), force);
+    const ctx = buildFilterContext('1', 'SomeTitle', 'artist', emptyCache(), force);
     expect(ctx.force).toBe(force);
   });
 
   it('force is undefined when not passed', () => {
-    const ctx = buildFilterContext('1', 'artist', emptyCache());
+    const ctx = buildFilterContext('1', 'SomeTitle', 'artist', emptyCache());
     expect(ctx.force).toBeUndefined();
   });
 });
