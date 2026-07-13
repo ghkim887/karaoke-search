@@ -335,6 +335,78 @@ describe('jpn-admit-artist step — filter-seam script guard', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Step 5: jpn-admit-artist — simplified-Chinese guard (classify-time promotion
+// of the report-only detector, mirroring the Korean-script guard above)
+// ---------------------------------------------------------------------------
+
+describe('jpn-admit-artist step — simplified-Chinese guard', () => {
+  const step = getStep('jpn-admit-artist');
+
+  it('vetoes an artist-vote admit when the title carries a curated simplified-Chinese Han char', () => {
+    // Synthetic Mandopop act NOT on any drop list, mis-tagged JPN by the artist
+    // scan. The title 明天你依然爱我 carries 爱 — a curated PRC-simplified-only
+    // glyph — so the guard falls through instead of admitting via 'artist'.
+    const cache = emptyCache();
+    cache.artistNationalityMap.星光 = jpnArtistEntry();
+    const artist = '星光';
+    const ctx = makeCtx({
+      title: '明天你依然爱我',
+      artist,
+      components: splitArtistCollab(artist),
+      cache,
+    });
+    expect(step.evaluate(ctx).decision).toBe('pass');
+  });
+
+  it('vetoes when the simplified-Chinese char is in the ARTIST field (guard scans `${title} ${artist}`)', () => {
+    // Latin title, but the artist name 张三乐队 carries 张 (curated). The guard
+    // scans the concatenated row text, exactly like the Korean veto.
+    const cache = emptyCache();
+    cache.artistNationalityMap.张三乐队 = jpnArtistEntry();
+    const artist = '张三乐队';
+    const ctx = makeCtx({
+      title: 'Nice Song',
+      artist,
+      components: splitArtistCollab(artist),
+      cache,
+    });
+    expect(step.evaluate(ctx).decision).toBe('pass');
+  });
+
+  it("still admits a Japanese shinjitai-titled row via 'artist' (no false veto on 国/桜-class)", () => {
+    // 国家と桜 mixes a shinjitai that EQUALS a PRC simplification but is valid
+    // Japanese (国) with a JP-only shinjitai (桜) — both EXCLUDED from the curated
+    // set — so hasSimplifiedOnlyHan is silent and the artist admit stands.
+    const cache = emptyCache();
+    cache.artistNationalityMap.ado = jpnArtistEntry();
+    const ctx = makeCtx({
+      title: '国家と桜',
+      artist: 'Ado',
+      components: splitArtistCollab('Ado'),
+      cache,
+    });
+    const v = step.evaluate(ctx);
+    expect(v.decision).toBe('admit');
+    if (v.decision === 'admit') expect(v.via).toBe('artist');
+  });
+
+  it('still vetoes a Korean-script row — both guards coexist', () => {
+    // The Korean-script veto (#143) is untouched by the simplified-Chinese
+    // addition: a Hangul-only row still falls through.
+    const cache = emptyCache();
+    cache.artistNationalityMap.가상밴드 = jpnArtistEntry();
+    const artist = '가상밴드';
+    const ctx = makeCtx({
+      title: '가상의 노래',
+      artist,
+      components: splitArtistCollab(artist),
+      cache,
+    });
+    expect(step.evaluate(ctx).decision).toBe('pass');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Step 4: jpn-admit-pro
 // ---------------------------------------------------------------------------
 

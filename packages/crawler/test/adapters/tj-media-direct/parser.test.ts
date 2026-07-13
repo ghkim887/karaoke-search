@@ -951,6 +951,90 @@ describe('filter-seam script guard — 2026-07-09 incident rows', () => {
   });
 });
 
+describe('classifyRecordWithReason — simplified-Chinese guard (jpn-admit-artist)', () => {
+  // Classify-time promotion of the report-only simplified-Chinese detector: the
+  // guard vetoes an artist-vote admit when the row carries a curated PRC-only
+  // simplified Han character over `${title} ${artist}`. proEnrichmentMap is EMPTY
+  // in these cases — the lagging per-song nationalcode seam, exactly as for the
+  // Korean-script guard (docs/ROADMAP.md "TJ filter seam").
+
+  it('vetoes an artist-vote admit for a simplified-Chinese-titled synthetic Mandopop act NOT on any drop list → drop / no-admit-path', () => {
+    const cache = emptyCache();
+    // Synthetic act; not on any drop list; artist scan mis-tagged it JPN.
+    cache.artistNationalityMap.星光 = jpnArtist();
+    const d = classifyRecordWithReason('900201', '明天你依然爱我', '星光', cache);
+    expect(d.verdict).toBe('drop');
+    // The guard falls through; no later step claims it, so it surfaces as the
+    // no-admit-path signal (NOT an explicit deny-list reject).
+    expect(d.step).toBeNull();
+    expect(d.reason).toBe('no-admit-path');
+  });
+
+  it("still admits a Japanese shinjitai-titled row via 'artist' (no false veto on 国/桜-class)", () => {
+    // 国家と桜: shinjitai (国) that equals a PRC simplification but is valid
+    // Japanese, plus a JP-only shinjitai (桜) — both excluded from the curated
+    // set — so the guard is a no-op and the artist vote admits.
+    const cache = emptyCache();
+    cache.artistNationalityMap.ado = jpnArtist();
+    const d = classifyRecordWithReason('900202', '国家と桜', 'Ado', cache);
+    expect(d.verdict).toBe('artist');
+    expect(d.step).toBe('jpn-admit-artist');
+    expect(d.reason).toBe('artist');
+  });
+
+  it('leaves a simplified-Chinese row admitted upstream via jpn-admit-pro untouched (guard never runs)', () => {
+    const cache = emptyCache();
+    // Per-song JPN pro tag admits at step 4, BEFORE the guard at step 5.
+    cache.proEnrichmentMap['900203'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    cache.artistNationalityMap.星光 = jpnArtist();
+    const d = classifyRecordWithReason('900203', '明天你依然爱我', '星光', cache);
+    expect(d.verdict).toBe('pro');
+    expect(d.step).toBe('jpn-admit-pro');
+  });
+
+  it('leaves a reviewed-song-allow release untouched even with a simplified-Chinese title (guard never runs)', () => {
+    // tj 68976 (IVE) is a reviewed-song-allow release; it admits at step 2, well
+    // before the guard at step 5, regardless of the row text.
+    const d = classifyRecordWithReason('68976', '明天你依然爱我', 'IVE(아이브)', emptyCache());
+    expect(d.verdict).toBe('song-override');
+    expect(d.step).toBe('reviewed-song-allow');
+  });
+
+  it('still vetoes a Korean-script row — both guards coexist', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.가상밴드 = jpnArtist();
+    const d = classifyRecordWithReason('900205', '가상의 노래', '가상밴드', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBeNull();
+    expect(d.reason).toBe('no-admit-path');
+  });
+
+  it('preserves the curated blog-rescue path: a simplified-Chinese row in the force set still rescues', () => {
+    // The guard vetoes the artist admit at step 5, but blog-rescue (step 6) still
+    // admits a force-listed TJ number — the curated JP-validated whitelist is
+    // deliberately NOT overridden by the guard, exactly as for the Korean case.
+    const cache = emptyCache();
+    cache.artistNationalityMap.星光 = jpnArtist();
+    const d = classifyRecordWithReason(
+      '900204',
+      '明天你依然爱我',
+      '星光',
+      cache,
+      new Set(['900204']),
+    );
+    expect(d.verdict).toBe('rescue');
+    expect(d.step).toBe('blog-rescue');
+    expect(d.reason).toBe('rescue');
+  });
+});
+
 describe('parseCatalogResponse — decisions[] ↔ KeepStats consistency', () => {
   it('records one decision per classified row, consistent with the counters', () => {
     const json = {
@@ -1045,6 +1129,41 @@ describe('parseCatalogResponse — decisions[] ↔ KeepStats consistency', () =>
     const { records, stats, decisions } = parseCatalogResponse(json, SOURCE_URL, { cache });
 
     // The Japanese-titled row admits; the Korean-script row is vetoed → dropped.
+    expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['1']);
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.dropped).toBe(1);
+
+    // decisions[] ↔ KeepStats invariant still holds with the guard active.
+    const admits = decisions.filter((d) => d.decision === 'admit');
+    const drops = decisions.filter((d) => d.decision === 'drop');
+    expect(admits.filter((d) => d.reason === 'artist')).toHaveLength(stats.admittedByArtist);
+    expect(drops).toHaveLength(stats.dropped);
+
+    // The vetoed row is logged as a no-admit-path fall-through, not a step reject.
+    const vetoed = decisions.find((d) => d.tj === '2');
+    expect(vetoed?.decision).toBe('drop');
+    expect(vetoed?.step).toBeNull();
+    expect(vetoed?.reason).toBe('no-admit-path');
+  });
+
+  it('stays consistent when the guard vetoes a simplified-Chinese artist-vote row (guard active)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          // admitted via artist (Japanese shinjitai title, guard is a no-op):
+          { pro: 1, indexTitle: '国家と桜', indexSong: 'Ado', publishdate: '2024-01-01' },
+          // guard-vetoed simplified-Chinese row (JPN-tagged synthetic act, empty pro):
+          { pro: 2, indexTitle: '明天你依然爱我', indexSong: '星光', publishdate: '2024-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.ado = jpnArtist();
+    cache.artistNationalityMap.星光 = jpnArtist();
+    const { records, stats, decisions } = parseCatalogResponse(json, SOURCE_URL, { cache });
+
+    // The Japanese-titled row admits; the simplified-Chinese row is vetoed → dropped.
     expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['1']);
     expect(stats.admittedByArtist).toBe(1);
     expect(stats.dropped).toBe(1);
