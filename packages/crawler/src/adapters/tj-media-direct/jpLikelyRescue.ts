@@ -49,7 +49,7 @@ export async function rescueJpLikelyDroppedRecords(
   for (const item of items) {
     const shell = parseCatalogShell(item);
     if (shell === null) continue;
-    if (classifyRecord(shell.tj, shell.artist, cache, force) !== 'drop') continue;
+    if (classifyRecord(shell.tj, shell.title, shell.artist, cache, force) !== 'drop') continue;
     if (!isStrongJpLikelyCandidate(shell)) continue;
 
     stats.candidates++;

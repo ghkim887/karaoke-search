@@ -562,7 +562,7 @@ describe('enrichArtistMap — persist non-JPN proEnrichmentMap entries (Item A)'
     // The veto now has data → drop. Pre-fix proEnrichmentMap['91234'] was empty,
     // step 1 passed, steps 2-4 passed, and jpn-admit-artist (step 5) admitted —
     // the KOR row leaked.
-    expect(classifyRecord(TJ, 'MixedSignalAct', cache)).toBe('drop');
+    expect(classifyRecord(TJ, 't1', 'MixedSignalAct', cache)).toBe('drop');
   });
 
   it('round-trips the new non-JPN entries through saveCache/loadCache (exact pro key only)', async () => {

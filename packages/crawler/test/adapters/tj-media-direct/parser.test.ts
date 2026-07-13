@@ -706,14 +706,14 @@ describe('parseCatalogResponse — direct unit cases', () => {
 
 describe('classifyRecordWithReason — per-row step + reason attribution', () => {
   it('rejects a Korean drop-list act with step=drop-list-reject reason=korean-drop-list', () => {
-    const d = classifyRecordWithReason('1', '방탄소년단', emptyCache());
+    const d = classifyRecordWithReason('1', '', '방탄소년단', emptyCache());
     expect(d.verdict).toBe('drop');
     expect(d.step).toBe('drop-list-reject');
     expect(d.reason).toBe('korean-drop-list');
   });
 
   it('rejects a Chinese drop-list act with step=drop-list-reject reason=chinese-drop-list', () => {
-    const d = classifyRecordWithReason('2', 'BEYOND', emptyCache());
+    const d = classifyRecordWithReason('2', '', 'BEYOND', emptyCache());
     expect(d.verdict).toBe('drop');
     expect(d.step).toBe('drop-list-reject');
     expect(d.reason).toBe('chinese-drop-list');
@@ -729,7 +729,7 @@ describe('classifyRecordWithReason — per-row step + reason attribution', () =>
       publishdate: null,
       lastSeen: '2026-04-29T00:00:00.000Z',
     };
-    const d = classifyRecordWithReason('3', 'SomeAct', cache);
+    const d = classifyRecordWithReason('3', '', 'SomeAct', cache);
     expect(d.verdict).toBe('drop');
     expect(d.step).toBe('non-jpn-pro-reject');
     expect(d.reason).toBe('pro-non-jpn');
@@ -737,7 +737,7 @@ describe('classifyRecordWithReason — per-row step + reason attribution', () =>
 
   it('rejects a reviewed song-level drop with step=reviewed-song-drop reason=reviewed-song-drop', () => {
     // tj 70438 is the reviewed-song-drop CUTIE STREET Korean-language row.
-    const d = classifyRecordWithReason('70438', 'CUTIE STREET', emptyCache());
+    const d = classifyRecordWithReason('70438', '', 'CUTIE STREET', emptyCache());
     expect(d.verdict).toBe('drop');
     expect(d.step).toBe('reviewed-song-drop');
     expect(d.reason).toBe('reviewed-song-drop');
@@ -753,7 +753,7 @@ describe('classifyRecordWithReason — per-row step + reason attribution', () =>
       publishdate: null,
       lastSeen: '2026-04-29T00:00:00.000Z',
     };
-    const d = classifyRecordWithReason('4', 'UnknownAct', cache);
+    const d = classifyRecordWithReason('4', '', 'UnknownAct', cache);
     expect(d.verdict).toBe('pro');
     expect(d.step).toBe('jpn-admit-pro');
     expect(d.reason).toBe('pro');
@@ -762,7 +762,7 @@ describe('classifyRecordWithReason — per-row step + reason attribution', () =>
   it('admits via per-artist JPN tag with step=jpn-admit-artist reason=artist', () => {
     const cache = emptyCache();
     cache.artistNationalityMap.yoasobi = jpnArtist();
-    const d = classifyRecordWithReason('5', 'YOASOBI', cache);
+    const d = classifyRecordWithReason('5', '', 'YOASOBI', cache);
     expect(d.verdict).toBe('artist');
     expect(d.step).toBe('jpn-admit-artist');
     expect(d.reason).toBe('artist');
@@ -770,21 +770,21 @@ describe('classifyRecordWithReason — per-row step + reason attribution', () =>
 
   it('admits via reviewed song-level allow with step=reviewed-song-allow reason=song-override', () => {
     // tj 26544 is a reviewed-song-allow K-pop Japanese release.
-    const d = classifyRecordWithReason('26544', '東方神起', emptyCache());
+    const d = classifyRecordWithReason('26544', '', '東方神起', emptyCache());
     expect(d.verdict).toBe('song-override');
     expect(d.step).toBe('reviewed-song-allow');
     expect(d.reason).toBe('song-override');
   });
 
   it('admits via blog rescue with step=blog-rescue reason=rescue', () => {
-    const d = classifyRecordWithReason('6', 'GRANRODEO', emptyCache(), new Set(['6']));
+    const d = classifyRecordWithReason('6', '', 'GRANRODEO', emptyCache(), new Set(['6']));
     expect(d.verdict).toBe('rescue');
     expect(d.step).toBe('blog-rescue');
     expect(d.reason).toBe('rescue');
   });
 
   it('falls through to step=null reason=no-admit-path when no step fires', () => {
-    const d = classifyRecordWithReason('7', 'UnknownAct', emptyCache());
+    const d = classifyRecordWithReason('7', '', 'UnknownAct', emptyCache());
     expect(d.verdict).toBe('drop');
     expect(d.step).toBeNull();
     expect(d.reason).toBe('no-admit-path');
@@ -793,15 +793,161 @@ describe('classifyRecordWithReason — per-row step + reason attribution', () =>
   it('agrees with classifyRecord on the verdict (thin wrapper contract)', () => {
     const cache = emptyCache();
     cache.artistNationalityMap.yoasobi = jpnArtist();
-    for (const [tj, artist] of [
-      ['1', 'YOASOBI'],
-      ['2', '방탄소년단'],
-      ['3', 'UnknownAct'],
+    for (const [tj, title, artist] of [
+      ['1', '', 'YOASOBI'],
+      ['2', '', '방탄소년단'],
+      ['3', '', 'UnknownAct'],
+      // Guard path: a Hangul title over the JPN-tagged YOASOBI lead — both the
+      // attribution-rich and thin classifiers must still agree on the verdict.
+      ['4', '한국어제목', 'YOASOBI'],
     ] as const) {
-      expect(classifyRecordWithReason(tj, artist, cache).verdict).toBe(
-        classifyRecord(tj, artist, cache),
+      expect(classifyRecordWithReason(tj, title, artist, cache).verdict).toBe(
+        classifyRecord(tj, title, artist, cache),
       );
     }
+  });
+});
+
+describe('classifyRecordWithReason — filter-seam script guard (jpn-admit-artist)', () => {
+  // The guard vetoes an artist-vote admit when the row's own text reads as
+  // Korean script (Hangul present, no Japanese script over `${title} ${artist}`,
+  // the #97-gate discriminator). proEnrichmentMap is EMPTY in these cases —
+  // mirroring the classify-time seam where the lagging per-song KOR
+  // nationalcode has not been written yet (docs/ROADMAP.md "TJ filter seam").
+
+  it('vetoes an artist-vote admit for a Hangul-titled synthetic Korean act NOT on any drop list → drop / no-admit-path', () => {
+    const cache = emptyCache();
+    // Synthetic act; not on any drop list; artist scan mis-tagged it JPN.
+    cache.artistNationalityMap.가상밴드 = jpnArtist();
+    const d = classifyRecordWithReason('900001', '가상의 노래', '가상밴드', cache);
+    expect(d.verdict).toBe('drop');
+    // The guard falls through; no later step claims it, so it surfaces as the
+    // no-admit-path signal (NOT an explicit deny-list reject).
+    expect(d.step).toBeNull();
+    expect(d.reason).toBe('no-admit-path');
+  });
+
+  it("still admits the Japanese-titled measured case (Ado「ビバリウム」) via 'artist'", () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.ado = jpnArtist();
+    const d = classifyRecordWithReason('900002', 'ビバリウム', 'Ado', cache);
+    expect(d.verdict).toBe('artist');
+    expect(d.step).toBe('jpn-admit-artist');
+    expect(d.reason).toBe('artist');
+  });
+
+  it('leaves a Korean-script row admitted upstream via jpn-admit-pro untouched (guard never runs)', () => {
+    const cache = emptyCache();
+    // Per-song JPN pro tag admits at step 4, BEFORE the guard at step 5.
+    cache.proEnrichmentMap['900003'] = {
+      nationalcode: 'JPN',
+      sortTitleKo: null,
+      sortSongKo: null,
+      subTitle: null,
+      publishdate: null,
+      lastSeen: '2026-04-29T00:00:00.000Z',
+    };
+    // Also JPN-tag the artist and give a Korean-script row text: pro still wins.
+    cache.artistNationalityMap.가상밴드 = jpnArtist();
+    const d = classifyRecordWithReason('900003', '한국어 제목', '가상밴드', cache);
+    expect(d.verdict).toBe('pro');
+    expect(d.step).toBe('jpn-admit-pro');
+  });
+
+  it('leaves a Hangul-glossed row admitted upstream via reviewed-song-allow untouched (guard never runs)', () => {
+    // tj 68976 (IVE) is a reviewed-song-allow release; even with a Hangul title
+    // it admits at step 2, well before the guard at step 5.
+    const d = classifyRecordWithReason('68976', '한국어 제목', 'IVE(아이브)', emptyCache());
+    expect(d.verdict).toBe('song-override');
+    expect(d.step).toBe('reviewed-song-allow');
+  });
+
+  it('preserves the curated blog-rescue path: a Korean-script row in the force set still rescues', () => {
+    // The guard vetoes the artist admit at step 5, but blog-rescue (step 6)
+    // still admits a force-listed TJ number. The blog whitelist is hand-curated
+    // for JP content, so this curated override is deliberately NOT overridden by
+    // the guard — current semantics: admitted via 'rescue', not dropped.
+    const cache = emptyCache();
+    cache.artistNationalityMap.가상밴드 = jpnArtist();
+    const d = classifyRecordWithReason(
+      '900004',
+      '가상의 노래',
+      '가상밴드',
+      cache,
+      new Set(['900004']),
+    );
+    expect(d.verdict).toBe('rescue');
+    expect(d.step).toBe('blog-rescue');
+    expect(d.reason).toBe('rescue');
+  });
+});
+
+describe('filter-seam script guard — 2026-07-09 incident rows', () => {
+  // The three rows that leaked in the PR #95 weekly crawl. With their real
+  // koreanArtistDropList entries PRESENT they reject at the deny-list step
+  // (today's behavior, unchanged by the guard). Each Hangul-script row is then
+  // shown to self-reject via the GUARD ALONE using a synthetic clone — an act
+  // NOT on any drop list — proving the seam no longer depends on a
+  // hand-maintained entry. BOYNEXTDOOR / "Nice Guy" is the Latin-titled
+  // residual tail (no Hangul script signal) that the guard cannot see
+  // (docs/ROADMAP.md "TJ filter seam"): its clone still admits, so its
+  // curated drop-list entry stays load-bearing.
+
+  it('루시 / 1년 365일 (tj-32100): real drop-list entry rejects at the deny-list step', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.루시 = jpnArtist(); // artist scan mis-tagged JPN
+    const d = classifyRecordWithReason('32100', '1년 365일', '루시', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('drop-list-reject');
+    expect(d.reason).toBe('korean-drop-list');
+  });
+
+  it('루시-shape synthetic clone (NOT on any drop list) self-rejects via the guard alone', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.가상루시 = jpnArtist();
+    const d = classifyRecordWithReason('900101', '1년 365일', '가상루시', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBeNull();
+    expect(d.reason).toBe('no-admit-path');
+  });
+
+  it('로이킴 / 봄봄봄 (tj-36707): real drop-list entry rejects at the deny-list step', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.로이킴 = jpnArtist();
+    const d = classifyRecordWithReason('36707', '봄봄봄', '로이킴', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('drop-list-reject');
+    expect(d.reason).toBe('korean-drop-list');
+  });
+
+  it('로이킴-shape synthetic clone (NOT on any drop list) self-rejects via the guard alone', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.가상로이 = jpnArtist();
+    const d = classifyRecordWithReason('900102', '봄봄봄', '가상로이', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBeNull();
+    expect(d.reason).toBe('no-admit-path');
+  });
+
+  it('BOYNEXTDOOR / Nice Guy (tj-43349): real drop-list entry rejects at the deny-list step', () => {
+    const cache = emptyCache();
+    cache.artistNationalityMap.boynextdoor = jpnArtist();
+    const d = classifyRecordWithReason('43349', 'Nice Guy', 'BOYNEXTDOOR', cache);
+    expect(d.verdict).toBe('drop');
+    expect(d.step).toBe('drop-list-reject');
+    expect(d.reason).toBe('korean-drop-list');
+  });
+
+  it('BOYNEXTDOOR-shape synthetic clone (Latin title, NOT drop-listed) is the residual tail the guard cannot self-reject — it still admits', () => {
+    // No Hangul in `${title} ${artist}` → the #97 discriminator does not fire,
+    // so the guard is a no-op and the JPN artist vote admits. This is the
+    // documented romaji/Latin-titled residual class; the curated drop list
+    // remains the only defense for it.
+    const cache = emptyCache();
+    cache.artistNationalityMap.fakelatinact = jpnArtist();
+    const d = classifyRecordWithReason('900103', 'Nice Guy', 'FakeLatinAct', cache);
+    expect(d.verdict).toBe('artist');
+    expect(d.step).toBe('jpn-admit-artist');
   });
 });
 
@@ -880,6 +1026,41 @@ describe('parseCatalogResponse — decisions[] ↔ KeepStats consistency', () =>
     expect(decisions[0]?.decision).toBe('admit');
     expect(decisions[0]?.reason).toBe('song-override');
   });
+
+  it('stays consistent when the script guard vetoes an artist-vote row (guard active)', () => {
+    const json = {
+      resultCode: '99',
+      resultData: {
+        items: [
+          // admitted via artist (Japanese-titled, guard is a no-op):
+          { pro: 1, indexTitle: 'ビバリウム', indexSong: 'Ado', publishdate: '2024-01-01' },
+          // guard-vetoed Korean-script row (JPN-tagged synthetic act, empty pro):
+          { pro: 2, indexTitle: '가상의 노래', indexSong: '가상밴드', publishdate: '2024-01-01' },
+        ],
+      },
+    };
+    const cache = emptyCache();
+    cache.artistNationalityMap.ado = jpnArtist();
+    cache.artistNationalityMap.가상밴드 = jpnArtist();
+    const { records, stats, decisions } = parseCatalogResponse(json, SOURCE_URL, { cache });
+
+    // The Japanese-titled row admits; the Korean-script row is vetoed → dropped.
+    expect(records.map((r) => r.karaoke_numbers.tj)).toEqual(['1']);
+    expect(stats.admittedByArtist).toBe(1);
+    expect(stats.dropped).toBe(1);
+
+    // decisions[] ↔ KeepStats invariant still holds with the guard active.
+    const admits = decisions.filter((d) => d.decision === 'admit');
+    const drops = decisions.filter((d) => d.decision === 'drop');
+    expect(admits.filter((d) => d.reason === 'artist')).toHaveLength(stats.admittedByArtist);
+    expect(drops).toHaveLength(stats.dropped);
+
+    // The vetoed row is logged as a no-admit-path fall-through, not a step reject.
+    const vetoed = decisions.find((d) => d.tj === '2');
+    expect(vetoed?.decision).toBe('drop');
+    expect(vetoed?.step).toBeNull();
+    expect(vetoed?.reason).toBe('no-admit-path');
+  });
 });
 
 describe('classifyRecord — direct unit (keep/drop verdict)', () => {
@@ -893,22 +1074,22 @@ describe('classifyRecord — direct unit (keep/drop verdict)', () => {
       publishdate: null,
       lastSeen: '2026-04-29T00:00:00.000Z',
     };
-    expect(classifyRecord('1', 'whatever', cache) !== 'drop').toBe(true);
+    expect(classifyRecord('1', '', 'whatever', cache) !== 'drop').toBe(true);
   });
 
   it('returns non-drop on path-2 hit (per-artist JPN) even without path-1 entry', () => {
     const cache = emptyCache();
     cache.artistNationalityMap.yoasobi = jpnArtist();
-    expect(classifyRecord('1', 'YOASOBI', cache) !== 'drop').toBe(true);
+    expect(classifyRecord('1', '', 'YOASOBI', cache) !== 'drop').toBe(true);
   });
 
   it('returns non-drop on path-3 hit (whitelist) even without path-1/2', () => {
     const cache = emptyCache();
-    expect(classifyRecord('1', 'whatever', cache, new Set(['1'])) !== 'drop').toBe(true);
+    expect(classifyRecord('1', '', 'whatever', cache, new Set(['1'])) !== 'drop').toBe(true);
   });
 
   it('returns drop when all three paths miss', () => {
-    expect(classifyRecord('1', 'whatever', emptyCache()) === 'drop').toBe(true);
+    expect(classifyRecord('1', '', 'whatever', emptyCache()) === 'drop').toBe(true);
   });
 });
 

@@ -162,7 +162,7 @@ export function parseCatalogResponse(
 
     if (!tj || !title || !artist) continue;
 
-    const { verdict, step, reason } = classifyRecordWithReason(tj, artist, cache, force);
+    const { verdict, step, reason } = classifyRecordWithReason(tj, title, artist, cache, force);
     // One decision per classified row (admit and drop alike). Recorded with
     // the RAW trimmed artist (not the per-song render override) so the log
     // reflects the catalog input the filter actually saw.
@@ -241,11 +241,12 @@ export type KeepVerdict = 'artist' | 'pro' | 'song-override' | 'rescue' | 'drop'
  */
 export function classifyRecordWithReason(
   tj: string,
+  title: string,
   artist: string,
   cache: SearchSongCache,
   force?: ReadonlySet<string>,
 ): { verdict: KeepVerdict; step: string | null; reason: string } {
-  const ctx = buildFilterContext(tj, artist, cache, force);
+  const ctx = buildFilterContext(tj, title, artist, cache, force);
   for (const step of FILTER_STEPS) {
     const verdict = step.evaluate(ctx);
     if (verdict.decision === 'admit') {
@@ -266,11 +267,12 @@ export function classifyRecordWithReason(
  */
 export function classifyRecord(
   tj: string,
+  title: string,
   artist: string,
   cache: SearchSongCache,
   force?: ReadonlySet<string>,
 ): KeepVerdict {
-  return classifyRecordWithReason(tj, artist, cache, force).verdict;
+  return classifyRecordWithReason(tj, title, artist, cache, force).verdict;
 }
 
 // `shouldKeep` was removed in the cleanup wave — call sites use

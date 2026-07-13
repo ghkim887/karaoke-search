@@ -49,6 +49,12 @@ type FilterVerdict =
 export interface FilterContext {
   /** Stringified TJ catalog number. */
   tj: string;
+  /**
+   * Raw title string from `indexTitle` (trimmed). Threaded for the
+   * jpn-admit-artist script guard, which reads `${title} ${artist}` — the same
+   * text the #97 corpus gate scans. Not used by any other step.
+   */
+  title: string;
   /** Raw artist string from `indexSong`. */
   artist: string;
   /** Collab-split components (pre-computed once per record). */
@@ -147,6 +153,30 @@ function leadKeyOf(components: string[]): string {
  */
 function isGenericAdmitBlocked(leadKey: string): boolean {
   return leadKey !== '' && GENERIC_ARTIST_JPN_ADMIT_BLOCKLIST.has(leadKey);
+}
+
+/**
+ * #97-gate script discriminator, byte-mirrored from the product-corpus
+ * regression gate (packages/crawler/test/product-corpus-regression.test.ts:
+ * `RE_HANGUL` / `RE_JAPANESE`). A row "reads as Korean script" when it contains
+ * a Hangul SYLLABLE and NO Japanese-script character (any kana, or any CJK
+ * ideograph incl. extension A). These two character classes MUST stay
+ * byte-identical to that gate so the filter-seam guard below self-rejects
+ * exactly the rows the gate flags as leakage.
+ *
+ * `hasHangul` from `@karaoke/search` is intentionally NOT reused: it matches
+ * jamo and compatibility jamo too, a strictly broader class than the gate's
+ * syllable-only `/[가-힣]/`, so it is not byte-equivalent.
+ */
+const RE_HANGUL = /[가-힣]/;
+const RE_JAPANESE = /[぀-ヿ㐀-鿿]/;
+
+/**
+ * True when `text` reads as Korean script by the #97-gate discriminator above:
+ * a Hangul syllable present AND no Japanese-script character.
+ */
+function readsAsKoreanScript(text: string): boolean {
+  return RE_HANGUL.test(text) && !RE_JAPANESE.test(text);
 }
 
 // ---------------------------------------------------------------------------
@@ -263,13 +293,29 @@ const proJpnAdmitStep: FilterStep = {
 const jpnAdmitStep: FilterStep = {
   name: 'jpn-admit-artist',
   phase: 'admit-artist',
-  evaluate({ components, cache }): FilterVerdict {
+  evaluate({ title, artist, components, cache }): FilterVerdict {
     if (components.length === 0) return { decision: 'pass' };
     const leadKey = leadKeyOf(components);
     if (leadKey === '') return { decision: 'pass' };
     if (isGenericAdmitBlocked(leadKey)) return { decision: 'pass' };
     const entry = cache.artistNationalityMap[leadKey];
-    if (entry?.code === 'JPN') return { decision: 'admit', via: 'artist' };
+    if (entry?.code === 'JPN') {
+      // Filter-seam script guard (docs/ROADMAP.md "TJ filter seam"): when the
+      // row itself reads as Korean script — Hangul present and no Japanese
+      // script over `${title} ${artist}`, the #97-gate discriminator — the
+      // artist verdict is a first-crawl leak. The lagging per-song `KOR`
+      // nationalcode that would reject it at step 1 (non-jpn-pro-reject) is not
+      // written until AFTER this classify pass, so the deny-list is today's only
+      // defense and it needs a hand-maintained entry. Fall through instead of
+      // admitting. NOTE: a vetoed row surfaces as `no-admit-path` in the
+      // decision log unless a later step (blog-rescue, when force-listed)
+      // decides it — the curated rescue path is deliberately preserved.
+      // Genuine Hangul-glossed JP releases are unaffected: they admit upstream
+      // via reviewed-song-allow (step 2, script-clean render) or jpn-admit-pro
+      // (step 4), both of which run before this step.
+      if (readsAsKoreanScript(`${title} ${artist}`)) return { decision: 'pass' };
+      return { decision: 'admit', via: 'artist' };
+    }
     return { decision: 'pass' };
   },
 };
@@ -366,9 +412,10 @@ assertPhaseOrder(FILTER_STEPS);
  */
 export function buildFilterContext(
   tj: string,
+  title: string,
   artist: string,
   cache: SearchSongCache,
   force?: ReadonlySet<string>,
 ): FilterContext {
-  return { tj, artist, components: splitArtistCollab(artist), cache, force };
+  return { tj, title, artist, components: splitArtistCollab(artist), cache, force };
 }
