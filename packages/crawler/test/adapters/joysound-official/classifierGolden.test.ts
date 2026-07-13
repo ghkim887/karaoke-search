@@ -290,67 +290,82 @@ describe('classifier golden — Phase-1 divergence code points (kana)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Part B2 — Phase-2 divergence code points (Han / Hangul), OUT OF SCOPE here.
+// Part B2 — Phase-2 divergence code points (Han / Hangul unification). CHANGE
+// SPEC.
 //
-// The classifier still uses its own `RE_HAN` / `RE_HANGUL` / `RE_HAN_FOREIGN`
-// regexes for the drop-reason split and the foreign-name Korean/Chinese signal.
-// These assertions pin the CURRENT behaviour and MUST stay green through the
-// Phase-1 swap — proving Phase-1 is kana-only. They are the Phase-2 change spec:
-// once those regexes move to the shared `hasHan`/`hasHangul`, these flip.
+// These seven assertions are the ENTIRE behavioural change of the Phase-2 swap
+// (`RE_HAN` / `RE_HAN_FOREIGN` / `RE_HANGUL` → shared `hasHan` / `hasHangul`).
+// Each was flipped from its pre-swap verdict (pinned in the commit that
+// introduced this file) to the value below; the git diff of this block is the
+// change specification. Every flip follows mechanically from the shared
+// predicates recognising code points the former BMP-only regexes missed (or, for
+// the Yijing block, no longer matching a range that is not actually Han):
+//   - drop-reason split (bare title, terminal gate): supplementary-plane Han,
+//     CJK-compat ideographs, and the ideographic-zero U+3007 now count as Han, so
+//     `drop-no-signal` becomes `drop-han-only`; the Yijing-hexagram block is NOT
+//     Han script, so `drop-han-only` becomes `drop-no-signal`.
+//   - foreign-name signal (kana listing + foreign-name detail): supplementary-
+//     plane Han now fires the Chinese signal (`foreign-chinese`), and half-width
+//     Hangul / Jamo Extended-A now fire the Korean signal (`foreign-korean`),
+//     each beating the kana listing title that formerly admitted.
+// All foreign-name flips are DROP widenings on rows whose ONLY foreign evidence
+// is a code point the old regex missed; the kana listing title itself is
+// unaffected (Part A / B1 still admit genuine kana rows). See docs/ROADMAP.md
+// §"JOYSOUND classifier safe-predicate unification".
 // ---------------------------------------------------------------------------
-describe('classifier golden — Phase-2 divergence code points (Han/Hangul, unchanged in Phase-1)', () => {
+describe('classifier golden — Phase-2 divergence code points (Han/Hangul unification)', () => {
   const bare = (cp: string) => listItem({ songName: cp, artistName: cp });
   const kanaListingForeign = (foreign: string) => ({
     listItem: listItem({ songName: 'カナ', artistName: 'アーティスト' }),
     detail: detail({ songNameForeign: foreign }),
   });
 
-  it('supplementary-plane Han 𠮟 (U+20B9F) bare title — drop-no-signal (RE_HAN misses; hasHan would drop-han-only)', () => {
+  it('supplementary-plane Han 𠮟 (U+20B9F) bare title — drop-han-only (hasHan matches supplementary-plane Han; was drop-no-signal under RE_HAN)', () => {
     expect(classifyJoysoundRecordWithReason({ listItem: bare('\u{20B9F}') })).toEqual({
-      admit: false,
-      reason: 'drop-no-signal',
-    });
-  });
-
-  it('CJK-compat ideograph 豈 (U+F900) bare title — drop-no-signal (RE_HAN misses in drop-reason path)', () => {
-    expect(classifyJoysoundRecordWithReason({ listItem: bare('豈') })).toEqual({
-      admit: false,
-      reason: 'drop-no-signal',
-    });
-  });
-
-  it('ideographic-zero 〇 (U+3007) bare title — drop-no-signal (below RE_HAN floor)', () => {
-    expect(classifyJoysoundRecordWithReason({ listItem: bare('〇') })).toEqual({
-      admit: false,
-      reason: 'drop-no-signal',
-    });
-  });
-
-  it('Yijing hexagram ䷀ (U+4DC0) bare title — drop-han-only (in RE_HAN range but NOT \\p{Han}; hasHan would drop-no-signal)', () => {
-    expect(classifyJoysoundRecordWithReason({ listItem: bare('䷀') })).toEqual({
       admit: false,
       reason: 'drop-han-only',
     });
   });
 
-  it('supplementary-plane Han 𠮟 (U+20B9F) foreign-name — kana title still admits (RE_HAN_FOREIGN misses; hasHan would foreign-chinese)', () => {
+  it('CJK-compat ideograph 豈 (U+F900) bare title — drop-han-only (hasHan matches CJK Compatibility Ideographs; was drop-no-signal)', () => {
+    expect(classifyJoysoundRecordWithReason({ listItem: bare('豈') })).toEqual({
+      admit: false,
+      reason: 'drop-han-only',
+    });
+  });
+
+  it('ideographic-zero 〇 (U+3007) bare title — drop-han-only (hasHan matches Han U+3007, below the old RE_HAN U+3400 floor; was drop-no-signal)', () => {
+    expect(classifyJoysoundRecordWithReason({ listItem: bare('〇') })).toEqual({
+      admit: false,
+      reason: 'drop-han-only',
+    });
+  });
+
+  it('Yijing hexagram ䷀ (U+4DC0) bare title — drop-no-signal (Yijing block is not Han script; was drop-han-only under RE_HAN)', () => {
+    expect(classifyJoysoundRecordWithReason({ listItem: bare('䷀') })).toEqual({
+      admit: false,
+      reason: 'drop-no-signal',
+    });
+  });
+
+  it('supplementary-plane Han 𠮟 (U+20B9F) foreign-name — foreign-chinese (hasHan matches supplementary-plane Han; was admit-jpop-kana)', () => {
     expect(classifyJoysoundRecordWithReason(kanaListingForeign('\u{20B9F}'))).toEqual({
-      admit: true,
-      reason: 'admit-jpop-kana',
+      admit: false,
+      reason: 'foreign-chinese',
     });
   });
 
-  it('half-width Hangul ﾡ (U+FFA1) foreign-name — kana title still admits (RE_HANGUL misses; hasHangul would foreign-korean)', () => {
+  it('half-width Hangul ﾡ (U+FFA1) foreign-name — foreign-korean (hasHangul matches half-width Hangul; was admit-jpop-kana)', () => {
     expect(classifyJoysoundRecordWithReason(kanaListingForeign('ﾡ'))).toEqual({
-      admit: true,
-      reason: 'admit-jpop-kana',
+      admit: false,
+      reason: 'foreign-korean',
     });
   });
 
-  it('Hangul-jamo-ext-A ꥠ (U+A960) foreign-name — kana title still admits (RE_HANGUL misses; hasHangul would foreign-korean)', () => {
+  it('Hangul-jamo-ext-A ꥠ (U+A960) foreign-name — foreign-korean (hasHangul matches Jamo Extended-A; was admit-jpop-kana)', () => {
     expect(classifyJoysoundRecordWithReason(kanaListingForeign('ꥠ'))).toEqual({
-      admit: true,
-      reason: 'admit-jpop-kana',
+      admit: false,
+      reason: 'foreign-korean',
     });
   });
 });

@@ -1,4 +1,4 @@
-import { hasKana, hasLatinLetter } from '@karaoke/search';
+import { hasHan, hasHangul, hasKana, hasLatinLetter } from '@karaoke/search';
 import { splitArtistCollab } from '../../clustering.js';
 import { isInChineseDropList } from '../../curated/chineseArtistDropList.js';
 import { isInDropList } from '../../curated/koreanArtistDropList.js';
@@ -114,44 +114,24 @@ const WESTERN_ACT_COMPONENTS = new Set<string>([
 // Katakana Phonetic Extensions block (U+31F0–31FF, e.g. ㇰ ㇿ) that the shared
 // predicate includes; adopting it only WIDENS kana recall (see below), never
 // narrows it.
-/**
- * Han ideographs (CJK Unified, U+3400–U+9FFF). Used ONLY to disambiguate which
- * fall-through DROP reason a record gets (`drop-han-only` vs `drop-ascii-only`
- * vs `drop-no-signal`) — Han alone never admits, because Han-only fields are
- * ambiguous with the Chinese catalog rows in the JOYSOUND source.
- *
- * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHan`
- * (`\p{Script=Han}`). That swap changes admit/drop-adjacent reasons — it adds
- * CJK-compat / supplementary-plane Han and drops the Yijing-hexagram block —
- * so it waits until the golden gate has soaked one crawl cycle. See
- * docs/ROADMAP.md §"JOYSOUND classifier safe-predicate unification".
- */
-const RE_HAN = /[㐀-鿿]/u;
-/**
- * Hangul, for the authoritative foreign-name detail signal: Hangul Syllables
- * (U+AC00–U+D7A3), Hangul Jamo (U+1100–U+11FF), and Hangul Compatibility Jamo
- * (U+3130–U+318F). Any Hangul code point in a populated foreign-name field
- * marks the entry KOREAN.
- *
- * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHangul`
- * (`\p{Script=Hangul}`), which additionally covers half-width Hangul and the
- * Jamo Extended-A/B blocks. That widens the foreign-Korean DROP directly, so it
- * waits for the golden-gate soak (see the RE_HAN note / ROADMAP).
- */
-const RE_HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/u;
-/**
- * Han ideographs for the foreign-name signal: CJK Extension A (U+3400–U+4DBF),
- * CJK Unified (U+4E00–U+9FFF), and CJK Compatibility Ideographs
- * (U+F900–U+FAFF). Broader than `RE_HAN` (which intentionally omits the
- * compatibility block for the listing-only fall-through diagnostic). A
- * foreign-name field with Han AND no kana marks the entry CHINESE.
- *
- * PHASE 2 (deferred, T5-D): unify with `@karaoke/search` `hasHan`
- * (`\p{Script=Han}`), which adds supplementary-plane Han the BMP range misses.
- * That changes the foreign-Chinese DROP directly, so it waits for the
- * golden-gate soak (see the RE_HAN note / ROADMAP).
- */
-const RE_HAN_FOREIGN = /[㐀-䶿一-鿿豈-﫿]/u;
+// Han and Hangul detection are single-sourced from `@karaoke/search` `hasHan`
+// (`\p{Script=Han}`) and `hasHangul` (`\p{Script=Hangul}`) (T5-D Phase 2). The
+// former local regexes drifted from the shared predicates:
+//   - `RE_HAN` (`[㐀-鿿]`, U+3400–U+9FFF) drove the fall-through DROP-reason
+//     split (`drop-han-only` vs `drop-no-signal`);
+//   - `RE_HAN_FOREIGN` (`[㐀-䶿一-鿿豈-﫿]`, + CJK-compat) drove the foreign-name
+//     Chinese signal;
+//   - `RE_HANGUL` (`[가-힣ᄀ-ᇿ㄰-㆏]`, BMP syllables + jamo + compat-jamo) drove
+//     the foreign-name Korean signal.
+// Adopting the shared predicates WIDENS recognition: `hasHan` adds CJK-compat
+// (豈 U+F900) and supplementary-plane Han (𠮟 U+20B9F) plus the ideographic-zero
+// 〇 (U+3007, Han but below the old U+3400 floor), and DROPS the Yijing-hexagram
+// block (U+4DC0–4DFF — in the old `RE_HAN` range but NOT `\p{Script=Han}`) —
+// shifting the DROP-reason split and widening the foreign-Chinese DROP;
+// `hasHangul` adds half-width Hangul (U+FFA0–FFDC) and Jamo Extended-A/B
+// (U+A960–A97F, U+D7B0–D7FF) — widening the foreign-Korean DROP. Han alone still
+// never admits (Han-only fields stay ambiguous with the JOYSOUND Chinese catalog
+// rows). See docs/ROADMAP.md §"JOYSOUND classifier safe-predicate unification".
 // The foreign-name kana echo test is single-sourced from `@karaoke/search`
 // `hasKana` (T5-D). The former local `RE_KANA` (`[぀-ヿ]`, hiragana + full-width
 // katakana blocks only) missed half-width and phonetic-extension kana; the
@@ -180,10 +160,6 @@ function matchesAny(haystack: string, patterns: readonly RegExp[]): boolean {
   return patterns.some((re) => re.test(haystack));
 }
 
-function hasHanScript(s: string): boolean {
-  return RE_HAN.test(s);
-}
-
 /**
  * Authoritative foreign-language signal from the detail API's foreign-name
  * fields (2026-06-09 — replaces the crude `isForeignKatakanaTranslit` gate).
@@ -193,8 +169,8 @@ function hasHanScript(s: string): boolean {
  * fields are EMPTY for genuine Japanese songs. Across a 15-FP / 124-control
  * live probe the separation was perfect (0 false positives on genuine-JP
  * controls). Inspect BOTH foreign-name fields:
- *  - contains Hangul (`RE_HANGUL`) → `'korean'`.
- *  - else contains Han (`RE_HAN_FOREIGN`) AND no kana (`hasKana`) → `'chinese'`.
+ *  - contains Hangul (`hasHangul`) → `'korean'`.
+ *  - else contains Han (`hasHan`) AND no kana (`hasKana`) → `'chinese'`.
  *    The no-kana clause matters because a foreign-name field can be a kana
  *    echo of a Japanese title; that is NOT a foreign signal.
  *  - else (C1, 2026-06-09) if a `*ForeignSearch` romanization field is
@@ -213,10 +189,10 @@ function hasHanScript(s: string): boolean {
 function foreignNameSignal(detail: JoysoundDetail): 'korean' | 'chinese' | null {
   const fields = [detail.songNameForeign ?? '', detail.artistNameForeign ?? ''];
   for (const f of fields) {
-    if (RE_HANGUL.test(f)) return 'korean';
+    if (hasHangul(f)) return 'korean';
   }
   for (const f of fields) {
-    if (RE_HAN_FOREIGN.test(f) && !hasKana(f)) return 'chinese';
+    if (hasHan(f) && !hasKana(f)) return 'chinese';
   }
   // C1: dotted-pinyin romanization is a corroborating chinese tell. Checked
   // AFTER the Hangul/Han rules above (never overrides korean) and only matches
@@ -648,7 +624,7 @@ const terminalGate: JoysoundGate = {
   name: 'terminal',
   phase: 'terminal',
   evaluate({ detail, titleArtist }): JoysoundGateVerdict {
-    const han = hasHanScript(titleArtist);
+    const han = hasHan(titleArtist);
     const ascii = hasLatinLetter(titleArtist);
     if (
       detail &&
