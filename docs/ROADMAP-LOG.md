@@ -651,3 +651,52 @@ sole candidate row, a 〇-titled song, is decided upstream by `admit-anime`
 identically in both). Reviewer APPROVE (independent semantic-delta derivation
 against the old regexes + from-scratch replay reproducing the exact output
 hash); CI green.
+
+## Offsite full-corpus backup (§8) — CANCELLED 2026-07-13 (owner)
+
+**Owner decision (2026-07-13): the backup plan is cancelled outright** — "백업
+계획을 아예 없애. 데이터 깨지면 새 크롤 돌리면 그만이야." This supersedes the
+2026-07-12 "back up privately, execution deferred" direction (below, archived
+as it stood).
+
+**Accepted risk, on record:** the NAS remains the ONLY copy of the promoted
+full corpus (v22 `full-corpus.json` ~135 MB) and of the serving releases;
+zero GitHub releases exist and both tracked manifests point at 404 assets, so
+nothing can reprovision from outside the NAS. The accepted recovery path for
+NAS loss is a **full re-crawl** (order: fresh fullCatalog listing + detail
+sweep ≈ a day-plus of polite crawling; the retained NAS run directories and
+the .tmp_review archive lower partial-rebuild costs only while the NAS
+itself survives). The tracked 26k baseline in git plus the committed caches
+(translation, tj-search-cache, catalogs) DO survive a NAS loss and would seed
+the rebuild.
+
+**Knock-on (parked, separate items):** the built-but-unused publish tooling
+(`full-corpus.yml`, `publish-full-corpus.mjs`/`fetch-full-corpus.mjs`
+manifest flow) stays in the repo under the post-JOYSOUND data-topology item
+(PR-2/PR-3), whose release-asset mechanism is now even further from use;
+whether to retire that tooling is a future owner call, not part of this
+closure.
+
+### Offsite full-corpus backup — DIRECTION DECIDED: PRIVATE (owner, 2026-07-12); execution deferred
+
+**Owner decision (2026-07-12): back up PRIVATELY, not as a public GitHub
+Release.** The public-release path (the built `full-corpus.yml` publish
+workflow) is therefore NOT the mechanism; a private storage target is. What
+remains is EXECUTION (deferred, no date): pick the concrete private store and
+wire an upload. Candidate targets (pick at execution time): a **private GitHub
+repo release/asset** (reuses the existing manifest+verify tooling almost
+as-is — `publish-full-corpus.mjs`/`fetch-full-corpus.mjs` are store-agnostic
+via the manifest `url`), **Cloudflare R2 / S3** (a bucket + credential; the
+manifest `url` becomes the object URL), or an **encrypted copy on a second
+box**. Recommended: private-repo release or R2 — both let the store-agnostic
+manifest do a one-line `url` swap and keep the trust-no-one re-verification.
+
+Current artifact to back up: `data-2026-07-12-v22-fullcatalog/full-corpus.json`
+(~135 MB) — the promoted v22 corpus. Since v22 promotion the NAS again holds
+the ONLY copy.
+
+**Severity note (still true 2026-07-12):** ZERO GitHub releases exist; both
+tracked manifests point at 404 assets (dangling), so `fetch-full-corpus.mjs` /
+the self-host SQLite build cannot reprovision from anywhere but the NAS. The
+private backup, once executed, is the first real offsite copy. The public
+publish workflow (`full-corpus.yml`) stays UNUSED under the private decision.
