@@ -1,102 +1,88 @@
-# 세션 핸드오프 — 관측성 라운드 + 백로그 배치 완결 (2026-07-13 checkpoint)
+# 세션 핸드오프 — 검증 크롤 완결 + seam/Phase2 출하 (2026-07-13 저녁 checkpoint)
 
-직전 체크포인트(2026-07-12 18:30, #132)를 갱신. 이후 진행: ①TJ 필터 관측성
-(#134) ②오너 docs #133 머지 ③무결정 백로그 배치 3종(#135·#136·.tmp_review
-집행) ④filter seam 정찰→근본원인 교정→방향 확정 ⑤크롤 사전 검증 완료.
-**다음 이벤트 = 오너의 검증용 크롤(사전 블로커 0).**
+직전 체크포인트(2026-07-13 오전, #137)를 갱신. 이후 진행: ①검증용 크롤 완주
+(#138→artist_ko 회귀 발견→픽스 #139→재크롤 #140 머지, 5단계 절차 완결)
+②크롤 무기한 보류 재확인(오너) ③ROADMAP 정리(#141, live/LOG 분리)
+④**filter seam 가드 출하(#143)** ⑤**classifier Phase 2 출하(#142)**.
+**남은 R-트랙 실행 항목 = R3 본구현·R5 KY 스파이크(모두 오너 게이트)뿐.**
 
 ## Current state of record
 
-- **main**: `8f96cc3` + 이 체크포인트 PR. #133~#136 전부 스쿼시 머지, 각 머지의
-  main push CI green. **열린 PR: 0.**
-- **서빙 (oci)**: v22 라이브 유지 — 이 라운드는 서빙 무접촉. 공개 체인 확인
-  `/api/meta → dbUpdatedAt 2026-07-12`.
-- **자동 크롤: 무기한 보류 유지** — `crawl.yml` = `disabled_manually`.
-  **crawl.yml 사전 검증 완료(2026-07-13)**: main 페치본 YAML 파스 OK,
-  #134 신규 배선(크롤러 `--decisions-out` ↔ 컴포저 `tj-filter.jsonl` 앵커,
-  `FILTER_DECISIONS_DIR` ↔ `drop-{kpop,cpop}-leaks.jsonl`, 컴포저 4번째 인자 =
-  디렉터리) 전부 일치, 아티팩트 업로드 `if: always()` + 핀 SHA + 유출 게이트보다
-  앞 배치 확인.
-- **`.tmp_review` (NAS)**: 정리 집행 완료 — 남은 것은 검증된 아카이브
-  `joysound-detail-sweep-20260610.tar.gz`(26.6MB, SHA-256 `6CC31486…`) 하나뿐.
-  원본 146.5MB 삭제. `runs/archive/`가 SMB ACL로 막혀 아카이브가 `.tmp_review/`
-  안에 있음(이관은 oci에서 `mv` 한 줄). 상세는 ROADMAP 해당 항목.
-- **작업 클론**: scratchpad `kwork`(+`kwork-b1`) — 소멸성, 다음 세션은 fresh clone.
-- **스크래치패드 잔여물**: v22 리플레이 증명 아티팩트(`v22-replay/` — decisions
-  로컬 사본 222MB + 리플레이 출력 2벌), title_ko 워커 입출력(`titleko-b2/`),
-  June 스윕 아카이브 로컬 사본. 전부 재생성 가능/NAS에 정본 존재 — 보존 불요.
+- **main**: `3376ea2` + 이 체크포인트 PR. #138~#143 전부 처리(138은 139로
+  대체 후 140 머지), 각 머지 main push CI green. **열린 PR: 0.**
+- **서빙 (oci)**: v22 라이브 유지 — 서빙 무접촉. tracked baseline은 26,462
+  레코드로 갱신(#140).
+- **자동 크롤: 무기한 보류 재확인(오너 2026-07-13 "크롤 재개는 무기한 보류")**
+  — `crawl.yml` = `disabled_manually` 원상복구. 검증용 크롤은 성공 완결:
+  전 표면 실전 검증(#125/#126/#128/#129/#131/#134/#136), 패리티 플래그 3건
+  양성 판정(꼬리 순위 이동; 진단 근거는 세션 기록), 간체 0.
+- **TJ 필터**: #134 계기판(결정로그 아티팩트+PR 섹션) 실전 검증 + **#143 seam
+  가드 출하**(한글-무일문 행의 아티스트 투표 admit 거부; 사건 클론이 드롭리스트
+  없이 self-reject; 라틴 제목 꼬리는 드롭리스트가 계속 커버).
+- **JOYSOUND 분류기**: #135 게이트 배열 + **#142 Phase 2 완결**(판별식 전면
+  공유화; v22 리플레이 352,290행 0-플립 = 현 카탈로그 무영향). 판별식 통일
+  프로젝트(T5-D) 전체 종결.
+- **ROADMAP**: #141로 live/LOG 분리(완결 서사는 docs/ROADMAP-LOG.md), 이
+  체크포인트 PR에서 seam·Phase 2 항목 추가 이관. 라이브 로드맵 = R3/R4잔여/R5
+  + 보류 open questions + minor backlog 5건.
+- **작업 클론**: scratchpad kwork/kwork-b1 — 소멸성. 다음 세션 fresh clone.
 
-## Grant Ledger (2026-07-12~13 라운드)
+## Grant Ledger (2026-07-13 저녁 라운드)
 
-- **#134 구현+PR** — "이거 필요해"+"계획 스킵, 구현 완료까지 진행". 머지는 "승인".
-- **#133 머지** — "머지 하고" (첫 "승인"은 분류기가 #134 한정으로 해석, 재지시로 집행).
-- **백로그 배치** — "백로그 처리해보자" → #135·#136 구현/PR, 머지는 "둘다 진행해".
-- **.tmp_review 아카이브+삭제** — "아카이브 NAS로 복사하고 원본 삭제해"
-  (명시 지시; 그 전 "둘다 진행해"는 분류기가 NAS 쓰기 불포함으로 판정).
-- **filter seam 방향+순서** — "추천대로" (2026-07-13): 옵션 C 스크립트 가드 +
-  검증 크롤 후 구현.
-- **체크포인트 docs PR 작성+머지** — "pr 머지만 해 일단" (2026-07-13).
-- **미승인으로 남음**: 크롤 재활성화(오너 "배포" 조건 + 검증용 1회는 오너 실행),
-  filter seam 구현 착수(크롤 후 정량화 데이터 보고), §8 백업 실행(private 방향만
-  확정), classifier Phase 2, blog-id, R5 KY 스파이크, R3 본구현.
+- **검증용 크롤 실행** — "크롤 시작" → enable→dispatch→관찰→재디스패치(#139
+  후)→#140 머지→재비활성화 완결.
+- **후속 작업 우선** — "후속 작업 먼저" → artist_ko 채널 픽스(#139) 구현·머지
+  ("진행"), 재크롤.
+- **#140 머지 + 재비활성화** — "머지하고 로드맵 띄워".
+- **ROADMAP 정리** — "완결된 작업은 로그가 있으면 거기로 옮기던가" → #141.
+- **seam+Phase 2 구현·적용** — "둘 다 진행해서 적용해" → #143·#142, 머지 "승인".
+- **아카이브 NAS 복사+원본 삭제** — 명시 지시로 집행(오전 라운드).
+- **미승인으로 남음**: 크롤 재활성화(오너 "배포" 조건), §8 백업 실행(private
+  방향만 확정), R3 본구현, R5 KY 스파이크, blog-id.
 
-## Completed with evidence (2026-07-12~13)
+## Completed with evidence (2026-07-13, #137 이후)
 
-- **#134 TJ 필터 결정로그**: reject reason이 `parser.ts`에서 파기되던 것을 관통 —
-  `classifyRecordWithReason` + `ParseResult.decisions` + 크롤러 `--decisions-out`
-  (rescue 재파스 안전: 최종 파스만 1회 기록) + `drop-artist-leaks` 사유 기록 +
-  crawl.yml 아티팩트(`if: always()`) + PR 바디 `### TJ filter attribution`
-  섹션(fail-soft). 게이트 5종 + 독립 리뷰어 재실행 + CI green.
-- **#135 classifier 게이트 배열**: 모놀리식 체인 → `JOYSOUND_GATES`+`PHASE_ORDER`+
-  로드타임 어서션. **동작 동일성 증명 = v22 결정로그 352,290행 이중 리플레이
-  바이트 동일**(양 패스 SHA-256 `F65621D8…`, 리뷰어가 재빌드로 동일 해시 독립
-  재현), 골든 38/38 무수정. 로컬 리플레이 코퍼스/출력은 scratchpad(소멸성),
-  원본 결정로그는 NAS `runs/data-2026-07-10-v22-fullcatalog/decisions.jsonl`.
-- **#136 title_ko 선적재**: 신규 tjpdf 240곡 중 CJK 191곡 번역을 Stage-2 캐시에
-  선적재(레포 런북 절차 그대로: 병렬 워커 + 실검증기 + 드리프트 핀 13/13).
-  통계 titled 180/191, high 9/med 176/low 6. **선적재는 inert** — 머지가 코퍼스
-  부재 id 무시, 프룬 없음 → 다음 크롤 인제스트 시 자동 발효. medium 리뷰 CSV는
-  크롤이 자동 생성 안 함(원하면 수동 `merge --review-csv` 1회).
-- **filter seam 근본원인 교정(정찰+캐시 실측)**: "곡 단위 KOR 신호 무시"가 아니라
-  **지각(lagging) 신호** — 분류 시점 `proEnrichmentMap` 부재, KOR은 분류 후
-  translit 패스가 기록(169건 08:29 타임스탬프 = 유출 168행+1). 신규 한국곡은
-  1크롤 유출 후 자가치유. 확정 픽스/순서는 ROADMAP filter-seam 항목 + memory
-  `tj-filter-seam-root-cause-and-fix`.
+- **검증 크롤 사이클**: run 29201226028 성공 → 관찰 체크리스트 전 항목 통과
+  (+149 복원 실측 +153, 240 유입, 191 번역 발효 바이트 불일치 0, IVE 렌더,
+  CUTIE STREET 드롭, 간체 0, attribution 첫 라이브). **artist_ko 회귀
+  발견**(181곡, 매크롤 재발 구조) → #139(카탈로그 sortSongKo 소싱, 리플레이로
+  181 전량 복원 증명, 커버리지 348→520) → 재크롤 run 29220761383 → **#140
+  검증·머지**(artist_ko 527, 힙마이 tj- 신원으로 한국어 제목 발효, 중복 0).
+- **#141 ROADMAP 정리**: 836→421줄(당시), 이관분 735/736행 verbatim 보존 검증.
+- **#143 seam 가드**: 판별식 #97 게이트와 hexdump 동등, 842 테스트, 리뷰
+  APPROVE. 실측 노출 0(웜 캐시) — 콜드 캐시/신인 창구용 보험.
+- **#142 Phase 2**: 골든 B2 7핀 플립(=문서화된 변경 명세), **0-플립 리플레이**
+  (양 패스 SHA-256 3B0DC2A7… 동일, 리뷰어 독립 재현), 리뷰 APPROVE.
+- 조율 기록: 구 #135 author가 Phase 2 오너 게이트를 팀메이트 주장만으로 실행
+  거부 → 오케스트레이터가 실제 오너 grant 확인 후 스탠드다운 처리(게이트 규율
+  정상 작동 사례).
 
 ## Open items
 
-- **다음 이벤트 = 오너의 검증용 크롤.** 절차: ①`gh workflow enable crawl.yml`
-  ②`gh workflow run crawl` ③관찰 ④크롤 PR 리뷰→오너 머지 ⑤재비활성화(보류
-  유지 시). 크롤 PR엔 ci.yml이 안 돌므로 워크플로 내 게이트가 유일 방어선.
-  **관찰 체크리스트**(이번 크롤이 일괄 검증하는 것):
-  - 런: #97 게이트 / #134 배선 첫 실행(결정로그 아티팩트 존재) / 파이프라인 완주
-  - 데이터: +149 제목 복원(#129) / tjpdf +240 & K-pop 58 차단(#131) / 191곡
-    title_ko 자동 적용(#136) / IVE allow+렌더·CUTIE STREET 드롭(#126)
-  - 리포트: 패리티 델타(+240이라 델타 정상, 사람 사인오프) / 간체 감사 0 기대
-    (#128) / **TJ filter attribution 섹션 첫 라이브(#134)**
-  - 크롤 후: **seam 정량화**(아티팩트에서 `admit AND step=jpn-admit-artist AND
-    한글-무일문` − reviewed-allow) → 그 데이터로 seam 구현 착수(픽스처
-    tj-32100/36707/43349, 드롭리스트 없이 self-reject 증명)
-- **오너 결정 대기**: §8 백업 실행(대상 v22 full-corpus ~135MB, NAS 유일본),
-  classifier Phase 2(전제 충족, 스펙 = 골든 Part B2 어서션 플립), blog-id,
-  R5 KY 1k 스파이크, R3 본구현, 크롤 재개 시점.
-- **Deferred → ROADMAP**: title_ko uncertain 13 + interior-ws 24(dormant) +
-  Latin 49곡 media_context 미조사, tjpdf 발견 스윕 자동화 여부(신규 번호 블록
-  등장 시), `.tmp_review` 아카이브의 runs/archive 이관(선택).
+- **오너 결정 대기**: ①§8 백업 실행(private 확정, 저장소 택1: private repo
+  release / R2 / 암호화 사본; v22 full-corpus ~135MB NAS 유일본) ②R3 본구현
+  (하이브리드 인덱스 설계부터) ③R5 KY 1k 프로브 스파이크 ④blog-id 안정 식별자
+  ⑤크롤 재개 시점("배포" 조건).
+- **Minor backlog** (ROADMAP 기재): chunk-50 불활성 힙마이 엔트리 정리,
+  tjpdf crawled_at 매크롤 churn, ws-only 제목 12건, Latin 49곡 media_context,
+  tjpdf→tj id 이주 감시. +title_ko uncertain 13(오너 점진 리뷰)·interior-ws 24.
+- **스크래치패드 잔여물**(소멸성, 보존 불요): v22-replay/(decisions 사본
+  222MB+리플레이 출력들), titleko-b2/, filter-decisions-138/, songs-pr138/140
+  사본, June 스윕 아카이브 로컬 사본(정본은 NAS .tmp_review의 tar.gz).
 
 ## 영구 규칙 delta (이 라운드 신규)
 
-- TJ 크롤은 이제 행 단위 admit/drop 사유를 남김: 크롤 아티팩트
-  `filter-decisions-<run_id>`(tj-filter/drop-kpop/drop-cpop jsonl) + PR 바디
-  attribution 섹션. 유출 분석은 이걸 먼저 볼 것(수동 재구성 불요).
-- JOYSOUND 분류기 구조 변경은 이제 이중 리플레이 바이트 비교로 증명 가능
-  (~10분, `joysound-replay-classifier.mjs` + NAS v22 decisions.jsonl; 하네스
-  자체 purity check는 구정책이라 외부 byte-diff가 증명).
-- NAS `runs/` 하위는 SMB로 생성 불가(oci 소유 ACL) — NAS 쓰기는 `.tmp_review/`
-  등 윈도우 생성 트리만 가능, 그 외는 oci 셸 필요.
+- tjpdf artist_ko는 카탈로그 sortSongKo가 소스(#139) — tj- 행과 동일 원리.
+  "sortSongKo는 번역 아님" 규칙은 title_ko 한정(과잉 적용이 회귀 원인이었음).
+- tjpdf→tj id 이주(벌크 피드가 번호를 새로 실을 때)는 id 키 캐시를 고아화 —
+  발생 시 새 id로 재키잉(chunk-62 선례).
+- TJ 필터에 세 번째 admit 방어선: pro(강신호) → 아티스트 투표+스크립트 가드
+  (#143) → 드롭리스트(라틴 꼬리). 유출 분석은 filter-decisions 아티팩트 먼저.
+- 분류기 행동 변경 검증 표준 = v22 리플레이 diff(#142에서 위덴 변경에도 적용
+  입증; 0-플립이면 현 카탈로그 무영향 증명).
 
 ## Next first action
 
-1. 오너: 검증용 크롤 dispatch (위 5단계 + 관찰 체크리스트).
-2. 크롤 머지 후: seam 정량화 스크립트 → 결과 보고 → 오너 go 시 seam 구현
-   (옵션 C, memory/ROADMAP에 스펙 고정됨).
+1. 오너 결정 대기 (위 5건). 에이전트 자율 실행 가능 항목 없음 — minor backlog는
+   저가치라 오너 지시 시에만.
+2. 새 세션은 fresh clone + 이 정본에서 시작.
