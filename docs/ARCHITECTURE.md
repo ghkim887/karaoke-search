@@ -81,69 +81,36 @@ full-catalog sweep, which already emits a per-row `DecisionRecord`
 (`adapters/joysound-official/diagnostic.ts`). Report-only: zero effect on
 admit/drop results — omit the flags and every output is byte-identical.
 
-### Full-corpus distribution (decided)
+### Full-corpus distribution (release-asset path RETIRED 2026-07-13)
 
-The post-JOYSOUND **full** corpus (~221k records, ~85 MB) will NOT be
-tracked in git — it ships as a GitHub Release asset, and git tracks only a
-small manifest at `data/full-corpus.manifest.json`
-(`{ version, url, sha256, sizeBytes, recordCount, vendorCounts,
-generatedAt, baselineCommit, decisionLogSha? }` — store-agnostic, so a
-later move to R2 is a one-line `url` change). The tracked baseline
-`songs.json` above stays exactly as today.
+The post-JOYSOUND **full** corpus (~135 MB as of v22) is NOT tracked in git
+and is NOT distributed as a downloadable asset: it lives on the production
+NAS, which is its only home. The offsite-backup plan (§8) was cancelled
+outright — the accepted recovery path for NAS loss is a full re-crawl. The
+tracked baseline `songs.json` above stays exactly as today (offline bundle +
+weekly crawl PR diff).
 
-- `scripts/publish-full-corpus.mjs` — schema-validates a composed corpus,
-  computes sha256 + record/vendor counts, writes the manifest atomically
-  (optionally also builds the self-host SQLite via the worker's
-  `build-sqlite-db.mjs`).
-- `scripts/fetch-full-corpus.mjs` — downloads `manifest.url` (http(s) or
-  `file://`), verifies sha256 + size **before** an atomic rename (a failed
-  or corrupt download never leaves a torn file), idempotent re-fetch via
-  `--skip-download-if-valid`. Shared consumer for local dev and the
-  self-host SQLite build.
+A release-asset distribution path was designed and partly built — publish
+the corpus as a GitHub Release asset while git tracks only a small
+store-agnostic manifest (`data/full-corpus.manifest.json`), with `fetch` /
+`verify` consumers and a trust-no-one `full-corpus.yml` re-verification
+workflow. **No release was ever published**, and the live serving route
+(self-hosted Node + SQLite behind a Cloudflare Pages proxy) superseded the
+deploy flip that path assumed. As of **2026-07-13 (phase 1)** the path is
+retired: `.github/workflows/full-corpus.yml`, `scripts/fetch-full-corpus.mjs`,
+`scripts/verify-manifest.mjs`, and the dangling
+`data/full-corpus.manifest.json` are deleted, and the per-PR manifest-shape
+gate is removed from `ci.yml`.
 
-Verification is CI's job, composition is not: the corpus's composition
-inputs (the JOYSOUND decision log, the candidate builder) live on the
-operator's machine / feature branch, and an ~85 MB file cannot be a
-workflow input — so the operator composes and publishes locally, then
-`.github/workflows/full-corpus.yml` re-downloads the asset and regenerates
-the manifest from the actual bytes (trust-no-one: CI never accepts an
-uploaded manifest). `ci.yml` additionally shape-validates the tracked
-manifest on every PR via `scripts/verify-manifest.mjs` (no download; no-op
-until the first manifest lands). The first actual publish/import is still
-ahead (see the post-JOYSOUND data-topology item in the
-[Open questions](ROADMAP.md#open-questions) section).
-
-#### Publishing a full-corpus release (operator runbook)
-
-Asset-naming convention: the corpus asset on the release must be named
-exactly **`full-corpus.json`**; an optional decision-log asset named exactly
-`decision-log.jsonl.gz` gets its sha256 recorded as the manifest's
-`decisionLogSha`. Other assets (e.g. a prebuilt `.sqlite`) may coexist.
-
-1. Compose the full corpus locally and note the commit it was composed
-   against (`git rev-parse HEAD` in the composing checkout).
-2. Dry-run sanity (schema-validates every record, ~221k):
-   `node scripts/publish-full-corpus.mjs --input <full-corpus.json> --url PENDING`
-   — do NOT commit the resulting PENDING manifest; the ci.yml gate rejects
-   PENDING urls by design.
-3. Create the release with the asset(s):
-   `gh release create data/<date> full-corpus.json [decision-log.jsonl.gz] --notes "..."`.
-4. Hand off to CI:
-   `gh workflow run full-corpus.yml -f release_tag=data/<date> [-f baseline_commit=<sha>]`
-   — `baseline_commit` is the composition commit from step 1 (provenance
-   metadata in the manifest). It defaults to the sha the workflow runs on,
-   which is only correct when `main` has not moved since composition — when
-   in doubt, pass it explicitly.
-5. Review and merge the PR the workflow opens (label `full-corpus`, branch
-   `data/full-corpus-manifest-<tag-slug>`): it commits the regenerated
-   `data/full-corpus.manifest.json` with CI-computed sha256 and
-   record/vendor counts in the PR body. Re-dispatching the workflow for the
-   same tag force-updates that existing branch/PR rather than opening a
-   duplicate (deliberate — peter-evans/create-pull-request v8 behavior).
-
-Consumers (`scripts/fetch-full-corpus.mjs` for local dev and the self-host
-SQLite build) read the merged manifest and verify sha256 + size on
-download.
+`scripts/publish-full-corpus.mjs` (with `scripts/lib/manifest.mjs`) is the
+one remnant kept for now — it still wraps the serving-DB build
+(schema-validate a composed corpus, then optionally build the self-host
+SQLite via the worker's `build-sqlite-db.mjs` with `--search-hints`; see
+[Two search paths](#two-search-paths) and
+[Search-only hint channel](#search-only-hint-channel) below). It stays until
+the serving runbook is repointed off it, at which point phase 2 deletes it
+too. See the post-JOYSOUND data-topology item in
+[ROADMAP.md](ROADMAP.md#post-joysound-data-topology-decided-2026-06-10).
 
 ## Two search paths
 
@@ -198,14 +165,6 @@ lockfile install).
   the Playwright suite against `astro preview` over a fallback-mode build
   (no `PUBLIC_KARAOKE_API_BASE_URL`), so UI breakage is caught at PR time
   instead of post-merge at the required deploy gate.
-  The `verify` job also shape-validates `data/full-corpus.manifest.json`
-  when it exists (`scripts/verify-manifest.mjs` — cheap, no asset download).
-- **`full-corpus.yml`** (dispatch only): trust-no-one verification gate for
-  an operator-published full-corpus release — downloads the
-  `full-corpus.json` asset from the given `release_tag`, schema-validates
-  every record, recomputes sha256/size/counts itself, and opens a PR
-  (label `full-corpus`) committing the regenerated manifest. See the
-  operator runbook above.
 - **`crawl.yml`** (weekly cron + dispatch): build, sidecar-drift gate, full
   crawl into `songs.json.tmp`, then `run-post-crawl-pipeline.mjs`, then opens
   a PR labeled `crawl-output` (requires the repo setting "Allow Actions to

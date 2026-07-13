@@ -661,7 +661,8 @@ as it stood).
 
 **Accepted risk, on record:** the NAS remains the ONLY copy of the promoted
 full corpus (v22 `full-corpus.json` ~135 MB) and of the serving releases;
-zero GitHub releases exist and both tracked manifests point at 404 assets, so
+zero GitHub releases exist and both tracked manifests point at 404 assets
+[2026-07-13: one manifest was tracked at retirement; deleted in phase 1], so
 nothing can reprovision from outside the NAS. The accepted recovery path for
 NAS loss is a **full re-crawl** (order: fresh fullCatalog listing + detail
 sweep ≈ a day-plus of polite crawling; the retained NAS run directories and
@@ -675,7 +676,12 @@ the rebuild.
 manifest flow) stays in the repo under the post-JOYSOUND data-topology item
 (PR-2/PR-3), whose release-asset mechanism is now even further from use;
 whether to retire that tooling is a future owner call, not part of this
-closure.
+closure. **[Update 2026-07-13: owner gave the go; phase 1 actioned —
+`full-corpus.yml`, `fetch-full-corpus.mjs`, `verify-manifest.mjs`, and the
+dangling `data/full-corpus.manifest.json` deleted, and the per-PR
+manifest-shape gate dropped from `ci.yml`. `publish-full-corpus.mjs` +
+`lib/manifest.mjs` remain as the serving-build wrapper, pending an
+owner-gated phase 2 (repoint the serving runbook, then delete).]**
 
 ### Offsite full-corpus backup — DIRECTION DECIDED: PRIVATE (owner, 2026-07-12); execution deferred
 
@@ -696,7 +702,9 @@ Current artifact to back up: `data-2026-07-12-v22-fullcatalog/full-corpus.json`
 the ONLY copy.
 
 **Severity note (still true 2026-07-12):** ZERO GitHub releases exist; both
-tracked manifests point at 404 assets (dangling), so `fetch-full-corpus.mjs` /
+tracked manifests point at 404 assets (dangling)
+[2026-07-13: one manifest was tracked at retirement; deleted in phase 1], so
+`fetch-full-corpus.mjs` /
 the self-host SQLite build cannot reprovision from anywhere but the NAS. The
 private backup, once executed, is the first real offsite copy. The public
 publish workflow (`full-corpus.yml`) stays UNUSED under the private decision.
