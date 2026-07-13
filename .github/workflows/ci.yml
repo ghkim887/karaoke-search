@@ -70,19 +70,6 @@ jobs:
             packages/crawler/src/clustering-rules.json; do
             git diff --exit-code -- "$sidecar" || { echo "Sidecar drift detected: $sidecar"; exit 1; }
           done
-      - name: Verify full-corpus manifest shape
-        # Cheap per-PR trust gate for data/full-corpus.manifest.json — shape
-        # validation only, via the same scripts/lib/manifest.mjs validator the
-        # publisher/fetcher use. Never downloads the ~85 MB corpus asset; the
-        # full sha256 recompute against the real asset happens once, in
-        # full-corpus.yml at publish time. No-ops gracefully until the first
-        # manifest lands on main (today the file does not exist yet).
-        run: |
-          if [ -f data/full-corpus.manifest.json ]; then
-            node scripts/verify-manifest.mjs
-          else
-            echo "data/full-corpus.manifest.json not present yet — skipping"
-          fi
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
