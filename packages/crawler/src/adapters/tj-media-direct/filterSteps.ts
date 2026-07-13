@@ -15,6 +15,7 @@
  * short-circuits on the first non-'pass' verdict.
  */
 
+import { hasSimplifiedOnlyHan } from '@karaoke/search';
 import { isInChineseDropList } from '../../curated/chineseArtistDropList.js';
 import { isInDropList } from '../../curated/koreanArtistDropList.js';
 import type { SearchSongCache } from './cache.js';
@@ -314,6 +315,18 @@ const jpnAdmitStep: FilterStep = {
       // via reviewed-song-allow (step 2, script-clean render) or jpn-admit-pro
       // (step 4), both of which run before this step.
       if (readsAsKoreanScript(`${title} ${artist}`)) return { decision: 'pass' };
+      // Simplified-Chinese veto (classify-time promotion of the report-only
+      // detector, docs/ROADMAP.md "TJ filter seam"): the SAME `hasSimplifiedOnlyHan`
+      // predicate the post-crawl audit uses (single-sourced from @karaoke/search).
+      // A Mandopop/Cantopop row mis-tagged JPN by the artist scan that carries a
+      // curated PRC-simplified-only Han character over `${title} ${artist}` is a
+      // first-crawl leak of the same class the Korean veto above catches. The
+      // predicate is precision-calibrated (0 hits over the v22 corpus + baseline),
+      // so any hit is high-signal; and it EXCLUDES shinjitai that equal PRC
+      // simplifications (国 学 体 会 医 数 …), so genuine Japanese kanji/shinjitai
+      // titles never false-veto here. Fall through instead of admitting; the outer
+      // defenses (deny-list, post-crawl audit + crawl-PR report) stay unchanged.
+      if (hasSimplifiedOnlyHan(`${title} ${artist}`)) return { decision: 'pass' };
       return { decision: 'admit', via: 'artist' };
     }
     return { decision: 'pass' };
