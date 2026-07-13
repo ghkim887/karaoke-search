@@ -102,15 +102,26 @@ retired: `.github/workflows/full-corpus.yml`, `scripts/fetch-full-corpus.mjs`,
 `data/full-corpus.manifest.json` are deleted, and the per-PR manifest-shape
 gate is removed from `ci.yml`.
 
-`scripts/publish-full-corpus.mjs` (with `scripts/lib/manifest.mjs`) is the
-one remnant kept for now — it still wraps the serving-DB build
-(schema-validate a composed corpus, then optionally build the self-host
-SQLite via the worker's `build-sqlite-db.mjs` with `--search-hints`; see
+The self-host serving SQLite is built directly by the worker's
+`apps/worker/scripts/build-sqlite-db.mjs` — **the release-build entry point**.
+It reads a composed corpus JSON, schema-validates every record through
+`@karaoke/data-store`'s `importSongsJson` → `validateSongCorpus` (per-record
+validation + duplicate-id detection), and writes the custom-index SQLite:
+
+```
+node apps/worker/scripts/build-sqlite-db.mjs \
+  --input <full-corpus.json> --output <songs.sqlite> \
+  --search-hints data/search-hints.jsonl
+```
+
+CI exercises this exact path per-PR via `pnpm --filter @karaoke/worker
+sqlite:build` (the serving gate; committed `songs.json` → SQLite). See
 [Two search paths](#two-search-paths) and
-[Search-only hint channel](#search-only-hint-channel) below). It stays until
-the serving runbook is repointed off it, at which point phase 2 deletes it
-too. See the post-JOYSOUND data-topology item in
-[ROADMAP.md](ROADMAP.md#post-joysound-data-topology-decided-2026-06-10).
+[Search-only hint channel](#search-only-hint-channel) below. The thin
+`publish-full-corpus.mjs` wrapper that formerly fronted this build (and its
+`scripts/lib/manifest.mjs`) was deleted 2026-07-13 (phase 2); the
+post-JOYSOUND data-topology item is now fully closed — see
+[ROADMAP-LOG.md](ROADMAP-LOG.md).
 
 ## Two search paths
 
@@ -143,8 +154,8 @@ artist credits) that must improve recall WITHOUT appearing in display — unlike
 confidence}`) is materialized into `search_tokens` (`title_hint` /
 `artist_hint`) at build time and never into `search_texts` or the exported
 `SongRecord`, so a hint only ever adds low-weight token recall. Wired into the
-release build via `scripts/publish-full-corpus.mjs --search-hints`. To add a
-hint: append a line to `data/search-hints.jsonl`.
+release build via `build-sqlite-db.mjs --search-hints data/search-hints.jsonl`
+(repeatable). To add a hint: append a line to `data/search-hints.jsonl`.
 
 ## CI workflows (`.github/workflows/`)
 
