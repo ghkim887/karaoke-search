@@ -4,6 +4,7 @@ import { type SongRecord, validateSongRecord } from '@karaoke/schema';
 import type { CrawlOptions, Crawler } from './adapters/index.js';
 import { type AliasConflict, resolveArtistAliases } from './aliases.js';
 import { type MergeConflict, headlineConflicts, mergeRecords } from './merge.js';
+import { type BlogReverseLookup, computeBlogReverseLookup } from './reverseLookup.js';
 
 export interface RunPipelineOptions {
   adapters: Crawler[];
@@ -25,12 +26,27 @@ export interface RunPipelineOptions {
    * it. `undefined` (the default) leaves adapter behavior byte-identical.
    */
   decisionsOutPath?: string;
+  /**
+   * Optional path for the blog reverse-lookup artifact (JSON). When set, the
+   * pipeline writes the claimed-but-unmatched vendor numbers on standalone blog
+   * records after merge: the TJ probe seed and the JOYSOUND delisted/typo
+   * report (design 2026-07-14 §3). `undefined` (the default) writes nothing and
+   * leaves a plain crawl byte-identical.
+   *
+   * NOTE (consumption gap): nothing ingests the seed automatically yet — the
+   * tj-media-direct R7 probe (`searchSongByPro`) only runs over its own crawled
+   * catalog plus the blog-whitelist rescue. Feeding this seed into the probe is
+   * a follow-up; today the artifact is emitted for the crawl report and manual
+   * re-seeding.
+   */
+  reverseLookupOutPath?: string;
 }
 
 export interface RunPipelineResult {
   written: number;
   conflicts: MergeConflict[];
   aliasConflicts: AliasConflict[];
+  reverseLookup: BlogReverseLookup;
 }
 
 /**
@@ -46,7 +62,8 @@ export interface RunPipelineResult {
  *  4. Atomically write `outPath` via `outPath + ".tmp"` then rename.
  */
 export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipelineResult> {
-  const { adapters, limit, outPath, conflictsOutPath, decisionsOutPath } = opts;
+  const { adapters, limit, outPath, conflictsOutPath, decisionsOutPath, reverseLookupOutPath } =
+    opts;
   // Preserve the original `undefined` when neither knob is set, so a plain
   // crawl passes exactly what it did before (byte-identical adapter behavior).
   const hasLimit = typeof limit === 'number' && limit > 0;
@@ -99,5 +116,24 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
     await writeFile(conflictsOutPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
   }
 
-  return { written: merged.length, conflicts, aliasConflicts };
+  // Reverse lookup: claimed-but-unmatched vendor numbers on standalone blog
+  // records (design §3). Always computed (cheap, returned for callers); written
+  // only when a path is supplied, so a plain crawl is byte-identical.
+  const reverseLookup = computeBlogReverseLookup(merged);
+  if (reverseLookupOutPath) {
+    const artifact = {
+      tjProbeSeed: {
+        total: reverseLookup.tjProbeSeed.length,
+        numbers: reverseLookup.tjProbeSeed,
+      },
+      joysoundDelistedReport: {
+        total: reverseLookup.joysoundDelistedReport.length,
+        numbers: reverseLookup.joysoundDelistedReport,
+      },
+    };
+    await mkdir(dirname(reverseLookupOutPath), { recursive: true });
+    await writeFile(reverseLookupOutPath, `${JSON.stringify(artifact, null, 2)}\n`, 'utf8');
+  }
+
+  return { written: merged.length, conflicts, aliasConflicts, reverseLookup };
 }

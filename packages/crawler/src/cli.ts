@@ -11,6 +11,7 @@ const HELP = `karaoke-crawl — run registered source adapters and emit songs.js
 Usage:
   karaoke-crawl [--limit <n>] [--source <slug>]... [--out <path>]
                 [--conflicts-out <path>] [--decisions-out <path>]
+                [--reverse-lookup-out <path>]
 
 Options:
   --limit <n>      Per-source page cap (e.g. artist pages for the blog
@@ -37,6 +38,12 @@ Options:
                    row). Only the tj-media-direct adapter writes it; overwrite
                    semantics. When omitted, no file is written and behavior is
                    unchanged. Resolved relative to the repo root.
+  --reverse-lookup-out <path>
+                   Optional path for the blog reverse-lookup artifact (JSON):
+                   claimed-but-unmatched TJ numbers (probe seed) and JOYSOUND
+                   numbers (delisted/typo report) on standalone blog records
+                   after merge. When omitted, no file is written and behavior is
+                   unchanged. Resolved relative to the repo root.
   --help           Print this message and exit 0.
 `;
 
@@ -46,6 +53,7 @@ interface ParsedArgs {
   out: string;
   conflictsOut: string | null;
   decisionsOut: string | null;
+  reverseLookupOut: string | null;
   help: boolean;
 }
 
@@ -56,6 +64,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     out: 'apps/web/public/data/songs.json',
     conflictsOut: null,
     decisionsOut: null,
+    reverseLookupOut: null,
     help: false,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -106,6 +115,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
       out.decisionsOut = next;
       continue;
     }
+    if (arg === '--reverse-lookup-out') {
+      const next = argv[++i];
+      if (next === undefined) throw new Error('--reverse-lookup-out requires a value');
+      out.reverseLookupOut = next;
+      continue;
+    }
     throw new Error(`unknown flag: ${arg}`);
   }
   return out;
@@ -143,6 +158,11 @@ async function main(): Promise<void> {
       ? parsed.decisionsOut
       : resolve(repoRoot, parsed.decisionsOut)
     : undefined;
+  const reverseLookupOutPath = parsed.reverseLookupOut
+    ? isAbsolute(parsed.reverseLookupOut)
+      ? parsed.reverseLookupOut
+      : resolve(repoRoot, parsed.reverseLookupOut)
+    : undefined;
 
   const selected = resolveAdaptersForSources(parsed.sources);
 
@@ -152,13 +172,20 @@ async function main(): Promise<void> {
     ...(parsed.limit > 0 ? { limit: parsed.limit } : {}),
     ...(conflictsOutPath ? { conflictsOutPath } : {}),
     ...(decisionsOutPath ? { decisionsOutPath } : {}),
+    ...(reverseLookupOutPath ? { reverseLookupOutPath } : {}),
   };
   try {
-    const { written, conflicts } = await runPipeline(pipelineOpts);
+    const { written, conflicts, reverseLookup } = await runPipeline(pipelineOpts);
     process.stdout.write(`wrote ${written} records to ${outPath}\n`);
     const headline = headlineConflicts(conflicts);
     if (headline.length > 0) {
       process.stdout.write(`merge conflicts: ${headline.length}\n`);
+    }
+    if (reverseLookupOutPath) {
+      process.stdout.write(
+        `reverse lookup: ${reverseLookup.tjProbeSeed.length} TJ probe seeds, ` +
+          `${reverseLookup.joysoundDelistedReport.length} JOYSOUND delisted → ${reverseLookupOutPath}\n`,
+      );
     }
   } finally {
     // Cache persistence is batched; flush the shared clients so the last
