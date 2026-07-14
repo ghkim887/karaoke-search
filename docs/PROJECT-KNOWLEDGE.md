@@ -329,15 +329,28 @@ once the self-host setup stabilizes.
   workflow (the crawl job now runs the crawler corpus-regression suite and the
   parity-baseline regen/delta before opening its PR); never assume repo-level
   CI covers bot-opened PRs.
-- `blog-*` record ids are POSITIONAL (`blog-{artistId}-{rowIndex}`): any crawl
-  that re-touches a blog page reassigns the id→song mapping wholesale (#95
-  moved 137/149 ids on the Utada page alone). Anything that pins a blog id
-  across crawls silently re-targets a different song — this broke the parity
-  smoke fixtures and still affects device favorites (localStorage stores record
-  ids; stable-identity design is an owner-held ROADMAP item). Rule: never
-  persist or pin a `blog-*` id across crawls in fixtures, tooling, or features;
-  the stable identity is the vendor karaoke number (tj/ky/joysound), with
-  title+artist as a cross-check.
+- `blog-*` record ids WERE POSITIONAL (`blog-{artistId}-{rowIndex}`): any crawl
+  that re-touched a blog page reassigned the id→song mapping wholesale (#95
+  moved 137/149 ids on the Utada page alone). Anything that pinned a blog id
+  across crawls silently re-targeted a different song — this broke the parity
+  smoke fixtures and device favorites (localStorage stores record ids). The
+  stable-identity design SHIPPED 2026-07-14: blog rows now demote to the lowest
+  merge rank (merged clusters take the vendor id) and standalone blog rows mint
+  `blog-{artistId}-{vendor}-{number}` from the row's first claimed vendor number
+  — stable across crawls. This takes effect in the corpus at crawl resume; the
+  frozen v22 serving corpus still carries the old positional ids until then.
+  Rule (still holds): never pin a positional `blog-{artistId}-{rowIndex}` id
+  across crawls; the stable identity is the vendor karaoke number (tj/ky/joysound),
+  which the new minting now encodes directly.
+- Re-keying id-keyed SIDECARS (Stage-2 title_ko cache, `search-hints.jsonl`) to
+  a FUTURE corpus state must model CRAWL-time semantics, not candidate state.
+  The post-crawl sweep's conflict resolution nulls misattributed blog vendor
+  cells in the built candidate, so minting residual ids from candidate records
+  diverges from what the normalizer mints from the parsed blog rows (the v22
+  two-sided replay found 297 such rows + 10 title-merged numberless). Rule:
+  derive re-key targets from the parsed source numbers — the authoritative
+  old→new map the replay emits — never from post-conflict-resolution candidate
+  state.
 
 ## Script detection: kana punctuation is not script
 
