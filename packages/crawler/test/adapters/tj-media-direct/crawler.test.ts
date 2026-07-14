@@ -36,6 +36,10 @@ function buildHttp(opts: {
 }
 
 const emptyWhitelist = (): ReadonlySet<string> => new Set<string>();
+// Empty blog reverse-probe seed: opts an enrichment-enabled test out of the
+// always-on seed probe (which otherwise reads the real corpus), the same way
+// `emptyWhitelist` opts out of the force whitelist.
+const emptySeed = (): ReadonlySet<string> => new Set<string>();
 
 /**
  * Build a pre-seeded cache file at `cachePath` that tags every fixture
@@ -331,7 +335,12 @@ describe('TJDirectCrawler.crawl — JP-likely drop rescue', () => {
     const cachePath = join(tmpDir, 'cache.json');
     try {
       await seedFreshEmptyCache(cachePath);
-      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+      const crawler = new TJDirectCrawler(
+        http as HttpClient,
+        emptyWhitelist,
+        { cachePath },
+        emptySeed,
+      );
       const records = [];
       for await (const r of crawler.crawl()) records.push(r);
 
@@ -476,7 +485,12 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
       };
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       try {
-        const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+        const crawler = new TJDirectCrawler(
+          http as HttpClient,
+          emptyWhitelist,
+          { cachePath },
+          emptySeed,
+        );
         const records = [];
         for await (const r of crawler.crawl()) records.push(r);
 
@@ -552,7 +566,12 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
 
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       try {
-        const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+        const crawler = new TJDirectCrawler(
+          http as HttpClient,
+          emptyWhitelist,
+          { cachePath },
+          emptySeed,
+        );
         const records = [];
         for await (const r of crawler.crawl()) records.push(r);
 
@@ -623,7 +642,12 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       try {
-        const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath });
+        const crawler = new TJDirectCrawler(
+          http as HttpClient,
+          emptyWhitelist,
+          { cachePath },
+          emptySeed,
+        );
         const records = [];
         for await (const r of crawler.crawl()) records.push(r);
 
@@ -634,6 +658,147 @@ describe('TJDirectCrawler.crawl — translit enrichment integration (PR-1)', () 
         warn.mockRestore();
         log.mockRestore();
       }
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('TJDirectCrawler.crawl — blog reverse-probe seed ingest', () => {
+  // Cache tagging every fixture artist + pro as JPN with a FRESH bootstrap, so
+  // the catalog admits its JP rows, the artist scan + chart bootstrap make no
+  // HTTP calls, and — crucially — nothing that drops is a JP-likely rescue
+  // candidate (Chinese/Korean drops carry no kana), so jpLikelyRescue issues
+  // ZERO strType=16 probes. That isolates all strType=16 traffic to the SEED
+  // probe under test.
+  async function seedAllJpnFreshCache(cachePath: string): Promise<void> {
+    const now = new Date().toISOString();
+    const artistNationalityMap: Record<string, unknown> = {};
+    const proEnrichmentMap: Record<string, unknown> = {};
+    for (const item of FIXTURE.resultData.items) {
+      if (typeof item.indexSong === 'string') {
+        const key = item.indexSong.replace(/\s+/g, '').toLowerCase().normalize('NFKC');
+        if (key !== '') {
+          artistNationalityMap[key] = {
+            code: 'JPN',
+            votes: { JPN: 1, KOR: 0, ENG: 0 },
+            lastSeen: now,
+          };
+        }
+      }
+      proEnrichmentMap[String(item.pro)] = {
+        nationalcode: 'JPN',
+        sortTitleKo: null,
+        sortSongKo: null,
+        subTitle: null,
+        publishdate: null,
+        lastSeen: now,
+      };
+    }
+    await writeFile(
+      cachePath,
+      `${JSON.stringify(
+        {
+          version: 2,
+          generatedAt: now,
+          bootstrappedAt: now,
+          proEnrichmentMap,
+          artistNationalityMap,
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+  }
+
+  it('empty seed issues zero probe calls (crawl byte-identical pin)', async () => {
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      postFormImpl: async (url) => {
+        if (url.includes('newSongOfMonth')) return { status: 200, body: FIXTURE_TEXT };
+        // translit / artist / charts → benign empty search.
+        return {
+          status: 200,
+          body: JSON.stringify({ resultCode: '98', resultData: { items: [] } }),
+        };
+      },
+    });
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-seed-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      await seedAllJpnFreshCache(cachePath);
+      const crawler = new TJDirectCrawler(
+        http as HttpClient,
+        emptyWhitelist,
+        { cachePath },
+        emptySeed,
+      );
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
+      expect(records.length).toBeGreaterThan(0);
+      // With an empty seed AND an all-JPN cache (rescue has no candidates),
+      // NO exact-number (strType=16) probe is issued at all.
+      expect(captured.some((c) => c.body.strType === '16')).toBe(false);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('probes a blog-claimed number this run did not emit and graduates the hit to a tj-* record', async () => {
+    const SEED_PRO = '52784'; // not present in the fixture catalog
+    const captured: Captured[] = [];
+    const http = buildHttp({
+      captured,
+      postFormImpl: async (url, body) => {
+        if (url.includes('newSongOfMonth')) return { status: 200, body: FIXTURE_TEXT };
+        if (body.strType === '16' && body.searchTxt === SEED_PRO) {
+          return {
+            status: 200,
+            body: JSON.stringify({
+              resultCode: '99',
+              resultData: {
+                items: [
+                  {
+                    pro: SEED_PRO,
+                    indexTitle: 'うつくしい世界',
+                    indexSong: 'Aimer',
+                    sortTitleKo: '',
+                    sortSongKo: '',
+                    nationalcode: 'JPN',
+                    subTitle: '',
+                    publishdate: '',
+                  },
+                ],
+              },
+            }),
+          };
+        }
+        return {
+          status: 200,
+          body: JSON.stringify({ resultCode: '98', resultData: { items: [] } }),
+        };
+      },
+    });
+    const tmpDir = await mkdtemp(join(tmpdir(), 'tj-seed-'));
+    const cachePath = join(tmpDir, 'cache.json');
+    try {
+      await seedAllJpnFreshCache(cachePath);
+      const seed = (): ReadonlySet<string> => new Set([SEED_PRO]);
+      const crawler = new TJDirectCrawler(http as HttpClient, emptyWhitelist, { cachePath }, seed);
+      const records = [];
+      for await (const r of crawler.crawl()) records.push(r);
+
+      // The seed number was probed via the exact-number (strType=16) path…
+      expect(captured.some((c) => c.body.strType === '16' && c.body.searchTxt === SEED_PRO)).toBe(
+        true,
+      );
+      // …and the admitted hit graduated to a tj-* record in the crawl output.
+      const graduated = records.find((r) => r.id === `tj-${SEED_PRO}`);
+      expect(graduated).toBeDefined();
+      expect(graduated?.title_primary).toBe('うつくしい世界');
+      expect(graduated?.artist_primary).toBe('Aimer');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
