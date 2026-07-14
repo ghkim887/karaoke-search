@@ -19,9 +19,13 @@
  * "title_primary changed → realign BOTH guard surfaces in the same change,
  * translations byte-preserved" pitfall; PR #125 realigned the tjpdf side).
  *
- * blog-* ids are POSITIONAL and get re-assigned to different songs on every
- * crawl, so this drift RECURS — hence a reusable, guarded transform rather than
- * a one-off edit. Re-run it after a crawl introduces new drift.
+ * Originally built for the positional-id era, when blog-* ids were re-assigned
+ * to different songs on every crawl and this drift RECURRED. Since the blog
+ * stable-identity change (2026-07-14) blog ids are stable — minted from the
+ * row's claimed vendor number — so the tool now serves as the general safety
+ * net for cosmetic title drift on ANY source (a vendor title edit between
+ * crawls) and for legacy holdover entries. Re-run it after a crawl introduces
+ * new drift.
  *
  * WHAT IT DOES
  * ------------

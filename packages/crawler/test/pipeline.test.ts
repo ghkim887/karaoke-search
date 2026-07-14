@@ -142,4 +142,32 @@ describe('runPipeline — alias resolution + Tier B integration', () => {
     expect(summary.aliasConflicts).toHaveProperty('sample');
     expect(summary.aliasConflicts.total).toBeGreaterThanOrEqual(1);
   });
+
+  it('writes the blog reverse-lookup artifact for a standalone blog record after merge', async () => {
+    // A blog row claiming a TJ number that no crawled TJ record carries stays a
+    // standalone `blog-*` record after merge, so its claim feeds the TJ probe
+    // seed. A claimed JOYSOUND number on a standalone blog record is report-only.
+    const standaloneBlog = record({
+      id: 'blog-416-tj-26723',
+      source_url: 'https://blog.test/416',
+      title_primary: 'Orphan Title',
+      artist_primary: 'Nobody',
+      karaoke_numbers: { tj: '26723', ky: null, joysound: '677515' },
+    });
+
+    const outPath = join(outDir, 'songs.json');
+    const reverseLookupOutPath = join(outDir, 'reverse-lookup.json');
+    const result = await runPipeline({
+      adapters: [fixedAdapter('blog', [standaloneBlog])],
+      outPath,
+      reverseLookupOutPath,
+    });
+
+    expect(result.reverseLookup.tjProbeSeed).toEqual(['26723']);
+    expect(result.reverseLookup.joysoundDelistedReport).toEqual(['677515']);
+
+    const artifact = JSON.parse(await readFile(reverseLookupOutPath, 'utf8'));
+    expect(artifact.tjProbeSeed).toEqual({ total: 1, numbers: ['26723'] });
+    expect(artifact.joysoundDelistedReport).toEqual({ total: 1, numbers: ['677515'] });
+  });
 });

@@ -13,21 +13,29 @@ import {
 
 /**
  * Source priority (lower number = higher priority). Single source of truth
- * for tiebreaks across this file. The order blog > tj > tjpdf > joysound
- * is retained for known active corpus sources, with unknown legacy or
- * experimental prefixes falling back to lowest priority instead of shaping
- * merge semantics.
+ * for the `id` / `source_url` / disputed-vendor-number tiebreaks across this
+ * file. The order tj > tjpdf > joysound > blog is retained for known active
+ * corpus sources, with unknown legacy or experimental prefixes falling back to
+ * lowest priority instead of shaping merge semantics.
  *
- * joysound is intentionally lowest priority: it joins the merge primarily
- * to union its karaoke_numbers.joysound cell. Listing it here gives
- * pickByPriority a deterministic tiebreak without allowing JOYSOUND to
- * displace existing sources.
+ * blog is intentionally lowest priority (2026-07-14, blog stable-identity
+ * design): a blog row's positional id used to win every merged cluster,
+ * reshuffling id→song mappings on each crawl. Demoting blog to last makes a
+ * merged blog+vendor cluster survive under the stable vendor id (`tj-{n}` /
+ * `tjpdf-{n}` / `joysound-{n}`); blog contributes only its own fields via the
+ * chains below, never the cluster id. joysound stays above blog but below
+ * tj/tjpdf, preserving the prior "JOYSOUND must not displace TJ" intent while
+ * still beating a bare blog claim on its own number space.
+ *
+ * NOTE: this rank governs ONLY id/source_url and disputed-cell number
+ * tiebreaks. Per-field ownership is governed by TITLE_ARTIST_CHAIN and
+ * KO_CHAIN below, which are deliberately independent of this order.
  */
 const SOURCE_RANK: Record<string, number> = {
-  blog: 1,
-  tj: 2,
-  tjpdf: 3,
-  joysound: 4,
+  tj: 1,
+  tjpdf: 2,
+  joysound: 3,
+  blog: 4,
 };
 
 const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'tjpdf', 'joysound'] as const;
@@ -43,9 +51,10 @@ const KO_CHAIN = ['blog', 'tj', 'tjpdf', 'joysound'] as const;
 /**
  * Source slug derived from the `id` prefix (everything before the first `-`).
  * The schema's `id` pattern is `^[a-z0-9-]+-\d+$`, so the slug may itself
- * contain `-` only if the source convention uses it; for the v1 blog source
- * (`blog-449-0`) the slug is `blog`. Examples: `tj-52498` → `tj`,
- * `blog-487-1` → `blog`, `tjpdf-12345` → `tjpdf`.
+ * contain `-` only if the source convention uses it; for the blog source
+ * (`blog-449-tj-26723`, minted `blog-{artistId}-{vendor}-{number}`) the slug is
+ * still `blog`. Examples: `tj-52498` → `tj`,
+ * `blog-487-joysound-672848` → `blog`, `tjpdf-12345` → `tjpdf`.
  *
  * Used for two distinct purposes:
  *   1. Per-field ownership and source-priority tiebreaks in `pickByOwnership`,
@@ -63,6 +72,19 @@ function sourceSlug(r: SongRecord): string {
 
 function sourceRank(slug: string): number {
   return SOURCE_RANK[slug] ?? Number.POSITIVE_INFINITY;
+}
+
+/**
+ * Rank a slug by its position in a per-field ownership chain (lower index =
+ * higher priority; unlisted slugs are lowest). Used where a tiebreak must
+ * follow field-ownership priority rather than the id/source_url `SOURCE_RANK`
+ * order — currently only `propagateArtistKo`, which picks a display form by KO
+ * ownership priority. Decoupled from `SOURCE_RANK` so the blog demotion there
+ * cannot perturb an owned field value.
+ */
+function chainRank(chain: readonly string[], slug: string): number {
+  const i = chain.indexOf(slug);
+  return i === -1 ? Number.POSITIVE_INFINITY : i;
 }
 
 /**
@@ -959,7 +981,8 @@ function pickByPriority(cluster: SongRecord[], field: (r: SongRecord) => string)
  *
  *  - For each vendor (tj/ky/joysound), union all non-null contributions.
  *  - When multiple records contribute DIFFERENT non-null values for the SAME
- *    vendor, the highest-priority source's value wins (chain blog→tj→tjpdf→joysound).
+ *    vendor, the highest-priority source's value wins (SOURCE_RANK order
+ *    tj→tjpdf→joysound→blog, so a vendor's own number now beats a blog claim).
  *  - If `tierBClusterKey` is non-null AND disagreement is detected on a
  *    vendor field that was NOT the clustering key, emit a `MergeConflict`.
  *    (Tier A clusters can't disagree on the joining vendor — they share it
@@ -1259,8 +1282,10 @@ function koDisplayKey(s: string): string {
  *     ENTIRE key group is skipped — no partial fill, no source-based choice.
  *
  * When safe, the display value is chosen by the KO ownership source priority
- * (`SOURCE_RANK`: blog > tj > tjpdf > joysound), with an `id`-ascending
- * tie-break for determinism, then outer whitespace is trimmed. Existing
+ * (`KO_CHAIN`: blog > tj > tjpdf > joysound — NOT the id-tiebreak `SOURCE_RANK`,
+ * so the blog demotion for ids never changes which display form fills here),
+ * with an `id`-ascending tie-break for determinism, then outer whitespace is
+ * trimmed. Existing
  * non-null `artist_ko` values are NEVER overwritten — even by a higher-priority
  * donor. Records are not mutated: filled rows are returned as fresh objects and
  * untouched rows pass through by reference.
@@ -1289,11 +1314,11 @@ function propagateArtistKo(records: SongRecord[]): SongRecord[] {
     // Pick the display value by KO ownership priority, id-ascending tie-break.
     let winner = donors[0];
     if (!winner) continue;
-    let winnerRank = sourceRank(sourceSlug(winner));
+    let winnerRank = chainRank(KO_CHAIN, sourceSlug(winner));
     for (let k = 1; k < donors.length; k++) {
       // biome-ignore lint/style/noNonNullAssertion: bounded by length
       const d = donors[k]!;
-      const rank = sourceRank(sourceSlug(d));
+      const rank = chainRank(KO_CHAIN, sourceSlug(d));
       if (rank < winnerRank || (rank === winnerRank && d.id < winner.id)) {
         winner = d;
         winnerRank = rank;

@@ -66,7 +66,7 @@ describe('coreTitle / coresMatch — positive (the observed drift classes)', () 
 });
 
 describe('coreTitle / coresMatch — negative (must refuse to re-key)', () => {
-  it('genuinely different songs (re-assigned blog id) do NOT match', () => {
+  it('genuinely different songs (a title diverged past the core) do NOT match', () => {
     expect(coresMatch('My Dearest(ギルティクラウン OP)', 'さよならメモリーズ')).toBe(false);
   });
 
@@ -158,39 +158,39 @@ describe('rekeyEntries', () => {
     expect(entries[0].title_primary).toBe('マイフレンド (SLAM DUNK ED)');
   });
 
-  it('leaves a genuinely different (re-keyed blog id) song untouched, as remainder', () => {
+  it('leaves an entry whose corpus title diverged past the core match untouched, as remainder', () => {
     const entries = [
       cacheEntry({
-        id: 'blog-442-6',
+        id: 'joysound-147099',
         title_primary: 'My Dearest(ギルティクラウン OP)',
         title_ko: '마이 디어리스트',
       }),
     ];
     const byId = new Map([
       [
-        'blog-442-6',
-        corpusRec({ id: 'blog-442-6', title_primary: 'さよならメモリーズ', title_ko: null }),
+        'joysound-147099',
+        corpusRec({ id: 'joysound-147099', title_primary: 'さよならメモリーズ', title_ko: null }),
       ],
     ]);
     const result = rekeyEntries(entries, byId);
     expect(result.rekeyed).toHaveLength(0);
-    expect(result.remainder.map((r) => r.id)).toEqual(['blog-442-6']);
+    expect(result.remainder.map((r) => r.id)).toEqual(['joysound-147099']);
     expect(result.entries[0]).toEqual(entries[0]);
   });
 
   it('HOLDS (does not re-key) an entry whose alignment would null a blog title_ko', () => {
     const entries = [
       cacheEntry({
-        id: 'blog-537-16',
+        id: 'joysound-142583',
         title_primary: "It's all too much (カイジ人生逆転ゲーム 主題歌)",
         title_ko: null,
       }),
     ];
     const byId = new Map([
       [
-        'blog-537-16',
+        'joysound-142583',
         corpusRec({
-          id: 'blog-537-16',
+          id: 'joysound-142583',
           title_primary: "It's all too much(カイジ人生逆転ゲーム 主題歌)",
           title_ko: '전부 너무해',
           title_ko_source: 'blog',
@@ -199,7 +199,7 @@ describe('rekeyEntries', () => {
     ]);
     const result = rekeyEntries(entries, byId);
     expect(result.rekeyed).toHaveLength(0);
-    expect(result.held.map((h) => h.id)).toEqual(['blog-537-16']);
+    expect(result.held.map((h) => h.id)).toEqual(['joysound-142583']);
     expect(result.entries[0]).toEqual(entries[0]);
   });
 

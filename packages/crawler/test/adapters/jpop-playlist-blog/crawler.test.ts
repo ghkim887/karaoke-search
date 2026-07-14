@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BlogCrawler } from '../../../src/adapters/jpop-playlist-blog/crawler.js';
 import type { HttpClient } from '../../../src/http.js';
 
@@ -106,5 +109,57 @@ describe('BlogCrawler.crawl — walks both indexes, de-dupes artists', () => {
       .map((u) => u.replace(BASE, ''));
     // /98 artists first (in order), then /417 artists.
     expect(artistPaths).toEqual(['/101', '/102', '/201']);
+  });
+});
+
+describe('BlogCrawler.crawl — numberless-drop report', () => {
+  let outDir: string;
+  beforeEach(async () => {
+    outDir = await mkdtemp(join(tmpdir(), 'blog-drops-'));
+  });
+  afterEach(async () => {
+    await rm(outDir, { recursive: true, force: true });
+  });
+
+  // One numbered row (survives, minted from tj) and one numberless row (all
+  // three cells `-` → dropped). The numbered row exercises the new minting
+  // shape; the numberless row exercises the drop rule + JSONL report.
+  const artistPageHtml = `
+<html><body>
+<div class="tt_article_useless_p_margin">
+  <blockquote><p>FakeArtist</p></blockquote>
+  <table><tbody>
+    <tr><td>Numbered</td><td>1</td><td>-</td><td>-</td></tr>
+    <tr><td>Numberless</td><td>-</td><td>-</td><td>-</td></tr>
+  </tbody></table>
+</div>
+</body></html>`;
+
+  function fakeHttp(): Pick<HttpClient, 'fetch'> {
+    return {
+      async fetch(url: string) {
+        if (url === `${BASE}/98`) return { status: 200, body: indexHtml(['/416']) };
+        if (url === `${BASE}/417`) return { status: 200, body: indexHtml([]) };
+        return { status: 200, body: artistPageHtml };
+      },
+    };
+  }
+
+  it('drops numberless rows, mints the numbered row, and writes the JSONL report', async () => {
+    const dropsPath = join(outDir, 'drops.jsonl');
+    const crawler = new BlogCrawler(fakeHttp() as HttpClient);
+    const records = [];
+    for await (const r of crawler.crawl({ blogDropsOutPath: dropsPath })) records.push(r);
+
+    // Only the numbered row survives, under the new minted id shape.
+    expect(records.map((r) => r.id)).toEqual(['blog-416-tj-1']);
+
+    const lines = (await readFile(dropsPath, 'utf8')).trim().split('\n');
+    expect(lines).toHaveLength(1);
+    expect(JSON.parse(lines[0] as string)).toEqual({
+      title_primary: 'Numberless',
+      artist_primary: 'FakeArtist',
+      source_url: `${BASE}/416`,
+    });
   });
 });

@@ -239,14 +239,17 @@ promotion are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).)
 
 - **PRODUCT: `blog-*` record ids are positional and reshuffle each crawl.** #95
   re-assigned the Utada page ids wholesale (e.g. `blog-301-13` was 光, is now a different
-  song). Device favorites (localStorage `karaoke-favorites:v1`) and `/api/songs` lookups
-  key by record id, so a user's saved favorites silently re-target DIFFERENT songs after
-  such a crawl. Needs a stable record-identity design for blog rows (e.g. derive the id
-  from a stable key such as a karaoke number or content hash) — owner decision.
-  **HELD (2026-07-10, owner): no action planned for now.** The recommended
-  narrow fix on file (favorites store a stable key — vendor numbers — and
-  resolve to ids at load, one-time v1 migration) stays available for when this
-  is picked up.
+  song), silently re-targeting device favorites (localStorage `karaoke-favorites:v1`).
+  **SHIPPED 2026-07-14 (this PR — `docs/specs/2026-07-14-blog-stable-identity-design.md`):**
+  D1 demote blog to the lowest merge rank (tj > tjpdf > joysound > blog) so merged
+  clusters take the stable vendor id; D2 drop numberless blog rows (483 on the current
+  corpus, report-observed); D3 reverse lookup for claimed-but-unmatched vendor numbers
+  (TJ probe-seed artifact + JOYSOUND delisted report — probe auto-ingest is a documented
+  gap, crawl-resume follow-up); D4 residual stable minting `blog-{artistId}-{vendor}-{number}`;
+  D5 favorites unchanged (backward compat waived — stale favorites silently dangle).
+  Effects land at crawl resume (corpus loses the numberless rows, merged records surface
+  under vendor ids); sidecars (134 cache + 1 hint) re-keyed now via the v22 two-sided
+  replay map. Parity baseline regenerates with the first resumed-crawl PR.
 
 *(The completed parity-baseline-regeneration-policy and smoke-fixture bullets,
 and the filter-seam script guard — SHIPPED 2026-07-13, PR #143 — are archived
@@ -267,7 +270,7 @@ Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).
 - **Post-JOYSOUND refactor backlog** — DONE 2026-07-13 (last items: classifier gate-array #135, .tmp_review cleanup).
 - **2026-07-09 audit deferred findings** — RESOLVED 2026-07-10 (PR #107; refactor batch PR #100).
 - **Chinese-leak detection — shipped detector/calibration/crawl-report wiring** — #120 (2026-07-10), calibration 2026-07-12, #128 (2026-07-12). Growing the anomaly list remains live.
-- **TJ filter-seam + parity — completed items** — search-parity baseline regeneration policy (PR #106, 2026-07-10) + smoke-fixture stable-key re-pin (2026-07-10). Filter-seam + blog-id bullets remain live.
+- **TJ filter-seam + parity — completed items** — search-parity baseline regeneration policy (PR #106, 2026-07-10) + smoke-fixture stable-key re-pin (2026-07-10). Filter-seam guard SHIPPED 2026-07-13 (#143); blog-id stable-identity SHIPPED 2026-07-14.
 - **Watchdog alert channel** — CLOSED 2026-07-10 (owner: no dedicated channel).
 - **TJ filter-seam script guard** — SHIPPED 2026-07-13 (PR #143): Option-C veto inside `jpn-admit-artist`; incident clones self-reject without drop-list entries; Latin-titled residual tail stays on the drop list.
 - **JOYSOUND classifier predicate unification (Phases 1+2)** — Phase 1 (T5-D); Phase 2 DONE 2026-07-13 (PR #142, 0 flips over the 352,290-row v22 replay).
