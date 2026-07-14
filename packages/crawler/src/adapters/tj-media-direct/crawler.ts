@@ -5,7 +5,12 @@ import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { resolveCrawlLimit } from '../limit.js';
-import { type BlogWhitelistSource, defaultBlogWhitelistSource } from './blogWhitelist.js';
+import {
+  type BlogSeedSource,
+  type BlogWhitelistSource,
+  defaultBlogSeedSource,
+  defaultBlogWhitelistSource,
+} from './blogWhitelist.js';
 import { bootstrapArtistMapFromCharts } from './bootstrapCharts.js';
 import { type SearchSongCache, isBootstrapFresh, loadCache, saveCache } from './cache.js';
 import { enrichArtistMap } from './enrichArtistMap.js';
@@ -14,6 +19,7 @@ import { parseCatalogShell, rescueJpLikelyDroppedRecords } from './jpLikelyRescu
 import { extractCatalogItems } from './normalize.js';
 import { type TranslitEnrichment, normalize } from './normalizer.js';
 import { type TjFilterDecisionRecord, parseCatalogResponse } from './parser.js';
+import { probeBlogSeedNumbers } from './seedProbe.js';
 
 // The blog-whitelist subsystem (record type, script-signal rules, builder,
 // default on-disk source) lives in `blogWhitelist.ts`; the JP-likely drop
@@ -111,6 +117,7 @@ export interface TJDirectCrawlerOptions {
 export class TJDirectCrawler implements Crawler {
   readonly name = 'tj-media-direct';
   private cachedWhitelist: ReadonlySet<string> | null = null;
+  private cachedSeed: ReadonlySet<string> | null = null;
   private readonly cachePath: string;
   private readonly disableEnrichment: boolean;
 
@@ -118,6 +125,10 @@ export class TJDirectCrawler implements Crawler {
     private http: HttpClient,
     private blogWhitelistSource: BlogWhitelistSource = defaultBlogWhitelistSource,
     options: TJDirectCrawlerOptions = {},
+    // Blog reverse-probe seed source (previous-corpus blog-claimed TJ numbers).
+    // Defaulted + last positional so existing call sites are unchanged; tests
+    // inject a fixture set.
+    private blogSeedSource: BlogSeedSource = defaultBlogSeedSource,
   ) {
     this.cachePath = options.cachePath ?? TRANSLIT_CACHE_PATH_DEFAULT;
     this.disableEnrichment = options.disableEnrichment ?? false;
@@ -132,6 +143,11 @@ export class TJDirectCrawler implements Crawler {
       this.cachedWhitelist = this.blogWhitelistSource();
     }
     const forceIncludeTjNumbers = this.cachedWhitelist;
+
+    if (this.cachedSeed === null) {
+      this.cachedSeed = this.blogSeedSource();
+    }
+    const blogSeed = this.cachedSeed;
 
     // Step 1: bulk catalog fetch.
     const res = await this.http.postForm(CATALOG_URL, { searchYm: SEARCH_YM });
@@ -225,6 +241,35 @@ export class TJDirectCrawler implements Crawler {
       }
       console.log(
         `[tj-rescue] checked ${rescueStats.candidates} JP-likely drops — fetches ${rescueStats.fetches}, admitted ${rescueStats.admitted}, misses ${rescueStats.misses}, errors ${rescueStats.errors}, skipped-cached ${rescueStats.skippedCached}`,
+      );
+    }
+
+    // Step 5b: TJ reverse-probe seed ingest (Option B — adapter self-feed;
+    // #152 gap closed). THIS run's TJ numbers are now settled (catalog +
+    // rescue), so look up the blog-claimed numbers we did NOT emit and, for
+    // hits the filter chain admits, append tj-{number} records so they
+    // graduate their standalone blog rows at the next merge. Runs BEFORE the
+    // translit pass so the new records get title_ko/artist_ko like any catalog
+    // row. Skipped under disableEnrichment (no HTTP), same as rescue/translit;
+    // an empty seed makes zero probes and adds nothing (crawl byte-identical).
+    if (!this.disableEnrichment) {
+      const alreadyCrawledTj = new Set<string>();
+      for (const r of raw) {
+        const tj = r.karaoke_numbers.tj;
+        if (tj !== null) alreadyCrawledTj.add(tj);
+      }
+      const { records: seedRecords, stats: seedStats } = await probeBlogSeedNumbers(
+        this.http,
+        blogSeed,
+        alreadyCrawledTj,
+        cache,
+        CATALOG_URL,
+        forceIncludeTjNumbers,
+      );
+      if (seedStats.probed > 0) cacheMutated = true;
+      for (const r of seedRecords) raw.push(r);
+      console.log(
+        `[tj-seed] probed ${seedStats.probed} blog-claimed numbers — hits ${seedStats.hits}, filtered ${seedStats.filtered}, misses ${seedStats.misses}, errors ${seedStats.errors}, skipped-already-crawled ${seedStats.skippedAlreadyCrawled}, truncated ${seedStats.truncated} (seed ${seedStats.seed})`,
       );
     }
 
