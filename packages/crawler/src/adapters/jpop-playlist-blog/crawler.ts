@@ -3,7 +3,7 @@ import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { resolveCrawlLimit } from '../limit.js';
 import { parseIndexPage } from './index-parser.js';
-import { normalizeRawRecords } from './normalizer.js';
+import { type DroppedBlogRow, normalizeRawRecords } from './normalizer.js';
 import { parseArtistPage } from './parser.js';
 
 /**
@@ -69,6 +69,9 @@ export class BlogCrawler implements Crawler {
     let attempted = 0;
     let succeeded = 0;
     const queued: SongRecord[] = [];
+    // Numberless rows (tj/ky/joysound all null) are dropped at normalize time
+    // — collected here so the crawl report can list what the corpus loses.
+    const droppedNumberless: DroppedBlogRow[] = [];
     for (const artistPath of artistPaths) {
       if (attempted >= limit) break;
       attempted++;
@@ -88,8 +91,9 @@ export class BlogCrawler implements Crawler {
           console.warn(`[jpop-playlist-blog] ${artistPath} parsed 0 rows`);
           continue;
         }
-        const records = normalizeRawRecords(raw, artistPath, crawledAt);
+        const { records, dropped } = normalizeRawRecords(raw, artistPath, crawledAt);
         for (const r of records) queued.push(r);
+        for (const d of dropped) droppedNumberless.push(d);
         succeeded++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -106,6 +110,21 @@ export class BlogCrawler implements Crawler {
             `${ARTIST_SUCCESS_RATIO_FLOOR} (${succeeded}/${attempted})`,
         );
       }
+    }
+
+    // Surface the numberless-drop census on the crawler's telemetry channel
+    // (same role as tj-media-direct's per-path counters): a count plus a
+    // bounded sample of title/artist so the crawl report shows what was cut
+    // without dumping the whole list into the log.
+    if (droppedNumberless.length > 0) {
+      const sample = droppedNumberless
+        .slice(0, 10)
+        .map((d) => `${d.title_primary} / ${d.artist_primary}`)
+        .join('; ');
+      console.log(
+        `[jpop-playlist-blog] dropped ${droppedNumberless.length} numberless rows ` +
+          `(no tj/ky/joysound number); sample: ${sample}`,
+      );
     }
 
     for (const r of queued) yield r;
