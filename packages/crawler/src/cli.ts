@@ -11,7 +11,7 @@ const HELP = `karaoke-crawl — run registered source adapters and emit songs.js
 Usage:
   karaoke-crawl [--limit <n>] [--source <slug>]... [--out <path>]
                 [--conflicts-out <path>] [--decisions-out <path>]
-                [--reverse-lookup-out <path>]
+                [--blog-drops-out <path>] [--reverse-lookup-out <path>]
 
 Options:
   --limit <n>      Per-source page cap (e.g. artist pages for the blog
@@ -38,6 +38,12 @@ Options:
                    row). Only the tj-media-direct adapter writes it; overwrite
                    semantics. When omitted, no file is written and behavior is
                    unchanged. Resolved relative to the repo root.
+  --blog-drops-out <path>
+                   Optional path for the numberless-blog-drop report (JSONL,
+                   one dropped row per line). Only the jpop-playlist-blog
+                   adapter writes it; overwrite semantics. When omitted, no file
+                   is written and behavior is unchanged. Resolved relative to
+                   the repo root.
   --reverse-lookup-out <path>
                    Optional path for the blog reverse-lookup artifact (JSON):
                    claimed-but-unmatched TJ numbers (probe seed) and JOYSOUND
@@ -53,6 +59,7 @@ interface ParsedArgs {
   out: string;
   conflictsOut: string | null;
   decisionsOut: string | null;
+  blogDropsOut: string | null;
   reverseLookupOut: string | null;
   help: boolean;
 }
@@ -64,6 +71,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     out: 'apps/web/public/data/songs.json',
     conflictsOut: null,
     decisionsOut: null,
+    blogDropsOut: null,
     reverseLookupOut: null,
     help: false,
   };
@@ -115,6 +123,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
       out.decisionsOut = next;
       continue;
     }
+    if (arg === '--blog-drops-out') {
+      const next = argv[++i];
+      if (next === undefined) throw new Error('--blog-drops-out requires a value');
+      out.blogDropsOut = next;
+      continue;
+    }
     if (arg === '--reverse-lookup-out') {
       const next = argv[++i];
       if (next === undefined) throw new Error('--reverse-lookup-out requires a value');
@@ -158,6 +172,11 @@ async function main(): Promise<void> {
       ? parsed.decisionsOut
       : resolve(repoRoot, parsed.decisionsOut)
     : undefined;
+  const blogDropsOutPath = parsed.blogDropsOut
+    ? isAbsolute(parsed.blogDropsOut)
+      ? parsed.blogDropsOut
+      : resolve(repoRoot, parsed.blogDropsOut)
+    : undefined;
   const reverseLookupOutPath = parsed.reverseLookupOut
     ? isAbsolute(parsed.reverseLookupOut)
       ? parsed.reverseLookupOut
@@ -172,6 +191,7 @@ async function main(): Promise<void> {
     ...(parsed.limit > 0 ? { limit: parsed.limit } : {}),
     ...(conflictsOutPath ? { conflictsOutPath } : {}),
     ...(decisionsOutPath ? { decisionsOutPath } : {}),
+    ...(blogDropsOutPath ? { blogDropsOutPath } : {}),
     ...(reverseLookupOutPath ? { reverseLookupOutPath } : {}),
   };
   try {

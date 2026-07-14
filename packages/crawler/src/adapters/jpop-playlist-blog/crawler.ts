@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import type { SongRecord } from '@karaoke/schema';
 import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
@@ -127,6 +129,35 @@ export class BlogCrawler implements Crawler {
       );
     }
 
+    // Optional full drop report (JSONL), same observability channel as the TJ
+    // filter-decisions artifact (#134). Written once, overwrite semantics, ONLY
+    // when a path is supplied.
+    if (options?.blogDropsOutPath) {
+      await this.tryWriteDrops(options.blogDropsOutPath, droppedNumberless);
+    }
+
     for (const r of queued) yield r;
+  }
+
+  /**
+   * Write the numberless-drop report as JSONL (one dropped row per line),
+   * overwrite semantics. Fail-soft: a write error is warned, never thrown — the
+   * report is telemetry and must not abort the crawl. The parent dir is created
+   * if missing (CI points this at a RUNNER_TEMP subdir).
+   */
+  private async tryWriteDrops(outPath: string, dropped: readonly DroppedBlogRow[]): Promise<void> {
+    try {
+      await mkdir(dirname(outPath), { recursive: true });
+      const body = dropped.map((d) => JSON.stringify(d)).join('\n');
+      await writeFile(outPath, dropped.length > 0 ? `${body}\n` : '', 'utf8');
+      console.log(
+        `[jpop-playlist-blog] wrote ${dropped.length} numberless-drop rows to ${outPath}`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[jpop-playlist-blog] numberless-drop report write failed at ${outPath}: ${msg}`,
+      );
+    }
   }
 }

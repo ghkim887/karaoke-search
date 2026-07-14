@@ -27,6 +27,12 @@ export interface RunPipelineOptions {
    */
   decisionsOutPath?: string;
   /**
+   * Optional path for the numberless-blog-drop report (JSONL). Forwarded
+   * verbatim into each adapter's `CrawlOptions`; only `jpop-playlist-blog`
+   * writes it. `undefined` (the default) leaves adapter behavior byte-identical.
+   */
+  blogDropsOutPath?: string;
+  /**
    * Optional path for the blog reverse-lookup artifact (JSON). When set, the
    * pipeline writes the claimed-but-unmatched vendor numbers on standalone blog
    * records after merge: the TJ probe seed and the JOYSOUND delisted/typo
@@ -62,14 +68,26 @@ export interface RunPipelineResult {
  *  4. Atomically write `outPath` via `outPath + ".tmp"` then rename.
  */
 export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipelineResult> {
-  const { adapters, limit, outPath, conflictsOutPath, decisionsOutPath, reverseLookupOutPath } =
-    opts;
-  // Preserve the original `undefined` when neither knob is set, so a plain
-  // crawl passes exactly what it did before (byte-identical adapter behavior).
+  const {
+    adapters,
+    limit,
+    outPath,
+    conflictsOutPath,
+    decisionsOutPath,
+    blogDropsOutPath,
+    reverseLookupOutPath,
+  } = opts;
+  // Preserve the original `undefined` when no adapter-facing knob is set, so a
+  // plain crawl passes exactly what it did before (byte-identical adapter
+  // behavior).
   const hasLimit = typeof limit === 'number' && limit > 0;
   const adapterOptions: CrawlOptions | undefined =
-    hasLimit || decisionsOutPath
-      ? { ...(hasLimit ? { limit } : {}), ...(decisionsOutPath ? { decisionsOutPath } : {}) }
+    hasLimit || decisionsOutPath || blogDropsOutPath
+      ? {
+          ...(hasLimit ? { limit } : {}),
+          ...(decisionsOutPath ? { decisionsOutPath } : {}),
+          ...(blogDropsOutPath ? { blogDropsOutPath } : {}),
+        }
       : undefined;
 
   const collected: SongRecord[] = [];

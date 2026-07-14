@@ -19,6 +19,14 @@ export interface CrawlOptions {
    * (the default) means no file is written and behavior is unchanged.
    */
   decisionsOutPath?: string;
+  /**
+   * Optional path for the numberless-blog-drop report (JSONL). Only the
+   * `jpop-playlist-blog` adapter honors it — it writes one dropped row
+   * (title/artist/page) per line for rows that claimed no vendor number.
+   * Other adapters ignore it. `undefined` (the default) means no file is
+   * written and behavior is unchanged.
+   */
+  blogDropsOutPath?: string;
 }
 
 /**
