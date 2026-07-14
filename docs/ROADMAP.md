@@ -244,8 +244,9 @@ promotion are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).)
   D1 demote blog to the lowest merge rank (tj > tjpdf > joysound > blog) so merged
   clusters take the stable vendor id; D2 drop numberless blog rows (483 on the current
   corpus, report-observed); D3 reverse lookup for claimed-but-unmatched vendor numbers
-  (TJ probe-seed artifact + JOYSOUND delisted report — probe auto-ingest is a documented
-  gap, crawl-resume follow-up); D4 residual stable minting `blog-{artistId}-{vendor}-{number}`;
+  (JOYSOUND delisted report; TJ probe auto-ingest CLOSED 2026-07-14 — tj-media-direct
+  self-feeds the seed post-crawl, probing blog-claimed TJ numbers it did not emit and
+  admitting hits through the normal filter chain); D4 residual stable minting `blog-{artistId}-{vendor}-{number}`;
   D5 favorites unchanged (backward compat waived — stale favorites silently dangle).
   Effects land at crawl resume (corpus loses the numberless rows, merged records surface
   under vendor ids); sidecars (134 cache + 1 hint) re-keyed now via the v22 two-sided

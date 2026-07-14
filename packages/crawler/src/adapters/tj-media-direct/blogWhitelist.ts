@@ -211,3 +211,75 @@ export function defaultBlogWhitelistSource(): ReadonlySet<string> {
     return new Set();
   }
 }
+
+/**
+ * Provider for the TJ reverse-probe SEED: TJ catalog numbers claimed by
+ * blog-origin records in the previous corpus. Same on-disk source as the
+ * rescue whitelist (`apps/web/public/data/songs.json`) but a DIFFERENT
+ * projection — see `buildBlogSeed`. Defaults to the on-disk corpus.
+ */
+export type BlogSeedSource = () => ReadonlySet<string>;
+
+/**
+ * Build the reverse-probe seed from a previous-corpus record array: every TJ
+ * number claimed by a blog-origin record.
+ *
+ * Detection is PREFIX-ONLY (`id` starts with `blog-`), so it works for both
+ * the legacy positional shape (`blog-{artistId}-{rowIndex}`) and the current
+ * `blog-{artistId}-{vendor}-{number}` minting. Unlike `buildBlogWhitelist`
+ * there is NO artist script-signal trim: every blog TJ claim is a probe
+ * candidate. The probe hit is still gated by the full classification chain
+ * downstream (a probe hit does not bypass the JPN/drop filters), so widening
+ * the candidate set here cannot admit a non-JP record — it only decides which
+ * numbers are worth a lookup.
+ */
+export function buildBlogSeed(records: ReadonlyArray<BlogWhitelistRecord>): ReadonlySet<string> {
+  const seed = new Set<string>();
+  for (const rec of records) {
+    if (typeof rec.id !== 'string' || !rec.id.startsWith('blog-')) continue;
+    const tj = rec.karaoke_numbers?.tj;
+    if (typeof tj === 'string' && tj !== '') seed.add(tj);
+  }
+  return seed;
+}
+
+/**
+ * Read a corpus JSON file and derive the blog reverse-probe seed. If the file
+ * is missing or unreadable, log a single warning and return an empty set — the
+ * seed probe degrades to "no reverse lookup", not a hard failure (mirrors
+ * `defaultBlogWhitelistSource`). Extracted (path-parameterized) so the
+ * missing-file and derivation behavior are unit-testable without the on-disk
+ * default corpus.
+ */
+export function loadBlogSeedFromCorpus(corpusPath: string): ReadonlySet<string> {
+  try {
+    const text = readFileSync(corpusPath, 'utf8');
+    const parsed: unknown = JSON.parse(text);
+    if (!Array.isArray(parsed)) return new Set();
+    const records: BlogWhitelistRecord[] = [];
+    for (const rec of parsed) {
+      if (!rec || typeof rec !== 'object') continue;
+      const numbersRaw = (rec as { karaoke_numbers?: unknown }).karaoke_numbers;
+      if (!numbersRaw || typeof numbersRaw !== 'object') continue;
+      const tjRaw = (numbersRaw as { tj?: unknown }).tj;
+      records.push({
+        id: typeof (rec as { id?: unknown }).id === 'string' ? (rec as { id: string }).id : null,
+        artist_primary: null,
+        karaoke_numbers: { tj: typeof tjRaw === 'string' ? tjRaw : null },
+      });
+    }
+    return buildBlogSeed(records);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[tj-seed] blog seed disabled: could not read ${corpusPath}: ${msg}`);
+    return new Set();
+  }
+}
+
+/**
+ * Default blog seed source: derive the blog-claimed TJ numbers from the same
+ * `apps/web/public/data/songs.json` the rescue whitelist reads.
+ */
+export function defaultBlogSeedSource(): ReadonlySet<string> {
+  return loadBlogSeedFromCorpus(BLOG_CORPUS_PATH_DEFAULT);
+}
