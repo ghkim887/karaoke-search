@@ -39,11 +39,13 @@ export interface RunPipelineOptions {
    * report (design 2026-07-14 §3). `undefined` (the default) writes nothing and
    * leaves a plain crawl byte-identical.
    *
-   * NOTE (consumption gap): nothing ingests the seed automatically yet — the
-   * tj-media-direct R7 probe (`searchSongByPro`) only runs over its own crawled
-   * catalog plus the blog-whitelist rescue. Feeding this seed into the probe is
-   * a follow-up; today the artifact is emitted for the crawl report and manual
-   * re-seeding.
+   * NOTE (closed loop): the tj-media-direct adapter now self-feeds the TJ probe
+   * seed — after its catalog crawl + rescue it probes the blog-claimed TJ
+   * numbers this run did not emit (`probeBlogSeedNumbers`) and admits the hits
+   * through the normal filter chain, so those standalone blog rows graduate to
+   * `tj-*` on the next merge. This post-merge artifact is therefore an
+   * observability surface (what remained unmatched), not the only path to
+   * enrichment; the JOYSOUND side stays report-only (fullCatalog is exhaustive).
    */
   reverseLookupOutPath?: string;
 }
