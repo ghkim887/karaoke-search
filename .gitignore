@@ -73,6 +73,7 @@ scripts/data/audit-missing-joysound/
 
 # Simplified-Chinese-leak audit default output dir (report-only JSONL, never committed)
 scripts/data/audit-simplified-chinese/
+scripts/data/audit-blog-ky-parity/
 
 # R4-4 JOYSOUND artistId index (generated from the NAS detail-sweep logs, never committed)
 scripts/data/joysound-artist-id-index.json

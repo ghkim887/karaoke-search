@@ -41,7 +41,12 @@ function StringEnum<const T extends readonly string[]>(values: T) {
 const karaokeNumbersSchema = Type.Object(
   {
     tj: Nullable(),
-    ky: Nullable(),
+    // Defense-in-depth: a string ky value must be bare digits (all real KY
+    // codes look like `41637`). `null` stays valid — `pattern` only constrains
+    // string instances. Added 2026-07-16 with the R5 KY adapter after verifying
+    // every existing ky value in the committed corpus (1,254 distinct) is
+    // already bare digits, so this is an additive hardening, not a data change.
+    ky: Nullable({ pattern: '^[0-9]+$' }),
     // Defense-in-depth: a string joysound value must be bare digits (all real
     // codes look like `190001`). `null` stays valid — `pattern` only constrains
     // string instances. Catches blog-parse junk like the Korean word "등록일"

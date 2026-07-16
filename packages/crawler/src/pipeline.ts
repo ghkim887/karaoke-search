@@ -33,6 +33,12 @@ export interface RunPipelineOptions {
    */
   blogDropsOutPath?: string;
   /**
+   * Optional path for the KY per-row filter decision log (JSONL). Forwarded
+   * verbatim into each adapter's `CrawlOptions`; only `ky-kysing` writes it.
+   * `undefined` (the default) leaves adapter behavior byte-identical.
+   */
+  kyDecisionsOutPath?: string;
+  /**
    * Optional path for the blog reverse-lookup artifact (JSON). When set, the
    * pipeline writes the claimed-but-unmatched vendor numbers on standalone blog
    * records after merge: the TJ probe seed and the JOYSOUND delisted/typo
@@ -77,6 +83,7 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
     conflictsOutPath,
     decisionsOutPath,
     blogDropsOutPath,
+    kyDecisionsOutPath,
     reverseLookupOutPath,
   } = opts;
   // Preserve the original `undefined` when no adapter-facing knob is set, so a
@@ -84,11 +91,12 @@ export async function runPipeline(opts: RunPipelineOptions): Promise<RunPipeline
   // behavior).
   const hasLimit = typeof limit === 'number' && limit > 0;
   const adapterOptions: CrawlOptions | undefined =
-    hasLimit || decisionsOutPath || blogDropsOutPath
+    hasLimit || decisionsOutPath || blogDropsOutPath || kyDecisionsOutPath
       ? {
           ...(hasLimit ? { limit } : {}),
           ...(decisionsOutPath ? { decisionsOutPath } : {}),
           ...(blogDropsOutPath ? { blogDropsOutPath } : {}),
+          ...(kyDecisionsOutPath ? { kyDecisionsOutPath } : {}),
         }
       : undefined;
 

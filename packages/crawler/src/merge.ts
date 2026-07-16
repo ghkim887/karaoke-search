@@ -22,10 +22,16 @@ import {
  * design): a blog row's positional id used to win every merged cluster,
  * reshuffling id→song mappings on each crawl. Demoting blog to last makes a
  * merged blog+vendor cluster survive under the stable vendor id (`tj-{n}` /
- * `tjpdf-{n}` / `joysound-{n}`); blog contributes only its own fields via the
- * chains below, never the cluster id. joysound stays above blog but below
- * tj/tjpdf, preserving the prior "JOYSOUND must not displace TJ" intent while
- * still beating a bare blog claim on its own number space.
+ * `tjpdf-{n}` / `joysound-{n}` / `ky-{n}`); blog contributes only its own fields
+ * via the chains below, never the cluster id. joysound and ky stay above blog
+ * but below tj/tjpdf.
+ *
+ * ky is ranked ABOVE blog (R5 KY adapter, 2026-07-16): a standalone blog row
+ * claiming a `ky` number Tier-A-unions with the live `ky-{n}` record; ky (4)
+ * outranking blog (5) makes the cluster survive under the stable `ky-{n}` id, so
+ * the blog row graduates to `ky-*` — the same graduation mechanism TJ/JOYSOUND
+ * already use. ky sits below joysound, preserving the vendor precedence
+ * tj > tjpdf > joysound > ky > blog.
  *
  * NOTE: this rank governs ONLY id/source_url and disputed-cell number
  * tiebreaks. Per-field ownership is governed by TITLE_ARTIST_CHAIN and
@@ -35,10 +41,16 @@ const SOURCE_RANK: Record<string, number> = {
   tj: 1,
   tjpdf: 2,
   joysound: 3,
-  blog: 4,
+  ky: 4,
+  blog: 5,
 };
 
-const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'tjpdf', 'joysound'] as const;
+// `ky` is LAST in the title/artist chain (R5): KY index titles carry a
+// fixed-width truncation risk, so a KY title must never win a field it shares
+// with a higher-confidence source (a truncated-then-repaired KY title only
+// survives when it is the sole contributor). KO_CHAIN is unchanged — KY
+// contributes no Korean fields.
+const TITLE_ARTIST_CHAIN = ['tj', 'blog', 'tjpdf', 'joysound', 'ky'] as const;
 
 // `tj` is an explicit member of the Korean-fields chain (lowest priority)
 // because the TJ-direct adapter's `searchSong` translit pass (PR-1) writes

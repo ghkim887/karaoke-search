@@ -352,3 +352,88 @@ describe('TJ filter attribution section (2026-07-12, report-only)', () => {
     expect(body.indexOf('### Simplified-Chinese audit')).toBeLessThan(body.indexOf(HEADING));
   });
 });
+
+describe('KY filter attribution section (2026-07-16, report-only)', () => {
+  const HEADING = '### KY filter attribution';
+  const writeKy = (rows) =>
+    writeText(
+      'ky-filter.jsonl',
+      rows.length === 0 ? '' : `${rows.map((r) => JSON.stringify(r)).join('\n')}\n`,
+    );
+  // Write the (empty) TJ-side logs so the TJ section renders note-free and does
+  // not pollute a whole-body `not.toContain('[!NOTE]')` assertion about KY.
+  const writeCleanTjLogs = () => {
+    writeText('tj-filter.jsonl', '');
+    writeText('drop-kpop-leaks.jsonl', '');
+    writeText('drop-cpop-leaks.jsonl', '');
+  };
+
+  it('renders NOTHING when ky-filter.jsonl is absent (byte-parity for TJ-only dirs)', () => {
+    // A dir with only a TJ log must not sprout a KY section.
+    writeText('tj-filter.jsonl', '');
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).not.toContain(HEADING);
+  });
+
+  it('renders totals and the admit/drop reason table from ky-filter.jsonl', () => {
+    writeCleanTjLogs(); // keep the TJ section note-free so we isolate KY
+    writeKy([
+      {
+        ky: '20',
+        title: '怪物',
+        artist: 'YOASOBI',
+        decision: 'admit',
+        step: 'index',
+        reason: 'admit-index',
+      },
+      {
+        ky: '30',
+        title: 'x',
+        artist: 'YOASOBI',
+        decision: 'admit',
+        step: 'truncation-repair',
+        reason: 'admit-detail-repaired',
+      },
+      {
+        ky: '21',
+        title: 'Dynamite',
+        artist: 'BTS',
+        decision: 'drop',
+        step: 'drop-list',
+        reason: 'drop-korean-artist',
+      },
+    ]);
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain(HEADING);
+    expect(body).toContain('Kept 2 / dropped 1 (from `ky-filter.jsonl`).');
+    expect(body).toContain('| decision | reason | count |');
+    expect(body).toContain('| admit | admit-index | 1 |');
+    expect(body).toContain('| admit | admit-detail-repaired | 1 |');
+    expect(body).toContain('| drop | drop-korean-artist | 1 |');
+    expect(body).not.toContain('[!NOTE]');
+  });
+
+  it('renders "Kept 0 / dropped 0" for an empty ky-filter.jsonl', () => {
+    writeCleanTjLogs(); // keep the TJ section note-free so we isolate KY
+    writeKy([]);
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain('Kept 0 / dropped 0 (from `ky-filter.jsonl`).');
+    expect(body).toContain('No filter decisions recorded.');
+    expect(body).not.toContain('[!NOTE]');
+  });
+
+  it('renders a visible note (never throws) on a malformed ky-filter.jsonl line', () => {
+    writeText('ky-filter.jsonl', '{oops\n');
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body).toContain(HEADING);
+    expect(body).toContain('> [!NOTE]');
+    expect(body).toContain('Could not parse');
+  });
+
+  it('appends the KY section AFTER the TJ section when both logs are present', () => {
+    writeText('tj-filter.jsonl', '');
+    writeKy([]);
+    const body = composePrBody(join(dir, 'nope.json'), undefined, undefined, dir);
+    expect(body.indexOf('### TJ filter attribution')).toBeLessThan(body.indexOf(HEADING));
+  });
+});

@@ -2750,3 +2750,83 @@ describe('mergeRecords — Tier B same-source survivor determinism', () => {
     expect(records[0]?.karaoke_numbers.tj).toBe('1000');
   });
 });
+
+describe('mergeRecords — KY source rank + blog graduation (R5)', () => {
+  it('graduates a standalone blog row to ky-* when it shares a ky number with a live KY record', () => {
+    const ky = record({
+      id: 'ky-41637',
+      source_url: 'https://kysing.kr/search/?category=1&keyword=41637',
+      title_primary: '雪の華', // KY primary (Japanese)
+      artist_primary: '中島美嘉',
+      karaoke_numbers: { tj: null, ky: '41637', joysound: null },
+    });
+    const blog = record({
+      id: 'blog-523-1',
+      source_url: 'https://blog.test/523',
+      title_primary: '유키노하나', // blog title (Korean render)
+      title_ko: '눈의 꽃',
+      artist_primary: '中島美嘉',
+      artist_ko: '나카시마 미카',
+      karaoke_numbers: { tj: null, ky: '41637', joysound: null },
+    });
+
+    const { records, conflicts } = mergeRecords([ky, blog]);
+    expect(records).toHaveLength(1);
+    expect(conflicts).toHaveLength(0);
+    const m = records[0];
+    if (!m) throw new Error('no record');
+    // id/source_url: ky (rank 4) beats blog (rank 5) → the blog row graduates.
+    expect(m.id).toBe('ky-41637');
+    expect(m.source_url).toBe('https://kysing.kr/search/?category=1&keyword=41637');
+    // TITLE_ARTIST_CHAIN puts ky LAST, so the blog title wins over the KY title
+    // (a truncation-risky KY title never beats a higher-confidence source).
+    expect(m.title_primary).toBe('유키노하나');
+    // KO chain: blog contributes the Korean fields (KY contributes none).
+    expect(m.title_ko).toBe('눈의 꽃');
+    expect(m.karaoke_numbers.ky).toBe('41637');
+  });
+
+  it('joysound (rank 3) beats ky (rank 4) on the cluster id', () => {
+    // A blog row carrying BOTH a ky and a joysound number Tier-A-unions with the
+    // live ky-* and joysound-* records; the highest-rank source wins the id.
+    const blog = record({
+      id: 'blog-9-1',
+      source_url: 'https://blog.test/9',
+      title_primary: 'T',
+      artist_primary: 'A',
+      karaoke_numbers: { tj: null, ky: '200', joysound: '300' },
+    });
+    const kyRec = record({
+      id: 'ky-200',
+      source_url: 'https://kysing.kr/search/?category=1&keyword=200',
+      title_primary: 'T',
+      artist_primary: 'A',
+      karaoke_numbers: { tj: null, ky: '200', joysound: null },
+    });
+    const joy = record({
+      id: 'joysound-300',
+      source_url: 'https://www.joysound.com/web/search/song/300',
+      title_primary: 'T',
+      artist_primary: 'A',
+      karaoke_numbers: { tj: null, ky: null, joysound: '300' },
+    });
+
+    const { records } = mergeRecords([blog, kyRec, joy]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('joysound-300');
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: '200', joysound: '300' });
+  });
+
+  it('passes a standalone ky-* record through unchanged', () => {
+    const ky = record({
+      id: 'ky-44655',
+      source_url: 'https://kysing.kr/search/?category=1&keyword=44655',
+      title_primary: '怪物',
+      artist_primary: 'YOASOBI',
+      karaoke_numbers: { tj: null, ky: '44655', joysound: null },
+    });
+    const { records } = mergeRecords([ky]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe('ky-44655');
+  });
+});
