@@ -106,4 +106,33 @@ describe('KY tie-up strip — end-to-end merge lock (audit follow-up A)', () => 
     expect(records[0]?.id).toBe('joysound-2');
     expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: '1', joysound: '2' });
   });
+
+  it('a preserved version/cut suffix does NOT merge a KY row into a clean twin (negative lock)', () => {
+    // Review M1: the strip KEEPS version/cut markers (a distinct karaoke cut).
+    // `メルト(Short Ver.)` must therefore stay SEPARATE from the studio `メルト`
+    // — the normalizer leaves the suffix on, so no tier's title key matches and
+    // the two rows do not merge. Guards against a future over-eager strip that
+    // would collapse distinct cuts.
+    const ky = normalizeKyRecord({
+      ky: '1',
+      title: 'メルト(Short Ver.)',
+      artist: 'supercell',
+      crawledAt: CRAWLED_AT,
+    });
+    expect(ky.title_primary).toBe('メルト(Short Ver.)'); // suffix preserved
+    const joy = {
+      id: 'joysound-2',
+      source_url: 'https://www.joysound.com/web/search/song/2',
+      title_primary: 'メルト',
+      title_ko: null,
+      artist_primary: 'supercell',
+      artist_ko: null,
+      karaoke_numbers: { tj: null, ky: null, joysound: '2' },
+      crawled_at: CRAWLED_AT,
+    };
+    const { records } = mergeRecords([ky, joy]);
+    // NOT merged — two distinct cuts survive as two records.
+    expect(records).toHaveLength(2);
+    expect(records.map((r) => r.id).sort()).toEqual(['joysound-2', 'ky-1']);
+  });
 });
