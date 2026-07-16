@@ -1,84 +1,74 @@
-# 세션 핸드오프 — 2026-07-14 blog 안정 식별자 출하 (#152) + 후속 배선 (#154)
+# 세션 핸드오프 — 2026-07-16 워커+웹 재배포 + funnel origin 리네임 커밋화 (#156)
 
-직전 체크포인트(#151, 백로그 소진)를 갱신. 이 세션은 오너 결정 4건 중
-**③ blog-id 안정 식별자**를 지시받아 설계→구현→검증→머지까지 완결(#152),
-이어서 **후속 갭(TJ 역검색 시드 프로브 인제스트)도 같은 날 출하(#154)**.
+직전 체크포인트(#155, blog 안정 식별자 #152+#154)를 갱신. 이 세션은 오너
+지시("재배포 해")로 **서빙 3표면 중 뒤처져 있던 워커·웹을 재배포**하고,
+그 과정에서 발견한 **미커밋 배포 지뢰(hermes-host→oci 리네임)를 PR #156으로
+커밋화 후 머지**(오너 명시 승인)까지 완결했다.
 오너 결정 잔여 = **3건: R3 본구현 / R5 KY 1k 스파이크 / 크롤 재개 시점.**
 
 ## Current state of record
 
-- **main**: `e82bf6d`(#154) — #152 blog stable identity 위에 #153 체크포인트
-  + #154 시드 인제스트. 각 PR CI green + main push CI green. **열린 PR: 0.**
-- **#154 내용** (옵션 B, 오너 승인 "진행해"): tj-media-direct가 이전 커밋
-  코퍼스에서 blog 주장 tj 번호를 자급 도출(blogWhitelist와 동일 소스) →
-  이번 런 산출 차감 → `searchSongByPro` 프로브(스텝 5b: 레스큐 후·translit
-  전) → 히트는 전체 admission 체인(#97/#143/#148) 통과 시에만 배출. 캡 500
-  (경고+정렬 앞 500), 빈 시드 = 바이트 동일(테스트 핀), `[tj-seed]` 관측
-  라인. 라이브 스모크: 리플레이 잔존 5곡 전부 실엔드포인트 JPN 히트.
-  독립 리뷰 APPROVE. **후속 후보(정보성, 차단 아님)**: ①영구 미스 네거티브
-  캐시(매 크롤 재프로브 방지) ②songs.json 파싱 공유(현재 2회/크롤)
-  ③재개 첫 크롤 잔존 > 캡 500 시 수 크롤 단조 소진(경고 로그 존재).
-- **서빙 (oci)**: v22 라이브 유지 — 이 세션 서빙 무접촉. tracked baseline
-  26,462 동결(코퍼스/parity baseline은 크롤 재개 시 재생성).
-- **크롤**: `disabled_manually` 유지(재개 = 오너 1.0 선언).
-- **#152 내용** (스펙 `docs/specs/2026-07-14-blog-stable-identity-design.md`,
-  전부 오너 승인 D1–D5):
-  - D1 SOURCE_RANK 강등 `tj>tjpdf>joysound>blog` — 병합 승자 id가 벤더
-    안정 id로. KO_CHAIN(blog 최우선) 불변 = blog 고유 필드만 기여.
-    `propagateArtistKo`는 KO_CHAIN에 핀(동작 동일, rank 커플링 제거).
-  - D2 무번호 blog 행 드롭(현 데이터 483, 블로그 원문부터 `-`) +
-    `--blog-drops-out` 리포트 아티팩트.
-  - D3 역검색: standalone blog의 주장 번호 → TJ 프로브 시드 + JOYSOUND
-    delisted/typo 리포트(`--reverse-lookup-out`). ~~갭: 프로브 자동 인제스트
-    미배선~~ → **#154로 종결(같은 날)**.
-  - D4 잔존 민팅 `blog-{artistId}-{vendor}-{번호}`(tj→ky→joysound 첫
-    non-null, 중복 throw, 단일 파생함수 `mintBlogRecordId`). 스키마 무변.
-  - D5 즐겨찾기 무변경 — 안정 id로 자동 해결. 기존 저장분은 id 전환 시
-    무효(오너 웨이버). 발효는 크롤 재개 후 첫 릴리스.
-  - 사이드카 재키잉(1회성): title_ko 캐시 blog 134 → 131 벤더id/2 잔존
-    민팅/1 프룬(blog-376-104), search-hint `blog-338-10`→`blog-338-tj-28895`.
-
-## 검증 증거 (#152)
-
-- 게이트 5종(biome/typecheck/test/build/knip) — author 2회 + 오케스트레이터
-  독립 재실행 green.
-- **v22 양면 리플레이**(main@33371fe vs feat, 동일 입력 222MB decisions):
-  313,553 레코드 1:1 바이젝션, id 플립 blog→joysound **20,843**, 필드 무변
-  (허용 예외 = 분쟁 joysound 셀 2), 무번호 483 정확 일치, 충돌 0.
-  보고서 = **PR #152 코멘트로 보존**(issuecomment-4965647963). 아티팩트
-  (후보 2종·맵)는 스크래치패드 소멸성 — NAS `runs/` 쓰기권한 없어 미보존,
-  decisions.jsonl(NAS)+두 커밋으로 재생성 가능. 맵은 이미 소비·커밋됨.
-- 독립 리뷰어 **APPROVE**(rank 커플링 전수 감사, 재키잉 바이트 대조).
+- **main**: `ac7fb4f`(#156 squash) — funnel origin hermes-host→oci 3파일 3줄
+  (`apps/web/functions/api/[[path]].js`, `functions/healthz.js`,
+  `wrangler.toml`). PR CI green(e2e/verify). **열린 PR: 이 체크포인트뿐.**
+- **왜 #156이 필요했나**: 2026-07-08경 호스트 리네임(hermes-host→oci)이
+  **라이브 NAS 트리의 미커밋 로컬 수정으로만** 존재했다. main 그대로 웹을
+  배포하면 Pages 프록시가 죽은 호스트명을 가리켜 API가 끊기는 상태.
+  이제 main == 라이브 배포 상태로 수렴.
+- **워커 재배포 (oci)**: 라이브 실행 트리 `/srv/nas/karaoke/app`
+  (`/srv/karaoke`는 심링크; `karaoke-api.service`가
+  `app/apps/worker/dist/node-server.js` 직접 실행)를 3c47b05→main으로 ff,
+  `corepack pnpm --filter @karaoke/worker... build`,
+  `sudo systemctl restart karaoke-api`. 이전 로컬 수정은 stash
+  `pre-redeploy-20260716`에 보존. **라이브 워커가 이제 #93~#148 serve측
+  픽스 포함**(직전엔 2026-07-03/04 빌드로 8PR 뒤였음).
+  검증: healthz ok / api/meta 2026-07-12 / 검색 정상 / journal 클린 /
+  공개체인(oci.tail04d970.ts.net + karaokedb.pages.dev/api/meta) ok.
+- **웹 재배포 (Pages)**: production `5de27093`(--branch main, source
+  f9d0498=#156 내용). 직전 production은 3c47b05(1주 전). 실브라우저 검증:
+  アイドル 50건 렌더(YOASOBI TJ 68781/KY 44923/JOY 616010), **ko 크롬
+  한국어 단독 유지**, DB 날짜 2026-07-12, 콘솔 에러 0.
+  ⚠️ 교훈: `wrangler pages deploy`는 **`--branch main` 없이는 프리뷰**로만
+  올라간다(첫 시도가 그랬음).
+- **oci SSH 복구 확인**: Tailscale SSH 정상(이전 "호스트키 보류" 해소),
+  passwordless sudo 가용.
+- **서빙 DB = v22 유지(무접촉)**. 크롤 `disabled_manually` 유지.
+- **라이브 트리 고아 문서 2건**(main에 없음, 언트랙 보존 — 커밋 후보):
+  `docs/runbooks/2026-07-08-soak-crawl-gates.md`,
+  `docs/specs/2026-07-08-search-hint-channel-and-dead-schema-cleanup.md`.
+- **R5 KY 소스 재서베이 완료**(오너 지시 "번호 다 긁는 건 너무 무식"):
+  **브루트포스 불필요 판정** — `/karaoke-book/` 색인 브라우즈(city=jp 일본곡
+  전용 가나 색인, 200행/페이지)로 전량 ~500–700요청(JP만 ~150–200), 델타는
+  무인증 `new_ky.asp` XML(최신 100곡), 시드 후보 kacsv 60,636곡 CSV. 핵심
+  주장 오케스트레이터 독립 재검증(라이브 재현+실측). 상세·막다른 길 목록 =
+  `docs/research/2026-07-16-ky-smart-enumeration-resurvey.md`(이 PR에 포함).
+  R5 스파이크 착수 시 이 문서가 출발점(1k 프로브 스파이크는 사실상 불필요,
+  바로 색인 워크 어댑터 설계 가능).
 
 ## Grant Ledger (이 세션)
 
-- **blog-id 착수 + 기존 호환성 웨이버** — "3번 먼저. 기존과 호환성은 생각
-  안 해도 돼" (2026-07-14).
-- **설계 D1–D5 승인** — rank 강등/무번호 드롭("무번호는 드롭하자. 문서에만
-  기록. 역검색 진행")/잔존 민팅+즐겨찾기 무변경("좋아").
-- **완성까지 진행** — "플랜 스킵하고 완성까지 진행해" (구현·검증·PR).
-- **머지 명시 승인** — "머지해"(#152) / "153도 머지해"(#153) / "승인"(#154).
-  auto-mode 분류기가 포괄 그랜트로는 머지 불허 → PR마다 명시 승인 후 집행.
-- **후속작업 착수 + 옵션 B 설계 승인** — "blog id 후속작업 먼저 처리하자"
-  → 설계 제시 → "진행해" (#154).
-- **미승인으로 남음**: 크롤 재활성화(오너 1.0 선언), R3 본구현, R5 KY
-  스파이크.
+- **워커+웹 재배포** — "재배포 해. oci 아마 해결됐을거야" (2026-07-16).
+  라이브 트리 git 갱신·서비스 재시작·Pages 프로덕션 배포 포함. 실행 완결.
+- **PR #156 머지** — "머지 승인" (2026-07-16). 집행 완료(squash, ac7fb4f).
+- **KY 크롤 소스 재조사** — "하위 에이전트한테 insane search 쥐어주고 ky
+  크롤 소스 다시 조사하라그래" (2026-07-16). 조사 완결(kysing.kr 28요청,
+  무차단). **어댑터 구현은 별도 승인 필요.**
+- **미승인으로 남음**: 크롤 재개(오너 1.0 선언), R3 본구현, R5 KY 스파이크,
+  고아 문서 2건 커밋 여부.
 
 ## Open items
 
 - **오너 결정 3건**: ①R3 오프라인 풀팩 본구현 ②R5 KY 1k 프로브 스파이크
   (권장 첫 수) ③크롤 재개 시점.
-- **크롤 재개 시 확인 목록(누적)**: 기존 캐시 발효분(#151 목록: 제목 승격
-  49·오분류 회수 22·미디어 컨텍스트 96·프룬 19·재키잉 3) + **#152 발효분**:
-  무번호 −483, 병합 레코드 벤더 id 전환(리플레이 기준 ~20.8k+), 재키잉
-  사이드카 매치 확인, parity baseline 재생성(기존 정책), **#154 시드 프로브
-  첫 실동작 확인**(`[tj-seed]` 라인 — 잔존 graduation, 캡 500 초과 여부),
-  297 충돌-널 잔존의 실크롤 귀결 확인(PK에 규칙 기록됨).
-- **휴면(무조치 결정 존중)**: #151과 동일(title_ko uncertain 13 /
-  interior-ws 24 / R4 잔여 / korean 사이드카 서술 감사).
+- **크롤 재개 시 확인 목록(누적, #155와 동일)**: #151 캐시 발효분 + #152
+  발효분(무번호 −483, 벤더 id 전환 ~20.8k+, parity baseline 재생성) +
+  #154 시드 프로브 첫 실동작(`[tj-seed]` 라인) + 297 충돌-널 잔존 귀결.
+- **고아 문서 2건 커밋 여부**(위) — 오너 판단.
+- **휴면(무조치 결정 존중)**: #151과 동일.
 
 ## Next first action
 
 1. 새 세션: fresh clone → 이 정본 → 오너 결정 3건 중 지시된 것 착수.
 2. 크롤 재개 선언 시: 재개 첫 크롤 PR에서 #151+#152+#154 발효분 일괄 확인
-   (별도 선행 작업 없음 — 시드 배선은 #154로 완결).
+   (선행 작업 없음). 웹/워커 재배포 절차는 memory
+   `redeploy-runbook-worker-web` 및 이 문서 "재배포" 절 참조.
