@@ -198,7 +198,17 @@ function hasNonRoleContextText(inner: string): boolean {
   );
 }
 
-function stripContextSuffix(title: string): { title: string; changed: boolean } {
+/**
+ * Peel trailing role/tie-up parentheticals (`(錯乱 OST)`, `("BLEACH"OP)`) from a
+ * title, conservatively: only when the inner text carries a role token
+ * (`CONTEXT_ROLE_RE`: OP/ED/OST/主題歌/…) AND a work name AND is NOT a
+ * version/cut marker (`CONTEXT_VERSION_RE`: Live/Ver./Remix/…). Exported so the
+ * R5 KY adapter can normalize its titles to the SAME canonical form Tier D
+ * keys on — a KY row `この世の限り(錯乱 OST)` then keys/clusters identically to
+ * a JOYSOUND `この世の限り`. Reusing this exact stripper (rather than a private
+ * copy) guarantees the adapter and the merger cannot drift.
+ */
+export function stripContextSuffix(title: string): { title: string; changed: boolean } {
   let current = title;
   let changed = false;
   while (true) {
