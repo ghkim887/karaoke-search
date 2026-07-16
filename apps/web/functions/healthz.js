@@ -1,4 +1,4 @@
-const DEFAULT_FUNNEL_ORIGIN = 'https://hermes-host.tail04d970.ts.net';
+const DEFAULT_FUNNEL_ORIGIN = 'https://oci.tail04d970.ts.net';
 
 function upstreamOrigin(env) {
   const configured = env?.KARAOKE_FUNNEL_ORIGIN;
