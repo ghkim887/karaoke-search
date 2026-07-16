@@ -1,0 +1,260 @@
+[
+ {
+  "song_id": "ky-41239",
+  "title": "Blurry Eyes(\"D.N.A2\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6805",
+  "candidate_joysound": "12583",
+  "reason": "동일 곡: L'Arc~en~Ciel 'Blurry Eyes'(D.N.A² OP). 제목 대소문자/타이업 표기 차이만 존재."
+ },
+ {
+  "song_id": "ky-41084",
+  "title": "CAN YOU CELEBRATE?",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6890",
+  "candidate_joysound": "14816",
+  "reason": "동일 곡: 아무로 나미에 원곡. 恵/惠는 한자 이체자 표기 차이. 徳永英明은 커버(reject), Wedding Mix는 버전 차이(reject)."
+ },
+ {
+  "song_id": "ky-44002",
+  "title": "CHANGE!!!!(M@STER VERSION) (\"THE IDOLM@STER\"OP)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27861",
+  "candidate_joysound": "145876",
+  "reason": "동일 곡: 765PRO ALLSTARS 'CHANGE!!!!' M@STER VERSION. VER/VERSION 축약 및 타이업 표기 차이만."
+ },
+ {
+  "song_id": "ky-75891",
+  "title": "Charisma Battle Anthem",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-985633",
+  "candidate_joysound": "619503",
+  "reason": "동일 곡: 카리스마(Charisma) 프로젝트 곡. KY는 성우(小野友樹) 크레딧, JOYSOUND는 캐릭터(伊藤ふみや) 크레딧 — 小野友樹가 伊藤ふみや의 CV임을 웹으로 확인."
+ },
+ {
+  "song_id": "ky-41393",
+  "title": "Chase the Chance",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25427",
+  "candidate_joysound": "9678",
+  "reason": "동일 곡: 아무로 나미에 원곡, 恵/惠 이체자 차이만. CC Mix는 버전 차이(reject)."
+ },
+ {
+  "song_id": "ky-44077",
+  "title": "chase (\"ジョジョの奇妙な冒険 ダイヤモンドは砕けない\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-27960",
+  "candidate_joysound": "686491",
+  "reason": "동일 곡: batta 'chase'(죠죠 4부 OP2). 아티스트 일치, 타이업 표기 차이만. 나머지 후보는 동명이곡(다른 아티스트)."
+ },
+ {
+  "song_id": "ky-42392",
+  "title": "Climax Jump (特撮\"仮面ライダー電王\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26430",
+  "candidate_joysound": "161487",
+  "reason": "동일 곡: AAA DEN-O form 'Climax Jump'(가면라이더 덴오 OP). 아티스트·제목 일치."
+ },
+ {
+  "song_id": "ky-42535",
+  "title": "Double-Action (特撮\"仮面ライダー電王\")",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-101399",
+  "candidate_joysound": "56941",
+  "reason": "동일 곡: 가면라이더 덴오 'Double-Action'. 野上良太郎,モモタロス = 野上良太郎&モモタロス(佐藤健・関俊彦), 캐릭터 크레딧 표기 차이만."
+ },
+ {
+  "song_id": "ky-42383",
+  "title": "EMOTION",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26419",
+  "candidate_joysound": "51537",
+  "reason": "동일 곡: 田中理恵의 'Emotion'(건담 SEED 캐릭터 송, 라크스 클라인). 아티스트 일치, JOYSOUND 측 타이업 주석 차이만. 다른 후보는 전부 동명이곡."
+ },
+ {
+  "song_id": "ky-44215",
+  "title": "EXCITE (特撮\"仮面ライダーエグゼイド\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28785",
+  "candidate_joysound": "691428",
+  "reason": "동일 곡: 미우라 다이치 'EXCITE'(가면라이더 에그제이드 OP) 풀 버전. テレビオープニングサイズ 후보는 컷 차이(reject)."
+ },
+ {
+  "song_id": "ky-41375",
+  "title": "flying (\"Tales of Eternia\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25184",
+  "candidate_joysound": "26356",
+  "reason": "동일 곡: GARNET CROW 'flying'(테일즈 오브 이터니아 OP). 아티스트 일치. 나머지 후보는 동명이곡."
+ },
+ {
+  "song_id": "ky-75840",
+  "title": "FRE△KOUT (\"Paradox Live\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-68890",
+  "candidate_joysound": "487548",
+  "reason": "동일 곡: BAE 'FRE△KOUT'(Paradox Live). 아티스트·제목 일치, 타이업 표기 차이만."
+ },
+ {
+  "song_id": "ky-42370",
+  "title": "FUNKY TOWN",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26439",
+  "candidate_joysound": "24536",
+  "reason": "동일 곡: 아무로 나미에 'FUNKY TOWN'(2007 싱글). 恵/惠 이체자 차이만."
+ },
+ {
+  "song_id": "ky-40498",
+  "title": "GAME",
+  "verdict": "REJECT",
+  "reason": "하마사키 아유미 본인 후보는 'GAME〈MY STORY Classical Version〉'뿐 — 클래식 편곡 버전으로 원곡과 다른 버전. 나머지 후보는 전부 동명이곡(다른 아티스트)."
+ },
+ {
+  "song_id": "ky-41814",
+  "title": "GIRL TALK",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25886",
+  "candidate_joysound": "10064",
+  "reason": "동일 곡: 아무로 나미에 'GIRL TALK'(2004 싱글). 恵/惠 이체자 차이만. JUJU는 동명이곡(reject)."
+ },
+ {
+  "song_id": "ky-41332",
+  "title": "I WILL",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25169",
+  "candidate_joysound": "22448",
+  "reason": "동일 곡: 아무로 나미에 'I WILL'(2002 싱글). 恵/惠 이체자 차이만. FLOW/AZU/KinKi Kids 등은 동명이곡."
+ },
+ {
+  "song_id": "ky-41220",
+  "title": "Let's Get Together Now (JAPAN ver.)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-21872",
+  "candidate_joysound": "22575",
+  "reason": "동일 곡·동일 버전: 2002 월드컵 공식곡 일본어판. (JAPAN ver.) = 〈JAPAN Version〉, 괄호 표기 차이만."
+ },
+ {
+  "song_id": "ky-41221",
+  "title": "Let's Get Together Now (KOREA/JAPAN ver.)",
+  "verdict": "REJECT",
+  "reason": "KOREA/JAPAN ver.는 한일 가사 혼합판(merged version)으로 별도 실재 버전 — 이 곡은 일본어판/한국어판/혼합판 3종 발매가 웹으로 확인됨. JOYSOUND 후보는 JAPAN Version과 KOREA Version 단일 언어판뿐이라 어느 쪽과도 버전 불일치. CHEMISTRY 단독 곡도 별개."
+ },
+ {
+  "song_id": "ky-75839",
+  "title": "Life Is Beautiful (\"Paradox Live\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-68889",
+  "candidate_joysound": "487547",
+  "reason": "동일 곡: The Cat's Whiskers 'Life Is Beautiful'(Paradox Live). 아티스트·제목 일치. 平井大/Tani Yuuki 등은 동명이곡."
+ },
+ {
+  "song_id": "ky-43553",
+  "title": "Life is SHOW TIME (特撮\"仮面ライダーウィザード\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27365",
+  "candidate_joysound": "730913",
+  "reason": "동일 곡: 鬼龍院翔 from ゴールデンボンバー 'Life is SHOW TIME'(가면라이더 위자드 OP). 대소문자/타이업 표기 차이만. FlaP 레코오토 커버는 reject."
+ },
+ {
+  "song_id": "ky-42900",
+  "title": "LIGHT IN YOUR HEART (特撮\"大決戦!超ウルトラ8兄弟\")",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-123049",
+  "candidate_joysound": "30095",
+  "reason": "동일 곡: V6 'LIGHT IN YOUR HEART'(울트라 8형제 주제가). 아티스트·제목 일치, 타이업 주석 차이만."
+ },
+ {
+  "song_id": "ky-41430",
+  "title": "Like a star in the night (\"ダーク・エンジェル\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25433",
+  "candidate_joysound": "18107",
+  "reason": "동일 곡: 쿠라키 마이 'Like a star in the night'. 아티스트·제목 일치, 타이업 주석 차이만."
+ },
+ {
+  "song_id": "ky-41155",
+  "title": "LOVE 2000",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25041",
+  "candidate_joysound": "21879",
+  "reason": "동일 곡: 아무로 나미에 'LOVE 2000'(2000-01-01, 'Love to Thousand'로 읽음)은 hitomi 'LOVE 2000'과 별개로 실존함을 웹으로 확인. 恵/惠 이체자 차이만. hitomi(tj-26008)·鶴 and 亀는 동명이곡."
+ },
+ {
+  "song_id": "ky-43965",
+  "title": "M@STERPIECE(\"THE IDOLM@STER MOVIE 輝きの向こう側へ!\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28534",
+  "candidate_joysound": "735581",
+  "reason": "동일 곡: 765PRO ALLSTARS 'M@STERPIECE'(극장판 아이마스 주제가). 아티스트·제목 일치, 타이업 주석 차이만."
+ },
+ {
+  "song_id": "ky-41015",
+  "title": "NEVER END",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6942",
+  "candidate_joysound": "24985",
+  "reason": "동일 곡: 아무로 나미에 'NEVER END'(2000 규슈·오키나와 서밋 곡). 恵/惠 이체자 차이만. SIAM SHADE 등은 동명이곡."
+ },
+ {
+  "song_id": "ky-44158",
+  "title": "No title",
+  "verdict": "MERGE",
+  "candidate_id": "tj-28704",
+  "candidate_joysound": "689337",
+  "reason": "동일 곡: Reol = れをる(동일 아티스트의 로마자/가나 명의 변천). 'No title'은 れをる 명의 시절 대표곡. SNAIL RAMP/locofrank 등은 동명이곡."
+ },
+ {
+  "song_id": "ky-44358",
+  "title": "Over\"Quartzer\" (特撮\"仮面ライダージオウ\")",
+  "verdict": "REJECT",
+  "reason": "유일 후보가 (TVサイズ) — TV 사이즈 컷 버전으로 풀 버전과 버전 차이. 풀 버전 후보 없음."
+ },
+ {
+  "song_id": "ky-43968",
+  "title": "Raise your flag(\"機動戦士ガンダム 鉄血のオルフェンズ\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27853",
+  "candidate_joysound": "678034",
+  "reason": "동일 곡: MAN WITH A MISSION 'Raise your flag'(철혈의 오펀스 OP). 아티스트 일치. ARP(DAIYA)는 동명이곡."
+ },
+ {
+  "song_id": "ky-43404",
+  "title": "READY!!(M@STER VERSION) (\"THE iDOLM@STER\"OP)",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28113",
+  "candidate_joysound": "110661",
+  "reason": "동일 곡: 765PRO ALLSTARS 'READY!!'(아이마스 애니 OP). 아티스트 일치 — JOYSOUND 무표기 항목이 같은 M@STER VERSION 음원(765PRO ALLSTARS 명의 녹음은 이것뿐). MILLIONSTARS Team8th는 다른 유닛 커버(reject)."
+ },
+ {
+  "song_id": "ky-44504",
+  "title": "REAL×EYEZ (特撮\"仮面ライダーゼロワン\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-68184",
+  "candidate_joysound": "446356",
+  "reason": "동일 곡: J×Takanori Nishikawa 'REAL×EYEZ'(가면라이더 제로원 OP) 풀 버전. 공백 표기 차이만. (TVSize)는 컷 차이(reject)."
+ },
+ {
+  "song_id": "ky-44615",
+  "title": "Reason!!",
+  "verdict": "MERGE",
+  "candidate_id": "tj-28998",
+  "candidate_joysound": "424125",
+  "reason": "동일 곡: 315 STARS 'Reason!!'(SideM 애니 OP), 아티스트 명의 정확 일치. 315 ALLSTARS(445426)는 별도 명의 녹음, Jupiter Ver./DRAMATIC STARS Ver.는 유닛 버전 차이(reject)."
+ },
+ {
+  "song_id": "ky-42131",
+  "title": "REDEMPTION (\"DIRGE of CERBERUS-FINAL FANTASY VII\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28115",
+  "candidate_joysound": "20003",
+  "reason": "동일 곡: Gackt 'REDEMPTION'(FF7 더지 오브 케르베로스 주제가). 아티스트 일치, 대소문자/타이업 표기 차이만."
+ },
+ {
+  "song_id": "ky-41050",
+  "title": "RESPECT the POWER OF LOVE",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6878",
+  "candidate_joysound": "19877",
+  "reason": "동일 곡: 아무로 나미에 'RESPECT the POWER OF LOVE'(1999 싱글). 恵/惠 이체자 차이만."
+ }
+]

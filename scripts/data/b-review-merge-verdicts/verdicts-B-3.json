@@ -1,0 +1,354 @@
+[
+ {
+  "song_id": "tjpdf-28062",
+  "title": "Great Distance",
+  "verdict": "MERGE",
+  "candidate_id": "blog-442-59",
+  "candidate_joysound": "156116",
+  "reason": "웹검증: ryo(supercell) feat.chelly의 Bravely Second OP(2015) 단일 원곡. supercell=ryo(supercell) 동일 엔티티의 표기 축약(블로그 크레딧 생략). JOYSOUND 공식 수록 확인(joysound.com/web/search/song/420670). 표기 변형 케이스."
+ },
+ {
+  "song_id": "ky-43358",
+  "title": "Os-宇宙人",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-165676",
+  "candidate_joysound": "94502",
+  "reason": "웹검증(ja.wikipedia): エリオをかまってちゃん = 神聖かまってちゃん의 電波女と青春男 타이업 유닛(작사작곡 の子, 보컬 大亀あすか=에리오 성우). 神聖かまってちゃん 명의 별도 스튜디오/가라오케 버전 없음 → 모체 밴드 크레딧 변형(타이업 유닛↔밴드)."
+ },
+ {
+  "song_id": "tjpdf-28121",
+  "title": "Rose",
+  "verdict": "REJECT",
+  "reason": "TJ는 ANNA inspi' NANA(BLACK STONES)의 NANA OP. 후보 5건(HANA/堂本光一/長瀬実夕/AI/BREAKERZ) 전부 동명이곡, 해당 곡 후보에 없음."
+ },
+ {
+  "song_id": "tjpdf-28132",
+  "title": "Someone Else",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-153828",
+  "candidate_joysound": "100546",
+  "reason": "WORKING!! 캐릭터송. 성우↔캐릭터(CV) 케이스: 후보 크레딧 괄호 내 阿澄佳奈·藤田咲·喜多村英梨가 TJ 성우 3인과 정확 일치. Anna Aya 후보는 동명이곡."
+ },
+ {
+  "song_id": "tjpdf-28138",
+  "title": "Super∞Stream",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-163199",
+  "candidate_joysound": "106236",
+  "reason": "IS<인피니트 스트라토스> ED. 성우↔캐릭터(CV) 케이스: cv.日笠陽子·ゆかな 포함 5인 = TJ '日笠陽子,ゆかな 他'와 일치."
+ },
+ {
+  "song_id": "tjpdf-28141",
+  "title": "The Galaxy Express 999",
+  "verdict": "REJECT",
+  "reason": "원곡은 ゴダイゴ(1979). I'iwi 버전은 커버 → 커버=REJECT."
+ },
+ {
+  "song_id": "tjpdf-28187",
+  "title": "オレンジ",
+  "verdict": "REJECT",
+  "reason": "TJ는 토라도라! ED(성우 3인). 후보 5건(Saucy Dog/sumika/Hump Back/川崎鷹也/GReeeeN) 전부 동명이곡."
+ },
+ {
+  "song_id": "tjpdf-28188",
+  "title": "お願い!シンデレラ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-419206",
+  "candidate_joysound": "672515",
+  "reason": "웹검증: 데레마스 애니 1화 삽입 버전(9인, 高垣楓 리드) = TJ '高垣楓,他'와 리드 아티스트 정확 대응. M@STER VERSION/ハピ☆ハピver./CINDERELLA PROJECT는 다른 라인업 버전이라 제외."
+ },
+ {
+  "song_id": "ky-42649",
+  "title": "かえして!ニーソックス",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-106899",
+  "candidate_joysound": "165114",
+  "reason": "웹검증: もってけ!セーラーふく 커플링, 러키☆스타 4캐릭터(CV) 가창 단일 음원. KY는 리드 성우 平野綾만 표기(트렁케이션). 성우↔캐릭터 케이스."
+ },
+ {
+  "song_id": "tjpdf-28193",
+  "title": "ギー太に首ったけ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-133292",
+  "candidate_joysound": "136422",
+  "reason": "케이온! 캐릭터송. 平沢唯(豊崎愛生) — 성우↔캐릭터(CV) 정확 일치."
+ },
+ {
+  "song_id": "tjpdf-28217",
+  "title": "ススメ→トゥモロウ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-255119",
+  "candidate_joysound": "726244",
+  "reason": "러브라이브! 1화 삽입곡. CV.新田恵海·内田彩·三森すずこ = TJ 성우 3인 정확 일치. 성우↔캐릭터 케이스."
+ },
+ {
+  "song_id": "tjpdf-28230",
+  "title": "ドラマチックマーケットライド",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-248646",
+  "candidate_joysound": "721971",
+  "reason": "타마코 마켓 OP. 北白川たまこ(cv:洲崎綾) — 성우↔캐릭터 정확 일치."
+ },
+ {
+  "song_id": "ky-42576",
+  "title": "どんだけファンファーレ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-108903",
+  "candidate_joysound": "166422",
+  "reason": "러키☆스타 캐릭터송. 泉こなた(平野綾) — 성우↔캐릭터 정확 일치."
+ },
+ {
+  "song_id": "tjpdf-28234",
+  "title": "ハートの確率",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-158294",
+  "candidate_joysound": "103142",
+  "reason": "웹검증: そらのおとしものf OP, blue drops(吉田仁美&イカロス(早見沙織)) 동일 유닛 — 아티스트 실질 일치. '(Main Vocal Hitomi)'는 A면 표준 버전 라벨(이카로스 메인 버전과 구분용)로 TJ 무표기 엔트리가 대응하는 기본 버전."
+ },
+ {
+  "song_id": "tjpdf-28238",
+  "title": "はっぴぃにゅうにゃあ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-153961",
+  "candidate_joysound": "100624",
+  "reason": "캐릭터송. 괄호 내 伊藤かな恵·井口裕香·竹達彩奈 = TJ 성우 3인 정확 일치. 성우↔캐릭터 케이스(공백 유무만 차이)."
+ },
+ {
+  "song_id": "ky-42686",
+  "title": "パラレルDays",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-85967",
+  "candidate_joysound": "124976",
+  "reason": "하루히 캐릭터송. 涼宮ハルヒ(C.V.平野綾) — 성우↔캐릭터 정확 일치."
+ },
+ {
+  "song_id": "tjpdf-28257",
+  "title": "プレパレード",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-124168",
+  "candidate_joysound": "176434",
+  "reason": "토라도라! OP. 괄호 내 釘宮理恵·堀江由衣·喜多村英梨 = TJ 성우 3인 정확 일치. 男汁MAX SINGLE ver.는 남성진 별도 버전이라 제외."
+ },
+ {
+  "song_id": "tjpdf-28261",
+  "title": "ポワゾンKISS",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-297710",
+  "candidate_joysound": "728580",
+  "reason": "우타프리. QUARTET NIGHT 동일 유닛명(후보는 멤버/CV 부기만 추가) — 표기 변형."
+ },
+ {
+  "song_id": "tjpdf-28270",
+  "title": "まどろみの約束",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-231292",
+  "candidate_joysound": "198862",
+  "reason": "빙과 ED. 千反田える(佐藤聡美)&伊原摩耶花(茅野愛衣) = TJ 성우 2인 정확 일치. 성우↔캐릭터 케이스."
+ },
+ {
+  "song_id": "tjpdf-28292",
+  "title": "経験値上昇中☆",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-112111",
+  "candidate_joysound": "168428",
+  "reason": "미나미가 OP. 괄호 내 佐藤利奈·井上麻里奈·茅原実里 = TJ 성우 3인 정확 일치. 성우↔캐릭터 케이스."
+ },
+ {
+  "song_id": "tjpdf-28336",
+  "title": "僕らのLove Style",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-104561",
+  "candidate_joysound": "163662",
+  "reason": "오란고교 호스트부 히타치인 형제 캐릭터송. 괄호 내 鈴村健一·藤田圭宣 = TJ 성우 2인 정확 일치."
+ },
+ {
+  "song_id": "tjpdf-28371",
+  "title": "俺達のJOY!",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-114862",
+  "candidate_joysound": "171198",
+  "reason": "가정교사 히트맨 REBORN! 캐릭터송. 獄寺隼人(市瀬秀和) vs 山本武(井上優) — 성우 2인 및 'vs' 구조까지 TJ와 정확 일치."
+ },
+ {
+  "song_id": "tjpdf-28394",
+  "title": "地獄の沙汰も君次第",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-404061",
+  "candidate_joysound": "737474",
+  "reason": "호오즈키의 냉철 OP. 地獄の沙汰オールスターズ 동일 유닛명(후보는 멤버 CV 부기만 추가) — 표기 변형."
+ },
+ {
+  "song_id": "ky-42730",
+  "title": "最強パレパレード",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-96170",
+  "candidate_joysound": "170533",
+  "reason": "하루히 3인조 곡(涼宮ハルヒ CV.平野綾 리드). KY는 리드 성우 平野綾만 표기(트렁케이션). 성우↔캐릭터 케이스."
+ },
+ {
+  "song_id": "tjpdf-28522",
+  "title": "ビュンビュン!トッキュウジャー",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-403670",
+  "candidate_joysound": "736143",
+  "reason": "열차전대 톳큐저 주제가. Project.R 동일 아티스트(후보는 멤버 부기만 추가) — 표기 변형. 제목 공백 차이만."
+ },
+ {
+  "song_id": "tjpdf-28549",
+  "title": "真夜中の饗宴(MIDNIGHT PLEASURE)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-422078",
+  "candidate_joysound": "501261",
+  "reason": "DIABOLIK LOVERS. 逆巻 3형제 CV.緑川光·鳥海浩輔·近藤隆 = TJ 성우 3인 정확 일치. TJ 제목의 (MIDNIGHT PLEASURE)는 부제 부기."
+ },
+ {
+  "song_id": "blog-1229-209",
+  "title": "Blue Moon",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-125145",
+  "candidate_joysound": "177020",
+  "reason": "웹검증: しゅごキャラ! 캐릭터송, ほしな歌唄(CV:水樹奈々) 1st 싱글(2007). 水樹奈々 솔로 명의 동명곡 없음 → 성우↔캐릭터 케이스. 나머지 4건(LiSA/水口晴幸/越中睦/嘉神川クロエ)은 동명이곡."
+ },
+ {
+  "song_id": "tjpdf-28644",
+  "title": "絶世美人",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-110845",
+  "candidate_joysound": "167646",
+  "reason": "웹검증: 안녕 절망선생 ED, 공식 크레딧은 絶望少女達(성우진). TJ는 OP 유닛명 '大槻ケンヂと絶望少女達'로 뭉뚱그려 표기(大槻ケンヂ는 작사 제공, 가창 버전 없음) — 크레딧 변형."
+ },
+ {
+  "song_id": "ky-44103",
+  "title": "時ノ雨、最終戦争",
+  "verdict": "REJECT",
+  "reason": "원곡은 Orangestar feat.IA(보카로). ウォルピスカーター는 우타이테 커버 가창 → 커버=REJECT (프로듀서↔가수 케이스 아님)."
+ },
+ {
+  "song_id": "tj-28677",
+  "title": "ようこそジャパリパークへ(けものフレンズ OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-604068",
+  "candidate_joysound": "692747",
+  "reason": "どうぶつビスケッツxPPP = どうぶつビスケッツ×PPP (x↔× 표기 변형만). with かばん/サーバル ver./アラフェネ ver.는 별도 버전, オーイシマサヨシ는 작곡자 셀프커버라 제외."
+ },
+ {
+  "song_id": "tj-28689",
+  "title": "金曜日のおはよう",
+  "verdict": "REJECT",
+  "reason": "원곡은 HoneyWorks feat.GUMI(보카로). Gero/アイドルネッサンス/浦島坂田船 전부 타 가수 커버 버전 → 커버=REJECT."
+ },
+ {
+  "song_id": "tjpdf-28697",
+  "title": "ロメオ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-610836",
+  "candidate_joysound": "692986",
+  "reason": "LIPxLIP = LIP×LIP(HoneyWorks 유닛, CV.内山昂輝·島崎信長) 표기 변형. 《本人映像》 엔트리는 영상 버전, BLANKEY JET CITY는 동명이곡, 浦島坂田船는 커버라 제외."
+ },
+ {
+  "song_id": "tjpdf-28701",
+  "title": "ニワカアメ",
+  "verdict": "REJECT",
+  "reason": "웹검증: 天野月가 花たん에게 제공한 곡(2011, 花たん 원곡 가창). JOYSOUND 후보의 天野月 명의는 본인 셀프커버(앨범 天の樹 수록) — 다른 가창 버전 → REJECT."
+ },
+ {
+  "song_id": "tj-28713",
+  "title": "Precious You☆(ロクでなし魔術講師と禁忌教典 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-615752",
+  "candidate_joysound": "696746",
+  "reason": "로쿠데나시 ED. CV:藤田茜·宮本侑芽·小澤亜李 = TJ 성우 3인 정확 일치. 성우↔캐릭터 케이스."
+ },
+ {
+  "song_id": "tj-28741",
+  "title": "JUMPin' JUMP UP!!!!(NEW GAME!! ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-631269",
+  "candidate_joysound": "696487",
+  "reason": "NEW GAME!! ED. Fourfolium = fourfolium 동일 유닛(대소문자 차이, 후보는 캐릭터/CV 부기 추가). TVサイズ 엔트리는 컷 버전이라 제외."
+ },
+ {
+  "song_id": "ky-44205",
+  "title": "DIARY",
+  "verdict": "REJECT",
+  "reason": "KK(上北健)의 곡. 후보 5건(斉藤和義/M!LK/コブクロ/青山テルマ/遊佐未森) 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-28763",
+  "title": "自力本願レボリューション(暗殺教室 OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-420827",
+  "candidate_joysound": "674317",
+  "reason": "암살교실 OP. 3年E組うた担 동일 유닛명(후보는 멤버 부기만 추가) — 표기 변형."
+ },
+ {
+  "song_id": "tj-28792",
+  "title": "ノンファンタジー(いつだって僕らの恋は10センチだった。OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-652873",
+  "candidate_joysound": "423462",
+  "reason": "LIPxLIP = LIP×LIP(CV.内山昂輝·島崎信長) 표기 변형. 단일 후보."
+ },
+ {
+  "song_id": "tj-28800",
+  "title": "By Your Side",
+  "verdict": "REJECT",
+  "reason": "WISE feat.西野カナ의 곡. 후보 5건(大橋ちっぽけ/高野健一/超新星/TIMBALAND-Kiley Dean-Utada/PINKLOOP) 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-28803",
+  "title": "Destiny(ドラマ'リバース' OST)",
+  "verdict": "REJECT",
+  "reason": "Che'Nelle의 드라마 リバース 주제가(2017). 후보 5건 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-28852",
+  "title": "Howling(七つの大罪-戒めの復活 OP)",
+  "verdict": "REJECT",
+  "reason": "FLOW×GRANRODEO 콜라보곡(칠대죄 OP). 후보 5건(surface/XG/大神ミオ×2/青木陽菜) 전부 동명이곡."
+ },
+ {
+  "song_id": "ky-44274",
+  "title": "月が綺麗",
+  "verdict": "REJECT",
+  "reason": "KK(上北健)의 곡. 후보 4건(amazarashi/藤本真希/岩見拓馬/TENSONG) 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-28876",
+  "title": "奇跡(映画'今夜、ロマンス劇場で' OST)",
+  "verdict": "REJECT",
+  "reason": "Che'Nelle의 영화 주제가(2018). 후보 5건 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-28893",
+  "title": "WAR WAR WAR(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-687330",
+  "candidate_joysound": "429142",
+  "reason": "히프노시스마이크 배틀곡. Buster Bros!!!·MAD TRIGGER CREW 동일 유닛 2조(후보는 CV 부기만 추가). THE ORAL CIGARETTES 'WARWARWAR'는 동명이곡."
+ },
+ {
+  "song_id": "tj-28894",
+  "title": "IKEBUKURO WEST GAME PARK(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-690805",
+  "candidate_joysound": "429143",
+  "reason": "히프노시스마이크 Buster Bros!!! 곡. 동일 유닛명(CV 부기). (Boyz Sunshine remix)는 별도 버전이라 제외."
+ },
+ {
+  "song_id": "tj-28899",
+  "title": "ステップアップLove(血界戦線 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-648355",
+  "candidate_joysound": "699477",
+  "reason": "혈계전선&BEYOND ED. DAOKO X 岡村靖幸 = DAOKO × 岡村靖幸 (X↔×, Love↔LOVE 표기 변형만)."
+ },
+ {
+  "song_id": "tj-28901",
+  "title": "シャンパンゴールド(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-666307",
+  "candidate_joysound": "425317",
+  "reason": "히프노시스마이크 캐릭터송. 伊弉冉一二三(CV.木島隆一) — 성우↔캐릭터 정확 일치. ET-KING는 동명이곡."
+ }
+]

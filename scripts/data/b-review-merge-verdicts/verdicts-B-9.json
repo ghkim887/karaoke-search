@@ -1,0 +1,352 @@
+[
+ {
+  "song_id": "ky-40677",
+  "title": "夫婦酒",
+  "verdict": "REJECT",
+  "reason": "大川栄策·大杉美栄子 버전이 후보에 없음. 夫婦酒는 흔한 엔카 제목으로 후보 5건 전부 동명이곡."
+ },
+ {
+  "song_id": "ky-40736",
+  "title": "女のねがい",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-9",
+  "candidate_joysound": "9",
+  "reason": "개명: 원곡은 宮史郎とぴんからトリオ 1972년 2nd 싱글(웹 확인, Wikipedia/Discogs). ぴんからトリオ는 1974년 멤버 탈퇴 후 宮史郎とぴんから兄弟로 개명한 동일 그룹(리드보컬 宮史郎 동일). KY는 후기 명의 사용. 八汐亜矢子는 동명이곡."
+ },
+ {
+  "song_id": "ky-40465",
+  "title": "女のみち",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2532",
+  "candidate_joysound": "2532",
+  "reason": "표기 변형: 宮史郞/宮史郎 구자체 한자 차이만 있는 동일 아티스트·동일 곡. 三山ひろし·氷川きよし·福田こうへい는 커버로 reject."
+ },
+ {
+  "song_id": "ky-44071",
+  "title": "好きな人がいること",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27962",
+  "candidate_joysound": "156842",
+  "reason": "표기 변형: JY = JY(知英), 동일인(전 KARA 강지영). 2016 월9 드라마 주제가 본인 싱글(웹 확인, Wikipedia/oricon)."
+ },
+ {
+  "song_id": "ky-43851",
+  "title": "小樽のひとよ",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6379",
+  "candidate_joysound": "27017",
+  "reason": "표기 변형: 鶴岡雅義/雅儀는 TJ측 오탈자 수준 표기 차이, 동일 그룹의 대표곡(1967). 氷川きよし는 커버로 reject."
+ },
+ {
+  "song_id": "ky-40150",
+  "title": "居酒屋",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6191",
+  "candidate_joysound": "353",
+  "reason": "표기 변형: 동일 듀엣(五木ひろし·木の実ナナ, 1982) 크레딧 순서만 상이. 다른 파트너 조합(高橋愛, 北原ミレイ&平浩二)·春日八郎·SKRYU는 커버/동명이곡 reject."
+ },
+ {
+  "song_id": "ky-40927",
+  "title": "山",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2764",
+  "candidate_joysound": "2764",
+  "reason": "표기 변형: 北島三郞/北島三郎 구자체 차이만 있는 동일 아티스트·동일 곡. 千田富士夫&高鷹しょうこ는 동명이곡."
+ },
+ {
+  "song_id": "ky-40928",
+  "title": "山小舎の灯",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-18997",
+  "candidate_joysound": "19011",
+  "reason": "표기 변형: 近江俊郞/近江俊郎 구자체 차이, 본인 대표곡(1947)."
+ },
+ {
+  "song_id": "ky-40902",
+  "title": "岬めぐり",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2185",
+  "candidate_joysound": "2185",
+  "reason": "표기 변형: ウイークエンド/ウィークエンド 소문자 가나 차이(원곡 山本コウタローとウィークエンド 1974, 양측 동일하게 그룹명만 표기). ビリケン·新沼謙治·松原健之는 커버 reject."
+ },
+ {
+  "song_id": "ky-40214",
+  "title": "川",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6132",
+  "candidate_joysound": "195",
+  "reason": "표기 변형: 北島三郞/北島三郎 구자체. 나머지 후보는 동명이곡."
+ },
+ {
+  "song_id": "ky-40742",
+  "title": "帰ろかな",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6306",
+  "candidate_joysound": "3745",
+  "reason": "표기 변형: 北島三郞/北島三郎 구자체, 본인 대표곡(1965)."
+ },
+ {
+  "song_id": "ky-40871",
+  "title": "年輪",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6480",
+  "candidate_joysound": "2213",
+  "reason": "표기 변형: 北島三郞/北島三郎 구자체 + 제목 내 공백(年 輪)만 상이."
+ },
+ {
+  "song_id": "ky-42121",
+  "title": "幸せな結末",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6959",
+  "candidate_joysound": "16730",
+  "reason": "표기 변형: 大滝詠一/大瀧詠一 동일인(정식 표기 大瀧), 1997년 본인 곡. 島谷ひとみ·一青窈는 동명이곡/커버 reject."
+ },
+ {
+  "song_id": "ky-42334",
+  "title": "心絵",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28364",
+  "candidate_joysound": "10153",
+  "reason": "표기 변형: ROAD OF MAJOR = ロードオブメジャー 로마자↔가타카나 동일 밴드(애니 MAJOR OP). 176BIZ·TRIPLANE은 동명이곡."
+ },
+ {
+  "song_id": "ky-40449",
+  "title": "忘れていいの",
+  "verdict": "UNCERTAIN",
+  "reason": "웹 확인 결과 듀엣 싱글(忘れていいの-愛の幕切れ-, 谷村新司·小川知子 1984)의 원곡인 谷村新司 솔로 앨범 버전(『抱擁-SATIN ROSE-』 수록, 가사 상이)이 별도 존재. joysound-421831은 谷村新司 단독 크레딧이라 듀엣인지 솔로 버전인지 판별 불가. 欧陽菲菲는 동명이곡."
+ },
+ {
+  "song_id": "ky-43160",
+  "title": "急☆上☆Show!!",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-144813",
+  "candidate_joysound": "91653",
+  "reason": "개명: 関ジャニ∞는 2024년 SUPER EIGHT로 개명한 동일 그룹(웹 확인, oricon/nikkei). 동일 곡의 카탈로그 명의 갱신."
+ },
+ {
+  "song_id": "ky-40273",
+  "title": "恋あざみ",
+  "verdict": "REJECT",
+  "reason": "勝彩也 버전이 후보에 없음. 八代亜紀는 커버/동명이곡."
+ },
+ {
+  "song_id": "ky-42390",
+  "title": "恋のミクル伝説",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-87801",
+  "candidate_joysound": "125614",
+  "reason": "성우↔캐릭터: 後藤邑子 = 朝比奈みくる CV(涼宮ハルヒの憂鬱 삽입곡, 웹 확인 uta-net/Spotify). ミンミンMIX는 별도 버전 reject."
+ },
+ {
+  "song_id": "ky-42861",
+  "title": "恋のメガラバ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-88281",
+  "candidate_joysound": "55329",
+  "reason": "표기 변형: Maximum the Hormone = マキシマム ザ ホルモン 로마자↔가타카나 동일 밴드(2006 본인 곡). コロナナモレモモ는 동 밴드의 별도 유닛(2号店) 재녹음 reject."
+ },
+ {
+  "song_id": "ky-41234",
+  "title": "恋をしちゃいました!",
+  "verdict": "REJECT",
+  "reason": "タンポポ 원곡 버전이 후보에 없음. スマイレージ는 커버."
+ },
+ {
+  "song_id": "ky-40255",
+  "title": "恋心(L'AMOUR C'EST POUR RIEN)",
+  "verdict": "REJECT",
+  "reason": "岸洋子의 샹송 번안곡 버전이 후보에 없음. Leina·華鈴·橋本一愛·長谷川和子·コブクロ 전부 동명이곡."
+ },
+ {
+  "song_id": "ky-43227",
+  "title": "恋愛サーキュレーション",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27027",
+  "candidate_joysound": "128291",
+  "reason": "성우↔캐릭터: 花澤香菜 = 千石撫子 CV(化物語 10화 OP, 웹 확인 uta-net/utaten)."
+ },
+ {
+  "song_id": "ky-40171",
+  "title": "想い出迷子",
+  "verdict": "REJECT",
+  "reason": "チョー・ヨンピル 버전이 후보에 없음. うるふ는 동명이곡."
+ },
+ {
+  "song_id": "ky-40650",
+  "title": "愛が止まらない",
+  "verdict": "REJECT",
+  "reason": "Wink 버전(愛が止まらない〜Turn It Into Love〜)이 후보에 없음. INFIX는 동명이곡."
+ },
+ {
+  "song_id": "ky-43953",
+  "title": "愛してるばんざーい!",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28419",
+  "candidate_joysound": "315701",
+  "reason": "표기 변형: u's = μ's(뮤즈, 러브라이브 유닛), KY측이 그리스 문자 μ를 u로 표기한 것. Piano Mix는 별도 버전 reject."
+ },
+ {
+  "song_id": "ky-40110",
+  "title": "愛して愛して愛しちゃったのよ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2542",
+  "candidate_joysound": "2542",
+  "reason": "표기 변형(크레딧 절삭): 원곡(1965)은 田代美代子&和田弘とマヒナスターズ 공동 명의, KY가 田代美代子만 표기. joysound-2542가 풀 크레딧의 동일 곡. サザン·奥村チヨ는 커버 reject."
+ },
+ {
+  "song_id": "ky-57811",
+  "title": "愛じゃない",
+  "verdict": "MERGE",
+  "candidate_id": "tj-52800",
+  "candidate_joysound": "613071",
+  "reason": "표기 변형: ダズビー = DAZBEE 동일인(가타카나↔로마자), 2022 본인 오리지널 디지털 싱글(웹 확인, universal-music/uta-net). surface·東京ゲゲゲイ는 동명이곡."
+ },
+ {
+  "song_id": "ky-40970",
+  "title": "愛始発",
+  "verdict": "REJECT",
+  "reason": "桂銀淑·浜圭介 듀엣 버전이 후보에 없음. 西方裕之는 동명이곡/커버."
+ },
+ {
+  "song_id": "ky-40400",
+  "title": "抱擁",
+  "verdict": "REJECT",
+  "reason": "箱崎晋一郞 버전이 후보에 없음. 후보 5건(SHING02·Kyo·双葉まさゆき·片山大生·和田アキ子) 전부 동명이곡."
+ },
+ {
+  "song_id": "ky-41060",
+  "title": "新妻鏡",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-19076",
+  "candidate_joysound": "19090",
+  "reason": "표기 변형(크레딧 절삭): 원곡(1940)은 霧島昇·二葉あき子 듀엣, KY가 霧島昇만 표기. joysound-19076이 풀 크레딧의 동일 곡."
+ },
+ {
+  "song_id": "ky-40288",
+  "title": "新宿そだち",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6192",
+  "candidate_joysound": "27054",
+  "reason": "표기 변형: 동일 듀엣(津山洋子·大木英夫) 크레딧 순서만 상이."
+ },
+ {
+  "song_id": "ky-40667",
+  "title": "旅の終りに",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6268",
+  "candidate_joysound": "2656",
+  "reason": "표기 변형: 冠二郞/冠 二郎 구자체 + 공백 차이, 본인 대표곡(1977)."
+ },
+ {
+  "song_id": "ky-44239",
+  "title": "旅立ちのうた",
+  "verdict": "MERGE",
+  "candidate_id": "tj-28802",
+  "candidate_joysound": "689913",
+  "reason": "표기 변형(크레딧 변형): 暗殺教室 24화 삽입곡, 공식 배급 크레딧은 '3年E組'(Spotify/OTOTOY), 통칭 3年E組うた担 — 동일 유닛·동일 곡(웹 확인). 和田アキ子·林部智史는 동명이곡."
+ },
+ {
+  "song_id": "ky-40528",
+  "title": "日曜日よりの使者",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-9873",
+  "candidate_joysound": "9874",
+  "reason": "표기 변형: THE HIGH-LOWS = ザ・ハイロウズ 로마자↔가타카나 동일 밴드. SINGLE Version은 별도 버전, Creepy Nuts×菅田将暉는 커버 reject."
+ },
+ {
+  "song_id": "ky-40865",
+  "title": "日本海",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-3871",
+  "candidate_joysound": "3871",
+  "reason": "표기 변형: 北島三郞/北島三郎 구자체. 石原裕次郎·八代亜紀 등 나머지는 동명이곡."
+ },
+ {
+  "song_id": "ky-40138",
+  "title": "明日の詩",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6700",
+  "candidate_joysound": "2238",
+  "reason": "표기 변형: 杉良太郞/杉良太郎 구자체."
+ },
+ {
+  "song_id": "ky-43293",
+  "title": "春夏秋冬",
+  "verdict": "REJECT",
+  "reason": "ヒルクライム 버전이 후보에 없음. レミオロメン·福山雅治·夏川りみ·PEDRO·横道坊主 전부 동명이곡."
+ },
+ {
+  "song_id": "ky-40810",
+  "title": "昭和枯れすすき",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6283",
+  "candidate_joysound": "1084",
+  "reason": "표기 변형: さくらと一郞/さくらと一郎 구자체, 본인 대표곡(1974)."
+ },
+ {
+  "song_id": "ky-41592",
+  "title": "月のしずく",
+  "verdict": "REJECT",
+  "reason": "RUI(柴咲コウ) 버전이 후보에 없음. 徳永英明는 커버(VOCALIST), 나머지는 동명이곡."
+ },
+ {
+  "song_id": "ky-40838",
+  "title": "月の砂漠",
+  "verdict": "REJECT",
+  "reason": "KY 아티스트가 '唱歌'(무특정 가수 전통 동요) — 특정 가수 명의의 개별 음원 엔트리(山澤愛子·川中美幸·城南海·Kra)로 매핑 불가. 특정 가수 버전은 각각 별도 트랙."
+ },
+ {
+  "song_id": "ky-40486",
+  "title": "望郷酒場",
+  "verdict": "REJECT",
+  "reason": "千昌夫 원곡 버전이 후보에 없음. 福田こうへい·渥美二郎·氷川きよし 전부 커버."
+ },
+ {
+  "song_id": "ky-40793",
+  "title": "札幌ふたりづれ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-376",
+  "candidate_joysound": "376",
+  "reason": "표기 변형: 동일 듀엣(都はるみ·渕野忠明) 크레딧 순서만 상이."
+ },
+ {
+  "song_id": "ky-40847",
+  "title": "東京のバスガール",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25645",
+  "candidate_joysound": "27156",
+  "reason": "표기 변형: コロムビアローズ = 初代コロムビア・ローズ(세대 한정자 '初代'와 중점 유무만 차이), 본인 1957년 대표곡."
+ },
+ {
+  "song_id": "ky-40350",
+  "title": "東京の灯よいつまでも",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6464",
+  "candidate_joysound": "27004",
+  "reason": "표기 변형: 新川二郞/新川二郎 구자체, 본인 대표곡(1964)."
+ },
+ {
+  "song_id": "ky-40848",
+  "title": "東京めぐり愛",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6756",
+  "candidate_joysound": "2179",
+  "reason": "표기 변형: 동일 듀엣(石川さゆり·琴風豪規) 크레딧 순서만 상이."
+ },
+ {
+  "song_id": "ky-40846",
+  "title": "東京流れもの",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25552",
+  "candidate_joysound": "27063",
+  "reason": "표기 변형: 竹越ひろこ/竹越ひろ子 동일인(こ/子 가나·한자 차이), 본인 1965년 대표곡. 藤圭子는 커버/동명이곡 reject."
+ },
+ {
+  "song_id": "ky-41016",
+  "title": "『果てのない道』",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-23435",
+  "candidate_joysound": "24304",
+  "reason": "표기 변형: 19 = 19(ジューク), 독음 병기 유무만 차이인 동일 듀오, 본인 곡(1999)."
+ }
+]

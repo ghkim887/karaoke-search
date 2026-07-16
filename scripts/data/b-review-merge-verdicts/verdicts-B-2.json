@@ -1,0 +1,334 @@
+[
+ {
+  "song_id": "ky-42643",
+  "title": "I.V.(SAW4 OST)",
+  "verdict": "REJECT",
+  "reason": "X JAPAN의 SAW IV 주제가 vs 아이마스 밀리언라이브 캐릭터 곡 'I.V.' — 무관한 동명이곡"
+ },
+ {
+  "song_id": "tj-26737",
+  "title": "まっがーれ↓スペクタクル(涼宮ハルヒの憂鬱 古泉一 Character Song)",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28268",
+  "candidate_joysound": "162483",
+  "reason": "하루히 古泉一樹 캐릭터송, CV=小野大輔 웹 확인(recochoku 등에 古泉一樹(CV.小野大輔) 명의) — 성우↔캐릭터. joysound-145074는 technoid goes to hollywood mix 별도 버전이라 제외"
+ },
+ {
+  "song_id": "tj-26744",
+  "title": "OPEN YOUR MIND(ああっ女神様 OP)",
+  "verdict": "REJECT",
+  "reason": "石田燿子의 ああっ女神様 OP vs 蒼井翔太 게임 캐릭터의 동명이곡"
+ },
+ {
+  "song_id": "tj-26750",
+  "title": "空想ルンバ(懺・さよなら絶望先生 OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-112569",
+  "candidate_joysound": "168779",
+  "reason": "아티스트 문자열 동일(大槻ケンヂと絶望少女達), JOYSOUND는 멤버 캐릭터명 병기 — 표기 변형"
+ },
+ {
+  "song_id": "tj-26800",
+  "title": "Double-Action CLIMAX form",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-117201",
+  "candidate_joysound": "172654",
+  "reason": "전왕&키바 극장판 주제가로 제목 유일. 실제 가창=モモタロス·ウラタロス·キンタロス·リュウタロス·デネブ(웹 확인, 후보 CV 표기와 정확히 일치); TJ의 野上良太郎＆モモタロス 크레딧은 Double-Action 원곡 크레딧을 잘못 재사용한 것"
+ },
+ {
+  "song_id": "tj-26834",
+  "title": "COOL EDITION(涼宮ハルヒの憂鬱 Character Song)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-96458",
+  "candidate_joysound": "170715",
+  "reason": "동일 캐릭터 명의 朝倉涼子, JOYSOUND는 CV.桑谷夏子 병기 — 표기 변형"
+ },
+ {
+  "song_id": "tj-26868",
+  "title": "The Gate of the Hell(マジンカイザー 死闘！暗黒大将軍 OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-27660",
+  "candidate_joysound": "31641",
+  "reason": "동일곡의 정식 크레딧이 JAM Project featuring 福山芳樹 — featuring 병기 유무의 표기 변형"
+ },
+ {
+  "song_id": "tj-26917",
+  "title": "下剋上",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-142263",
+  "candidate_joysound": "137442",
+  "reason": "보컬로이드 크레딧: 원곡=一行P feat.鏡音リン·レン(2008, VocaDB/JOYSOUND 142263 웹 확인). '(完)'은 이 곡의 통용 표기. 테니뮤/Misumi/Vivid BAD SQUAD는 동명이곡"
+ },
+ {
+  "song_id": "tj-26923",
+  "title": "ダブルラリアット",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-130641",
+  "candidate_joysound": "135038",
+  "reason": "보컬로이드 크레딧: 원곡=アゴアニキ feat.巡音ルカ(2009, 웹 확인) — 가수↔프로듀서"
+ },
+ {
+  "song_id": "tj-26941",
+  "title": "World is Mine",
+  "verdict": "REJECT",
+  "reason": "초음 미쿠 원곡은 supercell(ryo) 크레딧인데 후보에 없음; ランクヘッド/Fate 캐릭터/Yogee New Waves/GYROAXIA 전부 동명이곡"
+ },
+ {
+  "song_id": "ky-43128",
+  "title": "止マレ!(涼宮ハルヒの憂鬱 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-141872",
+  "candidate_joysound": "137288",
+  "reason": "성우↔캐릭터: KY의 성우 3인(平野綾·茅原実里(美里는 오탈자)·後藤邑子)이 후보의 캐릭터(CV) 병기와 일치 — 하루히 ED 동일곡"
+ },
+ {
+  "song_id": "tj-26970",
+  "title": "Fire◎Flower",
+  "verdict": "REJECT",
+  "reason": "TJ는 鏡音レン 원곡(halyosy feat.鏡音レン). absorb 항목은 셀프커버 릴리스(ChordWiki 'セルフカバー：absorb' 명시, 웹 확인), らっぷびと×halyosy·浦島坂田船·渋谷ハル은 커버, Sparkler Ver.는 별도 버전 — 전부 커버/버전"
+ },
+ {
+  "song_id": "tj-26999",
+  "title": "So lonely",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-213430",
+  "candidate_joysound": "941652",
+  "reason": "ラウドネス = LOUDNESS의 가타카나 표기 — 동일 밴드, 표기 변형"
+ },
+ {
+  "song_id": "tj-27019",
+  "title": "あいたい",
+  "verdict": "REJECT",
+  "reason": "SG워너비(sg WANNA BE+)의 곡인데 후보(RADWIMPS/大江千里/新垣結衣/益田さかえ/カラーボトル)는 전부 동명이곡"
+ },
+ {
+  "song_id": "tj-27028",
+  "title": "Dear",
+  "verdict": "REJECT",
+  "reason": "초음 미쿠 'Dear'(19's Sound Factory)인데 후보는 전부 무관한 동명이곡"
+ },
+ {
+  "song_id": "tj-27034",
+  "title": "Sky high",
+  "verdict": "REJECT",
+  "reason": "FreeTEMPO의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tj-27066",
+  "title": "IMITATION BLACK",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-143657",
+  "candidate_joysound": "138115",
+  "reason": "보컬로이드 크레딧: VanaN'Ice = 神威がくぽ·KAITO·鏡音レン 유닛, 원곡=natsuP(SCL Project) 프로듀스(웹 확인) — 가수↔프로듀서"
+ },
+ {
+  "song_id": "tj-27110",
+  "title": "風",
+  "verdict": "REJECT",
+  "reason": "ユンナ(Younha)의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tj-27147",
+  "title": "ユカイツーカイ怪物くん",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-5293",
+  "candidate_joysound": "5293",
+  "reason": "성우↔캐릭터: 1980년판 怪物くん OP, 주역 성우 野沢雅子 가창(웹 확인, JOYSOUND 5293이 바로 그 곡)"
+ },
+ {
+  "song_id": "tj-27261",
+  "title": "Seasons",
+  "verdict": "REJECT",
+  "reason": "赤西仁의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tj-27270",
+  "title": "Kiss Kiss",
+  "verdict": "REJECT",
+  "reason": "キム・ヒョンジュン의 곡 vs 松岡英明의 동명이곡"
+ },
+ {
+  "song_id": "tj-27273",
+  "title": "Lucky Guy",
+  "verdict": "REJECT",
+  "reason": "キム・ヒョンジュン의 곡 vs NONA REEVES의 동명이곡"
+ },
+ {
+  "song_id": "tj-27292",
+  "title": "Wild At Heart",
+  "verdict": "REJECT",
+  "reason": "嵐의 곡인데 후보(難波章浩/CaYOCO)는 동명이곡"
+ },
+ {
+  "song_id": "tj-27360",
+  "title": "Dreaming",
+  "verdict": "REJECT",
+  "reason": "FreeTEMPO feat.Nami Miyahara의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tj-27380",
+  "title": "Powder Snow ~永遠に終わらない冬~",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-244511",
+  "candidate_joysound": "32341",
+  "reason": "三代目 J Soul Brothers = 三代目 J SOUL BROTHERS from EXILE TRIBE — 동일 그룹의 공식 명칭 확장(표기 변형), 동일곡"
+ },
+ {
+  "song_id": "tj-27416",
+  "title": "パンダヒーロー",
+  "verdict": "MERGE",
+  "candidate_id": "ky-43454",
+  "candidate_joysound": "145546",
+  "reason": "보컬로이드 크레딧: 원곡=ハチ(米津玄師) feat.GUMI(2011, 웹 확인) — 가수↔프로듀서"
+ },
+ {
+  "song_id": "tj-27495",
+  "title": "Bounce(Japanese Ver.)",
+  "verdict": "REJECT",
+  "reason": "チョーヨンピル(조용필)의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tj-27543",
+  "title": "深山しぐれ",
+  "verdict": "REJECT",
+  "reason": "門脇陸男 vs 白井みさ子 — 별개 가수, 특수 범주 해당 없음(커버여도 REJECT)"
+ },
+ {
+  "song_id": "tj-27645",
+  "title": "よだかの星",
+  "verdict": "REJECT",
+  "reason": "Sound Horizon의 곡 vs 伊東歌詞太郎의 곡 — 미야자와 겐지 동화 제목을 공유하는 동명이곡"
+ },
+ {
+  "song_id": "ky-44001",
+  "title": "虹色の戦争",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-150201",
+  "candidate_joysound": "128519",
+  "reason": "개명: 世界の終わり → SEKAI NO OWARI(2011 메이저 데뷔 시 표기 변경, 웹 확인). 인디 시절 곡이라 JOYSOUND가 구명의"
+ },
+ {
+  "song_id": "ky-44021",
+  "title": "天使と悪魔(霊能力者小田霧響子の嘘 OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-157401",
+  "candidate_joysound": "93423",
+  "reason": "개명: 世界の終わり → SEKAI NO OWARI(웹 확인). FUNKY MONKEY BABYS/GRe4N BOYZ/鴉 등 다른 후보는 동명이곡"
+ },
+ {
+  "song_id": "ky-43971",
+  "title": "幻の命",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-149847",
+  "candidate_joysound": "128343",
+  "reason": "개명: 世界の終わり → SEKAI NO OWARI(웹 확인) — 구명의 데뷔 싱글"
+ },
+ {
+  "song_id": "tj-27780",
+  "title": "View",
+  "verdict": "REJECT",
+  "reason": "ユンナ(Younha)의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "blog-163-96",
+  "title": "白昼の夢",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-152300",
+  "candidate_joysound": "129647",
+  "reason": "개명: 世界の終わり → SEKAI NO OWARI(웹 확인) — 인디 시절 곡"
+ },
+ {
+  "song_id": "tj-27795",
+  "title": "サンドリヨン",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-147022",
+  "candidate_joysound": "139899",
+  "reason": "후보 아티스트가 シグナルP feat.初音ミク、KAITO를 그대로 포함(Dios/シグナルP는 동일 프로듀서 병기) — 표기 변형"
+ },
+ {
+  "song_id": "tj-27810",
+  "title": "Take Me Out",
+  "verdict": "REJECT",
+  "reason": "Fear, and Loathing in Las Vegas의 곡인데 후보(Franz Ferdinand/ARTEMA/ANNA TSUCHIYA)는 동명이곡"
+ },
+ {
+  "song_id": "tj-27823",
+  "title": "海色(艦隊これくしょん-艦これ- OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-417677",
+  "candidate_joysound": "671782",
+  "reason": "AKINO With bless4 / AKINO from bless4 — 동일 유닛의 표기 변형, 칸코레 OP 海色(みいろ) 동일곡"
+ },
+ {
+  "song_id": "tj-27849",
+  "title": "約束(THE iDOLM@STER OST)",
+  "verdict": "REJECT",
+  "reason": "今井麻美의 아이마스 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tjpdf-27867",
+  "title": "経験値速上々↑↑",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-127256",
+  "candidate_joysound": "178158",
+  "reason": "성우↔캐릭터: TJ 성우 3인(佐藤利奈·井上麻里奈·茅原実里)이 후보의 미나미가 캐릭터(CV) 병기와 완전 일치"
+ },
+ {
+  "song_id": "tjpdf-27870",
+  "title": "約束",
+  "verdict": "REJECT",
+  "reason": "Mucc의 곡인데 후보는 전부 동명이곡"
+ },
+ {
+  "song_id": "tjpdf-27876",
+  "title": "Go Tight!",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-59506",
+  "candidate_joysound": "78683",
+  "reason": "AKINO = AKINO from bless4 — 동일 가수의 표기 변형(아쿠에리온 2기 OP 원곡). 遠藤正明 항목은 별도 커버라 제외"
+ },
+ {
+  "song_id": "tjpdf-27878",
+  "title": "？でわっしょい",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-120194",
+  "candidate_joysound": "174317",
+  "reason": "성우↔캐릭터: TJ 성우 4인(阿澄佳奈·水橋かおり·後藤邑子·新谷良子)이 후보의 히다마리 스케치 캐릭터(CV) 병기와 완전 일치"
+ },
+ {
+  "song_id": "tj-27932",
+  "title": "バイバイ YESTERDAY(暗殺教室 OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-566548",
+  "candidate_joysound": "684141",
+  "reason": "아티스트 문자열 동일(3年E組うた担), 후보는 멤버 병기 — 표기 변형"
+ },
+ {
+  "song_id": "ky-44099",
+  "title": "桜ノ雨",
+  "verdict": "REJECT",
+  "reason": "KY는 halyosy 원곡(halyosy feat.初音ミク, 2008-02) 크레딧. absorb 항목 2건은 밴드 메이저 데뷔 싱글=셀프커버 릴리스(별도 어레인지, 웹 확인), 中孝介 feat.伊東歌詞太郎/ROOT FIVE/小林幸子는 커버 — Fire◎Flower와 동일 논리로 전부 커버/버전"
+ },
+ {
+  "song_id": "tjpdf-28015",
+  "title": "BAMBOO BEAT",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-112637",
+  "candidate_joysound": "168735",
+  "reason": "성우↔캐릭터: TJ '広橋涼,他'의 広橋涼가 후보의 Bamboo Blade 캐릭터(CV) 병기 선두와 일치 — 동일 캐릭터송"
+ },
+ {
+  "song_id": "tjpdf-28038",
+  "title": "Dear My",
+  "verdict": "REJECT",
+  "reason": "ELISA의 곡 vs KATZE의 동명이곡"
+ },
+ {
+  "song_id": "ky-42503",
+  "title": "First Good-Bye",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-103481",
+  "candidate_joysound": "162961",
+  "reason": "성우↔캐릭터: 후보가 涼宮ハルヒ(C.V.平野綾)로 KY의 平野綾와 일치 — 하루히 캐릭터송 동일곡"
+ }
+]

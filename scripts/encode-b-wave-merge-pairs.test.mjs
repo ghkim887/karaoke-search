@@ -1,0 +1,151 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildPlan,
+  entryLines,
+  parseArgs,
+  parseReviewedSource,
+} from './encode-b-wave-merge-pairs.mjs';
+
+const SAMPLE_SOURCE = `
+const REVIEWED_TIER_E_STRONG_PAIRS = [
+  ['6284', '1755'], // note
+  ['25065', '999999'], // existing E owner of joysound 999999
+] as const satisfies ReadonlyArray<readonly [string, string]>;
+
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 2;
+const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
+  '26121|65623',
+  '26750|168779',
+]);
+
+const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
+  ['tj', '52784', '634289'], // note
+  ['ky', '44158', '689337'], // existing F ky owner
+  ['tj', '25875', '888888'], // existing F tj owner of joysound 888888
+] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 3;
+const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
+  ['tj', '6927', '19868'], // artist 19
+] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+`;
+
+function row(over) {
+  return {
+    song_id: 'tj-1',
+    title: 'T',
+    artist: 'A',
+    tj: null,
+    ky: null,
+    J: '100',
+    candTitle: 'T2',
+    candArtist: 'A2',
+    reason: '',
+    ...over,
+  };
+}
+
+describe('parseArgs', () => {
+  it('defaults reviews/source and reads flags', () => {
+    const a = parseArgs(['--out', 'o.txt', '--plan-out', 'p.json']);
+    expect(a.out).toMatch(/o\.txt$/);
+    expect(a.planOut).toMatch(/p\.json$/);
+    expect(a.reviews).toMatch(/b-review-merge-verdicts$/);
+  });
+  it('throws on unknown flag', () => {
+    expect(() => parseArgs(['--nope'])).toThrow(/unknown arg/);
+  });
+});
+
+describe('parseReviewedSource', () => {
+  const ex = parseReviewedSource(SAMPLE_SOURCE);
+  it('extracts Tier E pairs and forbidden set', () => {
+    expect(ex.tierE.get('6284')?.has('1755')).toBe(true);
+    expect(ex.forbiddenE.has('26121|65623')).toBe(true);
+  });
+  it('extracts Tier F pairs and forbidden set', () => {
+    expect(ex.tierF.get('tj:52784')?.has('634289')).toBe(true);
+    expect(ex.tierF.get('ky:44158')?.has('689337')).toBe(true);
+    expect(ex.forbiddenF.has('tj|6927|19868')).toBe(true);
+  });
+  it('collects every used joysound number across both tiers', () => {
+    for (const j of ['1755', '999999', '634289', '689337', '888888'])
+      expect(ex.existingJ.has(j)).toBe(true);
+  });
+});
+
+describe('buildPlan tier assignment', () => {
+  const ex = parseReviewedSource(SAMPLE_SOURCE);
+  it('routes a single-vendor tj-only row to Tier F', () => {
+    const p = buildPlan([row({ song_id: 'tj-500', tj: '500', J: '100' })], ex);
+    expect(p.tierF).toHaveLength(1);
+    expect(p.tierF[0]).toMatchObject({ v: 'tj', n: '500', J: '100' });
+    expect(p.tierE).toHaveLength(0);
+  });
+  it('routes a single-vendor ky-only row to Tier F', () => {
+    const p = buildPlan([row({ song_id: 'ky-500', ky: '500', J: '101' })], ex);
+    expect(p.tierF[0]).toMatchObject({ v: 'ky', n: '500', J: '101' });
+  });
+  it('routes a both-vendor tj-slug row to Tier E', () => {
+    const p = buildPlan([row({ song_id: 'tj-500', tj: '500', ky: '600', J: '102' })], ex);
+    expect(p.tierE[0]).toMatchObject({ v: 'tj', n: '500', J: '102' });
+    expect(p.tierF).toHaveLength(0);
+  });
+  it('rejects a both-vendor row with a non-tj id (Tier mechanism cannot target)', () => {
+    const p = buildPlan([row({ song_id: 'ky-500', tj: '500', ky: '600', J: '103' })], ex);
+    expect(p.unencodable['both-vendor-non-tj-id']).toHaveLength(1);
+    expect(p.tierE.length + p.tierF.length).toBe(0);
+  });
+});
+
+describe('buildPlan guards', () => {
+  const ex = parseReviewedSource(SAMPLE_SOURCE);
+  it('never encodes a pair present in a forbidden set', () => {
+    const p = buildPlan([row({ song_id: 'tj-6927', tj: '6927', J: '19868' })], ex);
+    expect(p.unencodable.forbidden).toHaveLength(1);
+    expect(p.tierF).toHaveLength(0);
+  });
+  it('skips an already-encoded exact pair', () => {
+    const p = buildPlan([row({ song_id: 'ky-44158', ky: '44158', J: '689337' })], ex);
+    expect(p.unencodable['already-encoded']).toHaveLength(1);
+  });
+  it('classifies a ky row whose joysound is owned by an existing tj-pair as 3-way', () => {
+    const p = buildPlan([row({ song_id: 'ky-700', ky: '700', J: '888888' })], ex);
+    expect(p.unencodable['3way-existing-reviewed']).toHaveLength(1);
+    expect(p.unencodable['3way-existing-reviewed'][0].existingOwner).toBe('tierF tj:25875');
+  });
+  it('classifies a tj row whose joysound is owned by another tj-pair as both-vendor-number', () => {
+    const p = buildPlan([row({ song_id: 'tj-700', tj: '700', J: '888888' })], ex);
+    expect(p.unencodable['both-vendor-number']).toHaveLength(1);
+  });
+  it('keeps the tj side and drops the ky side of an in-batch 3-way (unique-joysound)', () => {
+    const p = buildPlan(
+      [
+        row({ song_id: 'ky-800', ky: '800', J: '200' }),
+        row({ song_id: 'tj-801', tj: '801', J: '200' }),
+      ],
+      ex,
+    );
+    expect(p.tierF).toHaveLength(1);
+    expect(p.tierF[0]).toMatchObject({ v: 'tj', n: '801', J: '200' });
+    expect(p.unencodable['3way-dupJ']).toHaveLength(1);
+    expect(p.unencodable['3way-dupJ'][0].song_id).toBe('ky-800');
+    expect(p.unencodable['3way-dupJ'][0].winner).toBe('tj-801');
+  });
+});
+
+describe('entryLines', () => {
+  const ex = parseReviewedSource(SAMPLE_SOURCE);
+  it('formats Tier E and Tier F code lines with a provenance comment', () => {
+    const p = buildPlan(
+      [
+        row({ song_id: 'tj-500', tj: '500', ky: '600', J: '102', title: 'S', candTitle: 'S2' }),
+        row({ song_id: 'ky-900', ky: '900', J: '300' }),
+      ],
+      ex,
+    );
+    const { tierE, tierF } = entryLines(p);
+    expect(tierE[0]).toBe("  ['500', '102'], // tj-500 S / A ↔ S2 / A2");
+    expect(tierF[0]).toBe("  ['ky', '900', '300'], // ky-900 T / A ↔ T2 / A2");
+  });
+});

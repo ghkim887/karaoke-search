@@ -1,0 +1,960 @@
+[
+ {
+  "song": {
+   "id": "tj-25065",
+   "title": "Simply Wonderful",
+   "artist": "倉木麻衣",
+   "tj": "25065",
+   "ky": "41499"
+  },
+  "candidates": [
+   {
+    "id": "joysound-24651",
+    "joysound": "26141",
+    "title": "Simply Wonderful〈Club Edit〉",
+    "artist": "倉木麻衣",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-24686",
+    "joysound": "26179",
+    "title": "Simply Wonderful〈Radio Edit〉",
+    "artist": "倉木麻衣",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25148",
+   "title": "はじまりはいつも雨",
+   "artist": "Chage & Aska",
+   "tj": "25148",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-2492",
+    "joysound": "2492",
+    "title": "はじまりはいつも雨",
+    "artist": "ASKA",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-100800",
+    "joysound": "162065",
+    "title": "はじまりはいつも雨",
+    "artist": "伴都美子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-253258",
+    "joysound": "724576",
+    "title": "はじまりはいつも雨",
+    "artist": "堂本剛",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-92894",
+    "joysound": "126500",
+    "title": "はじまりはいつも雨",
+    "artist": "佐藤竹善",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25247",
+   "title": "シングルベッド(D.N.A2 ED)",
+   "artist": "シャ乱Ｑ",
+   "tj": "25247",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-12438",
+    "joysound": "12446",
+    "title": "シングルベッド",
+    "artist": "シャ乱Q",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-502-42",
+    "joysound": "146019",
+    "title": "シングルベッド",
+    "artist": "OSTER project",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-151321",
+    "joysound": "129140",
+    "title": "シングルベッド",
+    "artist": "リュ・シウォン",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-199732",
+    "joysound": "927897",
+    "title": "シングルベッド",
+    "artist": "つんく♂",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-226635",
+    "joysound": "196241",
+    "title": "シングルベッド",
+    "artist": "つるの剛士",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25258",
+   "title": "勇者王誕生(神話 Ver.)(勇者王ガオガイガー OP)",
+   "artist": "遠藤正明",
+   "tj": "25258",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "tj-25255",
+    "joysound": "16476",
+    "title": "勇者王誕生(勇者王ガオガイガー OP)",
+    "artist": "遠藤正明",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25432",
+   "title": "INVOKE(機動戦士ガンダムSEED OP)",
+   "artist": "T.M.Revolution",
+   "tj": "25432",
+   "ky": "41514"
+  },
+  "candidates": [
+   {
+    "id": "joysound-255003",
+    "joysound": "726082",
+    "title": "INVOKE(UNDER:COVER 2)",
+    "artist": "T.M.Revolution",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-205428",
+    "joysound": "933605",
+    "title": "INVOKE",
+    "artist": "桃井はるこ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25499",
+   "title": "WINTER WISH(ラブひな WINTER SPECIAL)",
+   "artist": "米倉千尋",
+   "tj": "25499",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-37879",
+    "joysound": "52814",
+    "title": "WINTER WISH",
+    "artist": "米倉千尋",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1002417",
+    "joysound": "622668",
+    "title": "Winter Wish",
+    "artist": "GENERATIONS from EXILE TRIBE",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-113725",
+    "joysound": "169463",
+    "title": "Winter Wish",
+    "artist": "中川翔子",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25519",
+   "title": "real Emotion(FINAL FANTASY X-2)",
+   "artist": "倖田來未",
+   "tj": "25519",
+   "ky": "41628"
+  },
+  "candidates": [
+   {
+    "id": "joysound-130364",
+    "joysound": "179845",
+    "title": "real Emotion〈HOUSE NATION Sunset In Ibiza Remix〉",
+    "artist": "倖田來未",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-26419",
+    "joysound": "28527",
+    "title": "real Emotion",
+    "artist": "倖田來未",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-188905",
+    "joysound": "917037",
+    "title": "REAL EMOTION",
+    "artist": "sweetbox",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-49990",
+    "joysound": "68682",
+    "title": "real Emotion〈FFX-2 Mix〉",
+    "artist": "sweetbox",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25531",
+   "title": "dis-(無限のリヴァイアス OP)",
+   "artist": "有坂美香",
+   "tj": "25531",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-193098",
+    "joysound": "921243",
+    "title": "dis-(TV Version)",
+    "artist": "有坂美香",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-246505",
+    "joysound": "946545",
+    "title": "dis-(ENGLISH Version)",
+    "artist": "有坂美香",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-25770",
+    "joysound": "27341",
+    "title": "dis-(CLUB MIX Version)",
+    "artist": "有坂美香",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25567",
+   "title": "熱風！疾風！サイバスター(スーパーロボット大戦α外伝 OST)",
+   "artist": "水木一郎,MIO,影山ヒロノブ",
+   "tj": "25567",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-30398",
+    "joysound": "34901",
+    "title": "熱風!疾風!サイバスター",
+    "artist": "水木一郎/影山ヒロノブ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-39058",
+    "joysound": "55613",
+    "title": "熱風!疾風!サイバスター〈EDGEWIRED ver.〉",
+    "artist": "JAM Project featuring さかもとえいぞう&遠藤正明",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-25718",
+   "title": "Count down(GEAR戦士電童 ED)",
+   "artist": "Little Voice",
+   "tj": "25718",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-30874",
+    "joysound": "35378",
+    "title": "COUNT DOWN(カウントダウン)",
+    "artist": "Little Voice",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1028047",
+    "joysound": "647378",
+    "title": "Countdown",
+    "artist": "超特急",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1074104",
+    "joysound": "632779",
+    "title": "Countdown (feat.JUNG YOUNG HWA from CNBLUE)",
+    "artist": "UVERworld",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1089760",
+    "joysound": "634750",
+    "title": "COUNTDOWN (All ver.)",
+    "artist": "AVAM",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1138924",
+    "joysound": "642407",
+    "title": "Countdown",
+    "artist": "timelesz",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26077",
+   "title": "城崎恋歌",
+   "artist": "細川たかし",
+   "tj": "26077",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-10465",
+    "joysound": "10469",
+    "title": "城崎恋歌(きのさきこいうた)",
+    "artist": "細川たかし",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26121",
+   "title": "ハッピー☆マテリアル(魔法先生 ネギま! OP)",
+   "artist": "麻帆良学園中等部2-A",
+   "tj": "26121",
+   "ky": "42044"
+  },
+  "candidates": [
+   {
+    "id": "joysound-60677",
+    "joysound": "79892",
+    "title": "ハッピー☆マテリアル(31人ver.・TVサイズ)",
+    "artist": "麻帆良学園中等部2-A",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-122996",
+    "joysound": "175784",
+    "title": "ハッピー☆マテリアル",
+    "artist": "メルディアナ合唱団(ネギ、アーニャ、ネカネ)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-47271",
+    "joysound": "65623",
+    "title": "ハッピー☆マテリアル",
+    "artist": "麻帆良学園中等部2-A(相坂さよ/明石裕奈/朝倉和美/綾瀬夕映/和泉亜子/大河内アキラ)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-58736",
+    "joysound": "77873",
+    "title": "ハッピー☆マテリアル(4月度オープニングテーマ)",
+    "artist": "麻帆良学園中等部2-A(椎名桜子/龍宮真名/超鈴音/長瀬楓/那波千鶴)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-58971",
+    "joysound": "78108",
+    "title": "ハッピー☆マテリアル(6月度オープニングテーマ)",
+    "artist": "麻帆良学園中等部2-A(宮崎のどか/村上夏美/雪広あやか/四葉五月/Zazie Rainyday)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26145",
+   "title": "忘れていいの",
+   "artist": "小川知子,谷村新司",
+   "tj": "26145",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-421831",
+    "joysound": "501008",
+    "title": "忘れていいの",
+    "artist": "谷村新司",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-75069",
+    "joysound": "132027",
+    "title": "忘れていいの",
+    "artist": "欧陽菲菲",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26181",
+   "title": "月の呪縛(カース)(LOVELESS OP)",
+   "artist": "翁鈴佳",
+   "tj": "26181",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-58976",
+    "joysound": "78113",
+    "title": "月の呪縛",
+    "artist": "翁鈴佳",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26224",
+   "title": "宙船",
+   "artist": "TOKIO",
+   "tj": "26224",
+   "ky": "42012"
+  },
+  "candidates": [
+   {
+    "id": "joysound-86621",
+    "joysound": "21461",
+    "title": "宙船(そらふね)",
+    "artist": "TOKIO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-94033",
+    "joysound": "55775",
+    "title": "宙船(そらふね)〈Orchestra version〉",
+    "artist": "TOKIO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-687-14",
+    "joysound": "21759",
+    "title": "宙船(そらふね)",
+    "artist": "中島みゆき",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-121736",
+    "joysound": "83882",
+    "title": "宙船(そらふね)",
+    "artist": "工藤静香",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42263",
+   "title": "この世の限り(錯乱 OST)",
+   "artist": "椎名林檎,椎名純平",
+   "tj": "26310",
+   "ky": "42263"
+  },
+  "candidates": [
+   {
+    "id": "joysound-95338",
+    "joysound": "21930",
+    "title": "この世の限り",
+    "artist": "椎名林檎×斎藤ネコ+椎名純平",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26350",
+   "title": "Still(咎狗の血 ED)(Eng Ver.)",
+   "artist": "いとう かなこ",
+   "tj": "26350",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "tj-26271",
+    "joysound": "166525",
+    "title": "STILL(咎狗の血 ED)",
+    "artist": "いとう かなこ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-383-65",
+    "joysound": "502676",
+    "title": "Still",
+    "artist": "MY FIRST STORY",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-828-72",
+    "joysound": "3620",
+    "title": "STILL",
+    "artist": "DREAMS COME TRUE",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1072753",
+    "joysound": "632352",
+    "title": "Still",
+    "artist": "Neil",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1142583",
+    "joysound": "824187",
+    "title": "Still《レコおと》",
+    "artist": "SHIORI",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26436",
+   "title": "蕾(ドラマ'東京タワー 〜オカンとボクと、時々、オトン〜'OST)",
+   "artist": "コブクロ",
+   "tj": "26436",
+   "ky": "42368"
+  },
+  "candidates": [
+   {
+    "id": "joysound-99432",
+    "joysound": "23743",
+    "title": "蕾(つぼみ)",
+    "artist": "コブクロ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-1628-87",
+    "joysound": "689313",
+    "title": "蕾",
+    "artist": "クリス・ハート",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-338-80",
+    "joysound": "489575",
+    "title": "蕾",
+    "artist": "GReeeeN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-630-2",
+    "joysound": "627069",
+    "title": "蕾",
+    "artist": "Omoinotake",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1088354",
+    "joysound": "821035",
+    "title": "蕾《レコおと》",
+    "artist": "Arakezuri",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26460",
+   "title": "Face of Fact(BALDR FORCE EXE RESOLUTION OP)",
+   "artist": "KOTOKO",
+   "tj": "26460",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-147315",
+    "joysound": "127069",
+    "title": "Face of Fact〈RESOLUTION ver.〉",
+    "artist": "KOTOKO",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26465",
+   "title": "Peace of mind(蒼穹のファフナー RIGHT OF LEFT)",
+   "artist": "angela",
+   "tj": "26465",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-36486",
+    "joysound": "51027",
+    "title": "Peace of mind",
+    "artist": "angela",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-103030",
+    "joysound": "162693",
+    "title": "Peace of Mind",
+    "artist": "SAKURA with Micro(Def Tech)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-213486",
+    "joysound": "941708",
+    "title": "Peace of mind",
+    "artist": "RAMJET PULLEY",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26474",
+   "title": "未来への咆哮(マブラヴ オルタネイティヴ トータル・イクリプス OP)",
+   "artist": "JAM Project(Feat.male 影山ヒロノブ 外)",
+   "tj": "26474",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-60073",
+    "joysound": "79287",
+    "title": "未来への咆哮",
+    "artist": "JAM Project feat.影山ヒロノブ・遠藤正明・きただにひろし・福山芳樹",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26475",
+   "title": "微熱S.O.S!!(THE IDOLM@STER XENOGLOSSIA OP)",
+   "artist": "橋本みゆき",
+   "tj": "26475",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-105373",
+    "joysound": "164117",
+    "title": "微熱S.O.S!!",
+    "artist": "橋本みゆき",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-142196",
+    "joysound": "137408",
+    "title": "微熱S.O.S!!〈solitude Ver.〉",
+    "artist": "橋本みゆき",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-147350",
+    "joysound": "127099",
+    "title": "微熱S.O.S!!〈TVsize〉",
+    "artist": "天海春香(井口裕香)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26636",
+   "title": "Bomb A Head! Returns!(天上天下 OP)",
+   "artist": "M.C.A.T(Feat.DA PUMP)",
+   "tj": "26636",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-42788",
+    "joysound": "60852",
+    "title": "Bomb A Head! Returns!〈Album Version〉",
+    "artist": "m.c.A・T feat. DA PUMP",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-27953",
+    "joysound": "31937",
+    "title": "Bomb A Head! Returns!",
+    "artist": "m.c.A・T",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42670",
+   "title": "メルト",
+   "artist": "初音ミク",
+   "tj": "26749",
+   "ky": "42670"
+  },
+  "candidates": [
+   {
+    "id": "joysound-134537",
+    "joysound": "91145",
+    "title": "メルト",
+    "artist": "supercell",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-1516-34",
+    "joysound": "615393",
+    "title": "メルト",
+    "artist": "WurtS",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-108298",
+    "joysound": "166040",
+    "title": "メルト",
+    "artist": "パーキッツ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-131700",
+    "joysound": "135615",
+    "title": "メルト",
+    "artist": "Plastic Tree",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42833",
+   "title": "ブラック★ ロックシューター",
+   "artist": "初音ミク",
+   "tj": "26865",
+   "ky": "42833"
+  },
+  "candidates": [
+   {
+    "id": "joysound-125422",
+    "joysound": "177033",
+    "title": "ブラック★ロックシューター",
+    "artist": "supercell",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43058",
+   "title": "悪ノ娘",
+   "artist": "mothy_悪ノP(Feat.鏡音リン)",
+   "tj": "26906",
+   "ky": "43058"
+  },
+  "candidates": [
+   {
+    "id": "joysound-128487",
+    "joysound": "178844",
+    "title": "悪ノ娘",
+    "artist": "mothy feat.鏡音リン",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26927",
+   "title": "済州エア･ポート",
+   "artist": "半田浩二",
+   "tj": "26927",
+   "ky": "40600"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1081",
+    "joysound": "1081",
+    "title": "済州エア・ポート(チェジュエアポート)",
+    "artist": "半田浩二",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26954",
+   "title": "Just Be Friends",
+   "artist": "巡音ルカ",
+   "tj": "26954",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-145340",
+    "joysound": "138973",
+    "title": "Just Be Friends",
+    "artist": "Dixie Flatline feat.巡音ルカ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-145191",
+    "joysound": "138889",
+    "title": "Just Be Friends",
+    "artist": "らっぷびと&ゼブラ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-26965",
+   "title": "ダンシング☆サムライ",
+   "artist": "神威がくぽ",
+   "tj": "26965",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-146430",
+    "joysound": "139530",
+    "title": "ダンシング☆サムライ",
+    "artist": "かにみそP feat.神威がくぽ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-728443",
+    "joysound": "436001",
+    "title": "ダンシング☆サムライ",
+    "artist": "崎山つばさ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27012",
+   "title": "You were...",
+   "artist": "浜崎あゆみ",
+   "tj": "27012",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-145336",
+    "joysound": "91750",
+    "title": "You were...〈Original mix〉",
+    "artist": "浜崎あゆみ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-147374",
+    "joysound": "92044",
+    "title": "You were...〈Music Box mix -retake version-〉",
+    "artist": "浜崎あゆみ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43113",
+   "title": "ロミオとシンデレラ",
+   "artist": "初音ミク",
+   "tj": "27030",
+   "ky": "43113"
+  },
+  "candidates": [
+   {
+    "id": "joysound-133637",
+    "joysound": "136579",
+    "title": "ロミオとシンデレラ",
+    "artist": "doriko",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-223425",
+    "joysound": "147919",
+    "title": "ロミオとシンデレラ",
+    "artist": "すーぱーそに子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-926108",
+    "joysound": "613379",
+    "title": "ロミオとシンデレラ (ロミオver.)",
+    "artist": "岡本信彦",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43185",
+   "title": "ルカルカ★ナイトフィーバー",
+   "artist": "巡音ルカ",
+   "tj": "27031",
+   "ky": "43185"
+  },
+  "candidates": [
+   {
+    "id": "joysound-145091",
+    "joysound": "138844",
+    "title": "ルカルカ★ナイトフィーバー",
+    "artist": "samfree",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27038",
+   "title": "右肩の蝶",
+   "artist": "鏡音リン",
+   "tj": "27038",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-165328",
+    "joysound": "107313",
+    "title": "右肩の蝶",
+    "artist": "うさ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-143101",
+    "joysound": "137779",
+    "title": "右肩の蝶〈リンver.〉",
+    "artist": "のりP feat.鏡音リン",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-143658",
+    "joysound": "138116",
+    "title": "右肩の蝶〈レンver.〉",
+    "artist": "のりP feat.鏡音レン",
+    "match": "stripped-title"
+   }
+  ]
+ }
+]

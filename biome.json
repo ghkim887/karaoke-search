@@ -20,6 +20,7 @@
       "apps/web/src/lib/__snapshots__/search-parity.baseline.json",
       "scripts/data/llm-translations-chunk-*.json",
       "scripts/data/.stage2-stale/**",
+      "scripts/data/b-review-merge-verdicts/**",
       "packages/crawler/src/curated/korean-artist-drop-list.json",
       "packages/crawler/src/clustering-rules.json"
     ]

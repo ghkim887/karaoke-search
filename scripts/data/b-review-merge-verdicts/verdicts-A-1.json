@@ -1,0 +1,256 @@
+[
+ {
+  "song_id": "tj-25065",
+  "title": "Simply Wonderful",
+  "verdict": "merge",
+  "candidate_id": "joysound-24651",
+  "candidate_joysound": "26141",
+  "reason": "원곡 자체가 'Simply Wonderful ~Club Edit~/~Radio Edit~' 양판 싱글(GZCA-1030, 2000)로만 발매되어 무버전 원판이 없음 — TJ 무버전 엔트리는 이 곡이며 리드 A면인 Club Edit에 병합(Radio Edit는 동곡 별믹스)."
+ },
+ {
+  "song_id": "tj-25148",
+  "title": "はじまりはいつも雨",
+  "verdict": "merge",
+  "candidate_id": "joysound-2492",
+  "candidate_joysound": "2492",
+  "reason": "1991년 ASKA 솔로 싱글 원곡 — TJ가 듀오 명의(Chage & Aska)로 크레딧한 표기 차이일 뿐 같은 곡; 伴都美子/堂本剛/佐藤竹善은 커버."
+ },
+ {
+  "song_id": "tj-25247",
+  "title": "シングルベッド(D.N.A2 ED)",
+  "verdict": "merge",
+  "candidate_id": "joysound-12438",
+  "candidate_joysound": "12446",
+  "reason": "シャ乱Q 1994년 싱글(D・N・A² ED) 동일곡, 전각Ｑ/반각Q 표기 차이; OSTER project·リュ・シウォン·つんく♂ 솔로판·つるの剛士는 동명이곡 또는 별도 엔트리."
+ },
+ {
+  "song_id": "tj-25258",
+  "title": "勇者王誕生(神話 Ver.)(勇者王ガオガイガー OP)",
+  "verdict": "reject",
+  "reason": "神話(마이소로지) 버전은 GaoGaiGar FINAL기 재녹음 별버전 — 후보는 무버전 원판이며 이미 tj-25255로 별도 레코드 존재, 버전 차이라 병합 불가."
+ },
+ {
+  "song_id": "tj-25432",
+  "title": "INVOKE(機動戦士ガンダムSEED OP)",
+  "verdict": "reject",
+  "reason": "T.M.Revolution 후보는 UNDER:COVER 2(2015 셀프커버 앨범) 재편곡판으로 버전 차이; 桃井はるこ INVOKE는 동명이곡."
+ },
+ {
+  "song_id": "tj-25499",
+  "title": "WINTER WISH(ラブひな WINTER SPECIAL)",
+  "verdict": "merge",
+  "candidate_id": "joysound-37879",
+  "candidate_joysound": "52814",
+  "reason": "米倉千尋 동일곡(러브히나 윈터스페셜 주제가), TJ의 타이업 괄호만 차이; GENERATIONS·中川翔子는 동명이곡."
+ },
+ {
+  "song_id": "tj-25519",
+  "title": "real Emotion(FINAL FANTASY X-2)",
+  "verdict": "merge",
+  "candidate_id": "joysound-26419",
+  "candidate_joysound": "28527",
+  "reason": "倖田來未 FFX-2 주제가 원곡의 무버전 엔트리와 동일곡; HOUSE NATION 리믹스는 별버전, sweetbox 2건은 영어판 별곡 엔트리."
+ },
+ {
+  "song_id": "tj-25531",
+  "title": "dis-(無限のリヴァイアス OP)",
+  "verdict": "reject",
+  "reason": "후보 3건이 모두 TV Version/ENGLISH Version/CLUB MIX Version 표기의 별버전 — TJ 엔트리는 풀 원판으로 추정되며 대응 원판이 후보에 없음."
+ },
+ {
+  "song_id": "tj-25567",
+  "title": "熱風！疾風！サイバスター(スーパーロボット大戦α外伝 OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-30398",
+  "candidate_joysound": "34901",
+  "reason": "슈퍼로봇대전 사이버스터 주제가 동일곡 — 水木一郎/影山ヒロノブ 크레딧 일치(TJ는 MIO 추가 표기), 전각！/반각! 차이; JAM Project EDGEWIRED ver.는 재녹음 별버전."
+ },
+ {
+  "song_id": "tj-25718",
+  "title": "Count down(GEAR戦士電童 ED)",
+  "verdict": "merge",
+  "candidate_id": "joysound-30874",
+  "candidate_joysound": "35378",
+  "reason": "Little Voice 동일곡(GEAR전사 전동 ED), 대소문자·독음 병기 표기 차이; 나머지 4건은 타 아티스트 동명이곡."
+ },
+ {
+  "song_id": "tj-26077",
+  "title": "城崎恋歌",
+  "verdict": "merge",
+  "candidate_id": "joysound-10465",
+  "candidate_joysound": "10469",
+  "reason": "細川たかし 동일곡, JOYSOUND 측 독음 병기(きのさきこいうた)만 차이."
+ },
+ {
+  "song_id": "tj-26121",
+  "title": "ハッピー☆マテリアル(魔法先生 ネギま! OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-47271",
+  "candidate_joysound": "65623",
+  "reason": "TJ 제네릭 엔트리(멤버 불특정)는 JOYSOUND 무버전 기본 엔트리(1월도 상당, 출석번호 1-6 멤버)에 대응 — 같은 곡; 31인ver./월도별/합창단판은 멤버·컷 별버전."
+ },
+ {
+  "song_id": "tj-26145",
+  "title": "忘れていいの",
+  "verdict": "reject",
+  "reason": "TJ는 小川知子·谷村新司 듀엣판(忘れていいの-愛の幕切れ-, 1984)인데 JOYSOUND 谷村新司 단독 엔트리는 솔로 앨범(Embrace) 원판으로 가사·편곡이 다른 별버전; 欧陽菲菲는 별개."
+ },
+ {
+  "song_id": "tj-26181",
+  "title": "月の呪縛(カース)(LOVELESS OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-58976",
+  "candidate_joysound": "78113",
+  "reason": "翁鈴佳 동일곡(LOVELESS OP), TJ 측 독음(カース)·타이업 괄호만 차이."
+ },
+ {
+  "song_id": "tj-26224",
+  "title": "宙船",
+  "verdict": "merge",
+  "candidate_id": "joysound-86621",
+  "candidate_joysound": "21461",
+  "reason": "TOKIO 2006년 싱글 원곡, 독음 병기(そらふね) 차이; Orchestra version은 별버전, 中島みゆき(작곡자 셀프커버)·工藤静香는 별도 커버 엔트리."
+ },
+ {
+  "song_id": "ky-42263",
+  "title": "この世の限り(錯乱 OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-95338",
+  "candidate_joysound": "21930",
+  "reason": "영화 さくらん(KY의 '錯乱'은 오기) 주제가 동일곡 — 椎名林檎×斎藤ネコ+椎名純平 크레딧에서 KY가 斎藤ネコ를 누락한 표기 차이."
+ },
+ {
+  "song_id": "tj-26350",
+  "title": "Still(咎狗の血 ED)(Eng Ver.)",
+  "verdict": "reject",
+  "reason": "TJ 엔트리는 명시적 영어판(언어판 별버전) — 일본어 원판은 tj-26271이 joysound 166525로 이미 별도 매칭; 나머지 후보는 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-26436",
+  "title": "蕾(ドラマ'東京タワー 〜オカンとボクと、時々、オトン〜'OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-99432",
+  "candidate_joysound": "23743",
+  "reason": "コブクロ 2007년 싱글 동일곡, 독음 병기(つぼみ) 차이; GReeeeN·Omoinotake·Arakezuri는 동명이곡, クリス・ハート는 커버."
+ },
+ {
+  "song_id": "tj-26460",
+  "title": "Face of Fact(BALDR FORCE EXE RESOLUTION OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-147315",
+  "candidate_joysound": "127069",
+  "reason": "TJ 타이업 표기 자체가 BALDR FORCE EXE RESOLUTION(OVA) OP → JOYSOUND 〈RESOLUTION ver.〉와 동일 버전의 동일곡(KOTOKO)."
+ },
+ {
+  "song_id": "tj-26465",
+  "title": "Peace of mind(蒼穹のファフナー RIGHT OF LEFT)",
+  "verdict": "merge",
+  "candidate_id": "joysound-36486",
+  "candidate_joysound": "51027",
+  "reason": "angela 동일곡(파프너 RIGHT OF LEFT 주제가); SAKURA with Micro·RAMJET PULLEY는 동명이곡."
+ },
+ {
+  "song_id": "tj-26474",
+  "title": "未来への咆哮(マブラヴ オルタネイティヴ トータル・イクリプス OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-60073",
+  "candidate_joysound": "79287",
+  "reason": "JAM Project(마브러브 얼터너티브 주제가) 동일곡 — feat. 멤버 나열 방식만 다른 크레딧 표기 차이."
+ },
+ {
+  "song_id": "tj-26475",
+  "title": "微熱S.O.S!!(THE IDOLM@STER XENOGLOSSIA OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-105373",
+  "candidate_joysound": "164117",
+  "reason": "橋本みゆき 동일곡의 무버전 엔트리; solitude Ver.와 天海春香 TVsize는 별버전."
+ },
+ {
+  "song_id": "tj-26636",
+  "title": "Bomb A Head! Returns!(天上天下 OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-27953",
+  "candidate_joysound": "31937",
+  "reason": "2003년 싱글 원판(AVCD-30521) 자체가 m.c.A・T feat. DA PUMP 명의 — JOYSOUND 무버전 엔트리가 크레딧 축약된 표준판이고 〈Album Version〉은 변형판."
+ },
+ {
+  "song_id": "ky-42670",
+  "title": "メルト",
+  "verdict": "merge",
+  "candidate_id": "joysound-134537",
+  "candidate_joysound": "91145",
+  "reason": "ryo(supercell)의 하츠네미쿠 원곡 — KY 가수 크레딧 vs JOYSOUND 프로듀서 크레딧의 보컬로이드 관행 차이; パーキッツ·WurtS·Plastic Tree는 동명이곡."
+ },
+ {
+  "song_id": "ky-42833",
+  "title": "ブラック★ ロックシューター",
+  "verdict": "merge",
+  "candidate_id": "joysound-125422",
+  "candidate_joysound": "177033",
+  "reason": "ryo(supercell)의 하츠네미쿠 원곡 — 가수/프로듀서 크레딧 관행 차이(★ 뒤 공백은 표기 차이)."
+ },
+ {
+  "song_id": "ky-43058",
+  "title": "悪ノ娘",
+  "verdict": "merge",
+  "candidate_id": "joysound-128487",
+  "candidate_joysound": "178844",
+  "reason": "mothy(悪ノP)의 카가미네린 원곡 — 'mothy_悪ノP' vs 'mothy' 프로듀서 명의 표기 차이만."
+ },
+ {
+  "song_id": "tj-26927",
+  "title": "済州エア･ポート",
+  "verdict": "merge",
+  "candidate_id": "joysound-1081",
+  "candidate_joysound": "1081",
+  "reason": "半田浩二 동일곡, 중점(･/・)·독음 병기 표기 차이."
+ },
+ {
+  "song_id": "tj-26954",
+  "title": "Just Be Friends",
+  "verdict": "merge",
+  "candidate_id": "joysound-145340",
+  "candidate_joysound": "138973",
+  "reason": "Dixie Flatline의 메구리네루카 원곡 — 가수/프로듀서 크레딧 관행 차이; らっぷびと&ゼブラ는 랩 어레인지 커버."
+ },
+ {
+  "song_id": "tj-26965",
+  "title": "ダンシング☆サムライ",
+  "verdict": "merge",
+  "candidate_id": "joysound-146430",
+  "candidate_joysound": "139530",
+  "reason": "かにみそP의 가쿠포이드 원곡 — 가수/프로듀서 크레딧 관행 차이; 崎山つばさ는 커버."
+ },
+ {
+  "song_id": "tj-27012",
+  "title": "You were...",
+  "verdict": "merge",
+  "candidate_id": "joysound-145336",
+  "candidate_joysound": "91750",
+  "reason": "하마사키 아유미 싱글 표기 관행상 〈Original mix〉가 원판 그 자체(별도 무표기 원판 없음); Music Box mix는 별버전."
+ },
+ {
+  "song_id": "ky-43113",
+  "title": "ロミオとシンデレラ",
+  "verdict": "merge",
+  "candidate_id": "joysound-133637",
+  "candidate_joysound": "136579",
+  "reason": "doriko의 하츠네미쿠 원곡 — 가수/프로듀서 크레딧 관행 차이; すーぱーそに子·岡本信彦(ロミオver.)은 커버/별버전."
+ },
+ {
+  "song_id": "ky-43185",
+  "title": "ルカルカ★ナイトフィーバー",
+  "verdict": "merge",
+  "candidate_id": "joysound-145091",
+  "candidate_joysound": "138844",
+  "reason": "samfree의 메구리네루카 원곡 — 가수/프로듀서 크레딧 관행 차이."
+ },
+ {
+  "song_id": "tj-27038",
+  "title": "右肩の蝶",
+  "verdict": "merge",
+  "candidate_id": "joysound-143101",
+  "candidate_joysound": "137779",
+  "reason": "TJ 크레딧이 鏡音リン이므로 のりP feat.鏡音リン〈リンver.〉와 정확히 동일 버전; 〈レンver.〉는 다른 보컬판, うさ는 별개 엔트리."
+ }
+]

@@ -2235,19 +2235,23 @@ describe('mergeRecords — Tier G automatic residual split rules', () => {
   });
 
   it('does not merge CV-credit prefix containment without manual review', () => {
+    // Non-allowlisted numbers (tj 29401 / joysound 990143): the original real
+    // example (tj-28894 / joysound 429143) was promoted to a reviewed Tier F
+    // pair in the 2026-07-16 audit follow-up B, so this Tier G assertion uses
+    // synthetic numbers to keep testing the automatic tier's conservatism.
     const tjOnly = record({
-      id: 'tj-28894',
-      source_url: 'https://tj.test/28894',
+      id: 'tj-29401',
+      source_url: 'https://tj.test/29401',
       title_primary: 'IKEBUKURO WEST GAME PARK',
       artist_primary: 'Buster Bros!!!',
-      karaoke_numbers: { tj: '28894', ky: null, joysound: null },
+      karaoke_numbers: { tj: '29401', ky: null, joysound: null },
     });
     const joyOnly = record({
-      id: 'joysound-690805',
-      source_url: 'https://www.joysound.com/web/search/song/690805',
+      id: 'joysound-990805',
+      source_url: 'https://www.joysound.com/web/search/song/990805',
       title_primary: 'IKEBUKURO WEST GAME PARK',
       artist_primary: 'Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平)',
-      karaoke_numbers: { tj: null, ky: null, joysound: '429143' },
+      karaoke_numbers: { tj: null, ky: null, joysound: '990143' },
     });
 
     const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
@@ -2281,19 +2285,23 @@ describe('mergeRecords — Tier G automatic residual split rules', () => {
   });
 
   it('keeps version/remix title variants out of the automatic rule tier', () => {
+    // Non-allowlisted numbers (tj 29402 / joysound 990141): the original real
+    // example (tj-25065 / joysound 26141) was promoted to a reviewed Tier E
+    // pair in the 2026-07-16 audit follow-up B, so this Tier G assertion uses
+    // synthetic numbers to keep testing the automatic tier's conservatism.
     const tjOnly = record({
-      id: 'tj-25065',
-      source_url: 'https://tj.test/25065',
+      id: 'tj-29402',
+      source_url: 'https://tj.test/29402',
       title_primary: 'Simply Wonderful',
       artist_primary: '倉木麻衣',
-      karaoke_numbers: { tj: '25065', ky: null, joysound: null },
+      karaoke_numbers: { tj: '29402', ky: null, joysound: null },
     });
     const joyOnly = record({
-      id: 'joysound-24651',
-      source_url: 'https://www.joysound.com/web/search/song/24651',
+      id: 'joysound-990651',
+      source_url: 'https://www.joysound.com/web/search/song/990651',
       title_primary: 'Simply Wonderful〈Club Edit〉',
       artist_primary: '倉木麻衣',
-      karaoke_numbers: { tj: null, ky: null, joysound: '26141' },
+      karaoke_numbers: { tj: null, ky: null, joysound: '990141' },
     });
 
     const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);

@@ -1,0 +1,855 @@
+[
+ {
+  "song": {
+   "id": "tj-27039",
+   "title": "パラジクロロベンゼン",
+   "artist": "鏡音レン",
+   "tj": "27039",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-146574",
+    "joysound": "139620",
+    "title": "パラジクロロベンゼン",
+    "artist": "オワタP feat.鏡音レン",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27046",
+   "title": "ペテン師が笑う頃に",
+   "artist": "初音ミク",
+   "tj": "27046",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-145367",
+    "joysound": "138996",
+    "title": "ペテン師が笑う頃に",
+    "artist": "梨本うい feat.初音ミク",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27098",
+   "title": "Always(サヨナライツカ OST)",
+   "artist": "中島美嘉",
+   "tj": "27098",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "ky-43189",
+    "joysound": "91999",
+    "title": "ALWAYS",
+    "artist": "中島美嘉",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-162-47",
+    "joysound": "119205",
+    "title": "Always",
+    "artist": "斉藤和義",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-376-147",
+    "joysound": "728698",
+    "title": "Always",
+    "artist": "Superfly",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-730-259",
+    "joysound": "918310",
+    "title": "Always",
+    "artist": "THE ALFEE",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-103064",
+    "joysound": "162716",
+    "title": "Always",
+    "artist": "野川さくら",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27243",
+   "title": "In My Head(SUPERNATURAL : THE ANIMATION)",
+   "artist": "CNBLUE",
+   "tj": "27243",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-173424",
+    "joysound": "29271",
+    "title": "In My Head",
+    "artist": "CNBLUE",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1015619",
+    "joysound": "624824",
+    "title": "In My Head",
+    "artist": "BALLISTIK BOYZ from EXILE TRIBE",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27325",
+   "title": "ブルーバード (Blue Bird)(NARUTO-ナルト-疾風伝 OP)",
+   "artist": "いきものがかり",
+   "tj": "27325",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-118932",
+    "joysound": "27756",
+    "title": "ブルーバード",
+    "artist": "いきものがかり",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-865635",
+    "joysound": "489086",
+    "title": "ブルーバード (Slushii Remix)",
+    "artist": "いきものがかり",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-147-57",
+    "joysound": "637490",
+    "title": "ブルーバード",
+    "artist": "yama",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1168117",
+    "joysound": "646752",
+    "title": "ブルーバード",
+    "artist": "礼賛",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-400591",
+    "joysound": "734694",
+    "title": "ブルーバード",
+    "artist": "蒼井翔太",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43519",
+   "title": "0 Game(アメイジング・スパイダーマン OST)",
+   "artist": "SPYAIR",
+   "tj": "27347",
+   "ky": "43519"
+  },
+  "candidates": [
+   {
+    "id": "joysound-229959",
+    "joysound": "31314",
+    "title": "0 GAME(ラブゲーム)",
+    "artist": "SPYAIR",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-935200",
+    "joysound": "610082",
+    "title": "0 GAME",
+    "artist": "あらき",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27522",
+   "title": "満天の瞳",
+   "artist": "氷川きよし",
+   "tj": "27522",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-259448",
+    "joysound": "119185",
+    "title": "満天の瞳(ほし)",
+    "artist": "氷川きよし",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27657",
+   "title": "START:DASH!!(ラブライブ! OST)",
+   "artist": "μ's",
+   "tj": "27657",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-488536",
+    "joysound": "676523",
+    "title": "START:DASH!!(Bitter-Sweet Mix)",
+    "artist": "μ's",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-255120",
+    "joysound": "726245",
+    "title": "START:DASH!!",
+    "artist": "高坂穂乃果(CV.新田恵海)南ことり(CV.内田彩)園田海未(CV.三森すずこ)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43644",
+   "title": "ロストワンの号哭",
+   "artist": "鏡音リン",
+   "tj": "27670",
+   "ky": "43644"
+  },
+  "candidates": [
+   {
+    "id": "joysound-253411",
+    "joysound": "725112",
+    "title": "ロストワンの号哭",
+    "artist": "Neru",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-538882",
+    "joysound": "677880",
+    "title": "ロストワンの号哭",
+    "artist": "赤飯",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-27727",
+   "title": "一声一代",
+   "artist": "天童よしみ",
+   "tj": "27727",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-401442",
+    "joysound": "119402",
+    "title": "一声一代(いっせいいちだい)",
+    "artist": "天童よしみ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44030",
+   "title": "Rain",
+   "artist": "槇原敬之",
+   "tj": "27822",
+   "ky": "44030"
+  },
+  "candidates": [
+   {
+    "id": "joysound-451711",
+    "joysound": "690928",
+    "title": "Rain",
+    "artist": "秦 基博",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-162-173",
+    "joysound": "51674",
+    "title": "Rain",
+    "artist": "斉藤和義",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-374-3",
+    "joysound": "433413",
+    "title": "Rain",
+    "artist": "SIRUP",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-539-420",
+    "joysound": "58946",
+    "title": "Rain",
+    "artist": "中森明菜",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-104435",
+    "joysound": "163577",
+    "title": "RAIN",
+    "artist": "EGNISH",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "blog-1184-3",
+   "title": "&Z",
+   "artist": "澤野弘之",
+   "tj": "28002",
+   "ky": "43884"
+  },
+  "candidates": [
+   {
+    "id": "joysound-418665",
+    "joysound": "670815",
+    "title": "&Z",
+    "artist": "SawanoHiroyuki[nZk]:mizuki",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43845",
+   "title": "aLIEz",
+   "artist": "澤野弘之",
+   "tj": "28007",
+   "ky": "43845"
+  },
+  "candidates": [
+   {
+    "id": "joysound-411693",
+    "joysound": "316353",
+    "title": "aLIEz",
+    "artist": "SawanoHiroyuki[nZk]:mizuki",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28056",
+   "title": "Funny Sunny Day",
+   "artist": "SxOxU",
+   "tj": "28056",
+   "ky": "43179"
+  },
+  "candidates": [
+   {
+    "id": "joysound-144294",
+    "joysound": "138451",
+    "title": "Funny Sunny Day〈Japanese Version〉",
+    "artist": "SxOxU",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-146512",
+    "joysound": "139580",
+    "title": "Funny Sunny Day〈English Version〉",
+    "artist": "SxOxU",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28112",
+   "title": "Ready Go!(ポケットモンスター OP)",
+   "artist": "田村直美",
+   "tj": "28112",
+   "ky": "41740"
+  },
+  "candidates": [
+   {
+    "id": "joysound-56138",
+    "joysound": "75264",
+    "title": "Ready Go!(レディーゴー)",
+    "artist": "田村直美",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-166828",
+    "joysound": "94645",
+    "title": "Ready Go!",
+    "artist": "Sissy",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-167547",
+    "joysound": "108544",
+    "title": "Ready Go!",
+    "artist": "玉川茉莉(CV:中島愛)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-200877",
+    "joysound": "929046",
+    "title": "Ready Go!",
+    "artist": "モーニング娘。・DEF.DIVA・Berryz工房",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-271303",
+    "joysound": "666500",
+    "title": "Ready Go!",
+    "artist": "Kids Alive",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28287",
+   "title": "わたしの恋はホッチキス",
+   "artist": "放課後ティータイム",
+   "tj": "28287",
+   "ky": "43115"
+  },
+  "candidates": [
+   {
+    "id": "joysound-134532",
+    "joysound": "136931",
+    "title": "わたしの恋はホッチキス〈唯&澪MainVo.〉",
+    "artist": "放課後ティータイム",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28384",
+   "title": "残念系隣人部★★☆",
+   "artist": "友達つくり隊",
+   "tj": "28384",
+   "ky": "43427"
+  },
+  "candidates": [
+   {
+    "id": "joysound-184902",
+    "joysound": "116266",
+    "title": "残念系隣人部★★☆(星二つ半)",
+    "artist": "友達つくり隊",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28526",
+   "title": "Alive A Life",
+   "artist": "松本梨香",
+   "tj": "28526",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-21916",
+    "joysound": "22619",
+    "title": "Alive A life(アライヴアライフ)",
+    "artist": "松本梨香",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28548",
+   "title": "Euphoric Field",
+   "artist": "ELISA",
+   "tj": "28548",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-112152",
+    "joysound": "168460",
+    "title": "euphoric field〈English〉",
+    "artist": "ELISA",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-112533",
+    "joysound": "168682",
+    "title": "euphoric field〈Japanese〉",
+    "artist": "ELISA",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28672",
+   "title": "Baby I Love U",
+   "artist": "Che'Nelle",
+   "tj": "28672",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-245933",
+    "joysound": "732995",
+    "title": "Baby I love U",
+    "artist": "MIHIRO ～マイロ～",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-170610",
+    "joysound": "28921",
+    "title": "BABY I LOVE U (English Ver.)",
+    "artist": "Che'Nelle",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-297459",
+    "joysound": "728429",
+    "title": "BABY I LOVE U (CREAMIX)",
+    "artist": "CREAM",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-912553",
+    "joysound": "809423",
+    "title": "BABY I LOVE U《本人映像》",
+    "artist": "下北姫菜",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "blog-505-0",
+   "title": "白い雪のプリンセスは",
+   "artist": "のぼる↑Ｐ(Feat.初音ミク)",
+   "tj": "28695",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-151962",
+    "joysound": "129482",
+    "title": "白い雪のプリンセスは",
+    "artist": "のぼる↑ feat.初音ミク",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44171",
+   "title": "アマテラス",
+   "artist": "上北健",
+   "tj": "28724",
+   "ky": "44171"
+  },
+  "candidates": [
+   {
+    "id": "joysound-415467",
+    "joysound": "670058",
+    "title": "アマテラス",
+    "artist": "KK",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-596097",
+    "joysound": "689995",
+    "title": "アマテラス (M@STER VERSION)",
+    "artist": "萩原雪歩、三浦あずさ、四条貴音、秋月律子",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44179",
+   "title": "ミスト",
+   "artist": "KK(上北健)",
+   "tj": "28735",
+   "ky": "44179"
+  },
+  "candidates": [
+   {
+    "id": "joysound-531392",
+    "joysound": "678172",
+    "title": "ミスト",
+    "artist": "上北健",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-423446",
+    "joysound": "674802",
+    "title": "ミスト",
+    "artist": "近藤高弘",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44181",
+   "title": "砂の惑星",
+   "artist": "ハチ(Feat.初音ミク)",
+   "tj": "28736",
+   "ky": "44181"
+  },
+  "candidates": [
+   {
+    "id": "joysound-12776",
+    "joysound": "12784",
+    "title": "砂の惑星",
+    "artist": "松任谷由実",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-202878",
+    "joysound": "931048",
+    "title": "砂の惑星",
+    "artist": "9mm Parabellum Bullet",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-651036",
+    "joysound": "423053",
+    "title": "砂の惑星 ( + 初音ミク )",
+    "artist": "米津玄師",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28737",
+   "title": "可愛くなりたい",
+   "artist": "HoneyWorks(Feat.雨宮天)",
+   "tj": "28737",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-677734",
+    "joysound": "426860",
+    "title": "可愛くなりたい",
+    "artist": "CHiCO with HoneyWorks",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44186",
+   "title": "アストロノーツ",
+   "artist": "椎名もた",
+   "tj": "28744",
+   "ky": "44186"
+  },
+  "candidates": [
+   {
+    "id": "joysound-250053",
+    "joysound": "723196",
+    "title": "アストロノーツ",
+    "artist": "ぽわぽわP feat.初音ミク",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-150-18",
+    "joysound": "616181",
+    "title": "アストロノーツ",
+    "artist": "優里",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-129067",
+    "joysound": "179173",
+    "title": "アストロノーツ",
+    "artist": "布袋寅泰",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28828",
+   "title": "大嫌いなはずだった。(ずっと前から好きでした。~告白実行委員会~ OST)",
+   "artist": "HoneyWorks(Feat.GUMI,初音ミク)",
+   "tj": "28828",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-605085",
+    "joysound": "691827",
+    "title": "大嫌いなはずだった。",
+    "artist": "HoneyWorks meets さゆりんご軍団 + 真夏さんリスペクト軍団 from 乃木坂46",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1015705",
+    "joysound": "624354",
+    "title": "大嫌いなはずだった。",
+    "artist": "獅白ぼたん，尾丸ポルカ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "blog-338-10",
+   "title": "アイノカタチ(ドラマ'義母と娘のブルース' OST)",
+   "artist": "MISIA(Feat.HIDE(GReeeeN))",
+   "tj": "28895",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-775260",
+    "joysound": "441874",
+    "title": "アイノカタチ",
+    "artist": "GReeeeN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1117942",
+    "joysound": "645374",
+    "title": "アイノカタチ",
+    "artist": "GRe4N BOYZ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-821378",
+    "joysound": "446980",
+    "title": "アイノカタチ",
+    "artist": "MISIA",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-834947",
+    "joysound": "448921",
+    "title": "アイノカタチ",
+    "artist": "でんぱ組.inc",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-52750",
+   "title": "初心LOVE(ドラマ '消えた初恋' OST)",
+   "artist": "なにわ男子",
+   "tj": "52750",
+   "ky": "76546"
+  },
+  "candidates": [
+   {
+    "id": "joysound-891323",
+    "joysound": "493916",
+    "title": "初心LOVE(うぶらぶ)",
+    "artist": "なにわ男子",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-52854",
+   "title": "キミがいれば (暗殺者ヴァージョン)(映画 '名探偵コナン 瞳の中の暗殺者' OST)",
+   "artist": "伊織",
+   "tj": "52854",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-35564",
+    "joysound": "50092",
+    "title": "キミがいれば",
+    "artist": "伊織",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-111428",
+    "joysound": "167982",
+    "title": "キミがいれば",
+    "artist": "ミトカツユキ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6245",
+   "title": "あなたの灯",
+   "artist": "五木ひろし",
+   "tj": "6245",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-2534",
+    "joysound": "2534",
+    "title": "あなたの灯(ともしび)",
+    "artist": "五木ひろし",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6305",
+   "title": "薩摩の女",
+   "artist": "北島三郎",
+   "tj": "6305",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-22975",
+    "joysound": "23844",
+    "title": "薩摩の女(ひと)",
+    "artist": "北島三郎",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-118207",
+    "joysound": "83716",
+    "title": "薩摩の女(ひと)",
+    "artist": "美樹幸代",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6538",
+   "title": "夢酔枕",
+   "artist": "堀内孝雄",
+   "tj": "6538",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-13137",
+    "joysound": "13145",
+    "title": "夢酔枕(ゆめよいまくら)",
+    "artist": "堀内孝雄",
+    "match": "stripped-title"
+   }
+  ]
+ }
+]

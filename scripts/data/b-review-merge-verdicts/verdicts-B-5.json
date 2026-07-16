@@ -1,0 +1,352 @@
+[
+ {
+  "song_id": "tjpdf-68073",
+  "title": "Choose me",
+  "verdict": "REJECT",
+  "reason": "ヒャダイン feat.佐咲紗花 곡; 유일 후보 BAND-MAID 'Choose me'(2019)는 별개 자작곡. 동명이곡."
+ },
+ {
+  "song_id": "tjpdf-68074",
+  "title": "gift",
+  "verdict": "REJECT",
+  "reason": "佐倉綾音 곡; 후보(Vaundy/MY FIRST STORY/Nissy/平井堅/中島美嘉)는 전부 각자의 동명 별곡. CV·개명·표기 브리지 없음."
+ },
+ {
+  "song_id": "tj-68076",
+  "title": "お願いマッスル(ダンベル何キロ持てる? OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-764544",
+  "candidate_joysound": "441787",
+  "reason": "성우↔캐릭터: TJ ファイルーズあい,石川界人 = JOYSOUND 紗倉ひびき(CV:ファイルーズあい)、街雄鳴造(CV:石川界人). CV 전원 일치, 동일 애니 OP."
+ },
+ {
+  "song_id": "tj-68139",
+  "title": "みせて、あなたを(アナと雪の女王2 OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-809917",
+  "candidate_joysound": "444809",
+  "reason": "표기 변형: 동일 가수 松たか子·吉田羊에 배역 주석(エルサ/イドゥナ王妃)만 추가. 겨울왕국2 동일곡."
+ },
+ {
+  "song_id": "tj-68140",
+  "title": "ずっとかわらないもの(アナと雪の女王2 OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-809913",
+  "candidate_joysound": "444805",
+  "reason": "표기 변형: 神田沙也加·松たか子·武内駿輔·原慎一郎 4인 동일(+TJ의 'キャスト' 총칭). 배역 주석 차이뿐."
+ },
+ {
+  "song_id": "tj-68146",
+  "title": "VOICE",
+  "verdict": "REJECT",
+  "reason": "테연(태연) 일본곡 'VOICE'(2019); 후보(Superfly/ZAQ/宮世琉弥/the pillows/19's Sound Factory)에 태연 없음. 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-68150",
+  "title": "あゝオオサカdreamin'night(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-793123",
+  "candidate_joysound": "444008",
+  "reason": "표기 변형: 동일 유닛 どついたれ本舗, JOYSOUND는 CV 3인 주석만 추가. 힙마이 오사카 디비전 동일곡."
+ },
+ {
+  "song_id": "tj-68175",
+  "title": "竈門炭治郎のうた(鬼滅の刃 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-791036",
+  "candidate_joysound": "487358",
+  "reason": "표기 변형: 椎名豪(Feat.中川奈美) = 椎名豪 featuring 中川奈美. 동일 아티스트 조합."
+ },
+ {
+  "song_id": "tj-68178",
+  "title": "絶体絶命(約束のネバーランド ED)",
+  "verdict": "REJECT",
+  "reason": "Cö shu Nie 곡; 후보(三浦祐太朗/東京事変/うつみようこ/山口百恵/中村あゆみ)에 해당 없음. 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-68183",
+  "title": "Radio Happy(アイドルマスターシンデレラガールズスターライトステージ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-562326",
+  "candidate_joysound": "683200",
+  "reason": "성우↔캐릭터: 山下七海 = 大槻唯(CV:山下七海). 데레스테 동일곡."
+ },
+ {
+  "song_id": "tj-68185",
+  "title": "ベルセルク",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-567451",
+  "candidate_joysound": "684588",
+  "reason": "웹 검증: 'ベルセルク'는 After the Rain[そらる×まふまふ] 명의 트랙이나 작사·작곡·보컬 모두 まふまふ 단독(JOYSOUND/j-lyric 확인). 동일 녹음의 유닛↔멤버 크레딧 차이. Neru의 ベルセルク(blog-432-36)는 별개 보카로곡."
+ },
+ {
+  "song_id": "tj-68197",
+  "title": "月光陰 -Moonlight Shadow-",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-810360",
+  "candidate_joysound": "444994",
+  "reason": "표기 변형: TJ 'ヒプノシスマイク-D.R.B-(四十物 十四)' = JOYSOUND 四十物十四(CV:榊原優希). 동일 캐릭터 솔로곡."
+ },
+ {
+  "song_id": "tj-68219",
+  "title": "動く、動く(少女終末旅行 OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-649350",
+  "candidate_joysound": "424809",
+  "reason": "성우↔캐릭터: 水瀬いのり,久保ユリカ = チト(CV:水瀬いのり)、ユーリ(CV:久保ユリカ). CV 전원 일치."
+ },
+ {
+  "song_id": "tj-68221",
+  "title": "Yes! Party Time!!(M@STER VERSION)(アイドルマスターシンデレラガールズスターライトステージ OST)",
+  "verdict": "REJECT",
+  "reason": "웹 검증: TJ 라인업(今井麻夏/春瀬なつみ/照井春佳/黒沢ともよ/久野美咲 = 千枝·薫·桃華·みりあ·仁奈) 녹음과 JOYSOUND 후보 라인업(卯月·凛·未央·みりあ·菜々, VIEWING REVOLUTION CD) 녹음은 둘 다 실존하는 별개 버전. 버전 상이."
+ },
+ {
+  "song_id": "tj-68222",
+  "title": "絶対よい子のエトセトラ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-669313",
+  "candidate_joysound": "425626",
+  "reason": "표기 변형: After the Rain = After the Rain [そらる×まふまふ]. 멤버 주석 차이뿐."
+ },
+ {
+  "song_id": "tj-68229",
+  "title": "Stella(ヒプノシスマイク)",
+  "verdict": "REJECT",
+  "reason": "Fling Posse 곡; 후보(立花日菜/めておら/ECHOES/FLEET/米米CLUB)에 Fling Posse 없음. 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-68231",
+  "title": "パーティーを止めないで(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-814212",
+  "candidate_joysound": "448464",
+  "reason": "성우↔캐릭터: 木島隆一 = 伊弉冉一二三(CV.木島隆一). 힙마이 캐릭터 솔로곡."
+ },
+ {
+  "song_id": "tj-68238",
+  "title": "Stay",
+  "verdict": "REJECT",
+  "reason": "테연(태연) 일본 싱글 'Stay'(2018); 후보(高橋直純/KinKi Kids/Blue Purple/EXILE/天王寺璃奈)에 태연 없음. 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-68256",
+  "title": "BLACK DEJAVU(うたの☆プリンスさまっ♪Another World～WHITE&BLACK～OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-823352",
+  "candidate_joysound": "448614",
+  "reason": "표기 변형: 동일 유닛명 BLACK DEJAVU, JOYSOUND는 멤버 캐릭터·CV 나열만 추가."
+ },
+ {
+  "song_id": "tj-68258",
+  "title": "ファンサ(告白実行委員会 ~恋愛シリーズ~ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-811732",
+  "candidate_joysound": "445312",
+  "reason": "성우↔캐릭터: 夏川椎菜 = mona(CV:夏川椎菜). HoneyWorks 원곡의 본인 녹음. hololive 5인 후보(joysound-1015700)는 커버라 제외."
+ },
+ {
+  "song_id": "tj-68267",
+  "title": "イケナイGO AHEAD(アイドルマスターシンデレラガールズスターライトステージ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-843302",
+  "candidate_joysound": "485516",
+  "reason": "성우↔캐릭터: 照井春佳·佐藤亜美菜·花井美春 = 櫻井桃華·橘ありす·村上巴 CV 3인 전원 일치."
+ },
+ {
+  "song_id": "tj-68271",
+  "title": "Hello Alone(やはり俺の青春ラブコメはまちがっている。 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-255293",
+  "candidate_joysound": "726378",
+  "reason": "성우↔캐릭터: 早見沙織,東山奈央 = 雪ノ下雪乃(CV.早見沙織)&由比ヶ浜結衣(CV.東山奈央). CV 전원 일치, 동일 애니 ED."
+ },
+ {
+  "song_id": "tjpdf-68277",
+  "title": "ラブレター",
+  "verdict": "REJECT",
+  "reason": "데레마스 성우진(大橋彩香,津田美波,種﨑敦美=卯月·美穂·響子) 곡; 후보(傘村トータ/AMUGIRI/ガラクタ/THE ALFEE/mur mur)는 전부 동명이곡. 캐릭터판 후보 없음."
+ },
+ {
+  "song_id": "tj-68290",
+  "title": "S(mile)ING!(アイドルマスターシンデレラガールズスターライトステージ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-243190",
+  "candidate_joysound": "731408",
+  "reason": "성우↔캐릭터: 大橋彩香 = 島村卯月(CV大橋彩香). 우즈키 솔로곡."
+ },
+ {
+  "song_id": "blog-1149-23",
+  "title": "こいかぜ(アイドルマスターシンデレラガールズスターライトステージ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-228232",
+  "candidate_joysound": "197394",
+  "reason": "성우↔캐릭터: 早見沙織 = 高垣楓(CV早見沙織). 카에데 솔로곡."
+ },
+ {
+  "song_id": "tj-68304",
+  "title": "凸凹スピードスター(M@STER VERSION)(アイドルマスターシンデレラガールズスターライトステージ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-709640",
+  "candidate_joysound": "439268",
+  "reason": "성우↔캐릭터: 三宅麻理恵,花守ゆみり = 安部菜々(CV:三宅麻理恵)、佐藤心(CV:花守ゆみり). CV 전원 일치, 동일 M@STER VERSION 표기."
+ },
+ {
+  "song_id": "ky-44627",
+  "title": "眠れる森に行きたいな(ラブライブ！スクールアイドルフェスティバル ALL STAR OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-715725",
+  "candidate_joysound": "435281",
+  "reason": "성우↔캐릭터: 鬼頭明里 = 近江彼方(CV.鬼頭明里). 니지가사키 카나타 솔로곡."
+ },
+ {
+  "song_id": "tj-68367",
+  "title": "さみしがりや",
+  "verdict": "REJECT",
+  "reason": "HoneyWorks(Feat.江口拓也,島﨑信長) 곡; 유일 후보 ザ・ディランII(70년대 포크)는 완전 별개 동명이곡."
+ },
+ {
+  "song_id": "tj-68388",
+  "title": "LOVE&KISS",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-866453",
+  "candidate_joysound": "489368",
+  "reason": "표기 변형: LIPxLIP = LIP×LIP(勇次郎・愛蔵/CV:内山昂輝・島崎信長). x/× 문자 차이 + CV 주석."
+ },
+ {
+  "song_id": "tj-68412",
+  "title": "Black Journey(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-866154",
+  "candidate_joysound": "489561",
+  "reason": "표기 변형: 동일 유닛 Fling Posse, JOYSOUND는 CV 주석만 추가."
+ },
+ {
+  "song_id": "tj-68421",
+  "title": "ユメヲカケル！(ウマ娘プリティーダービー OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-867262",
+  "candidate_joysound": "488993",
+  "reason": "성우↔캐릭터: TJ 7인(和氣あず未~大西沙織)이 スピカ 7캐릭터 CV와 전원 일치. 다른 후보(joysound-919218)는 ナイスネイチャ 등 별도 라인업 버전이라 제외."
+ },
+ {
+  "song_id": "tj-68425",
+  "title": "Reason to FIGHT(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-866153",
+  "candidate_joysound": "489534",
+  "reason": "표기 변형: Fling Posse,MAD TRIGGER CREW 두 유닛 동일, JOYSOUND는 CV 주석만 추가. 呂布&貂蝉 'REASON TO FIGHT'는 별개곡."
+ },
+ {
+  "song_id": "tj-68449",
+  "title": "恋のうた(トニカクカワイイ OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-853101",
+  "candidate_joysound": "486752",
+  "reason": "프로듀서↔보컬 크레딧: 토니카쿠카와이이 OP 'Yunomi feat.由崎司' = JOYSOUND '恋のうた (feat. 由崎司)/由崎司(CV:鬼頭明里)'. 제목 feat 표기로 동일곡 상호 확인. 나머지 후보(スピッツ 등)는 동명이곡."
+ },
+ {
+  "song_id": "tj-68497",
+  "title": "シカ色デイズ(TVアニメ 'しかのこのこのここしたんたん' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1045830",
+  "candidate_joysound": "628991",
+  "reason": "표기 변형: TJ가 캐릭터 4인(鹿乃子のこ 외)을 직접 표기, JOYSOUND는 유닛명 シカ部+CV 주석. 캐릭터 전원 일치."
+ },
+ {
+  "song_id": "tj-68502",
+  "title": "カモナ・テンペスト！(転生したらスライムだった件転スラ日記 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-875890",
+  "candidate_joysound": "490520",
+  "reason": "성우↔캐릭터: TJ 7인(岡咲美保~泊明日菜)이 リムル~ランガ 7캐릭터 CV와 전원 일치."
+ },
+ {
+  "song_id": "tj-68515",
+  "title": "星の旅人(かげきしょうじょ！！ ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-889918",
+  "candidate_joysound": "492286",
+  "reason": "성우↔캐릭터: 千本木彩花,花守ゆみり = 渡辺さらさ(CV.千本木彩花)×奈良田愛(CV.花守ゆみり). 동일 애니 ED. 加山雄三/BREAKERZ/転校少女*는 동명이곡."
+ },
+ {
+  "song_id": "tj-68524",
+  "title": "ABC体操(うらみちお兄さん OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-879447",
+  "candidate_joysound": "491303",
+  "reason": "성우↔캐릭터: 宮野真守,水樹奈々 = いけてるお兄さん(CV:宮野真守)·うたのお姉さん(CV:水樹奈々). CV 전원 일치."
+ },
+ {
+  "song_id": "tj-68529",
+  "title": "Viva! Spark! トロピカル～ジュ！プリキュア(トロピカル～ジュ！プリキュア OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-869926",
+  "candidate_joysound": "489866",
+  "reason": "표기 변형: 동일 가수 Machico, TJ만 'コーラス：トロピカる部' 부기. 동일 프리큐어 OP."
+ },
+ {
+  "song_id": "tj-68530",
+  "title": "うまぴょい伝説(2021 Remastered Version)(ウマ娘プリティーダービー OST)",
+  "verdict": "REJECT",
+  "reason": "웹 검증: 2021 Remastered는 스페셜위크·스즈카·테이오 주역 리마스터(Spotify 크레딧이 TJ 3인과 일치). JOYSOUND 후보 5건은 전부 다른 라인업의 별개 녹음(WINNING LIVE·시즌2 대합창·극장판 등)이며 해당 리마스터판 없음."
+ },
+ {
+  "song_id": "tj-68583",
+  "title": "More One Night(少女終末旅行 ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-649351",
+  "candidate_joysound": "424812",
+  "reason": "성우↔캐릭터: 水瀬いのり,久保ユリカ = チト(CV:水瀬いのり)、ユーリ(CV:久保ユリカ). CV 전원 일치."
+ },
+ {
+  "song_id": "tj-68593",
+  "title": "開眼(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-866151",
+  "candidate_joysound": "489421",
+  "reason": "표기 변형: 동일 유닛 Bad Ass Temple, JOYSOUND는 CV 주석만 추가."
+ },
+ {
+  "song_id": "tj-68594",
+  "title": "Re:start!!!(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-866150",
+  "candidate_joysound": "489049",
+  "reason": "표기 변형: 동일 유닛 Buster Bros!!!, JOYSOUND는 CV 주석만 추가."
+ },
+ {
+  "song_id": "tj-68639",
+  "title": "フクロウ",
+  "verdict": "REJECT",
+  "reason": "KOKIA 곡; 후보(サカナクション/つばき/SHERBETS/FIRE BALL)에 KOKIA 없음. 전부 동명이곡."
+ },
+ {
+  "song_id": "tj-68643",
+  "title": "ジュリエッタ(ヒロインたるもの!~嫌われヒロインと内緒のお仕事~OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-912790",
+  "candidate_joysound": "498881",
+  "reason": "표기 변형: LIPxLIP = LIP×LIP(CV 주석). 동일 애니 OP."
+ },
+ {
+  "song_id": "tj-68653",
+  "title": "Scars",
+  "verdict": "REJECT",
+  "reason": "Nenashi 곡; 후보(도쿄리벤저스 캐릭터 듀엣/黒崎真音/WEST./X-JAPAN/Baggy My Life)에 Nenashi 없음. 캐릭터판이 있더라도 커버라 제외."
+ },
+ {
+  "song_id": "tj-68666",
+  "title": "あんずのうた('THE IDOL M@STER CINDERELLA GIRLS' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-228241",
+  "candidate_joysound": "197416",
+  "reason": "성우↔캐릭터: 五十嵐裕美 = 双葉杏(CV五十嵐裕美). 안즈 솔로곡."
+ },
+ {
+  "song_id": "blog-135-75",
+  "title": "ビンクスの酒('ONE PIECE' OST)",
+  "verdict": "REJECT",
+  "reason": "Ado(우타) 버전(FILM RED)과 麦わらの一味 버전은 동일곡의 별개 녹음. 버전/커버 규칙상 REJECT."
+ }
+]

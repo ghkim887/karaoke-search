@@ -1,0 +1,256 @@
+[
+ {
+  "song_id": "tj-27039",
+  "title": "パラジクロロベンゼン",
+  "verdict": "merge",
+  "candidate_id": "joysound-146574",
+  "candidate_joysound": "139620",
+  "reason": "보컬로이드 크레딧 차이: 원곡은 オワタP feat.鏡音レン — TJ는 가수(鏡音レン), JOYSOUND는 프로듀서 크레딧, 같은 곡."
+ },
+ {
+  "song_id": "tj-27046",
+  "title": "ペテン師が笑う頃に",
+  "verdict": "merge",
+  "candidate_id": "joysound-145367",
+  "candidate_joysound": "138996",
+  "reason": "보컬로이드 크레딧 차이: 원곡은 梨本うい feat.初音ミク — TJ는 가수 크레딧만, 같은 곡."
+ },
+ {
+  "song_id": "tj-27098",
+  "title": "Always(サヨナライツカ OST)",
+  "verdict": "merge",
+  "candidate_id": "ky-43189",
+  "candidate_joysound": "91999",
+  "reason": "中島美嘉 'ALWAYS'는 영화 サヨナライツカ 주제가로 동일곡 — TJ 쪽 OST 괄호 주석과 대소문자 표기 차이뿐."
+ },
+ {
+  "song_id": "tj-27243",
+  "title": "In My Head(SUPERNATURAL : THE ANIMATION)",
+  "verdict": "merge",
+  "candidate_id": "joysound-173424",
+  "candidate_joysound": "29271",
+  "reason": "CNBLUE 'In My Head'는 SUPERNATURAL: THE ANIMATION ED로 동일 아티스트·동일곡, 타이업 주석 차이뿐 (BALLISTIK BOYZ는 동명이곡)."
+ },
+ {
+  "song_id": "tj-27325",
+  "title": "ブルーバード (Blue Bird)(NARUTO-ナルト-疾風伝 OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-118932",
+  "candidate_joysound": "27756",
+  "reason": "いきものがかり 'ブルーバード'(NARUTO疾風伝 OP3) 원곡 동일 — Slushii Remix는 리믹스, 나머지는 동명이곡."
+ },
+ {
+  "song_id": "ky-43519",
+  "title": "0 Game(アメイジング・スパイダーマン OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-229959",
+  "candidate_joysound": "31314",
+  "reason": "SPYAIR '0 GAME'(아메이징 스파이더맨 일본 주제가) 동일곡 — (ラブゲーム)는 공식 요미가나 괄호 (あらき는 동명이곡)."
+ },
+ {
+  "song_id": "tj-27522",
+  "title": "満天の瞳",
+  "verdict": "merge",
+  "candidate_id": "joysound-259448",
+  "candidate_joysound": "119185",
+  "reason": "氷川きよし 동일곡 — JOYSOUND 쪽 (ほし)는 요미가나 괄호 표기 차이뿐."
+ },
+ {
+  "song_id": "tj-27657",
+  "title": "START:DASH!!(ラブライブ! OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-255120",
+  "candidate_joysound": "726245",
+  "reason": "같은 원곡의 크레딧 관행 차이: JOYSOUND는 삽입곡 싱글의 캐릭터(CV) 명의, TJ는 그룹 μ's 명의로 표기 — JOYSOUND에 μ's 명의 무인 판은 없음 (Bitter-Sweet Mix는 리믹스라 제외)."
+ },
+ {
+  "song_id": "ky-43644",
+  "title": "ロストワンの号哭",
+  "verdict": "merge",
+  "candidate_id": "joysound-253411",
+  "candidate_joysound": "725112",
+  "reason": "보컬로이드 크레딧 차이: 원곡은 Neru feat.鏡音リン — KY는 가수, JOYSOUND는 프로듀서 크레딧 (赤飯은 우타이테 커버)."
+ },
+ {
+  "song_id": "tj-27727",
+  "title": "一声一代",
+  "verdict": "merge",
+  "candidate_id": "joysound-401442",
+  "candidate_joysound": "119402",
+  "reason": "天童よしみ 동일곡 — (いっせいいちだい)는 요미가나 괄호 표기 차이뿐."
+ },
+ {
+  "song_id": "ky-44030",
+  "title": "Rain",
+  "verdict": "reject",
+  "reason": "후보 중 槇原敬之 명의가 없음 — 전부 다른 아티스트의 동명이곡·커버(秦基博 'Rain'은 大江千里 곡 커버로 별도 엔트리)."
+ },
+ {
+  "song_id": "blog-1184-3",
+  "title": "&Z",
+  "verdict": "merge",
+  "candidate_id": "joysound-418665",
+  "candidate_joysound": "670815",
+  "reason": "SawanoHiroyuki[nZk]:mizuki는 澤野弘之의 보컬 프로젝트 명의 — 같은 곡(알드노아 제로 2기 OP)의 크레딧 표기 차이."
+ },
+ {
+  "song_id": "ky-43845",
+  "title": "aLIEz",
+  "verdict": "merge",
+  "candidate_id": "joysound-411693",
+  "candidate_joysound": "316353",
+  "reason": "SawanoHiroyuki[nZk]:mizuki = 澤野弘之 보컬 프로젝트 — 같은 곡(알드노아 제로 ED)의 크레딧 표기 차이."
+ },
+ {
+  "song_id": "tjpdf-28056",
+  "title": "Funny Sunny Day",
+  "verdict": "merge",
+  "candidate_id": "joysound-144294",
+  "candidate_joysound": "138451",
+  "reason": "REBORN! OP7로 방영·대표판은 일본어판이라 TJ 무표기 엔트리는 〈Japanese Version〉에 대응 (English Version은 별도 언어판)."
+ },
+ {
+  "song_id": "tj-28112",
+  "title": "Ready Go!(ポケットモンスター OP)",
+  "verdict": "merge",
+  "candidate_id": "joysound-56138",
+  "candidate_joysound": "75264",
+  "reason": "田村直美 'Ready Go!'(포켓몬스터 OP) 동일 아티스트·동일곡 — (レディーゴー)는 요미가나 괄호 (나머지 후보는 전부 동명이곡)."
+ },
+ {
+  "song_id": "tjpdf-28287",
+  "title": "わたしの恋はホッチキス",
+  "verdict": "merge",
+  "candidate_id": "joysound-134532",
+  "candidate_joysound": "136931",
+  "reason": "放課後ティータイム 동일곡 — 〈唯&澪MainVo.〉는 원판 보컬 구성을 명시한 JOYSOUND식 태그일 뿐이고 유일한 해당 엔트리."
+ },
+ {
+  "song_id": "tjpdf-28384",
+  "title": "残念系隣人部★★☆",
+  "verdict": "merge",
+  "candidate_id": "joysound-184902",
+  "candidate_joysound": "116266",
+  "reason": "友達つくり隊 동일곡(하가나이 OP) — (星二つ半)는 ★★☆의 요미가나 괄호."
+ },
+ {
+  "song_id": "tjpdf-28526",
+  "title": "Alive A Life",
+  "verdict": "merge",
+  "candidate_id": "joysound-21916",
+  "candidate_joysound": "22619",
+  "reason": "松本梨香 동일곡(가면라이더 류우키 OP) — 대소문자와 (アライヴアライフ) 요미가나 차이뿐."
+ },
+ {
+  "song_id": "tjpdf-28548",
+  "title": "Euphoric Field",
+  "verdict": "merge",
+  "candidate_id": "joysound-112152",
+  "candidate_joysound": "168460",
+  "reason": "ef - a tale of memories OP 방영판은 영어 가사라 TJ 무표기 엔트리는 〈English〉판에 대응 (〈Japanese〉는 별도 언어판)."
+ },
+ {
+  "song_id": "tj-28672",
+  "title": "Baby I Love U",
+  "verdict": "uncertain",
+  "reason": "Che'Nelle은 일본어 히트판 'ベイビー・アイラブユー'와 'BABY I LOVE U (English Ver.)'를 별도 발매 — TJ 라틴 표기만으로 어느 판인지 확정 불가하고 일본어판 엔트리는 후보에 없음(웹 검색으로도 TJ 28672 수록판 미확인)."
+ },
+ {
+  "song_id": "blog-505-0",
+  "title": "白い雪のプリンセスは",
+  "verdict": "merge",
+  "candidate_id": "joysound-151962",
+  "candidate_joysound": "129482",
+  "reason": "のぼる↑P = のぼる↑ 동일 프로듀서 표기 변형 — 같은 feat.初音ミク 원곡."
+ },
+ {
+  "song_id": "ky-44171",
+  "title": "アマテラス",
+  "verdict": "merge",
+  "candidate_id": "joysound-415467",
+  "candidate_joysound": "670058",
+  "reason": "KK는 上北健의 활동명 — 같은 곡의 명의 표기 차이 (M@STER VERSION은 아이돌마스터 동명이곡)."
+ },
+ {
+  "song_id": "ky-44179",
+  "title": "ミスト",
+  "verdict": "merge",
+  "candidate_id": "joysound-531392",
+  "candidate_joysound": "678172",
+  "reason": "KY 'KK(上北健)' = JOYSOUND '上北健' 동일 인물 — 같은 곡 (近藤高弘는 동명이곡)."
+ },
+ {
+  "song_id": "ky-44181",
+  "title": "砂の惑星",
+  "verdict": "merge",
+  "candidate_id": "joysound-651036",
+  "candidate_joysound": "423053",
+  "reason": "ハチ = 米津玄師의 보컬로이드 명의 — '砂の惑星 (+初音ミク)'가 같은 원곡 (松任谷由実·9mm는 동명이곡)."
+ },
+ {
+  "song_id": "tj-28737",
+  "title": "可愛くなりたい",
+  "verdict": "reject",
+  "reason": "후보(CHiCO with HoneyWorks, joy 426860)는 CHiCO 보컬의 별도 버전 — TJ의 feat.成海聖奈(CV:雨宮天) 원곡판은 JOYSOUND에 별도 엔트리(606713)로 존재하나 후보 목록에 없음."
+ },
+ {
+  "song_id": "ky-44186",
+  "title": "アストロノーツ",
+  "verdict": "merge",
+  "candidate_id": "joysound-250053",
+  "candidate_joysound": "723196",
+  "reason": "ぽわぽわP = 椎名もた 동일 인물 — 같은 feat.初音ミク 원곡 (優里·布袋寅泰는 동명이곡)."
+ },
+ {
+  "song_id": "tj-28828",
+  "title": "大嫌いなはずだった。(ずっと前から好きでした。~告白実行委員会~ OST)",
+  "verdict": "reject",
+  "reason": "TJ는 GUMI×初音ミク 보컬로이드판인데 후보는 乃木坂46 콜라보 명의판과 hololive 커버로 모두 다른 보컬의 별도 버전."
+ },
+ {
+  "song_id": "blog-338-10",
+  "title": "アイノカタチ(ドラマ'義母と娘のブルース' OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-821378",
+  "candidate_joysound": "446980",
+  "reason": "MISIA 'アイノカタチ feat.HIDE(GReeeeN)' 원곡 — JOYSOUND는 feat. 크레딧을 생략한 MISIA 명의 (GReeeeN/GRe4N BOYZ/でんぱ組는 셀프커버·커버 별도판)."
+ },
+ {
+  "song_id": "tj-52750",
+  "title": "初心LOVE(ドラマ '消えた初恋' OST)",
+  "verdict": "merge",
+  "candidate_id": "joysound-891323",
+  "candidate_joysound": "493916",
+  "reason": "なにわ男子 동일곡 — (うぶらぶ)는 요미가나 괄호 표기 차이뿐."
+ },
+ {
+  "song_id": "tj-52854",
+  "title": "キミがいれば (暗殺者ヴァージョン)(映画 '名探偵コナン 瞳の中の暗殺者' OST)",
+  "verdict": "reject",
+  "reason": "TJ는 명시적으로 '瞳の中の暗殺者' 영화판 어레인지인데 JOYSOUND 후보는 무표기 표준판 — 버전 차이 (ミトカツユキ는 동명이곡)."
+ },
+ {
+  "song_id": "tj-6245",
+  "title": "あなたの灯",
+  "verdict": "merge",
+  "candidate_id": "joysound-2534",
+  "candidate_joysound": "2534",
+  "reason": "五木ひろし 동일곡 — (ともしび)는 요미가나 괄호 표기 차이뿐."
+ },
+ {
+  "song_id": "tj-6305",
+  "title": "薩摩の女",
+  "verdict": "merge",
+  "candidate_id": "joysound-22975",
+  "candidate_joysound": "23844",
+  "reason": "北島三郎 동일곡 — (ひと)는 요미가나 괄호 (美樹幸代 쪽은 다른 아티스트의 동명이곡)."
+ },
+ {
+  "song_id": "tj-6538",
+  "title": "夢酔枕",
+  "verdict": "merge",
+  "candidate_id": "joysound-13137",
+  "candidate_joysound": "13145",
+  "reason": "堀内孝雄 동일곡 — (ゆめよいまくら)는 요미가나 괄호 표기 차이뿐."
+ }
+]

@@ -1,0 +1,258 @@
+[
+ {
+  "song_id": "ky-42941",
+  "title": "Rule",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-128642",
+  "candidate_joysound": "90305",
+  "reason": "浜崎あゆみ 동일곡. JOYSOUND 〈Original mix〉는 하마사키 카탈로그에서 원곡 표준 버전 표기(리믹스와 구분용)이므로 KY 무태그 레코드와 동일 녹음. 나머지 후보는 전부 동명이곡(타 아티스트)."
+ },
+ {
+  "song_id": "ky-40568",
+  "title": "shine more",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25515",
+  "candidate_joysound": "28526",
+  "reason": "안무로 나미에 동일곡(2003 싱글). 惠/恵 한자 표기차만 존재. 松浦亜弥·MISTY는 동명이곡/타 아티스트."
+ },
+ {
+  "song_id": "ky-41756",
+  "title": "SO CRAZY",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25637",
+  "candidate_joysound": "31857",
+  "reason": "안무로 나미에 동일곡(2004 싱글). 惠/恵 표기차. 타 후보는 동명이곡."
+ },
+ {
+  "song_id": "ky-42412",
+  "title": "TAKE ME HIGHER (特撮\"ウルトラマンティガ\")",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-14392",
+  "candidate_joysound": "14400",
+  "reason": "V6 동일곡(울트라맨 티가 OP). KY 괄호는 타이업 메타데이터일 뿐. 타 후보는 동명이곡."
+ },
+ {
+  "song_id": "ky-42566",
+  "title": "talkin' 2 myself",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-108804",
+  "candidate_joysound": "25472",
+  "reason": "浜崎あゆみ 동일곡. 〈Original mix〉는 원곡 표준 버전 표기. 〈STONEBRIDGE Radio Edit〉는 리믹스라 제외."
+ },
+ {
+  "song_id": "ky-41932",
+  "title": "WANT ME,WANT ME",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25983",
+  "candidate_joysound": "10756",
+  "reason": "안무로 나미에 동일곡(2005 싱글). 대소문자·쉼표·惠/恵 표기차만 존재."
+ },
+ {
+  "song_id": "ky-42396",
+  "title": "w-inds. Single Mega-Mix",
+  "verdict": "REJECT",
+  "reason": "유일 후보가 〈Radio Edit Version〉 — 컷(단축) 버전 태그가 명시된 별도 버전. 버전/컷 차이 기준으로 거부."
+ },
+ {
+  "song_id": "ky-41096",
+  "title": "いつも何度でも　(\"千と千尋の神隠し\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-29809",
+  "candidate_joysound": "11690",
+  "reason": "木村弓 원곡 동일(센과 치히로 주제가). KY 괄호는 타이업 메타. HEAVY HITTER♂는 커버."
+ },
+ {
+  "song_id": "ky-44649",
+  "title": "うやむや",
+  "verdict": "MERGE",
+  "candidate_id": "tj-68384",
+  "candidate_joysound": "488132",
+  "reason": "SixTONES うやむや는 YouTube 한정 공개곡(2021)으로 (YouTube Ver.)가 사실상 원곡 유일 버전. 一青窈 うやむや는 동명이곡."
+ },
+ {
+  "song_id": "ky-44751",
+  "title": "おもかげ (produced by Vaundy)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25017",
+  "candidate_joysound": "495453",
+  "reason": "milet×Aimer×幾田りら 동일곡(THE FIRST TAKE 오리지널, Vaundy 프로듀스). 아티스트 연결자(×/&)와 프로듀서 크레딧 위치 표기차. 나머지는 동명이곡."
+ },
+ {
+  "song_id": "ky-42459",
+  "title": "くればいいのに feat.草野マサムネ from SPITZ",
+  "verdict": "UNCERTAIN",
+  "reason": "같은 곡(KREVA feat.草野マサムネ)이지만 JOYSOUND 후보가 〈Single Edit〉/(Album Version) 버전 태그 2종뿐 — KY 무태그 레코드가 어느 버전인지 판별 불가, 오병합 위험으로 보류."
+ },
+ {
+  "song_id": "ky-41614",
+  "title": "さくら (独唱）",
+  "verdict": "REJECT",
+  "reason": "본인(森山直太朗) 후보는 さくら(二〇一九) — 2019년 재녹음 별도 버전. 나머지(クリス・ハート/夏川りみ/中澤卓也/天童よしみ)는 전부 커버. 원곡 さくら(独唱) 레코드가 후보에 없음."
+ },
+ {
+  "song_id": "ky-40794",
+  "title": "さよならはダンスの後に",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6633",
+  "candidate_joysound": "27068",
+  "reason": "倍賞千恵子 동일곡, 惠/恵 표기차. 由紀さおり는 커버."
+ },
+ {
+  "song_id": "ky-40823",
+  "title": "それは...黄昏",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2041",
+  "candidate_joysound": "2041",
+  "reason": "五木ひろし 동일곡. 말줄임표(.../…)와 독음 괄호(たそがれ) 표기차만 존재."
+ },
+ {
+  "song_id": "ky-44882",
+  "title": "とても痛い痛がりたい",
+  "verdict": "REJECT",
+  "reason": "유일 후보가 (カバー) EZFG(Feat.灯油) — 보컬이 다른 커버(우타이테 灯油). KY 원곡은 VY1,VY2 보컬로이드 버전."
+ },
+ {
+  "song_id": "ky-41351",
+  "title": "とんちんかんちん一休さん(\"一休さん\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28453",
+  "candidate_joysound": "5374",
+  "reason": "相内恵、ヤングフレッシュ 동일 아티스트 동일곡, 구분자(、/,) 표기차. KY 괄호는 타이업 메타. 南明奈·でんぱ組.inc는 커버."
+ },
+ {
+  "song_id": "ky-42085",
+  "title": "アゲ♂アゲ♂EVERY☆騎士",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-84594",
+  "candidate_joysound": "54486",
+  "reason": "DJ OZMA 동일곡. (ナイト)는 騎士의 독음 주석일 뿐 버전 태그 아님."
+ },
+ {
+  "song_id": "ky-41247",
+  "title": "ウイスキーが、お好きでしょ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2458",
+  "candidate_joysound": "2458",
+  "reason": "SAYURI(石川さゆり)는 이시카와 사유리의 1990년 원곡 발매 명의(명의 변형, 동일 인물) — JOYSOUND가 괄호로 본명 병기. (Transcend ver.)는 버전차, 나머지는 커버."
+ },
+ {
+  "song_id": "ky-42826",
+  "title": "エージェント夜を往く (\"THE IDOLM@STER\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28179",
+  "candidate_joysound": "138579",
+  "reason": "平田宏美 크레딧 무태그 레코드로 정확 일치. KY 괄호는 타이업 메타. M@STER VERSION/REM@STER-B 및 타 캐릭터(千早·亜美真美) 버전은 별도."
+ },
+ {
+  "song_id": "ky-40747",
+  "title": "カスマプゲ（胸がせつない）",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6151",
+  "candidate_joysound": "2337",
+  "reason": "李成愛 동일곡(가슴 아프게 일본어반). KY 괄호는 부제, 아티스트 공백 표기차. 八代亜紀는 커버."
+ },
+ {
+  "song_id": "ky-42419",
+  "title": "キッス~帰り道のラブソング~ (\"ラブ★コン\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26713",
+  "candidate_joysound": "24677",
+  "reason": "テゴマス 동일곡. 타이업 태그·공백 표기차. 増田貴久 명의는 별도 솔로 버전 레코드."
+ },
+ {
+  "song_id": "ky-40119",
+  "title": "スクランブル",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25918",
+  "candidate_joysound": "65161",
+  "reason": "스쿨럼블 OP 동일곡 — KY '堀江由衣 with UNSCANDAL' vs TJ '堀江由衣' 크레딧 축약 차이. SPYAIR 등 나머지는 동명이곡."
+ },
+ {
+  "song_id": "ky-44228",
+  "title": "ノンファンタジー(いつだって僕らの恋は10センチだった)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-652873",
+  "candidate_joysound": "423462",
+  "reason": "LIP×LIP(HoneyWorks) 동일곡. KY 괄호는 작품 부제, JOYSOUND는 CV 병기 — 동일 유닛."
+ },
+ {
+  "song_id": "ky-43610",
+  "title": "マジLOVE2000%(\"うたの☆プリンスさまっマジLOVE2000%\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27438",
+  "candidate_joysound": "723883",
+  "reason": "ST☆RISH 동일곡(우타프리 2기 ED). 타이업 태그 표기차만 존재."
+ },
+ {
+  "song_id": "ky-57747",
+  "title": "メズマライザー",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1039915",
+  "candidate_joysound": "627223",
+  "reason": "メズマライザー(2024, 미쿠×테토) — KY 사츠키 = サツキ 한글/가타카나 표기차, 동일 프로듀서."
+ },
+ {
+  "song_id": "ky-43311",
+  "title": "一番の宝物",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28380",
+  "candidate_joysound": "100811",
+  "reason": "Girls Dead Monster 명의 버전 = (Yui Ver.)(LiSA 보컬) 단일 — KY GDM 크레딧과 동일 녹음. marina(Crow Ver.)·karuta(Original Version)는 타 보컬 버전."
+ },
+ {
+  "song_id": "ky-43143",
+  "title": "右肩の蝶",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-143101",
+  "candidate_joysound": "137779",
+  "reason": "KY 크레딧이 feat.鏡音リン이므로 〈リンver.〉가 정확 일치. 〈レンver.〉는 타 보컬 버전, うさ는 커버."
+ },
+ {
+  "song_id": "ky-44076",
+  "title": "君のこころは輝いてるかい? (\"ラブライブ! サンシャイン\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27955",
+  "candidate_joysound": "678050",
+  "reason": "Aqours 데뷔 싱글 동일곡. 타이업 태그·공백 표기차만 존재."
+ },
+ {
+  "song_id": "ky-43914",
+  "title": "夕映えプレゼント (アイドルマスターシンデレラガールズ)",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28346",
+  "candidate_joysound": "672838",
+  "reason": "CINDERELLA PROJECT 동일 아티스트 동일곡. KY 괄호는 타이업 메타."
+ },
+ {
+  "song_id": "ky-41219",
+  "title": "夢であるように (\"Tales of Destiny\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6815",
+  "candidate_joysound": "16881",
+  "reason": "DEEN 원곡 무태그 레코드와 일치 — KY 괄호는 타이업 메타(이 배치 KY 관례). (テイルズオブデスティニーVersion)은 별도 어레인지 버전이라 제외."
+ },
+ {
+  "song_id": "ky-43299",
+  "title": "天樂",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27035",
+  "candidate_joysound": "313880",
+  "reason": "보컬로이드 크레딧 표기차(ゆうゆ feat.鏡音リン vs 鏡音リン 단독) — 동일 원곡. ピコ·和楽器バンド는 커버(각자 별도 joy 번호 보유)."
+ },
+ {
+  "song_id": "ky-41503",
+  "title": "太陽のSEASON",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25358",
+  "candidate_joysound": "9148",
+  "reason": "안무로 나미에 동일곡(1995), 惠/恵 표기차. 〈SALSOULIKE MIX〉는 리믹스라 제외."
+ },
+ {
+  "song_id": "ky-40878",
+  "title": "女性は愛に生きる",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-197",
+  "candidate_joysound": "197",
+  "reason": "三浦弘とハニーシックス 동일곡. 독음 주석(ひとはあいにいきる)과 中黒(ハニー・シックス) 표기차만 존재."
+ }
+]

@@ -1,0 +1,1255 @@
+[
+ {
+  "song": {
+   "id": "ky-41909",
+   "title": "橋",
+   "artist": "北島三郞",
+   "tj": null,
+   "ky": "41909"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1344",
+    "joysound": "1344",
+    "title": "橋",
+    "artist": "岩崎宏美",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-188952",
+    "joysound": "917084",
+    "title": "橋",
+    "artist": "工藤静香",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-3311",
+    "joysound": "3311",
+    "title": "橋",
+    "artist": "真木ことみ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-75152",
+    "joysound": "132222",
+    "title": "橋",
+    "artist": "明日香",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-26046",
+    "joysound": "26250",
+    "title": "橋",
+    "artist": "北島三郎",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40390",
+   "title": "歩",
+   "artist": "北島三郞",
+   "tj": null,
+   "ky": "40390"
+  },
+  "candidates": [
+   {
+    "id": "joysound-208020",
+    "joysound": "936208",
+    "title": "歩",
+    "artist": "PENGIN",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-409337",
+    "joysound": "314704",
+    "title": "歩",
+    "artist": "キマグレン",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-691850",
+    "joysound": "429303",
+    "title": "歩",
+    "artist": "氷川きよし",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-6491",
+    "joysound": "2669",
+    "title": "歩",
+    "artist": "北島三郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-752375",
+    "joysound": "801015",
+    "title": "歩《本人映像》",
+    "artist": "大見明夜",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40965",
+   "title": "母影",
+   "artist": "チョー・ヨンピル",
+   "tj": null,
+   "ky": "40965"
+  },
+  "candidates": [
+   {
+    "id": "joysound-4574",
+    "joysound": "4574",
+    "title": "母影",
+    "artist": "趙容弼(チョー・ヨンピル)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41693",
+   "title": "河内おとこ節",
+   "artist": "中村美津子",
+   "tj": null,
+   "ky": "41693"
+  },
+  "candidates": [
+   {
+    "id": "joysound-227716",
+    "joysound": "197030",
+    "title": "河内おとこ節",
+    "artist": "木村友衛",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-627016",
+    "joysound": "695746",
+    "title": "河内おとこ節",
+    "artist": "氷川きよし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-76311",
+    "joysound": "52087",
+    "title": "河内おとこ節",
+    "artist": "水森かおり",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-26081",
+    "joysound": "3089",
+    "title": "河内おとこ節",
+    "artist": "中村美律子",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40857",
+   "title": "泣かないで",
+   "artist": "館ひろし",
+   "tj": null,
+   "ky": "40857"
+  },
+  "candidates": [
+   {
+    "id": "joysound-104387",
+    "joysound": "163532",
+    "title": "泣かないで",
+    "artist": "岡本真夜",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-118685",
+    "joysound": "173469",
+    "title": "泣かないで",
+    "artist": "MEGARYU",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-119462",
+    "joysound": "27804",
+    "title": "泣かないで",
+    "artist": "羞恥心",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-15171",
+    "joysound": "15180",
+    "title": "泣かないで",
+    "artist": "シャ乱Q",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-186994",
+    "joysound": "915119",
+    "title": "泣かないで",
+    "artist": "リィ・ヘンヘン",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40856",
+   "title": "流されて",
+   "artist": "チョー・ヨンピル",
+   "tj": null,
+   "ky": "40856"
+  },
+  "candidates": [
+   {
+    "id": "joysound-110067",
+    "joysound": "167153",
+    "title": "流されて",
+    "artist": "加川明",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-3942",
+    "joysound": "3942",
+    "title": "流されて",
+    "artist": "原大輔",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-48075",
+    "joysound": "66492",
+    "title": "流されて",
+    "artist": "桂銀淑",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-493",
+    "joysound": "493",
+    "title": "流されて",
+    "artist": "趙容弼(チョー・ヨンピル)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-54731",
+    "joysound": "73849",
+    "title": "流されて",
+    "artist": "園まり",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40619",
+   "title": "流転",
+   "artist": "上原敏",
+   "tj": null,
+   "ky": "40619"
+  },
+  "candidates": [
+   {
+    "id": "blog-736-65",
+    "joysound": "934840",
+    "title": "流転",
+    "artist": "アンダーグラフ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-113590",
+    "joysound": "169384",
+    "title": "流転",
+    "artist": "北川裕二",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-422271",
+    "joysound": "501407",
+    "title": "流転",
+    "artist": "北島三郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-467565",
+    "joysound": "683206",
+    "title": "流転",
+    "artist": "三山ひろし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-48061",
+    "joysound": "66478",
+    "title": "流転",
+    "artist": "氷川きよし",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40217",
+   "title": "海峡",
+   "artist": "吉幾三",
+   "tj": null,
+   "ky": "40217"
+  },
+  "candidates": [
+   {
+    "id": "joysound-202344",
+    "joysound": "930514",
+    "title": "海峡",
+    "artist": "篠原良枝",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-21311",
+    "joysound": "22014",
+    "title": "海峡",
+    "artist": "野中彩央里",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-231708",
+    "joysound": "199228",
+    "title": "海峡",
+    "artist": "岩本公水",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-76401",
+    "joysound": "52381",
+    "title": "海峡",
+    "artist": "瀬口侑希",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40425",
+   "title": "湯の町エレジー",
+   "artist": "近江俊郞",
+   "tj": null,
+   "ky": "40425"
+  },
+  "candidates": [
+   {
+    "id": "joysound-18998",
+    "joysound": "19012",
+    "title": "湯の町エレジー",
+    "artist": "近江俊郎",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42927",
+   "title": "無責任ヒーロー",
+   "artist": "関ジャニ∞",
+   "tj": null,
+   "ky": "42927"
+  },
+  "candidates": [
+   {
+    "id": "joysound-124655",
+    "joysound": "69736",
+    "title": "無責任ヒーロー",
+    "artist": "SUPER EIGHT",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40126",
+   "title": "熱海の夜",
+   "artist": "箱崎晋一郞",
+   "tj": null,
+   "ky": "40126"
+  },
+  "candidates": [
+   {
+    "id": "joysound-142945",
+    "joysound": "91384",
+    "title": "熱海の夜",
+    "artist": "水森かおり",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-6679",
+    "joysound": "2120",
+    "title": "熱海の夜",
+    "artist": "箱崎晋一郎",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40222",
+   "title": "片恋酒",
+   "artist": "宮史郞",
+   "tj": null,
+   "ky": "40222"
+  },
+  "candidates": [
+   {
+    "id": "joysound-2353",
+    "joysound": "2353",
+    "title": "片恋酒",
+    "artist": "中村三郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-35429",
+    "joysound": "39956",
+    "title": "片恋酒",
+    "artist": "宮史郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-605725",
+    "joysound": "692640",
+    "title": "片恋酒",
+    "artist": "島津ゆたか",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-74931",
+    "joysound": "131762",
+    "title": "片恋酒",
+    "artist": "三門忠司",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40459",
+   "title": "男の人生",
+   "artist": "杉良太郞",
+   "tj": null,
+   "ky": "40459"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1155348",
+    "joysound": "644066",
+    "title": "男の人生",
+    "artist": "辰野友泉",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-130911",
+    "joysound": "90684",
+    "title": "男の人生",
+    "artist": "三笠優子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-161399",
+    "joysound": "94005",
+    "title": "男の人生",
+    "artist": "北島三郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-202796",
+    "joysound": "930966",
+    "title": "男の人生",
+    "artist": "高木 守",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-20289",
+    "joysound": "20316",
+    "title": "男の人生",
+    "artist": "浜慎也",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40663",
+   "title": "男の背中",
+   "artist": "増位山太志郞",
+   "tj": null,
+   "ky": "40663"
+  },
+  "candidates": [
+   {
+    "id": "joysound-202251",
+    "joysound": "930421",
+    "title": "男の背中",
+    "artist": "平賀榮一",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-603813",
+    "joysound": "691820",
+    "title": "男の背中",
+    "artist": "澤一夫",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-610528",
+    "joysound": "693526",
+    "title": "男の背中",
+    "artist": "川中美幸",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-6104",
+    "joysound": "2142",
+    "title": "男の背中",
+    "artist": "増位山太志郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1153973",
+    "joysound": "824789",
+    "title": "男の背中《レコおと》",
+    "artist": "美紀正",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40814",
+   "title": "白い花の咲く頃",
+   "artist": "岡本敦郞",
+   "tj": null,
+   "ky": "40814"
+  },
+  "candidates": [
+   {
+    "id": "joysound-151061",
+    "joysound": "128973",
+    "title": "白い花の咲く頃",
+    "artist": "村下孝蔵",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-3437",
+    "joysound": "3437",
+    "title": "白い花の咲く頃",
+    "artist": "岡本敦郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-405844",
+    "joysound": "738998",
+    "title": "白い花の咲く頃",
+    "artist": "石原詢子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-486313",
+    "joysound": "683979",
+    "title": "白い花の咲く頃",
+    "artist": "倍賞千恵子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-784419",
+    "joysound": "890493",
+    "title": "白い花の咲く頃《レコおと》",
+    "artist": "アンサンブル・コノハ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40893",
+   "title": "真赤な太陽",
+   "artist": "美空ひばり.ジャッキー吉川とブルーコメッツ",
+   "tj": null,
+   "ky": "40893"
+  },
+  "candidates": [
+   {
+    "id": "joysound-124428",
+    "joysound": "176523",
+    "title": "真赤な太陽",
+    "artist": "さだまさし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-193518",
+    "joysound": "921663",
+    "title": "真赤な太陽",
+    "artist": "南かなこ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-245469",
+    "joysound": "732782",
+    "title": "真赤な太陽",
+    "artist": "神野美伽",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-400884",
+    "joysound": "735061",
+    "title": "真赤な太陽",
+    "artist": "坂本冬美",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-401672",
+    "joysound": "735627",
+    "title": "真赤な太陽",
+    "artist": "山内惠介",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40837",
+   "title": "私は泣いています",
+   "artist": "りりイ",
+   "tj": null,
+   "ky": "40837"
+  },
+  "candidates": [
+   {
+    "id": "blog-539-186",
+    "joysound": "147974",
+    "title": "私は泣いています",
+    "artist": "中森明菜",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-2671",
+    "joysound": "2671",
+    "title": "私は泣いています",
+    "artist": "りりィ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-415443",
+    "joysound": "670004",
+    "title": "私は泣いています",
+    "artist": "坂本冬美",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-421561",
+    "joysound": "502946",
+    "title": "私は泣いています",
+    "artist": "八代亜紀",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-75877",
+   "title": "秩序宣言",
+   "artist": "山中真尋",
+   "tj": null,
+   "ky": "75877"
+  },
+  "candidates": [
+   {
+    "id": "joysound-928684",
+    "joysound": "618670",
+    "title": "秩序宣言",
+    "artist": "草薙理解",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40621",
+   "title": "窓の外の女",
+   "artist": "チョー・ヨンピル",
+   "tj": null,
+   "ky": "40621"
+  },
+  "candidates": [
+   {
+    "id": "joysound-231177",
+    "joysound": "198817",
+    "title": "窓の外の女",
+    "artist": "パク・ヒョンビン",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-2829",
+    "joysound": "2829",
+    "title": "窓の外の女",
+    "artist": "趙容弼(チョー・ヨンピル)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41416",
+   "title": "籠の鳥",
+   "artist": "ちあきなおみ",
+   "tj": null,
+   "ky": "41416"
+  },
+  "candidates": [
+   {
+    "id": "joysound-487503",
+    "joysound": "675203",
+    "title": "籠の鳥",
+    "artist": "野中彩央里",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-774255",
+    "joysound": "441673",
+    "title": "籠の鳥",
+    "artist": "BIN",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40805",
+   "title": "終着駅は始発駅",
+   "artist": "北島三郞",
+   "tj": null,
+   "ky": "40805"
+  },
+  "candidates": [
+   {
+    "id": "joysound-161689",
+    "joysound": "105334",
+    "title": "終着駅は始発駅",
+    "artist": "三山ひろし",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41346",
+   "title": "終電 何時?",
+   "artist": "山川豊、田川寿美",
+   "tj": null,
+   "ky": "41346"
+  },
+  "candidates": [
+   {
+    "id": "joysound-20379",
+    "joysound": "20409",
+    "title": "終電 何時?",
+    "artist": "田川寿美/山川豊",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40822",
+   "title": "蘇州夜曲",
+   "artist": "霧島昇、渡辺はま子",
+   "tj": null,
+   "ky": "40822"
+  },
+  "candidates": [
+   {
+    "id": "tj-6449",
+    "joysound": "27150",
+    "title": "蘇州夜曲",
+    "artist": "渡辺はま子",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41206",
+   "title": "誰よりも君を愛す",
+   "artist": "和田弘とマヒナスターズ、松尾和子",
+   "tj": null,
+   "ky": "41206"
+  },
+  "candidates": [
+   {
+    "id": "joysound-242655",
+    "joysound": "946047",
+    "title": "誰よりも君を愛す",
+    "artist": "真奈尚子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-25672",
+    "joysound": "27183",
+    "title": "誰よりも君を愛す",
+    "artist": "松尾和子/和田弘とマヒナスターズ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42158",
+   "title": "貴女ノ為ノ此ノ命。",
+   "artist": "ガゼット",
+   "tj": null,
+   "ky": "42158"
+  },
+  "candidates": [
+   {
+    "id": "joysound-47994",
+    "joysound": "66411",
+    "title": "貴女ノ為ノ此ノ命。",
+    "artist": "the GazettE",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40991",
+   "title": "足跡",
+   "artist": "19",
+   "tj": null,
+   "ky": "40991"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1053058",
+    "joysound": "629505",
+    "title": "足跡",
+    "artist": "コブクロ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-105621",
+    "joysound": "164323",
+    "title": "足跡",
+    "artist": "SOFFet",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1059979",
+    "joysound": "645532",
+    "title": "足跡",
+    "artist": "名取さな",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-106079",
+    "joysound": "164584",
+    "title": "足跡",
+    "artist": "川嶋あい",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1145426",
+    "joysound": "643192",
+    "title": "足跡",
+    "artist": "Meg Bonus",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41275",
+   "title": "銀の指輪",
+   "artist": "石原裕次郎",
+   "tj": null,
+   "ky": "41275"
+  },
+  "candidates": [
+   {
+    "id": "joysound-25627",
+    "joysound": "27138",
+    "title": "銀の指輪",
+    "artist": "石原裕次郎/愛まち子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-419671",
+    "joysound": "673352",
+    "title": "銀の指輪",
+    "artist": "千葉山貴公",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40767",
+   "title": "銀座の雀",
+   "artist": "森繁久彌",
+   "tj": null,
+   "ky": "40767"
+  },
+  "candidates": [
+   {
+    "id": "joysound-19122",
+    "joysound": "19136",
+    "title": "銀座の雀",
+    "artist": "森繁久弥",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41249",
+   "title": "銀座ブルース",
+   "artist": "和田弘とマヒナスターズ、松尾和子",
+   "tj": null,
+   "ky": "41249"
+  },
+  "candidates": [
+   {
+    "id": "joysound-2438",
+    "joysound": "2438",
+    "title": "銀座ブルース",
+    "artist": "松尾和子/和田弘とマヒナスターズ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44799",
+   "title": "開眼",
+   "artist": "Bad Ass Temple",
+   "tj": null,
+   "ky": "44799"
+  },
+  "candidates": [
+   {
+    "id": "joysound-866151",
+    "joysound": "489421",
+    "title": "開眼",
+    "artist": "Bad Ass Temple(CV:葉山翔太・榊原優希・竹内栄治)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42242",
+   "title": "関風ファイティング",
+   "artist": "関ジャニ∞",
+   "tj": null,
+   "ky": "42242"
+  },
+  "candidates": [
+   {
+    "id": "joysound-94471",
+    "joysound": "21883",
+    "title": "関風ファイティング",
+    "artist": "SUPER EIGHT",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41561",
+   "title": "雑走",
+   "artist": "ROAD OF MAJOR",
+   "tj": null,
+   "ky": "41561"
+  },
+  "candidates": [
+   {
+    "id": "joysound-26292",
+    "joysound": "28400",
+    "title": "雑走",
+    "artist": "ロードオブメジャー",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40697",
+   "title": "雨が止んだら",
+   "artist": "朝丘雪路",
+   "tj": null,
+   "ky": "40697"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1098469",
+    "joysound": "636926",
+    "title": "雨が止んだら",
+    "artist": "日比谷ブロードウェイ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1117948",
+    "joysound": "639163",
+    "title": "雨が止んだら",
+    "artist": "大黒可不可(CV:小林千晃)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40121",
+   "title": "雨に咲く花",
+   "artist": "関種子",
+   "tj": null,
+   "ky": "40121"
+  },
+  "candidates": [
+   {
+    "id": "joysound-25709",
+    "joysound": "27220",
+    "title": "雨に咲く花",
+    "artist": "井上ひろし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-30154",
+    "joysound": "34657",
+    "title": "雨に咲く花",
+    "artist": "たかだみゆき",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-574820",
+    "joysound": "686069",
+    "title": "雨に咲く花",
+    "artist": "山本裕二朗",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42536",
+   "title": "雪、無音、窓辺にて。",
+   "artist": "茅原実里",
+   "tj": null,
+   "ky": "42536"
+  },
+  "candidates": [
+   {
+    "id": "joysound-86951",
+    "joysound": "125287",
+    "title": "雪、無音、窓辺にて。",
+    "artist": "長門有希(茅原実里)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-145559",
+    "joysound": "139116",
+    "title": "雪、無音、窓辺にて。〈jazz massive in tyo mix〉",
+    "artist": "長門有希(茅原実里)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-75901",
+   "title": "雪解",
+   "artist": "日向朔公",
+   "tj": null,
+   "ky": "75901"
+  },
+  "candidates": [
+   {
+    "id": "tj-68968",
+    "joysound": "618645",
+    "title": "雪解('カリスマ' OST)",
+    "artist": "湊大瀬",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40911",
+   "title": "霧笛が俺を呼んでいる",
+   "artist": "赤木圭一郞",
+   "tj": null,
+   "ky": "40911"
+  },
+  "candidates": [
+   {
+    "id": "joysound-2032",
+    "joysound": "2032",
+    "title": "霧笛が俺を呼んでいる",
+    "artist": "赤木圭一郎",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40500",
+   "title": "青春狂騒曲",
+   "artist": "Sambo Master",
+   "tj": null,
+   "ky": "40500"
+  },
+  "candidates": [
+   {
+    "id": "joysound-40936",
+    "joysound": "58992",
+    "title": "青春狂騒曲",
+    "artist": "caligari",
+    "match": "exact-title"
+   },
+   {
+    "id": "tjpdf-28401",
+    "joysound": "65347",
+    "title": "青春狂騒曲",
+    "artist": "サンボマスター",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40881",
+   "title": "風雪ながれ旅",
+   "artist": "北島三郞",
+   "tj": null,
+   "ky": "40881"
+  },
+  "candidates": [
+   {
+    "id": "joysound-231711",
+    "joysound": "199233",
+    "title": "風雪ながれ旅",
+    "artist": "岩本公水",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-403655",
+    "joysound": "737182",
+    "title": "風雪ながれ旅",
+    "artist": "島津亜矢",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-411006",
+    "joysound": "315914",
+    "title": "風雪ながれ旅",
+    "artist": "神野美伽",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-422532",
+    "joysound": "501822",
+    "title": "風雪ながれ旅",
+    "artist": "船村徹",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-544922",
+    "joysound": "679579",
+    "title": "風雪ながれ旅",
+    "artist": "美空ひばり",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40892",
+   "title": "香港",
+   "artist": "テレサ・テン",
+   "tj": null,
+   "ky": "40892"
+  },
+  "candidates": [
+   {
+    "id": "joysound-107382",
+    "joysound": "57739",
+    "title": "香港",
+    "artist": "Ko^Ko",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-15580",
+    "joysound": "15590",
+    "title": "香港",
+    "artist": "森高千里",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-816517",
+    "joysound": "449993",
+    "title": "香港",
+    "artist": "RONDONRATS。",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40396",
+   "title": "骨まで愛して",
+   "artist": "城卓也",
+   "tj": null,
+   "ky": "40396"
+  },
+  "candidates": [
+   {
+    "id": "joysound-48721",
+    "joysound": "67140",
+    "title": "骨まで愛して",
+    "artist": "氷川きよし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-652272",
+    "joysound": "423109",
+    "title": "骨まで愛して",
+    "artist": "坂本冬美",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-672036",
+    "joysound": "426232",
+    "title": "骨まで愛して",
+    "artist": "嵯峨レイコ",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-6175",
+    "joysound": "2101",
+    "title": "骨まで愛して",
+    "artist": "城 卓矢",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40780",
+   "title": "高原列車は行く",
+   "artist": "岡本敦郞",
+   "tj": null,
+   "ky": "40780"
+  },
+  "candidates": [
+   {
+    "id": "joysound-18999",
+    "joysound": "19013",
+    "title": "高原列車は行く",
+    "artist": "岡本敦郎",
+    "match": "exact-title"
+   }
+  ]
+ }
+]

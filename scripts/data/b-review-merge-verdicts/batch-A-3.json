@@ -1,0 +1,897 @@
+[
+ {
+  "song": {
+   "id": "tj-6555",
+   "title": "別れ曲でも唄って",
+   "artist": "前川清",
+   "tj": "6555",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-3542",
+    "joysound": "3542",
+    "title": "別れ曲でも唄って〈シングルヴァージョン〉",
+    "artist": "前川清",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6579",
+   "title": "ROCKET DIVE(AWOL OP)",
+   "artist": "hide with Spread Beaver",
+   "tj": "6579",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "tj-25103",
+    "joysound": "17108",
+    "title": "Rocket Dive",
+    "artist": "hide",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-107044",
+    "joysound": "165204",
+    "title": "ROCKET DIVE〈DJTK RESPECT GLAM MIX For“SIR hide”〉",
+    "artist": "DJTK",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-220771",
+    "joysound": "146539",
+    "title": "ROCKET DIVE",
+    "artist": "メガマソ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-297195",
+    "joysound": "728263",
+    "title": "ROCKET DIVE",
+    "artist": "R指定",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-43837",
+    "joysound": "61901",
+    "title": "ROCKET DIVE",
+    "artist": "布袋寅泰",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-66064",
+   "title": "夢幻(アニメ ''鬼滅の刃'柱稽古編' OST)",
+   "artist": "MY FIRST STORY & HYDE",
+   "tj": "66064",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "ky-75958",
+    "joysound": "627341",
+    "title": "夢幻",
+    "artist": "MY FIRST STORY",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1006576",
+    "joysound": "622432",
+    "title": "夢幻",
+    "artist": "堀切千色",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-401280",
+    "joysound": "735339",
+    "title": "夢幻",
+    "artist": "ダルビッシュP feat.GUMI",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-44493",
+    "joysound": "62557",
+    "title": "夢幻(むげん)",
+    "artist": "陰陽座",
+    "match": "stripped-title"
+   },
+   {
+    "id": "ky-43155",
+    "joysound": "138341",
+    "title": "夢幻",
+    "artist": "水樹奈々",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-66207",
+   "title": "永久 -トコシエ-(アニメ ''鬼滅の刃'柱稽古編' OST)",
+   "artist": "MY FIRST STORY & HYDE",
+   "tj": "66207",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-1043192",
+    "joysound": "627793",
+    "title": "永久 -トコシエ-",
+    "artist": "HYDE×MY FIRST STORY",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6741",
+   "title": "おもかげの女",
+   "artist": "石原裕次郎",
+   "tj": "6741",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-3786",
+    "joysound": "3786",
+    "title": "おもかげの女(ひと)",
+    "artist": "石原裕次郎",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6787",
+   "title": "蒼い霹靂",
+   "artist": "T.M.Revolution",
+   "tj": "6787",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-254104",
+    "joysound": "725541",
+    "title": "蒼い霹靂(UNDER:COVER 2)",
+    "artist": "T.M.Revolution",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68037",
+   "title": "Hoodstar(ヒプノシスマイク)",
+   "artist": "Division All Stars",
+   "tj": "68037",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-750622",
+    "joysound": "438772",
+    "title": "Hoodstar",
+    "artist": "Division All Stars",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68172",
+   "title": "二重の虹(ダブル レインボウ)(BanG Dream! OST)",
+   "artist": "Poppin'Party",
+   "tj": "68172",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-694917",
+    "joysound": "430573",
+    "title": "二重の虹",
+    "artist": "Poppin'Party",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68218",
+   "title": "DRIVE US CRAZY(BanG Dream!)",
+   "artist": "RAISE A SUILEN",
+   "tj": "68218",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-790005",
+    "joysound": "446195",
+    "title": "DRIVE US CRAZY",
+    "artist": "RAISE A SUILEN",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68280",
+   "title": "Survival of the Illest(ヒプノシスマイク)",
+   "artist": "Division All Stars",
+   "tj": "68280",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-846966",
+    "joysound": "485882",
+    "title": "Survival of the Illest",
+    "artist": "Division All Stars",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68305",
+   "title": "なんどでも笑おう(THE IDOLM@STER OST)",
+   "artist": "THE IDOLM@STER FIVE STARS!!!!!",
+   "tj": "68305",
+   "ky": "44595"
+  },
+  "candidates": [
+   {
+    "id": "joysound-851275",
+    "joysound": "486586",
+    "title": "なんどでも笑おう",
+    "artist": "THE IDOLM@STER FIVE STARS!!!!!",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44598",
+   "title": "聖槍爆裂ボーイ",
+   "artist": "れるりり,もじゃ(大柴広己)(Feat.鏡音レン)",
+   "tj": "68314",
+   "ky": "44598"
+  },
+  "candidates": [
+   {
+    "id": "joysound-405573",
+    "joysound": "738747",
+    "title": "聖槍爆裂ボーイ",
+    "artist": "れるりり/もじゃ feat.鏡音レン",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-423289",
+    "joysound": "500869",
+    "title": "聖槍爆裂ボーイ",
+    "artist": "りぶ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68316",
+   "title": "カイト(NHK2020ソング)",
+   "artist": "嵐",
+   "tj": "68316",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-818556",
+    "joysound": "446332",
+    "title": "カイト",
+    "artist": "嵐",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-109909",
+    "joysound": "85578",
+    "title": "カイト",
+    "artist": "槇原敬之",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-156283",
+    "joysound": "93245",
+    "title": "カイト",
+    "artist": "BONNIE PINK",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68327",
+   "title": "Dye the sky.(THE IDOLM@STER SHINY COLORS OST)",
+   "artist": "シャイニーカラーズ",
+   "tj": "68327",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-831088",
+    "joysound": "448411",
+    "title": "Dye the sky.",
+    "artist": "シャイニーカラーズ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6833",
+   "title": "愛冠岬",
+   "artist": "松原のぶえ",
+   "tj": "6833",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-3478",
+    "joysound": "3478",
+    "title": "愛冠岬(アイカップミサキ)",
+    "artist": "松原のぶえ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-6836",
+   "title": "愛は別離",
+   "artist": "川中美幸",
+   "tj": "6836",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-1628",
+    "joysound": "1628",
+    "title": "愛は別離(わかれ)",
+    "artist": "川中美幸",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68377",
+   "title": "絆(ヒプノシスマイク -D.R.B- Rhyme Anima)",
+   "artist": "Division All Stars",
+   "tj": "68377",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-862690",
+    "joysound": "487824",
+    "title": "絆",
+    "artist": "Division All Stars",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-338-113",
+    "joysound": "168397",
+    "title": "絆",
+    "artist": "GReeeeN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1043555",
+    "joysound": "818209",
+    "title": "絆《本人映像》",
+    "artist": "川嶋あい",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1092343",
+    "joysound": "636096",
+    "title": "絆",
+    "artist": "橋幸夫・ZERO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1100218",
+    "joysound": "821719",
+    "title": "絆《レコおと》",
+    "artist": "Komomo",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68513",
+   "title": "Hang out!(ヒプノシスマイク)",
+   "artist": "Division All Stars",
+   "tj": "68513",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-882562",
+    "joysound": "498108",
+    "title": "Hang out!",
+    "artist": "Division All Stars",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-4748",
+    "joysound": "4748",
+    "title": "HANG OUT!",
+    "artist": "三上博史(本城裕二)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68549",
+   "title": "Femme Fatale(ヒプノシスマイク)",
+   "artist": "中王区言の葉党",
+   "tj": "68549",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-850810",
+    "joysound": "486325",
+    "title": "Femme Fatale",
+    "artist": "中王区 言の葉党",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-539-355",
+    "joysound": "75463",
+    "title": "Femme Fatale",
+    "artist": "中森明菜",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1169601",
+    "joysound": "647366",
+    "title": "Femme fatale",
+    "artist": "MELLOW DEAR US",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-688420",
+    "joysound": "430237",
+    "title": "Femme Fatale",
+    "artist": "加藤ミリヤ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68597",
+   "title": "君が見た夢の物語(ロード・エルメロイⅡ世の事件簿 -魔眼蒐集列車- Grace note)",
+   "artist": "ASCA",
+   "tj": "68597",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-907685",
+    "joysound": "495752",
+    "title": "君が見た夢の物語",
+    "artist": "ASCA",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68823",
+   "title": "可愛くてごめん",
+   "artist": "HoneyWorks(Feat.かぴ)",
+   "tj": "68823",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-135-45",
+    "joysound": "622637",
+    "title": "可愛くてごめん",
+    "artist": "Ado",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1015710",
+    "joysound": "624207",
+    "title": "可愛くてごめん",
+    "artist": "ロボ子さん，アキ・ローゼンタール，癒月ちょこ，猫又おかゆ，宝鐘マリン，桃鈴ねね，ラプラス・ダークネス，博衣こより，Pavolia Reine，Ceres Fauna",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1086857",
+    "joysound": "635242",
+    "title": "可愛くてごめん",
+    "artist": "雨宮天 as 成海聖奈",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1117969",
+    "joysound": "639572",
+    "title": "可愛くてごめん",
+    "artist": "高嶺のなでしこ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-950714",
+    "joysound": "612984",
+    "title": "可愛くてごめん (feat.かぴ)",
+    "artist": "HoneyWorks",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44962",
+   "title": "Magic('コカ・コーラ' TVCM)",
+   "artist": "Mrs. GREEN APPLE",
+   "tj": "68835",
+   "ky": "44962"
+  },
+  "candidates": [
+   {
+    "id": "joysound-971151",
+    "joysound": "617946",
+    "title": "Magic",
+    "artist": "Mrs. GREEN APPLE",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-135-30",
+    "joysound": "642240",
+    "title": "MAGIC(アニメ 'キャツアイ' OST)",
+    "artist": "Ado",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-155-12",
+    "joysound": "691293",
+    "title": "MAGIC",
+    "artist": "sumika",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-163-10",
+    "joysound": "316153",
+    "title": "MAGIC",
+    "artist": "SEKAI NO OWARI",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-830-127",
+    "joysound": "616486",
+    "title": "Magic",
+    "artist": "flumpool",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68844",
+   "title": "STAGE OF SEKAI",
+   "artist": "針原翼(はりーP)(Feat.初音ミク)",
+   "tj": "68844",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-921773",
+    "joysound": "497916",
+    "title": "STAGE OF SEKAI",
+    "artist": "はりーP feat.初音ミク",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1079726",
+    "joysound": "820296",
+    "title": "STAGE OF SEKAI《アニメカラオケ》",
+    "artist": "Leo/need",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68913",
+   "title": "Back Off(プロジェクト 'Paradox Live' OST)",
+   "artist": "cozmez",
+   "tj": "68913",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-851999",
+    "joysound": "487546",
+    "title": "Back Off",
+    "artist": "cozmez",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68919",
+   "title": "REBELLION -悪漢奴等 is still Burning-(プロジェクト 'Paradox Live' OST)",
+   "artist": "悪漢奴等",
+   "tj": "68919",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-852000",
+    "joysound": "487545",
+    "title": "REBELLION -悪漢奴等 is still Burning-",
+    "artist": "悪漢奴等",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68930",
+   "title": "Alive",
+   "artist": "Full Throttle4(Feat.HoneyWorks)",
+   "tj": "68930",
+   "ky": "75872"
+  },
+  "candidates": [
+   {
+    "id": "joysound-852126",
+    "joysound": "486495",
+    "title": "Alive",
+    "artist": "CHiCO with HoneyWorks",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-918404",
+    "joysound": "497330",
+    "title": "Alive",
+    "artist": "Full Throttle4 (Vo:斉藤壮馬・内田雄馬) feat. HoneyWorks",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-496-17",
+    "joysound": "100714",
+    "title": "Alive",
+    "artist": "doriko",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-626-16",
+    "joysound": "446608",
+    "title": "AliVe",
+    "artist": "AliA",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1060559",
+    "joysound": "637626",
+    "title": "ALIVE",
+    "artist": "AMEFURASSHI",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68988",
+   "title": "Pieces of The World(劇場版 'IDOLiSH7 LIVE 4bit Compilation Album ''BEYOND THE PERiOD''' OST)",
+   "artist": "IDOLiSH7,TRIGGER,Re:vale,ZOOL",
+   "tj": "68988",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-1187780",
+    "joysound": "718992",
+    "title": "Pieces of The World《LIVEカラオケ》",
+    "artist": "IDOLiSH7 & TRIGGER & Re:vale & ZOOL",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-971389",
+    "joysound": "617202",
+    "title": "Pieces of The World",
+    "artist": "IDOLiSH7 & TRIGGER & Re:vale & ZOOL",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-68992",
+   "title": "MONSTER GENERATiON('劇場版 IDOLiSH7 LIVE 4bit Compilation Album ''BEYOND THE PERiOD''' OST)",
+   "artist": "IDOLiSH7",
+   "tj": "68992",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-542827",
+    "joysound": "680334",
+    "title": "MONSTER GENERATiON",
+    "artist": "IDOLiSH7",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43466",
+   "title": "365日のラブストーリー。",
+   "artist": "Sonar Pocket",
+   "tj": null,
+   "ky": "43466"
+  },
+  "candidates": [
+   {
+    "id": "joysound-173312",
+    "joysound": "29281",
+    "title": "365日のラブストーリー。",
+    "artist": "ソナーポケット",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-983762",
+    "joysound": "620461",
+    "title": "365日のラブストーリー。 (15th Anniversary ver.)",
+    "artist": "Sonar Pocket",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-251136",
+    "joysound": "723675",
+    "title": "365日のラブストーリー。(アコースティック ver.)",
+    "artist": "ソナーポケット",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41743",
+   "title": "ALARM",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41743"
+  },
+  "candidates": [
+   {
+    "id": "tj-25772",
+    "joysound": "30774",
+    "title": "ALARM",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-412010",
+    "joysound": "668803",
+    "title": "Alarm",
+    "artist": "核P-MODEL",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-471012",
+    "joysound": "697903",
+    "title": "Alarm",
+    "artist": "GOTCHAROCKA",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-542294",
+    "joysound": "156451",
+    "title": "alarm",
+    "artist": "Silent Siren",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-701590",
+    "joysound": "431625",
+    "title": "Alarm",
+    "artist": "東京ゲゲゲイ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41788",
+   "title": "ALL FOR YOU",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41788"
+  },
+  "candidates": [
+   {
+    "id": "tj-25828",
+    "joysound": "32720",
+    "title": "ALL FOR YOU",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-165783",
+    "joysound": "107573",
+    "title": "All for you",
+    "artist": "佐藤史果",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-169380",
+    "joysound": "109533",
+    "title": "All for You",
+    "artist": "TOTALFAT",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-221718",
+    "joysound": "30645",
+    "title": "All for you",
+    "artist": "倖田來未",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-529552",
+    "joysound": "156353",
+    "title": "ALL FOR YOU",
+    "artist": "GENERATIONS from EXILE TRIBE",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43304",
+   "title": "Anything Goes! (特撮\"仮面ライダーオーズ\")",
+   "artist": "大黒摩季",
+   "tj": null,
+   "ky": "43304"
+  },
+  "candidates": [
+   {
+    "id": "tj-27907",
+    "joysound": "93530",
+    "title": "Anything Goes!(仮面ライダー オーズ OP)",
+    "artist": "大黒摩季",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-75858",
+   "title": "Back Off (\"Paradox Live\"OST)",
+   "artist": "cozmez",
+   "tj": null,
+   "ky": "75858"
+  },
+  "candidates": [
+   {
+    "id": "joysound-851999",
+    "joysound": "487546",
+    "title": "Back Off",
+    "artist": "cozmez",
+    "match": "stripped-title"
+   }
+  ]
+ }
+]
