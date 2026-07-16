@@ -197,6 +197,54 @@ describe('KyKysingCrawler — truncation recovery (curated map, no fetch)', () =
     expect(recs.map((r) => r.id)).toEqual(['ky-44655']);
     expect(consulted).toBe(false); // non-truncated rows never hit the map
   });
+
+  it('still DROPS a recovered row via the classifier guard — recovery cannot bypass the drop-list', async () => {
+    // Integration guard (review M1): a truncated row whose recovery-map entry is
+    // a drop-listed foreign act (BTS) must NOT slip in via the recovery path —
+    // the classifier's drop-list gate runs on the RECOVERED title/artist just
+    // like a normal index row. Proven at the crawler level, incl. the decision
+    // log's step/reason (so a future refactor that recovered-then-admitted
+    // without re-classifying would fail here).
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { http } = fakeHttp({
+      pages: {
+        'あ:1': [
+          // Truncated index row (title + artist cut) — will hit the recovery map.
+          { ky: '600', title: 'Film Out (期間限定..', artist: 'BTS (防弾少年..' },
+        ],
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'ky-decisions-'));
+    const outPath = join(dir, 'ky-filter.jsonl');
+    const crawler = new KyKysingCrawler(http as HttpClient, {
+      indexValues: ['あ'],
+      // The map "recovers" the row to a clean, non-truncated BTS entry.
+      titleRecovery: fakeRecovery({
+        '600': { title: 'Film out', artist: 'BTS', source: 'test' },
+      }),
+    });
+    const recs = [];
+    for await (const r of crawler.crawl({ kyDecisionsOutPath: outPath })) recs.push(r);
+
+    // Recovered but still dropped — never enters the corpus.
+    expect(recs).toHaveLength(0);
+    const lines = (await readFile(outPath, 'utf8'))
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    // The decision logs the RECOVERED strings and the drop-list gate's verdict —
+    // NOT an admit-title-recovered — proving the guard ran post-recovery.
+    expect(lines).toEqual([
+      {
+        ky: '600',
+        title: 'Film out',
+        artist: 'BTS',
+        decision: 'drop',
+        step: 'drop-list',
+        reason: 'drop-korean-artist',
+      },
+    ]);
+  });
 });
 
 describe('KyKysingCrawler — failure semantics', () => {
