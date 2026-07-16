@@ -43,17 +43,18 @@ describe('buildSteps', () => {
     'title-ko-manual-fixes',
     'prune-artist-nationality-cache',
     'validate-songs-json',
+    'blog-ky-parity',
   ];
 
-  it('produces the 11 crawl.yml steps in the load-bearing order', () => {
+  it('produces the 12 crawl.yml steps in the load-bearing order', () => {
     expect(buildSteps().map((s) => s.name)).toEqual(EXPECTED_ORDER);
   });
 
-  it('marks ONLY the Stage 2 replay as continueOnError', () => {
+  it('marks the Stage 2 replay and the report-only blog↔KY parity as continueOnError', () => {
     const flagged = buildSteps()
       .filter((s) => s.continueOnError)
       .map((s) => s.name);
-    expect(flagged).toEqual(['title-ko-stage2-replay']);
+    expect(flagged).toEqual(['title-ko-stage2-replay', 'blog-ky-parity']);
   });
 
   it('threads the corpus path into every parameterized step', () => {

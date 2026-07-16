@@ -271,11 +271,13 @@ export const SIMPLIFIED_ONLY_HAN: ReadonlySet<string> = new Set(
 /**
  * Whether `value` contains any curated simplified-Chinese-only Han character
  * (see {@link SIMPLIFIED_ONLY_HAN}). Precision-first leak signal (calibrated
- * 0 hits over the 313k v22 corpus) with two sanctioned consumers: the
- * report-only simplified-Chinese audit, and — owner-approved 2026-07-13 — the
- * TJ `jpn-admit-artist` classify-time veto (fall-through `pass`, mirroring the
- * Korean-script seam guard). It must NOT gate any other admit/drop path (in
- * particular the JOYSOUND classifier) without a fresh owner decision.
+ * 0 hits over the 313k v22 corpus) with three sanctioned consumers: the
+ * report-only simplified-Chinese audit; the TJ `jpn-admit-artist` classify-time
+ * veto (owner-approved 2026-07-13, fall-through `pass`, mirroring the
+ * Korean-script seam guard); and the R5 KY (`ky-kysing`) classifier's
+ * script-guard drop (owner-approved 2026-07-16 KY adapter spec). It must NOT
+ * gate any other admit/drop path (in particular the JOYSOUND classifier)
+ * without a fresh owner decision.
  */
 export function hasSimplifiedOnlyHan(value: string): boolean {
   for (const character of value) {

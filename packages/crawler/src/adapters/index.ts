@@ -2,6 +2,7 @@ import type { SongRecord } from '@karaoke/schema';
 import { HttpClient } from '../http.js';
 import { JoysoundOfficialCrawler } from './joysound-official/crawler.js';
 import { BlogCrawler } from './jpop-playlist-blog/crawler.js';
+import { KyKysingCrawler } from './ky-kysing/crawler.js';
 import { TJDirectCrawler } from './tj-media-direct/crawler.js';
 
 /**
@@ -27,6 +28,15 @@ export interface CrawlOptions {
    * written and behavior is unchanged.
    */
   blogDropsOutPath?: string;
+  /**
+   * Optional path for the KY per-row filter decision log (JSONL). Only the
+   * `ky-kysing` adapter honors it — it writes one admit/drop attribution object
+   * per classified row there. MUST be a distinct path from `decisionsOutPath`
+   * (the TJ log): both use overwrite semantics, so sharing a path would make
+   * the two adapters clobber each other. Other adapters ignore it. `undefined`
+   * (the default) means no file is written and behavior is unchanged.
+   */
+  kyDecisionsOutPath?: string;
 }
 
 /**
@@ -56,16 +66,21 @@ export interface Crawler {
  * `joysound-official` is deliberately NOT here: it is opt-in only (see
  * `buildOptInAdapters`) until the joysound data-merge scope is decided, so the
  * production corpus is not silently augmented by the weekly crawl.
+ *
+ * `ky-kysing` (R5) IS a default adapter — it rides the weekly crawl schedule
+ * like blog + tj. Its effect on the served corpus only takes hold once the
+ * crawl workflow is re-enabled (owner 1.0 declaration); the workflow is
+ * disabled today, so registering it here has no live impact.
  */
 function buildAdapters(http: HttpClient): Crawler[] {
-  return [new BlogCrawler(http), new TJDirectCrawler(http)];
+  return [new BlogCrawler(http), new TJDirectCrawler(http), new KyKysingCrawler(http)];
 }
 
 /**
  * Opt-in adapters: reachable ONLY via an explicit `--source <slug>` and never
  * part of the default no-`--source` run set. `joysound-official` lives here so
  * `--source joysound-official` keeps working while the default weekly crawl
- * stays blog + tj.
+ * stays blog + tj + ky.
  */
 function buildOptInAdapters(http: HttpClient): Crawler[] {
   return [new JoysoundOfficialCrawler(http)];
@@ -98,7 +113,7 @@ export const sharedHttpClients: readonly HttpClient[] = [defaultHttpClient, optI
 /**
  * Resolve the adapter run set for a `--source` selection.
  *
- *  - Empty `sources` → the default set (blog + tj), in registration order.
+ *  - Empty `sources` → the default set (blog + tj + ky), in registration order.
  *  - Non-empty `sources` → look each slug up across BOTH the default set and
  *    the opt-in set (so `--source joysound-official` resolves even though it is
  *    not a default adapter). The result preserves the order in which adapters

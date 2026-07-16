@@ -1,5 +1,6 @@
 import type { RawSongRecord } from '@karaoke/schema';
 import { load } from 'cheerio';
+import { KY_NUMBER_MAX_DIGITS, normalizeKyNumber } from '../ky-kysing/normalizeKyNumber.js';
 
 /** Minimal structural shape we need from a cheerio child node. */
 type CheerioNode = { type: string; name?: string };
@@ -20,8 +21,12 @@ const HEADER_LABELS = new Set(['TJ', 'KY', 'JOYSOUND']);
  * one. Real TJ/KY codes are 4–6 digits; JOYSOUND codes are 5–7 digits. Any
  * value above the cap is treated as malformed and returned as null with a
  * `console.warn` so future regressions surface visibly.
+ *
+ * `ky` is single-sourced from the shared `KY_NUMBER_MAX_DIGITS` so the blog's
+ * KY cap and the R5 KY adapter cannot drift (both funnel valid KY values
+ * through `normalizeKyNumber`; see the `field === 'ky'` branch below).
  */
-const NUMBER_LENGTH_CAPS = { tj: 6, ky: 6, joysound: 7 } as const;
+const NUMBER_LENGTH_CAPS = { tj: 6, ky: KY_NUMBER_MAX_DIGITS, joysound: 7 } as const;
 
 /**
  * Cell text classifier for the three karaoke-number columns.
@@ -100,6 +105,13 @@ function extractNumberCell(
     );
     return null;
   }
+
+  // Route the KY value through the shared canonicalizer so the blog and the R5
+  // KY adapter emit byte-identical `ky` strings (the merger's Tier A union is
+  // exact-match). `value` is already trimmed bare digits within the cap here, so
+  // this is a no-op transform — the point is a single source of truth for the
+  // canonical KY form, not a new drop path.
+  if (field === 'ky') return normalizeKyNumber(value);
 
   return value;
 }

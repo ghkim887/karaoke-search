@@ -64,6 +64,13 @@
 // [!NOTE] instead of throwing — this section must NEVER red the crawl. Omitting
 // the arg preserves the body byte-for-byte.
 //
+// KY FILTER ATTRIBUTION (added 2026-07-16, report-only): the R5 KY adapter's
+// --ky-decisions-out writes ky-filter.jsonl into the SAME FILTER_DECISIONS_DIR.
+// When that DIR is passed (the same fourth argument as the TJ section), a
+// parallel "### KY filter attribution" section is rendered from ky-filter.jsonl
+// (kept/dropped totals + admit/drop reason→count table). Same fail-soft
+// contract as the TJ section — no new CLI argument.
+//
 // Usage: node scripts/compose-crawl-pr-body.mjs [conflictsPath] [parityDeltaPath] [chineseSuspectsPath] [filterDecisionsDir]
 //   conflictsPath        defaults to /tmp/merge-conflicts.json (the crawl.yml path).
 //   parityDeltaPath      optional; when given, its contents are appended.
@@ -83,9 +90,13 @@ const CHINESE_AUDIT_HEADING = '### Simplified-Chinese audit';
 const CHINESE_AUDIT_MAX_ROWS = 20;
 
 const TJ_FILTER_HEADING = '### TJ filter attribution';
+const KY_FILTER_HEADING = '### KY filter attribution';
 // The crawler decision log; the two drop-artist-leaks decision logs are keyed
 // by their pipeline step name (see scripts/run-post-crawl-pipeline.mjs).
 const TJ_FILTER_DECISIONS_FILE = 'tj-filter.jsonl';
+// The KY adapter's decision log, written alongside tj-filter.jsonl into the
+// same FILTER_DECISIONS_DIR via the crawler's --ky-decisions-out.
+const KY_FILTER_DECISIONS_FILE = 'ky-filter.jsonl';
 const DROP_LEAKS_FILES = [
   { step: 'drop-kpop-leaks', file: 'drop-kpop-leaks.jsonl' },
   { step: 'drop-cpop-leaks', file: 'drop-cpop-leaks.jsonl' },
@@ -302,6 +313,65 @@ function composeTjFilterAttributionSection(decisionsDir) {
   return section;
 }
 
+/** Report-only section header + a GitHub `[!NOTE]` callout (never throws). */
+function kyFilterNote(message) {
+  return `\n${KY_FILTER_HEADING}\n\n> [!NOTE]\n> ${message}\n`;
+}
+
+/**
+ * Render the report-only KY filter attribution section from the decision-log
+ * DIR (reads `ky-filter.jsonl`, written by the ky-kysing adapter's
+ * --ky-decisions-out). SAME fail-soft contract as the TJ section: any
+ * missing/unreadable file or malformed JSONL line renders a visible [!NOTE]
+ * instead of throwing. The KY log has no companion drop-artist-leaks files, so
+ * this is a single-file kept/dropped totals line + reason→count table (admits
+ * by reason, drops by reason). Omitting the DIR arg renders nothing.
+ *
+ * Unlike the TJ section's anchor (tj-filter.jsonl, always written by the
+ * crawler), ky-filter.jsonl is written ONLY when --ky-decisions-out is passed
+ * (a newer opt-in) and the ky-kysing adapter ran — so its ABSENCE is not
+ * necessarily an error (a --source run that excludes ky, or a crawl predating
+ * the flag). An absent file therefore renders NOTHING (byte-parity for callers
+ * that only produce a TJ log); a present-but-malformed file still renders a
+ * visible [!NOTE] so a broken log is surfaced, never thrown.
+ */
+function composeKyFilterAttributionSection(decisionsDir) {
+  if (decisionsDir === undefined) return '';
+
+  const kyPath = join(decisionsDir, KY_FILTER_DECISIONS_FILE);
+  if (!existsSync(kyPath)) return '';
+  let rows;
+  try {
+    rows = readDecisionRows(kyPath);
+  } catch (err) {
+    return kyFilterNote(
+      `Could not parse the KY filter decision log (\`${kyPath}\`): ${err.message}. Report-only: this does not block the crawl.`,
+    );
+  }
+
+  const admits = rows.filter((r) => r.decision === 'admit');
+  const drops = rows.filter((r) => r.decision === 'drop');
+  const entries = [];
+  for (const [reason, count] of countByReason(admits)) entries.push(['admit', reason, count]);
+  for (const [reason, count] of countByReason(drops)) entries.push(['drop', reason, count]);
+
+  let section = `\n${KY_FILTER_HEADING}\n\n`;
+  section += `Kept ${admits.length} / dropped ${drops.length} (from \`${KY_FILTER_DECISIONS_FILE}\`).\n`;
+  if (entries.length === 0) {
+    section += '\nNo filter decisions recorded.\n';
+  } else {
+    const shown = entries.slice(0, TJ_FILTER_MAX_ROWS);
+    if (entries.length > shown.length) {
+      section += `\n${entries.length} reason rows (showing first ${shown.length}):\n`;
+    }
+    section += '\n| decision | reason | count |\n|---|---|---|\n';
+    for (const [decision, reason, count] of shown) {
+      section += `| ${escapeCell(decision)} | ${escapeCell(reason)} | ${count} |\n`;
+    }
+  }
+  return section;
+}
+
 export function composePrBody(
   conflictsPath = DEFAULT_CONFLICTS_PATH,
   parityDeltaPath = undefined,
@@ -313,6 +383,7 @@ export function composePrBody(
   body += composeParitySection(parityDeltaPath);
   body += composeChineseAuditSection(chineseSuspectsPath);
   body += composeTjFilterAttributionSection(filterDecisionsDir);
+  body += composeKyFilterAttributionSection(filterDecisionsDir);
   return body;
 }
 

@@ -30,6 +30,8 @@ interface HostRule {
  *   - www.joysound.com             → listing `/web/karaoke/contents/new`,
  *                                    full songlist `/web/search/songlist/{kana}`,
  *                                    and detail `/apis/v1/ise/fetchContentsDetail` only
+ *   - kysing.kr                    → KY karaoke-book index `/karaoke-book` and
+ *                                    per-song detail `/search` only (R5 adapter)
  *
  * Throw on any other host or (for path-restricted hosts) any other path.
  * Do NOT add catch-all entries — every entry must trace to a real call site.
@@ -45,6 +47,12 @@ const ALLOWED_HOSTS: ReadonlyMap<string, HostRule> = new Map<string, HostRule>([
         '/web/search/songlist',
         '/apis/v1/ise/fetchContentsDetail',
       ],
+    },
+  ],
+  [
+    'kysing.kr',
+    {
+      pathPrefixes: ['/karaoke-book', '/search'],
     },
   ],
 ]);
@@ -222,10 +230,19 @@ export interface HostConfig {
  *   adapter only issues one POST per crawl run, so the cadence almost never
  *   actually applies, but the entry documents the per-host posture.
  *
+ * - `kysing.kr`: the R5 KY adapter walks the server-rendered karaoke-book index
+ *   and fetches per-song detail pages. Same conservative 500ms+100ms cadence as
+ *   TJ (a polite choice for a ~hundreds-of-requests-scale walk); robots / retry
+ *   / conditional-cache are inherited defaults.
+ *
  * Design notes: docs/PROJECT-KNOWLEDGE.md (HTTP client).
  */
 const HOST_CONFIG: Record<string, HostConfig> = {
   'www.tjmedia.com': {
+    minIntervalMs: 500,
+    jitterMs: 100,
+  },
+  'kysing.kr': {
     minIntervalMs: 500,
     jitterMs: 100,
   },

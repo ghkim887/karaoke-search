@@ -69,7 +69,7 @@ jobs:
         # into the shell's parser.
         env:
           LIMIT: ${{ inputs.limit || 0 }}
-        run: pnpm --filter @karaoke/crawler start --limit "$LIMIT" --out apps/web/public/data/songs.json.tmp --conflicts-out /tmp/merge-conflicts.json --decisions-out "${RUNNER_TEMP}/filter-decisions/tj-filter.jsonl"
+        run: pnpm --filter @karaoke/crawler start --limit "$LIMIT" --out apps/web/public/data/songs.json.tmp --conflicts-out /tmp/merge-conflicts.json --decisions-out "${RUNNER_TEMP}/filter-decisions/tj-filter.jsonl" --ky-decisions-out "${RUNNER_TEMP}/filter-decisions/ky-filter.jsonl"
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -77,11 +77,12 @@ jobs:
           python-version: '3.11'
 
       - name: Run post-crawl pipeline
-        # The 11-step order-load-bearing post-processing chain (atomic rename
-        # → splitter parity → tjpdf catalog ingest → Stage 1 title_ko strip →
+        # The order-load-bearing post-processing chain (atomic rename →
+        # splitter parity → tjpdf catalog ingest → Stage 1 title_ko strip →
         # merger replay → KPOP drop → Cpop drop → Stage 2 LLM cache replay
         # (continue-on-error inside the runner) → manual title_ko fixes →
-        # cache prune → schema validation) lives in the runner's step table —
+        # cache prune → schema validation → blog↔KY parity report
+        # (continue-on-error, report-only)) lives in the runner's step table —
         # the single source of truth for the order. Per-step status is in the
         # runner's summary output.
         #
@@ -203,7 +204,10 @@ jobs:
         # keeps the step green so the audit's stdout summary stays easy to find.)
         run: node scripts/audit-simplified-chinese.mjs apps/web/public/data/songs.json --out "${RUNNER_TEMP}/chinese-audit" || true
 
-      - name: Compose PR body with merge-conflict summary, parity delta, Chinese-leak audit, and TJ filter attribution
+      - name: Compose PR body with merge-conflict summary, parity delta, Chinese-leak audit, and TJ + KY filter attribution
+        # The fourth arg (filter-decisions dir) now also holds ky-filter.jsonl
+        # (written by the crawler's --ky-decisions-out above), which the composer
+        # renders as a parallel "### KY filter attribution" section — no extra arg.
         run: node scripts/compose-crawl-pr-body.mjs /tmp/merge-conflicts.json "${RUNNER_TEMP}/parity-delta.md" "${RUNNER_TEMP}/chinese-audit/suspects.jsonl" "${RUNNER_TEMP}/filter-decisions" > "${RUNNER_TEMP}/pr_body.md"
 
       - name: Close prior crawl PRs

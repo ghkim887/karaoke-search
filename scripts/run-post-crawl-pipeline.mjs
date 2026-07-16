@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // Weekly post-crawl pipeline runner — extracted from `.github/workflows/crawl.yml`.
 //
-// Before this script existed, the 11-step order-load-bearing post-processing
-// chain (atomic rename → splitter parity → tjpdf catalog ingest → Stage 1
-// title_ko strip → merger replay → KPOP drop → Cpop drop → Stage 2 LLM cache
-// replay → manual title_ko fixes → cache prune → schema validation) lived ONLY
-// as YAML step order in crawl.yml. It could not be run locally as one unit, and
+// Before this script existed, the order-load-bearing post-processing chain
+// (atomic rename → splitter parity → tjpdf catalog ingest → Stage 1 title_ko
+// strip → merger replay → KPOP drop → Cpop drop → Stage 2 LLM cache replay →
+// manual title_ko fixes → cache prune → schema validation → blog↔KY parity
+// report) lived ONLY as YAML step order in crawl.yml. It could not be run
+// locally as one unit, and
 // prose copies of the order kept drifting. This file is now the single source
 // of truth for the chain; crawl.yml invokes it as one step.
 //
@@ -143,6 +144,17 @@ export function buildSteps(corpus = DEFAULT_CORPUS, filterDecisionsDir = undefin
       // Final gate: schema-validate every record.
       name: 'validate-songs-json',
       command: [node, 'scripts/validate-songs-json.mjs', corpus],
+    },
+    {
+      // Report-only (R5 KY adapter, D7): blog↔KY parity over the FINAL corpus —
+      // how many blog-claimed ky numbers the live KY crawl covers (residual
+      // blog-* ky claims = delisted / typo / en-kr-tab-gap candidates). NEVER
+      // gates: continueOnError so a parity-script hiccup cannot red the crawl,
+      // and the script itself is read-only (no corpus mutation). First-soak
+      // report-only; a ≥95% parity threshold is enforced later.
+      name: 'blog-ky-parity',
+      continueOnError: true,
+      command: [node, 'scripts/audit-blog-ky-parity.mjs', corpus],
     },
   ];
 }

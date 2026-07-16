@@ -11,16 +11,17 @@ const HELP = `karaoke-crawl — run registered source adapters and emit songs.js
 Usage:
   karaoke-crawl [--limit <n>] [--source <slug>]... [--out <path>]
                 [--conflicts-out <path>] [--decisions-out <path>]
-                [--blog-drops-out <path>] [--reverse-lookup-out <path>]
+                [--blog-drops-out <path>] [--ky-decisions-out <path>]
+                [--reverse-lookup-out <path>]
 
 Options:
   --limit <n>      Per-source page cap (e.g. artist pages for the blog
                    adapter). 0 or omitted means no cap.
   --source <slug>  Restrict to adapters whose name matches <slug>. Repeatable;
                    may also be a comma-separated list. If omitted, the default
-                   adapters (jpop-playlist-blog, tj-media-direct) run in
-                   registration order. Opt-in adapters (joysound-official) run
-                   ONLY when named explicitly. An unknown slug is an error.
+                   adapters (jpop-playlist-blog, tj-media-direct, ky-kysing) run
+                   in registration order. Opt-in adapters (joysound-official)
+                   run ONLY when named explicitly. An unknown slug is an error.
   --out <path>     Output JSON path. Resolved relative to the repo root
                    (the directory containing pnpm-workspace.yaml). Defaults
                    to apps/web/public/data/songs.json.
@@ -44,6 +45,13 @@ Options:
                    adapter writes it; overwrite semantics. When omitted, no file
                    is written and behavior is unchanged. Resolved relative to
                    the repo root.
+  --ky-decisions-out <path>
+                   Optional path for the KY per-row filter decision log (JSONL,
+                   one admit/drop attribution object per classified row). Only
+                   the ky-kysing adapter writes it; overwrite semantics. MUST be
+                   a distinct path from --decisions-out. When omitted, no file
+                   is written and behavior is unchanged. Resolved relative to
+                   the repo root.
   --reverse-lookup-out <path>
                    Optional path for the blog reverse-lookup artifact (JSON):
                    claimed-but-unmatched TJ numbers (probe seed) and JOYSOUND
@@ -60,6 +68,7 @@ interface ParsedArgs {
   conflictsOut: string | null;
   decisionsOut: string | null;
   blogDropsOut: string | null;
+  kyDecisionsOut: string | null;
   reverseLookupOut: string | null;
   help: boolean;
 }
@@ -72,6 +81,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     conflictsOut: null,
     decisionsOut: null,
     blogDropsOut: null,
+    kyDecisionsOut: null,
     reverseLookupOut: null,
     help: false,
   };
@@ -129,6 +139,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
       out.blogDropsOut = next;
       continue;
     }
+    if (arg === '--ky-decisions-out') {
+      const next = argv[++i];
+      if (next === undefined) throw new Error('--ky-decisions-out requires a value');
+      out.kyDecisionsOut = next;
+      continue;
+    }
     if (arg === '--reverse-lookup-out') {
       const next = argv[++i];
       if (next === undefined) throw new Error('--reverse-lookup-out requires a value');
@@ -177,6 +193,11 @@ async function main(): Promise<void> {
       ? parsed.blogDropsOut
       : resolve(repoRoot, parsed.blogDropsOut)
     : undefined;
+  const kyDecisionsOutPath = parsed.kyDecisionsOut
+    ? isAbsolute(parsed.kyDecisionsOut)
+      ? parsed.kyDecisionsOut
+      : resolve(repoRoot, parsed.kyDecisionsOut)
+    : undefined;
   const reverseLookupOutPath = parsed.reverseLookupOut
     ? isAbsolute(parsed.reverseLookupOut)
       ? parsed.reverseLookupOut
@@ -192,6 +213,7 @@ async function main(): Promise<void> {
     ...(conflictsOutPath ? { conflictsOutPath } : {}),
     ...(decisionsOutPath ? { decisionsOutPath } : {}),
     ...(blogDropsOutPath ? { blogDropsOutPath } : {}),
+    ...(kyDecisionsOutPath ? { kyDecisionsOutPath } : {}),
     ...(reverseLookupOutPath ? { reverseLookupOutPath } : {}),
   };
   try {
