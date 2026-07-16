@@ -4,11 +4,9 @@ import { normalize } from './normalize.js';
 import {
   type NonJoysoundVendor,
   REVIEWED_TIER_E_JOYS_BY_TJ,
-  REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS,
   REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER,
   VENDORS,
   type Vendor,
-  reviewedTierFPairKey,
 } from './reviewedMergePairs.js';
 
 /**
@@ -313,31 +311,6 @@ export function headlineConflicts(conflicts: MergeConflict[]): MergeConflict[] {
 
 // --- Union-Find ----------------------------------------------------------
 
-function isReviewedTierFJoySideShape(
-  vendor: NonJoysoundVendor,
-  number: string,
-  joysound: string,
-  joy: SongRecord,
-): boolean {
-  if (joy.karaoke_numbers.joysound !== joysound || joy.karaoke_numbers[vendor] !== null) {
-    return false;
-  }
-  if (nonNullVendorNumberCount(joy) === 1) return true;
-
-  const allowedExtra = REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS.get(
-    reviewedTierFPairKey(vendor, number, joysound),
-  );
-  if (allowedExtra === undefined) return false;
-
-  for (const extraVendor of ['tj', 'ky'] as const satisfies readonly NonJoysoundVendor[]) {
-    if (extraVendor === vendor) continue;
-    const actual = joy.karaoke_numbers[extraVendor];
-    const expected = allowedExtra[extraVendor] ?? null;
-    if (actual !== expected) return false;
-  }
-  return true;
-}
-
 type VendorIndexes = Record<Vendor, Map<string, number[]>>;
 
 class UnionFind {
@@ -477,23 +450,6 @@ function shouldUnionTierDGroup(records: SongRecord[], idxs: number[]): boolean {
   return hasMultipleSourceSlugs(records, idxs) && hasContextStrippedTitle(records, idxs);
 }
 
-function singletonVendorIndex(
-  records: SongRecord[],
-  uf: UnionFind,
-  sizeByRoot: Map<number, number>,
-  vendor: Vendor,
-): Map<string, number> {
-  const index = new Map<string, number>();
-  for (let i = 0; i < records.length; i++) {
-    const root = uf.find(i);
-    if (sizeByRoot.get(root) !== 1) continue;
-    // biome-ignore lint/style/noNonNullAssertion: i in bounds
-    const value = records[i]!.karaoke_numbers[vendor];
-    if (value !== null) index.set(value, i);
-  }
-  return index;
-}
-
 function tierEClusterKey(tj: string, joysound: string): string {
   return `tj:${tj}|joysound:${joysound}`;
 }
@@ -514,77 +470,109 @@ function nonNullVendorNumberCount(record: SongRecord): number {
   return count;
 }
 
+/**
+ * Full (non-singleton-restricted) index: maps a vendor number to a
+ * representative record index carrying it. Post-Tier-A every vendor number lives
+ * in exactly one cluster (Tier A already unioned same-number rows), so ANY
+ * member is a valid representative — union-find unions by ROOT, so the choice of
+ * representative does not affect the resulting cluster or the output.
+ */
+function firstVendorIndex(records: SongRecord[], vendor: Vendor): Map<string, number> {
+  const index = new Map<string, number>();
+  for (let i = 0; i < records.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: i in bounds
+    const value = records[i]!.karaoke_numbers[vendor];
+    if (value !== null && !index.has(value)) index.set(value, i);
+  }
+  return index;
+}
+
+/**
+ * Shared planner for the REVIEWED tiers (E and F). A reviewed pair is a
+ * human-confirmed "(vendor, number) is the same song as this joysound" fact, so
+ * unlike the automatic tiers it may attach the target's cluster to the
+ * joysound's cluster REGARDLESS of either side's current cluster state. The
+ * singleton requirement and the Tier F joy-side shape check that the automatic
+ * tiers rely on are intentionally NOT applied here: with tiers B/C/D running
+ * first, requiring both sides to still be joy-only singletons makes a
+ * hand-reviewed merge silently inert whenever an earlier tier already touched
+ * either side (measured: 131/697 reviewed pairs inert at v24). The ONLY gate is
+ * the vendor-number conflict guard applied over the FULL union of both clusters:
+ * if merging would put two different values in one vendor cell (tj/ky/joysound),
+ * the pair is skipped and the conflict is logged for review. This is safe where
+ * the REJECTED automatic "attach tier" (audit-A) was not — the pair is reviewed,
+ * so there is no false-positive title/artist risk; only a hard vendor-number
+ * collision can block it.
+ */
+function collectReviewedClusterAttachGroups(
+  records: SongRecord[],
+  uf: UnionFind,
+  conflicts: MergeConflict[],
+  pairs: Iterable<{ vendor: Vendor; number: string; joysound: string; clusterKey: string }>,
+): Map<string, number[]> {
+  const groups = new Map<string, number[]>();
+  const index: Record<Vendor, Map<string, number>> = {
+    tj: firstVendorIndex(records, 'tj'),
+    ky: firstVendorIndex(records, 'ky'),
+    joysound: firstVendorIndex(records, 'joysound'),
+  };
+  const clusters = collectClusters(uf, records.length);
+  for (const { vendor, number, joysound, clusterKey } of pairs) {
+    const targetIdx = index[vendor].get(number);
+    if (targetIdx === undefined) continue;
+    const joyIdx = index.joysound.get(joysound);
+    if (joyIdx === undefined) continue;
+    const targetRoot = uf.find(targetIdx);
+    const joyRoot = uf.find(joyIdx);
+    if (targetRoot === joyRoot) continue; // already one cluster — nothing to do
+    const members = [
+      ...(clusters.get(targetRoot) ?? [targetIdx]),
+      ...(clusters.get(joyRoot) ?? [joyIdx]),
+      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
+    ].map((i) => records[i]!);
+    if (collectVendorNumberConflicts(members).length > 0) {
+      // Reviewed pair blocked by a vendor-number collision between the two
+      // clusters: keep them split and surface the conflict for review.
+      recordBlockedVendorConflicts(conflicts, clusterKey, members);
+      continue;
+    }
+    groups.set(clusterKey, [targetIdx, joyIdx]);
+  }
+  return groups;
+}
+
 function collectTierEReviewedStrongGroups(
   records: SongRecord[],
   uf: UnionFind,
-  sizeByRoot: Map<number, number>,
+  conflicts: MergeConflict[],
 ): Map<string, number[]> {
-  const groups = new Map<string, number[]>();
-  const tjIndex = singletonVendorIndex(records, uf, sizeByRoot, 'tj');
-  const joysoundIndex = singletonVendorIndex(records, uf, sizeByRoot, 'joysound');
-
+  const pairs: { vendor: Vendor; number: string; joysound: string; clusterKey: string }[] = [];
   for (const [tj, joysoundValues] of REVIEWED_TIER_E_JOYS_BY_TJ) {
-    const tjIdx = tjIndex.get(tj);
-    if (tjIdx === undefined) continue;
     for (const joysound of joysoundValues) {
-      const joyIdx = joysoundIndex.get(joysound);
-      if (joyIdx === undefined || joyIdx === tjIdx) continue;
-      // Tier E was reviewed specifically as raw TJ official ↔ raw JOYSOUND
-      // official evidence. A blog/manual singleton carrying one of the same
-      // numbers should not widen this 65-pair data change implicitly.
-      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
-      if (sourceSlug(records[tjIdx]!) !== 'tj' || sourceSlug(records[joyIdx]!) !== 'joysound')
-        continue;
-      const idxs = [tjIdx, joyIdx];
-      if (!hasMultipleSourceSlugs(records, idxs)) continue;
-      groups.set(tierEClusterKey(tj, joysound), idxs);
+      pairs.push({ vendor: 'tj', number: tj, joysound, clusterKey: tierEClusterKey(tj, joysound) });
     }
   }
-
-  return groups;
+  return collectReviewedClusterAttachGroups(records, uf, conflicts, pairs);
 }
 
 function collectTierFPostcrawlReviewedGroups(
   records: SongRecord[],
   uf: UnionFind,
-  sizeByRoot: Map<number, number>,
+  conflicts: MergeConflict[],
 ): Map<string, number[]> {
-  const groups = new Map<string, number[]>();
-  const targetIndexes: Record<NonJoysoundVendor, Map<string, number>> = {
-    tj: singletonVendorIndex(records, uf, sizeByRoot, 'tj'),
-    ky: singletonVendorIndex(records, uf, sizeByRoot, 'ky'),
-  };
-  const joysoundIndex = singletonVendorIndex(records, uf, sizeByRoot, 'joysound');
-
+  const pairs: { vendor: Vendor; number: string; joysound: string; clusterKey: string }[] = [];
   for (const [vendorNumberKey, joysoundValues] of REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER) {
     const [vendor, number] = vendorNumberKey.split(':') as [NonJoysoundVendor, string];
-    const targetIdx = targetIndexes[vendor].get(number);
-    if (targetIdx === undefined) continue;
     for (const joysound of joysoundValues) {
-      const joyIdx = joysoundIndex.get(joysound);
-      if (joyIdx === undefined || joyIdx === targetIdx) continue;
-      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
-      const target = records[targetIdx]!;
-      // biome-ignore lint/style/noNonNullAssertion: indexes came from records
-      const joy = records[joyIdx]!;
-
-      // Preserve the audit scope: target side must still be a single TJ/KY-only
-      // row, and the JOYSOUND side must not already carry that same provider.
-      if (nonNullVendorNumberCount(target) !== 1) continue;
-      if (target.karaoke_numbers[vendor] !== number || target.karaoke_numbers.joysound !== null)
-        continue;
-      // The reviewed surface is a split pair, not an implicit triple merge:
-      // the JOYSOUND-side row must stay JOY-only unless this exact pair also
-      // lists an explicit, already-reviewed extra provider number.
-      if (!isReviewedTierFJoySideShape(vendor, number, joysound, joy)) continue;
-
-      const cluster = [target, joy];
-      if (collectVendorNumberConflicts(cluster).length > 0) continue;
-      groups.set(tierFClusterKey(vendor, number, joysound), [targetIdx, joyIdx]);
+      pairs.push({
+        vendor,
+        number,
+        joysound,
+        clusterKey: tierFClusterKey(vendor, number, joysound),
+      });
     }
   }
-
-  return groups;
+  return collectReviewedClusterAttachGroups(records, uf, conflicts, pairs);
 }
 
 // --- Tier G: conservative automatic residual TJ/KY↔JOYSOUND rules --------
@@ -926,7 +914,7 @@ function collectVendorNumberConflicts(cluster: SongRecord[]): VendorNumberConfli
   return out;
 }
 
-function recordTierDBlockedConflicts(
+function recordBlockedVendorConflicts(
   conflicts: MergeConflict[],
   clusterKey: string,
   cluster: SongRecord[],
@@ -1484,7 +1472,7 @@ function planTierD(ctx: TierContext): PlannedUnion[] {
     const cluster = idxs.map((i) => records[i]!);
     if (collectVendorNumberConflicts(cluster).length > 0) {
       // Blocked group: stays split, emit vendor-number conflicts for review.
-      recordTierDBlockedConflicts(conflicts, clusterKey, cluster);
+      recordBlockedVendorConflicts(conflicts, clusterKey, cluster);
       continue;
     }
     plans.push({ idxs, clusterKey: null });
@@ -1518,7 +1506,7 @@ const TIER_PIPELINE: readonly TierDescriptor[] = [
   {
     name: 'E',
     plan: (ctx) =>
-      plannedFromGroups(collectTierEReviewedStrongGroups(ctx.records, ctx.uf, ctx.sizeByRoot)),
+      plannedFromGroups(collectTierEReviewedStrongGroups(ctx.records, ctx.uf, ctx.conflicts)),
     softKey: (_cluster, clusterKey) => clusterKey,
     softKeyFallThroughOnNull: true,
     marker: (conflicts, cluster, id, softKey) =>
@@ -1527,7 +1515,7 @@ const TIER_PIPELINE: readonly TierDescriptor[] = [
   {
     name: 'F',
     plan: (ctx) =>
-      plannedFromGroups(collectTierFPostcrawlReviewedGroups(ctx.records, ctx.uf, ctx.sizeByRoot)),
+      plannedFromGroups(collectTierFPostcrawlReviewedGroups(ctx.records, ctx.uf, ctx.conflicts)),
     softKey: (_cluster, clusterKey) => clusterKey,
     softKeyFallThroughOnNull: true,
     marker: (conflicts, cluster, id, softKey) =>

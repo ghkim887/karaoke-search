@@ -1515,19 +1515,27 @@ describe('mergeRecords — Tier D context-suffix title merge', () => {
   });
 
   it('blocks Tier D auto-merge and emits a review conflict when same-provider numbers disagree', () => {
+    // Non-reviewed synthetic tj numbers: the original real fixture used tj-27098,
+    // which the 2026-07-16 audit-B batch promoted to a reviewed Tier F pair
+    // (tj-27098 ↔ joysound-91999). With the reviewed-tier cluster-attach
+    // relaxation that pair now also (correctly) conflicts with this blog row's
+    // tj-27011, adding a second headline conflict. To keep this a focused Tier D
+    // regression (automatic tier unchanged), the numbers are synthetic and
+    // untouched by any reviewed pair; the reviewed conflict-guard block has its
+    // own dedicated test below.
     const blog = record({
-      id: 'blog-523-tj-27011',
+      id: 'blog-523-tj-990011',
       source_url: 'https://blog.test/523',
       title_primary: 'ALWAYS',
       artist_primary: '中島美嘉',
-      karaoke_numbers: { tj: '27011', ky: '43189', joysound: '91999' },
+      karaoke_numbers: { tj: '990011', ky: '990189', joysound: '990999' },
     });
     const tj = record({
-      id: 'tj-27098',
-      source_url: 'https://tj.test/27098',
+      id: 'tj-990098',
+      source_url: 'https://tj.test/990098',
       title_primary: 'Always(サヨナライツカ OST)',
       artist_primary: '中島美嘉',
-      karaoke_numbers: { tj: '27098', ky: null, joysound: null },
+      karaoke_numbers: { tj: '990098', ky: null, joysound: null },
     });
 
     const { records, conflicts } = mergeRecords([blog, tj]);
@@ -1537,7 +1545,7 @@ describe('mergeRecords — Tier D context-suffix title merge', () => {
     const tjConflict = conflicts.find((c) => c.field === 'tj');
     expect(tjConflict).toBeDefined();
     expect(tjConflict?.cluster_key).toBe('always|中島美嘉');
-    expect(tjConflict?.values.map((v) => v.value).sort()).toEqual(['27011', '27098']);
+    expect(tjConflict?.values.map((v) => v.value).sort()).toEqual(['990011', '990098']);
     expect(headlineConflicts(conflicts)).toHaveLength(1);
   });
 });
@@ -1838,7 +1846,15 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
   });
 
-  it('does not import an unreviewed third provider number from the JOYSOUND-side row', () => {
+  it('attaches to a JOYSOUND-side row carrying a non-conflicting extra provider (cluster-attach relaxation)', () => {
+    // Pre-2026-07-17 this asserted the reviewed pair did NOT merge because the
+    // JOYSOUND-side row carried an unreviewed third provider (ky-99999). The
+    // reviewed-tier cluster-attach relaxation removed that joy-side shape gate:
+    // a reviewed pair is a human-confirmed identity, so it now attaches
+    // regardless of the JOYSOUND row's shape, gated ONLY by the vendor-number
+    // conflict guard. Here no vendor cell collides (tj 52784 / ky 99999 /
+    // joysound 634289 are each single-valued), so the rows merge and the extra
+    // ky travels with its own physical row.
     const tjOnly = record({
       id: 'blog-112-tj-52784',
       source_url: 'https://j-pop-playlist.tistory.com/112',
@@ -1856,8 +1872,145 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
 
     const { records, conflicts } = mergeRecords([tjOnly, joyWithKy]);
 
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '52784', ky: '99999', joysound: '634289' });
+    // The merge now fires, so the informational Tier F marker is emitted (one
+    // per successful split-pair merge).
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Reviewed-tier cluster-attach relaxation (2026-07-17). A reviewed pair
+// attaches its target's cluster to the joysound's cluster regardless of either
+// side's cluster state, gated ONLY by the vendor-number conflict guard. Uses
+// the real reviewed Tier F pair (ky-40138 ↔ joysound-2238, 明日の詩/杉良太郎)
+// and Tier E pair (tj-6284 ↔ joysound-1755, 別離/小林幸子). Relies on
+// normalize NOT folding 郞≠郎, which is exactly why the KY row needed review.
+// ---------------------------------------------------------------------
+describe('mergeRecords — reviewed-tier cluster-attach relaxation', () => {
+  const kyTarget = () =>
+    record({
+      id: 'ky-40138',
+      source_url: 'https://ky.test/40138',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郞',
+      karaoke_numbers: { tj: null, ky: '40138', joysound: null },
+    });
+  const joy2238 = (over = {}) =>
+    record({
+      id: 'joysound-2238',
+      source_url: 'https://www.joysound.com/web/search/song/2238',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郎',
+      karaoke_numbers: { tj: null, ky: null, joysound: '2238', ...over },
+    });
+
+  it('Case A: fires when both sides are singletons', () => {
+    const { records } = mergeRecords([kyTarget(), joy2238()]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: '40138', joysound: '2238' });
+  });
+
+  it('Case B: attaches to a joysound already merged into a cluster by an earlier tier', () => {
+    // A tj twin (同artist 杉良太郎) Tier-B-merges with the joysound first, so the
+    // joysound is a NON-singleton by the time Tier F runs.
+    const tjTwin = record({
+      id: 'tj-990500',
+      source_url: 'https://tj.test/990500',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郎',
+      karaoke_numbers: { tj: '990500', ky: null, joysound: null },
+    });
+    const { records } = mergeRecords([kyTarget(), joy2238(), tjTwin]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '990500', ky: '40138', joysound: '2238' });
+  });
+
+  it('Case C: attaches when the joysound row natively carries another vendor number', () => {
+    const { records } = mergeRecords([kyTarget(), joy2238({ tj: '990501' })]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '990501', ky: '40138', joysound: '2238' });
+  });
+
+  it('target-nonsingleton: attaches when the target itself is already in a cluster', () => {
+    // A tj row with the SAME 杉良太郞 rendering Tier-B-merges with the KY target,
+    // so the target is a non-singleton; the reviewed pair still attaches it.
+    const tjSameAsTarget = record({
+      id: 'tj-990602',
+      source_url: 'https://tj.test/990602',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郞',
+      karaoke_numbers: { tj: '990602', ky: null, joysound: null },
+    });
+    const { records } = mergeRecords([kyTarget(), tjSameAsTarget, joy2238()]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '990602', ky: '40138', joysound: '2238' });
+  });
+
+  it('conflict guard: skips + logs when attaching would collide on a vendor cell', () => {
+    // The joysound row natively carries a DIFFERENT ky (990700) than the reviewed
+    // target (40138): merging would put two values in the ky cell → blocked.
+    const { records, conflicts } = mergeRecords([kyTarget(), joy2238({ ky: '990700' })]);
     expect(records).toHaveLength(2);
-    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+    const kyConflict = conflicts.find(
+      (c) => c.field === 'ky' && c.cluster_key === 'ky:40138|joysound:2238',
+    );
+    expect(kyConflict).toBeDefined();
+    expect(kyConflict?.values.map((v) => v.value).sort()).toEqual(['40138', '990700']);
+  });
+
+  it('Tier E: attaches a reviewed tj↔joysound pair to a pre-merged joysound cluster', () => {
+    // tj-6284 ↔ joysound-1755 (別離/小林幸子) is a reviewed Tier E pair. Put the
+    // joysound in a cluster first via a same-title/artist blog twin.
+    const tjTarget = record({
+      id: 'tj-6284',
+      source_url: 'https://tj.test/6284',
+      title_primary: '別 離',
+      artist_primary: '小林幸子',
+      karaoke_numbers: { tj: '6284', ky: null, joysound: null },
+    });
+    const joyTwin = record({
+      id: 'blog-9-ky-990900',
+      source_url: 'https://blog.test/9',
+      title_primary: '別離(わかれ)',
+      artist_primary: '小林幸子',
+      karaoke_numbers: { tj: null, ky: '990900', joysound: '1755' },
+    });
+    const { records } = mergeRecords([tjTarget, joyTwin]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '6284', ky: '990900', joysound: '1755' });
+  });
+
+  it('automatic-tier regression: an unreviewed KY row is NOT attached to a cluster', () => {
+    // Same shape as Case B but with a NON-reviewed KY number: the relaxation is
+    // scoped to reviewed pairs, so the automatic tiers must leave the KY row
+    // split (no general singleton→cluster attach).
+    const unreviewedKy = record({
+      id: 'ky-990800',
+      source_url: 'https://ky.test/990800',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郞',
+      karaoke_numbers: { tj: null, ky: '990800', joysound: null },
+    });
+    const joyOther = record({
+      id: 'joysound-990801',
+      source_url: 'https://www.joysound.com/web/search/song/990801',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郎',
+      karaoke_numbers: { tj: null, ky: null, joysound: '990801' },
+    });
+    const tjTwin = record({
+      id: 'tj-990802',
+      source_url: 'https://tj.test/990802',
+      title_primary: '明日の詩',
+      artist_primary: '杉良太郎',
+      karaoke_numbers: { tj: '990802', ky: null, joysound: null },
+    });
+    const { records } = mergeRecords([unreviewedKy, joyOther, tjTwin]);
+    // tjTwin + joyOther merge (Tier B, same 杉良太郎); the unreviewed 杉良太郞 KY
+    // row stays separate.
+    expect(records).toHaveLength(2);
   });
 });
 

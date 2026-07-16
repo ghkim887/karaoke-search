@@ -840,26 +840,18 @@ const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '68290', '731408'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-export const REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS = new Map<
-  string,
-  Partial<Record<NonJoysoundVendor, string>>
->([
-  // `No title` / Reol: the KY-only target attaches to a row that already has
-  // the reviewed TJ↔JOY merge (`tj-28704` + JOY 689337). This is an explicit
-  // triple, not a general permission to import arbitrary JOY-side TJ/KY cells.
-  [reviewedTierFPairKey('ky', '44158', '689337'), { tj: '28704' }],
-  // R1 batch: `再会` / LiSA — the TJ-only target (`tj-68342`) pairs to a blog
-  // row (`blog-153-179`) that already carries a reviewed KY number (`44631`)
-  // alongside the JOY number (`487541`). Explicit triple, not a general
-  // permission to import arbitrary JOY-side TJ/KY cells.
-  [reviewedTierFPairKey('tj', '68342', '487541'), { ky: '44631' }],
-]);
+// NOTE: the former `REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS` allowlist
+// (which let a reviewed Tier F pair attach to a JOYSOUND row that already
+// carried one specific extra tj/ky number — the `No title`/Reol and `再会`/LiSA
+// triples) was removed with the 2026-07-17 reviewed-tier cluster-attach
+// relaxation. The reviewed tiers now attach the pair regardless of the
+// JOYSOUND side's cluster shape, gated only by the vendor-number conflict guard
+// (which subsumes the old per-pair allowlist: those two triples merge because
+// the guard finds no conflicting cell). See merge.ts
+// `collectReviewedClusterAttachGroups`.
 
-export function reviewedTierFPairKey(
-  vendor: NonJoysoundVendor,
-  number: string,
-  joysound: string,
-): string {
+// Internal (only the forbidden-pair invariant below uses it).
+function reviewedTierFPairKey(vendor: NonJoysoundVendor, number: string, joysound: string): string {
   return `${vendor}|${number}|${joysound}`;
 }
 
