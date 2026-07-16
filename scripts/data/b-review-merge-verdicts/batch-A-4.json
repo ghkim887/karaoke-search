@@ -1,0 +1,953 @@
+[
+ {
+  "song": {
+   "id": "ky-41239",
+   "title": "Blurry Eyes(\"D.N.A2\")",
+   "artist": "L'Arc~en~Ciel",
+   "tj": null,
+   "ky": "41239"
+  },
+  "candidates": [
+   {
+    "id": "tj-6805",
+    "joysound": "12583",
+    "title": "BLURRY EYES(DNA2 OP)",
+    "artist": "L'Arc~en~Ciel",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41084",
+   "title": "CAN YOU CELEBRATE?",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41084"
+  },
+  "candidates": [
+   {
+    "id": "tj-6890",
+    "joysound": "14816",
+    "title": "Can you celebrate?",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-108892",
+    "joysound": "166409",
+    "title": "CAN YOU CELEBRATE?",
+    "artist": "徳永英明",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-187072",
+    "joysound": "915199",
+    "title": "CAN YOU CELEBRATE?(Wedding Mix)",
+    "artist": "安室奈美恵",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44002",
+   "title": "CHANGE!!!!(M@STER VERSION) (\"THE IDOLM@STER\"OP)",
+   "artist": "765PRO ALLSTARS",
+   "tj": null,
+   "ky": "44002"
+  },
+  "candidates": [
+   {
+    "id": "tj-27861",
+    "joysound": "145876",
+    "title": "CHANGE!!!!(M@STER VER)(THE IDOLM@STER 2nd OP)",
+    "artist": "765PRO ALLSTARS",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-75891",
+   "title": "Charisma Battle Anthem",
+   "artist": "小野友樹 feat.六人のカリスマ",
+   "tj": null,
+   "ky": "75891"
+  },
+  "candidates": [
+   {
+    "id": "joysound-985633",
+    "joysound": "619503",
+    "title": "Charisma Battle Anthem",
+    "artist": "伊藤ふみや feat. 六人のカリスマ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41393",
+   "title": "Chase the Chance",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41393"
+  },
+  "candidates": [
+   {
+    "id": "tj-25427",
+    "joysound": "9678",
+    "title": "Chase the Chance",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-403204",
+    "joysound": "736827",
+    "title": "Chase the Chance (CC Mix)",
+    "artist": "安室奈美恵",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44077",
+   "title": "chase (\"ジョジョの奇妙な冒険 ダイヤモンドは砕けない\")",
+   "artist": "batta",
+   "tj": null,
+   "ky": "44077"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-27960",
+    "joysound": "686491",
+    "title": "Chase",
+    "artist": "batta",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1042938",
+    "joysound": "628230",
+    "title": "CHASE",
+    "artist": "IMP.",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-15913",
+    "joysound": "15923",
+    "title": "CHASE",
+    "artist": "森高千里",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-193950",
+    "joysound": "922095",
+    "title": "CHASE (追跡)",
+    "artist": "EL-MALO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-28453",
+    "joysound": "32722",
+    "title": "Chase",
+    "artist": "倖田來未",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42392",
+   "title": "Climax Jump (特撮\"仮面ライダー電王\")",
+   "artist": "AAA DEN-O form",
+   "tj": null,
+   "ky": "42392"
+  },
+  "candidates": [
+   {
+    "id": "tj-26430",
+    "joysound": "161487",
+    "title": "Climax Jump",
+    "artist": "AAA DEN-O form",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42535",
+   "title": "Double-Action (特撮\"仮面ライダー電王\")",
+   "artist": "野上良太郎,モモタロス",
+   "tj": null,
+   "ky": "42535"
+  },
+  "candidates": [
+   {
+    "id": "joysound-101399",
+    "joysound": "56941",
+    "title": "Double-Action",
+    "artist": "野上良太郎&モモタロス(佐藤健・関俊彦)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42383",
+   "title": "EMOTION",
+   "artist": "田中理恵",
+   "tj": null,
+   "ky": "42383"
+  },
+  "candidates": [
+   {
+    "id": "joysound-10251",
+    "joysound": "10255",
+    "title": "Emotion",
+    "artist": "玉木宏",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1075858",
+    "joysound": "632956",
+    "title": "emotion",
+    "artist": "S.Yuya",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-116780",
+    "joysound": "172405",
+    "title": "EMOTION",
+    "artist": "浅岡雄也",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-127331",
+    "joysound": "90091",
+    "title": "EMOTION",
+    "artist": "DJ OZMA",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-26419",
+    "joysound": "51537",
+    "title": "Emotion(機動戦士ガンダムSEED Character Song)",
+    "artist": "田中理恵",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44215",
+   "title": "EXCITE (特撮\"仮面ライダーエグゼイド\")",
+   "artist": "三浦大知",
+   "tj": null,
+   "ky": "44215"
+  },
+  "candidates": [
+   {
+    "id": "joysound-596642",
+    "joysound": "690705",
+    "title": "EXCITE (テレビオープニングサイズ)",
+    "artist": "三浦大知",
+    "match": "stripped-title"
+   },
+   {
+    "id": "tjpdf-28785",
+    "joysound": "691428",
+    "title": "EXCITE",
+    "artist": "三浦大知",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41375",
+   "title": "flying (\"Tales of Eternia\")",
+   "artist": "GARNET CROW",
+   "tj": null,
+   "ky": "41375"
+  },
+  "candidates": [
+   {
+    "id": "tj-25184",
+    "joysound": "26356",
+    "title": "Flying(テイルズオブエターニア OP)",
+    "artist": "GARNET CROW",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-530-40",
+    "joysound": "640406",
+    "title": "Flying",
+    "artist": "ナナヲアカリ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-157038",
+    "joysound": "102470",
+    "title": "FLYING",
+    "artist": "ゴダイゴ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-209756",
+    "joysound": "937959",
+    "title": "FLYING",
+    "artist": "CHANGE UP",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-542662",
+    "joysound": "682002",
+    "title": "FLYING",
+    "artist": "谷山浩子",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-75840",
+   "title": "FRE△KOUT (\"Paradox Live\"OST)",
+   "artist": "BAE",
+   "tj": null,
+   "ky": "75840"
+  },
+  "candidates": [
+   {
+    "id": "tj-68890",
+    "joysound": "487548",
+    "title": "FRE△KOUT(プロジェクト 'Paradox Live' ソング)",
+    "artist": "BAE",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42370",
+   "title": "FUNKY TOWN",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "42370"
+  },
+  "candidates": [
+   {
+    "id": "tj-26439",
+    "joysound": "24536",
+    "title": "FUNKY TOWN",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40498",
+   "title": "GAME",
+   "artist": "浜崎あゆみ",
+   "tj": null,
+   "ky": "40498"
+  },
+  "candidates": [
+   {
+    "id": "blog-523-83",
+    "joysound": "90333",
+    "title": "GAME",
+    "artist": "中島美嘉",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-539-257",
+    "joysound": "54567",
+    "title": "GAME",
+    "artist": "中森明菜",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-576-131",
+    "joysound": "32203",
+    "title": "GAME",
+    "artist": "福山雅治",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1030913",
+    "joysound": "626383",
+    "title": "GAME",
+    "artist": "9Lana",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-10983",
+    "joysound": "10989",
+    "title": "GAME〈MY STORY Classical Version〉",
+    "artist": "浜崎あゆみ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41814",
+   "title": "GIRL TALK",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41814"
+  },
+  "candidates": [
+   {
+    "id": "tj-25886",
+    "joysound": "10064",
+    "title": "GIRL TALK",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-186147",
+    "joysound": "29690",
+    "title": "Girl Talk",
+    "artist": "JUJU",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-244097",
+    "joysound": "732058",
+    "title": "Girl Talk(MTV UNPLUGGED ver.)",
+    "artist": "JUJU",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41332",
+   "title": "I WILL",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41332"
+  },
+  "candidates": [
+   {
+    "id": "tj-25169",
+    "joysound": "22448",
+    "title": "I WILL",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-121452",
+    "joysound": "175031",
+    "title": "I WILL",
+    "artist": "FLOW",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-132654",
+    "joysound": "136104",
+    "title": "I WILL",
+    "artist": "AZU",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-143957",
+    "joysound": "138305",
+    "title": "I WILL",
+    "artist": "武川アイ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-146102",
+    "joysound": "91854",
+    "title": "I will",
+    "artist": "KinKi Kids",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41220",
+   "title": "Let's Get Together Now (JAPAN ver.)",
+   "artist": "Voices of KOREA/JAPAN",
+   "tj": null,
+   "ky": "41220"
+  },
+  "candidates": [
+   {
+    "id": "joysound-21872",
+    "joysound": "22575",
+    "title": "Let's Get Together Now〈JAPAN Version〉",
+    "artist": "Voices of KOREA/JAPAN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-21961",
+    "joysound": "22664",
+    "title": "Let's Get Together Now〈KOREA Version〉",
+    "artist": "Voices of KOREA/JAPAN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-244296",
+    "joysound": "946160",
+    "title": "Let's Get Together Now(Tokyo Calling)",
+    "artist": "CHEMISTRY",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41221",
+   "title": "Let's Get Together Now (KOREA/JAPAN ver.)",
+   "artist": "Voices of KOREA/JAPAN",
+   "tj": null,
+   "ky": "41221"
+  },
+  "candidates": [
+   {
+    "id": "joysound-21872",
+    "joysound": "22575",
+    "title": "Let's Get Together Now〈JAPAN Version〉",
+    "artist": "Voices of KOREA/JAPAN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-21961",
+    "joysound": "22664",
+    "title": "Let's Get Together Now〈KOREA Version〉",
+    "artist": "Voices of KOREA/JAPAN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-244296",
+    "joysound": "946160",
+    "title": "Let's Get Together Now(Tokyo Calling)",
+    "artist": "CHEMISTRY",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-75839",
+   "title": "Life Is Beautiful (\"Paradox Live\"OST)",
+   "artist": "The Cat's Whiskers",
+   "tj": null,
+   "ky": "75839"
+  },
+  "candidates": [
+   {
+    "id": "tj-68889",
+    "joysound": "487547",
+    "title": "Life Is Beautiful(プロジェクト 'Paradox Live' ソング)",
+    "artist": "The Cat's Whiskers",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-151-114",
+    "joysound": "691590",
+    "title": "Life is Beautiful (English version)",
+    "artist": "平井 大",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-151-26",
+    "joysound": "685722",
+    "title": "Life is Beautiful",
+    "artist": "平井 大",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-181-32",
+    "joysound": "486465",
+    "title": "Life is beautiful",
+    "artist": "Tani Yuuki",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-552-7",
+    "joysound": "497688",
+    "title": "LIFE IS BEAUTIFUL",
+    "artist": "go!go!vanillas",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43553",
+   "title": "Life is SHOW TIME (特撮\"仮面ライダーウィザード\")",
+   "artist": "鬼龍院翔 from ゴールデンボンバー",
+   "tj": null,
+   "ky": "43553"
+  },
+  "candidates": [
+   {
+    "id": "tj-27365",
+    "joysound": "730913",
+    "title": "Life Is Show Time(仮面ライダーウィザード OP)",
+    "artist": "鬼龍院翔 From ゴールデンボンバー",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1126894",
+    "joysound": "823301",
+    "title": "LIFE IS SHOWTIME《レコおと》",
+    "artist": "FlaP",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42900",
+   "title": "LIGHT IN YOUR HEART (特撮\"大決戦!超ウルトラ8兄弟\")",
+   "artist": "V6",
+   "tj": null,
+   "ky": "42900"
+  },
+  "candidates": [
+   {
+    "id": "joysound-123049",
+    "joysound": "30095",
+    "title": "LIGHT IN YOUR HEART",
+    "artist": "V6",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41430",
+   "title": "Like a star in the night (\"ダーク・エンジェル\")",
+   "artist": "倉木麻衣",
+   "tj": null,
+   "ky": "41430"
+  },
+  "candidates": [
+   {
+    "id": "tj-25433",
+    "joysound": "18107",
+    "title": "Like a star in the night",
+    "artist": "倉木麻衣",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41155",
+   "title": "LOVE 2000",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41155"
+  },
+  "candidates": [
+   {
+    "id": "tj-25041",
+    "joysound": "21879",
+    "title": "LOVE 2000",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1151129",
+    "joysound": "644335",
+    "title": "LOVE 2000",
+    "artist": "鶴 and 亀",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-26008",
+    "joysound": "24136",
+    "title": "LOVE 2000",
+    "artist": "hitomi",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43965",
+   "title": "M@STERPIECE(\"THE IDOLM@STER MOVIE 輝きの向こう側へ!\")",
+   "artist": "765PRO ALLSTARS",
+   "tj": null,
+   "ky": "43965"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28534",
+    "joysound": "735581",
+    "title": "M@STERPIECE",
+    "artist": "765PRO ALLSTARS",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41015",
+   "title": "NEVER END",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41015"
+  },
+  "candidates": [
+   {
+    "id": "tj-6942",
+    "joysound": "24985",
+    "title": "NEVER END",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1022165",
+    "joysound": "625415",
+    "title": "NEVER END",
+    "artist": "VISTY",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1060876",
+    "joysound": "631771",
+    "title": "Never End",
+    "artist": "Aぇ! group",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-106092",
+    "joysound": "164598",
+    "title": "never end",
+    "artist": "ルルーシュ(福山潤)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-18310",
+    "joysound": "18320",
+    "title": "NEVER END",
+    "artist": "SIAM SHADE",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44158",
+   "title": "No title",
+   "artist": "Reol",
+   "tj": null,
+   "ky": "44158"
+  },
+  "candidates": [
+   {
+    "id": "tj-28704",
+    "joysound": "689337",
+    "title": "No title",
+    "artist": "れをる",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-296211",
+    "joysound": "948955",
+    "title": "NO TITLE",
+    "artist": "SNAIL RAMP",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-49872",
+    "joysound": "68564",
+    "title": "no title",
+    "artist": "locofrank",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-975533",
+    "joysound": "621775",
+    "title": "No title",
+    "artist": "HITOMIN",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-893154",
+    "joysound": "808157",
+    "title": "no title《本人映像》",
+    "artist": "RAY",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44358",
+   "title": "Over\"Quartzer\" (特撮\"仮面ライダージオウ\")",
+   "artist": "Shuta Sueyoshi feat.ISSA",
+   "tj": null,
+   "ky": "44358"
+  },
+  "candidates": [
+   {
+    "id": "joysound-708930",
+    "joysound": "432799",
+    "title": "Over“Quartzer” (TVサイズ)",
+    "artist": "Shuta Sueyoshi feat. ISSA",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43968",
+   "title": "Raise your flag(\"機動戦士ガンダム 鉄血のオルフェンズ\")",
+   "artist": "MAN WITH A MISSION",
+   "tj": null,
+   "ky": "43968"
+  },
+  "candidates": [
+   {
+    "id": "tj-27853",
+    "joysound": "678034",
+    "title": "Raise Your Flag(機動戦士ガンダム 鉄血のオルフェンズ OP)",
+    "artist": "MAN WITH A MISSION",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-831095",
+    "joysound": "448389",
+    "title": "Raise Your Flag",
+    "artist": "ARP(DAIYA)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43404",
+   "title": "READY!!(M@STER VERSION) (\"THE iDOLM@STER\"OP)",
+   "artist": "765PRO ALLSTARS",
+   "tj": null,
+   "ky": "43404"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28113",
+    "joysound": "110661",
+    "title": "Ready!!",
+    "artist": "765PRO ALLSTARS",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1018566",
+    "joysound": "625068",
+    "title": "READY!! (M@STER VERSION)",
+    "artist": "MILLIONSTARS Team8th",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44504",
+   "title": "REAL×EYEZ (特撮\"仮面ライダーゼロワン\")",
+   "artist": "J×Takanori Nishikawa",
+   "tj": null,
+   "ky": "44504"
+  },
+  "candidates": [
+   {
+    "id": "joysound-783405",
+    "joysound": "443148",
+    "title": "REAL×EYEZ (TVSize)",
+    "artist": "J×Takanori Nishikawa",
+    "match": "stripped-title"
+   },
+   {
+    "id": "tj-68184",
+    "joysound": "446356",
+    "title": "REAL × EYEZ(仮面ライダーゼロワン OP)",
+    "artist": "J × Takanori Nishikawa",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44615",
+   "title": "Reason!!",
+   "artist": "315 STARS",
+   "tj": null,
+   "ky": "44615"
+  },
+  "candidates": [
+   {
+    "id": "joysound-793135",
+    "joysound": "445426",
+    "title": "Reason!!",
+    "artist": "315 ALLSTARS",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-28998",
+    "joysound": "424125",
+    "title": "Reason!!(THE IDOLM@STER SideM OP)",
+    "artist": "315 STARS",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-667813",
+    "joysound": "425658",
+    "title": "Reason!! (Jupiter Ver.)",
+    "artist": "Jupiter",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-670215",
+    "joysound": "427520",
+    "title": "Reason!!(DRAMATIC STARS Ver.)",
+    "artist": "DRAMATIC STARS(天道輝(CV.仲村宗悟)/桜庭薫(CV.内田雄馬)/柏木翼(CV.八代拓))",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42131",
+   "title": "REDEMPTION (\"DIRGE of CERBERUS-FINAL FANTASY VII\")",
+   "artist": "Gackt",
+   "tj": null,
+   "ky": "42131"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28115",
+    "joysound": "20003",
+    "title": "Redemption",
+    "artist": "Gackt",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41050",
+   "title": "RESPECT the POWER OF LOVE",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41050"
+  },
+  "candidates": [
+   {
+    "id": "tj-6878",
+    "joysound": "19877",
+    "title": "RESPECT the POWER OF LOVE",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   }
+  ]
+ }
+]

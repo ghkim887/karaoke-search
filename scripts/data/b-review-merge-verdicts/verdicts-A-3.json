@@ -1,0 +1,264 @@
+[
+ {
+  "song_id": "tj-6555",
+  "title": "別れ曲でも唄って",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-3542",
+  "candidate_joysound": "3542",
+  "reason": "동일 아티스트(前川清) 동일곡. JOYSOUND의 〈シングルヴァージョン〉는 표준 싱글판 표기 주석이고 TJ 무주석 레코드가 곧 싱글판. JOYSOUND에 다른 무주석 판이 후보로 없음."
+ },
+ {
+  "song_id": "tj-6579",
+  "title": "ROCKET DIVE(AWOL OP)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25103",
+  "candidate_joysound": "17108",
+  "reason": "hide with Spread Beaver는 hide의 밴드 명의 크레딧 — 동일 원곡(1998 싱글 ROCKET DIVE)의 표기 변형. DJTK 리믹스·メガマソ/R指定/布袋 커버는 REJECT."
+ },
+ {
+  "song_id": "tj-66064",
+  "title": "夢幻(アニメ ''鬼滅の刃'柱稽古編' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "ky-75958",
+  "candidate_joysound": "627341",
+  "reason": "귀멸의 칼날 주합 훈련편 OP '夢幻'(MY FIRST STORY × HYDE). 후보 크레딧이 MY FIRST STORY 단독이나 MFS의 夢幻은 이 곡뿐이고 joy 627341이 동시기 627793(永久)과 인접 — 동일곡. 타 후보는 동명이곡."
+ },
+ {
+  "song_id": "tj-66207",
+  "title": "永久 -トコシエ-(アニメ ''鬼滅の刃'柱稽古編' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1043192",
+  "candidate_joysound": "627793",
+  "reason": "귀멸 주합 훈련편 ED. HYDE×MY FIRST STORY vs MY FIRST STORY & HYDE는 크레딧 순서/표기 차이일 뿐 동일곡."
+ },
+ {
+  "song_id": "tj-6741",
+  "title": "おもかげの女",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-3786",
+  "candidate_joysound": "3786",
+  "reason": "동일 아티스트(石原裕次郎). (ひと)는 독음 주석일 뿐 동일곡."
+ },
+ {
+  "song_id": "tj-6787",
+  "title": "蒼い霹靂",
+  "verdict": "REJECT",
+  "reason": "유일 후보가 UNDER:COVER 2(셀프커버 앨범) 재녹음판 — TJ 레코드는 원곡 싱글판이므로 버전 차이. 기준상 REJECT."
+ },
+ {
+  "song_id": "tj-68037",
+  "title": "Hoodstar(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-750622",
+  "candidate_joysound": "438772",
+  "reason": "동일 아티스트(Division All Stars) 동일곡. TJ 괄호는 히프노시스마이크 타이업 주석."
+ },
+ {
+  "song_id": "tj-68172",
+  "title": "二重の虹(ダブル レインボウ)(BanG Dream! OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-694917",
+  "candidate_joysound": "430573",
+  "reason": "Poppin'Party 동일곡. 원제가 '二重の虹（ダブル レインボウ）'로 괄호는 독음, 나머지는 타이업 주석."
+ },
+ {
+  "song_id": "tj-68218",
+  "title": "DRIVE US CRAZY(BanG Dream!)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-790005",
+  "candidate_joysound": "446195",
+  "reason": "RAISE A SUILEN 동일곡. 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "tj-68280",
+  "title": "Survival of the Illest(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-846966",
+  "candidate_joysound": "485882",
+  "reason": "Division All Stars 동일곡. 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "tj-68305",
+  "title": "なんどでも笑おう(THE IDOLM@STER OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-851275",
+  "candidate_joysound": "486586",
+  "reason": "THE IDOLM@STER FIVE STARS!!!!! 동일곡(아이마스 15주년 합동곡). 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "ky-44598",
+  "title": "聖槍爆裂ボーイ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-405573",
+  "candidate_joysound": "738747",
+  "reason": "れるりり×もじゃ feat.鏡音レン 원곡 동일 — 크레딧 구분자(,/) 표기 차이. りぶ판은 우타이테 커버라 REJECT."
+ },
+ {
+  "song_id": "tj-68316",
+  "title": "カイト(NHK2020ソング)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-818556",
+  "candidate_joysound": "446332",
+  "reason": "嵐의 カイト(요네즈 켄시 작, NHK2020 송) 동일곡. 槇原敬之·BONNIE PINK의 カイト는 동명이곡."
+ },
+ {
+  "song_id": "tj-68327",
+  "title": "Dye the sky.(THE IDOLM@STER SHINY COLORS OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-831088",
+  "candidate_joysound": "448411",
+  "reason": "シャイニーカラーズ 동일곡. 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "tj-6833",
+  "title": "愛冠岬",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-3478",
+  "candidate_joysound": "3478",
+  "reason": "동일 아티스트(松原のぶえ). (アイカップミサキ)는 독음 주석일 뿐 동일곡."
+ },
+ {
+  "song_id": "tj-6836",
+  "title": "愛は別離",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1628",
+  "candidate_joysound": "1628",
+  "reason": "동일 아티스트(川中美幸). (わかれ)는 독음 주석일 뿐 동일곡."
+ },
+ {
+  "song_id": "tj-68377",
+  "title": "絆(ヒプノシスマイク -D.R.B- Rhyme Anima)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-862690",
+  "candidate_joysound": "487824",
+  "reason": "Division All Stars의 Rhyme Anima ED '絆' 동일곡. GReeeeN·川嶋あい 등은 동명이곡."
+ },
+ {
+  "song_id": "tj-68513",
+  "title": "Hang out!(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-882562",
+  "candidate_joysound": "498108",
+  "reason": "Division All Stars 동일곡. 三上博史의 HANG OUT!은 동명이곡."
+ },
+ {
+  "song_id": "tj-68549",
+  "title": "Femme Fatale(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-850810",
+  "candidate_joysound": "486325",
+  "reason": "中王区言の葉党 vs 中王区 言の葉党은 공백 표기 차이만 — 동일곡. 中森明菜·加藤ミリヤ 등은 동명이곡."
+ },
+ {
+  "song_id": "tj-68597",
+  "title": "君が見た夢の物語(ロード・エルメロイⅡ世の事件簿 -魔眼蒐集列車- Grace note)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-907685",
+  "candidate_joysound": "495752",
+  "reason": "ASCA 동일곡. 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "tj-68823",
+  "title": "可愛くてごめん",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-950714",
+  "candidate_joysound": "612984",
+  "reason": "HoneyWorks feat.かぴ 원곡 동일(크레딧 표기 차이). Ado·hololive·雨宮天(성해성나 캐릭터판)·高嶺のなでしこ는 커버판이라 REJECT."
+ },
+ {
+  "song_id": "ky-44962",
+  "title": "Magic('コカ・コーラ' TVCM)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-971151",
+  "candidate_joysound": "617946",
+  "reason": "Mrs. GREEN APPLE의 Magic(2024 코카콜라 CM송) 동일곡. Ado·sumika·SEKAI NO OWARI·flumpool은 동명이곡."
+ },
+ {
+  "song_id": "tj-68844",
+  "title": "STAGE OF SEKAI",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-921773",
+  "candidate_joysound": "497916",
+  "reason": "針原翼(はりーP) feat.初音ミク 원곡 동일 — 프로듀서 명의 표기 차이. Leo/need판(アニメカラオケ)은 게임 유닛 커버 버전이라 REJECT."
+ },
+ {
+  "song_id": "tj-68913",
+  "title": "Back Off(プロジェクト 'Paradox Live' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-851999",
+  "candidate_joysound": "487546",
+  "reason": "cozmez 동일곡. 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "tj-68919",
+  "title": "REBELLION -悪漢奴等 is still Burning-(プロジェクト 'Paradox Live' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-852000",
+  "candidate_joysound": "487545",
+  "reason": "悪漢奴等 동일곡. 타이업 주석 차이만 존재."
+ },
+ {
+  "song_id": "tj-68930",
+  "title": "Alive",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-918404",
+  "candidate_joysound": "497330",
+  "reason": "Full Throttle4 feat.HoneyWorks 동일곡 — 성우 병기(Vo:斉藤壮馬・内田雄馬)만 추가된 표기 차이. CHiCO with HoneyWorks·doriko·AliA·AMEFURASSHI는 동명이곡."
+ },
+ {
+  "song_id": "tj-68988",
+  "title": "Pieces of The World(劇場版 'IDOLiSH7 LIVE 4bit Compilation Album ''BEYOND THE PERiOD''' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-971389",
+  "candidate_joysound": "617202",
+  "reason": "IDOLiSH7&TRIGGER&Re:vale&ZOOL 동일곡 — 크레딧 구분자 표기 차이. 《LIVEカラオケ》판은 라이브 버전이라 REJECT."
+ },
+ {
+  "song_id": "tj-68992",
+  "title": "MONSTER GENERATiON('劇場版 IDOLiSH7 LIVE 4bit Compilation Album ''BEYOND THE PERiOD''' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-542827",
+  "candidate_joysound": "680334",
+  "reason": "IDOLiSH7 동일곡. TJ 괄호는 수록 앨범 주석일 뿐이고 IDOLiSH7의 MONSTER GENERATiON은 단일곡."
+ },
+ {
+  "song_id": "ky-43466",
+  "title": "365日のラブストーリー。",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-173312",
+  "candidate_joysound": "29281",
+  "reason": "Sonar Pocket=ソナーポケット(2019년 로마자 개명) 동일 아티스트, 무주석 원곡판. 15th Anniversary ver.·アコースティック ver.는 버전 차이라 REJECT."
+ },
+ {
+  "song_id": "ky-41743",
+  "title": "ALARM",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25772",
+  "candidate_joysound": "30774",
+  "reason": "安室奈美恵 vs 安室奈美惠는 한자 이체자(TJ 관용 표기) — 동일 아티스트의 ALARM(2004). 核P-MODEL·Silent Siren 등은 동명이곡."
+ },
+ {
+  "song_id": "ky-41788",
+  "title": "ALL FOR YOU",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25828",
+  "candidate_joysound": "32720",
+  "reason": "安室奈美恵 vs 安室奈美惠 이체자 표기 차이 — 동일 아티스트의 ALL FOR YOU(2004). 倖田來未 등은 동명이곡."
+ },
+ {
+  "song_id": "ky-43304",
+  "title": "Anything Goes! (特撮\"仮面ライダーオーズ\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27907",
+  "candidate_joysound": "93530",
+  "reason": "大黒摩季의 가면라이더 오즈 OP 동일곡. 양쪽 모두 동일 타이업 주석."
+ },
+ {
+  "song_id": "ky-75858",
+  "title": "Back Off (\"Paradox Live\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-851999",
+  "candidate_joysound": "487546",
+  "reason": "cozmez 동일곡. 타이업 주석 차이만 존재. (tj-68913도 같은 JOYSOUND 곡으로 판정 — 3원 병합 대상)"
+ }
+]

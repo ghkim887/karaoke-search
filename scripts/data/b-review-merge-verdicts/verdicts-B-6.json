@@ -1,0 +1,340 @@
+[
+ {
+  "song_id": "tj-68682",
+  "title": "線香花火",
+  "verdict": "REJECT",
+  "reason": "Song is HoneyWorks feat. 木村良平; all 5 candidates (ナオト・インティライミ/aiko/KANA-BOON/Terry&Francisco/H△G) are unrelated same-title songs by different artists."
+ },
+ {
+  "song_id": "tjpdf-68728",
+  "title": "Ghosts",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-879382",
+  "candidate_joysound": "493602",
+  "reason": "VA-vs-character credit. Web-verified: 'Ghosts' is the Tokyo Revengers character song EP 02 track by 羽宮一虎(CV:土岐隼一) (uta-net 312093, Lyrical Nonsense). TJ credits the voice actor 土岐隼一 directly; same recording."
+ },
+ {
+  "song_id": "tj-68730",
+  "title": "Crayon",
+  "verdict": "REJECT",
+  "reason": "Song is ZOT on the WAVE × Fuji Taito; candidates (G-DRAGON K-pop, ジェット機, 空音) are different same-title songs with no shared credit."
+ },
+ {
+  "song_id": "tj-68755",
+  "title": "No.1",
+  "verdict": "REJECT",
+  "reason": "Song is 夏川椎菜 feat. HoneyWorks; no candidate involves 夏川椎菜 or HoneyWorks — all unrelated same-title songs."
+ },
+ {
+  "song_id": "tj-68798",
+  "title": "WORK(アニメ '地獄楽' OP)",
+  "verdict": "REJECT",
+  "reason": "Hell's Paradise OP by millennium parade × 椎名林檎; candidates (西野カナ/Bird Bear Hare and Fish/小袋成彬) are different songs titled Work."
+ },
+ {
+  "song_id": "tj-68804",
+  "title": "Here I Stand(映画 'ブラッククローバー 魔法帝の剣' OST)",
+  "verdict": "REJECT",
+  "reason": "TREASURE (K-pop) Black Clover movie theme; candidates (Vieserrut As レコおと, JAY'ED) are unrelated same-title songs."
+ },
+ {
+  "song_id": "blog-336-123",
+  "title": "白いマフラー",
+  "verdict": "REJECT",
+  "reason": "indigo la End song; candidate DEEP(COLOR) 白いマフラー is COLOR's own unrelated song, no connection to indigo la End."
+ },
+ {
+  "song_id": "tj-68935",
+  "title": "命短し尽くせよ奴隷",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-928686",
+  "candidate_joysound": "618669",
+  "reason": "Notation variant. Web-verified: カリスマ (Charisma House) project song performed by character 本橋依央利 (Amazon Music '本橋依央利 & カリスマ'). TJ appends project name '/カリスマ'; JOYSOUND credits character alone. Same recording, unique title."
+ },
+ {
+  "song_id": "tj-68936",
+  "title": "秩序宣言",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-928684",
+  "candidate_joysound": "618670",
+  "reason": "Notation variant. Web-verified カリスマ project song by 草薙理解 (Lyrical Nonsense, charisma-house.com). TJ '/カリスマ' is a project tag; same recording."
+ },
+ {
+  "song_id": "tj-68944",
+  "title": "不可思議のカルテ(アニメ '青春ブタ野郎はゆめみる少女の夢を見ないより' ED)",
+  "verdict": "REJECT",
+  "reason": "Web-verified: fox capture plan feat. Chihiro Sings is a 2025 English-lyric self-cover single (distinct recording); candidate joysound-705807 is the original cast (CV ensemble) version. Different version = reject."
+ },
+ {
+  "song_id": "tj-68948",
+  "title": "Charisma Battle Anthem",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-985633",
+  "candidate_joysound": "619503",
+  "reason": "カリスマ project song (web-verified project); TJ credits 伊藤ふみや with '/カリスマ' project tag, JOYSOUND credits full '伊藤ふみや feat. 六人のカリスマ'. Unique title, same recording."
+ },
+ {
+  "song_id": "tj-68959",
+  "title": "When The Charisma Go Marching In",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-942031",
+  "candidate_joysound": "618642",
+  "reason": "カリスマ project song; identical performer 伊藤ふみや (TJ adds '/カリスマ' project tag). Unique title, same recording."
+ },
+ {
+  "song_id": "tj-68962",
+  "title": "LOVE MYSELF",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-928685",
+  "candidate_joysound": "618646",
+  "reason": "カリスマ project song; identical performer テラ (TJ adds '/カリスマ' project tag), JOYSOUND id sits in the verified カリスマ song cluster (618642-619503). Other candidates (IS:SUE/PERSONZ/CHIHIRO/etc.) are unrelated."
+ },
+ {
+  "song_id": "tj-68965",
+  "title": "不可思議のカルテ(アニメ '青春ブタ野郎シリーズ' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-705807",
+  "candidate_joysound": "433738",
+  "reason": "Character-vs-CV credit: TJ lists the six voice actresses (瀬戸麻沙美,東山奈央,種﨑敦美,内田真礼,久保ユリカ,水瀬いのり) which exactly match the CV list in JOYSOUND's character-credited entry. Same cast recording of the 青ブタ ED."
+ },
+ {
+  "song_id": "tj-6927",
+  "title": "あの紙ヒコーキ くもり空わって",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-19854",
+  "candidate_joysound": "19868",
+  "reason": "Notation variant: JOYSOUND writes the duo 19 as '19(ジューク)' with reading gloss. Original artist's signature song; PENGIN and JOY entries are covers (reject)."
+ },
+ {
+  "song_id": "tj-6935",
+  "title": "すべてへ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-20924",
+  "candidate_joysound": "21182",
+  "reason": "Same notation variant 19 = '19(ジューク)'. アリス九號. entry is an unrelated same-title song."
+ },
+ {
+  "song_id": "tj-6976",
+  "title": "時の雫",
+  "verdict": "REJECT",
+  "reason": "S.E.S (K-pop) song; candidates (girl next door/斎賀みつき/小田純平/GLAY) are unrelated same-title songs."
+ },
+ {
+  "song_id": "tj-79627",
+  "title": "Rockstar",
+  "verdict": "REJECT",
+  "reason": "LiSA song; no candidate is LiSA — all unrelated ROCK STAR/Rock Star titles by other artists."
+ },
+ {
+  "song_id": "tj-79914",
+  "title": "Born Again",
+  "verdict": "REJECT",
+  "reason": "LISA (BLACKPINK) feat. Doja Cat & RAYE; candidates (Rickie-G/中村雅俊/Good Dog Happy Men/五輪真弓) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-42771",
+  "title": "1000%SPARKING!",
+  "verdict": "REJECT",
+  "reason": "KY entry is the ネギ・スプリングフィールド version; all 5 candidates are different class-member group versions (different casts) of the Negima! song — version mismatch, the Negi version is not among candidates."
+ },
+ {
+  "song_id": "ky-43934",
+  "title": "Angelic Angel (\"ラブライブ! The School Idol Movie\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28012",
+  "candidate_joysound": "675367",
+  "reason": "Notation variant: KY renders μ's as u's (cannot display μ). Same Love Live! movie song by μ's."
+ },
+ {
+  "song_id": "ky-42651",
+  "title": "BAMBOO BEAT",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-112637",
+  "candidate_joysound": "168735",
+  "reason": "Character-vs-CV credit: KY lists the five voice actresses which exactly match the CV list in JOYSOUND's character-credited entry (Bamboo Blade ED). Same recording."
+ },
+ {
+  "song_id": "ky-44300",
+  "title": "BATTLE BATTLE BATTLE",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-695252",
+  "candidate_joysound": "431013",
+  "reason": "Notation variant: identical Hypnosis Mic units Fling Posse・麻天狼; JOYSOUND merely appends CV lists. Same recording."
+ },
+ {
+  "song_id": "ky-43150",
+  "title": "been so long",
+  "verdict": "REJECT",
+  "reason": "JEJUNG & YUCHUN (東方神起) song; candidate m-flo 'been so long' is m-flo's own unrelated song."
+ },
+ {
+  "song_id": "ky-44676",
+  "title": "Black Journey",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-866154",
+  "candidate_joysound": "489561",
+  "reason": "Notation variant: identical unit Fling Posse; JOYSOUND appends CV list. Same Hypnosis Mic recording."
+ },
+ {
+  "song_id": "ky-43795",
+  "title": "Break+Your+Destiny",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-128075",
+  "candidate_joysound": "178607",
+  "reason": "Character-vs-CV credit: JOYSOUND credit '兵部京介 vs 皆本光一 with 賢木修二 starring 遊佐浩二+中村悠一+谷山紀章' literally contains KY's three VA names (絶対可憐チルドレン). Same recording."
+ },
+ {
+  "song_id": "ky-40367",
+  "title": "Catch You Catch Me",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25543",
+  "candidate_joysound": "21147",
+  "reason": "Artist rename. Web-verified: グミ was the debut stage name of 日向めぐみ, who sang the Cardcaptor Sakura OP 'Catch You Catch Me' (ja.wikipedia, utaten). TJ candidate carries the same CCS OP tag. ダズビー/中川翔子 entries are covers (reject)."
+ },
+ {
+  "song_id": "ky-43967",
+  "title": "Dancing stars on me!",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27791",
+  "candidate_joysound": "313280",
+  "reason": "Notation variant u's = μ's; tj-27791 is the full version. TVサイズ candidate (669413) is a different cut (reject)."
+ },
+ {
+  "song_id": "ky-44338",
+  "title": "DEATH RESPECT",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-711917",
+  "candidate_joysound": "434190",
+  "reason": "Notation variant: identical Hypnosis Mic units MAD TRIGGER CREW・麻天狼; JOYSOUND appends CV lists. Same recording."
+ },
+ {
+  "song_id": "ky-44265",
+  "title": "Don't Leave Me",
+  "verdict": "REJECT",
+  "reason": "BTS (Face Yourself) song; candidates (里田まい/阿部真央/B'z/池田政典/韻シスト) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-41719",
+  "title": "Eyes On Me (\"FINAL FANTASY 8\")",
+  "verdict": "REJECT",
+  "reason": "Faye Wong FF8 theme; candidates (Superfly/JO1/センラ/AislE/MISIA) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-43233",
+  "title": "FAKE",
+  "verdict": "REJECT",
+  "reason": "AI feat. 安室奈美恵 song; candidates (MY FIRST STORY/中島美嘉/Waive/MIYA/T.N.T) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-43188",
+  "title": "Fall in Love",
+  "verdict": "REJECT",
+  "reason": "青山テルマ × SOL (BIGBANG) duet; candidates (Suiet/PANG/BREATH/ZOO/Che'Nelle) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-40638",
+  "title": "FEELING",
+  "verdict": "REJECT",
+  "reason": "ハイ・ファイ・セット song (JOYSOUND would list it as フィーリング); candidates (Mrs. GREEN APPLE/wyse/AciD FLavoR/CRAZE/CNBLUE) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-40579",
+  "title": "FIRE WARS",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25663",
+  "candidate_joysound": "37378",
+  "reason": "Credit-notation variant. Web-verified: 'FIRE WARS' is the Mazinkaiser OVA OP credited 'JAM Project featuring 影山ヒロノブ' (Lantis LACM-4027); TJ candidate carries the same マジンカイザーOP tag with shortened 'JAM Project' credit. Same recording."
+ },
+ {
+  "song_id": "ky-41838",
+  "title": "FOR REAL",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25266",
+  "candidate_joysound": "24397",
+  "reason": "Kanji-variant notation: 德山秀典 = 徳山秀典, same person, and TJ candidate carries the matching 最遊記 OP tag. TSUYOSHI 'For Real' is unrelated."
+ },
+ {
+  "song_id": "ky-41578",
+  "title": "For フルーツバスケット",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25257",
+  "candidate_joysound": "36852",
+  "reason": "Same artist 岡崎律子 ('外' = et al. suffix on TJ side) with matching フルーツバスケット OP tag. 堀江由衣 and 萩原雪歩(iM@S) entries are covers (reject)."
+ },
+ {
+  "song_id": "ky-43145",
+  "title": "Girlfriend",
+  "verdict": "REJECT",
+  "reason": "Crystal Kay feat. BoA song; candidates (平井大/なにわ男子/BMSG POSSE/NE-YO/Ricken's) are unrelated same-title songs."
+ },
+ {
+  "song_id": "ky-42205",
+  "title": "GOLDFINGER'99",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6904",
+  "candidate_joysound": "20816",
+  "reason": "Kanji-variant notation: 鄕ひろみ = 郷ひろみ, same person; GOLDFINGER'99 is Hiromi Go's unique hit. Same recording."
+ },
+ {
+  "song_id": "ky-42723",
+  "title": "GO MY WAY!! (\"THE IDOLM@STER\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-110950",
+  "candidate_joysound": "167703",
+  "reason": "Character-vs-CV credit: KY credits VA 中村繪里子, JOYSOUND credits 天海春香(CV:中村繪里子) — same iM@S recording. M@STER VERSION/REM@STER/ファミソン/高槻やよい candidates are different versions (reject)."
+ },
+ {
+  "song_id": "ky-42572",
+  "title": "GUILTY BEAUTY LOVE",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-103697",
+  "candidate_joysound": "162969",
+  "reason": "Character-vs-CV credit: KY credits VA 宮野真守, JOYSOUND credits 須王環(宮野真守) — Ouran High School Host Club character song, same recording."
+ },
+ {
+  "song_id": "ky-43413",
+  "title": "I AM THE BEST",
+  "verdict": "REJECT",
+  "reason": "2NE1 song; candidate Abyssmare (D4DJ unit) entry is at best a cover, and covers are rejects."
+ },
+ {
+  "song_id": "ky-44304",
+  "title": "IKEBUKURO WEST GAME PARK",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-690805",
+  "candidate_joysound": "429143",
+  "reason": "Notation variant: identical unit Buster Bros!!!; JOYSOUND appends CV list. Remix candidate (434379) is a different version (reject)."
+ },
+ {
+  "song_id": "ky-43281",
+  "title": "IMITATION BLACK",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-143657",
+  "candidate_joysound": "138115",
+  "reason": "Vocaloid credit variant. Web-verified: VanaN'Ice is natsuP's unit of 神威がくぽ・KAITO・鏡音レン (vocadb, Amazon LAST COLOR credit) — KY spells out the vocaloids, JOYSOUND uses the unit name. Same song."
+ },
+ {
+  "song_id": "ky-42971",
+  "title": "It's all Love!",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-129947",
+  "candidate_joysound": "90540",
+  "reason": "Notation variant: 倖田來未Xmisono = 倖田來未×misono (ASCII X vs ×). Same sisters-duet single."
+ },
+ {
+  "song_id": "ky-42967",
+  "title": "Journey through the Decade (特撮\"仮面ライダー ディケイド\")",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-128874",
+  "candidate_joysound": "90346",
+  "reason": "Notation variant: JOYSOUND credit 'GACKT(Gackt)' is the same artist's restyled capitalization. Same Kamen Rider Decade theme."
+ },
+ {
+  "song_id": "ky-43992",
+  "title": "KiRa-KiRa Sensation!",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27850",
+  "candidate_joysound": "312570",
+  "reason": "Notation variant u's = μ's; tj-27850 is the full μ's version. iM@S-cast entry (644931) is a crossover cover and TVサイズ (675044) is a different cut (both reject)."
+ }
+]

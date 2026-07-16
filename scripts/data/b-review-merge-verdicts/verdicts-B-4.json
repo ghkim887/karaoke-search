@@ -1,0 +1,336 @@
+[
+ {
+  "song_id": "tj-28905",
+  "title": "BATTLE BATTLE BATTLE(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-695252",
+  "candidate_joysound": "431013",
+  "reason": "CV case: Hypnosis Mic unit battle song. TJ credits units Fling Posse/摩天狼 (kanji variant of 麻天狼); JOYSOUND same two units with CV actor lists. Same song."
+ },
+ {
+  "song_id": "tj-28914",
+  "title": "ミッション! 健・康・第・イチ(はたらく細胞 OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-696794",
+  "candidate_joysound": "432059",
+  "reason": "CV case: Hataraku Saibou OP. TJ lists 4 voice actors (花澤香菜/前野智昭/小野大輔/井上喜久子); JOYSOUND lists characters with CV = exactly those 4 actors."
+ },
+ {
+  "song_id": "tj-28917",
+  "title": "Shibuya Marble Texture-PCCS-(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-695250",
+  "candidate_joysound": "431015",
+  "reason": "CV case: Hypnosis Mic Fling Posse song; JOYSOUND credits unit with CV list. Base version merged; candidate 434377 (Candy Dazed remix) rejected as remix."
+ },
+ {
+  "song_id": "tj-28919",
+  "title": "Pray(殺戮の天使 ED)",
+  "verdict": "REJECT",
+  "reason": "TJ song is Satsuriku no Tenshi ED by 千菅春香. All candidates (Eve/[Alexandros]/Hakubi/関智一/little by little) are different songs sharing the title."
+ },
+ {
+  "song_id": "tj-28924",
+  "title": "Yokohama Walker(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-690806",
+  "candidate_joysound": "429144",
+  "reason": "CV case: Hypnosis Mic MAD TRIGGER CREW; JOYSOUND same unit with CV list. Base version merged; candidate 434378 (Triple Trippin' remix) rejected as remix."
+ },
+ {
+  "song_id": "tjpdf-28928",
+  "title": "夢ファンファーレ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-705694",
+  "candidate_joysound": "433011",
+  "reason": "Notation + CV case: HoneyWorks unit LIPxLIP = LIP×LIP; JOYSOUND adds character/CV credit (内山昂輝・島崎信長). Same song."
+ },
+ {
+  "song_id": "tj-28936",
+  "title": "DEATH RESPECT(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-711917",
+  "candidate_joysound": "434190",
+  "reason": "CV case: Hypnosis Mic MAD TRIGGER CREW・麻天狼; JOYSOUND same two units with CV actor lists. Same song."
+ },
+ {
+  "song_id": "blog-163-39",
+  "title": "Illumination",
+  "verdict": "REJECT",
+  "reason": "SEKAI NO OWARI's Illumination is not among candidates; all candidates (神はサイコロを振らない/&TEAM/ILLUMINA/河西智美/ReN) are different songs sharing the title."
+ },
+ {
+  "song_id": "tj-28945",
+  "title": "Deep in Abyss(メイドインアビス OP)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-634598",
+  "candidate_joysound": "698899",
+  "reason": "CV case: Made in Abyss OP. TJ lists actors 富田美憂/伊瀨茉莉也; JOYSOUND credits characters リコ/レグ with CV = same actors."
+ },
+ {
+  "song_id": "tj-28979",
+  "title": "3$EVEN(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-667731",
+  "candidate_joysound": "425419",
+  "reason": "CV case, web-verified: Hypnosis Mic character song by 有栖川帝統(CV.野津山幸宏); TJ credits the actor, JOYSOUND the character (uta-net/recochoku/JOYSOUND artist page confirm)."
+ },
+ {
+  "song_id": "tj-28982",
+  "title": "チグリジア(ヒプノシスマイク)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-666308",
+  "candidate_joysound": "425316",
+  "reason": "CV case: Hypnosis Mic character song by 観音坂独歩(CV.伊東健人); TJ credits the actor, JOYSOUND the character."
+ },
+ {
+  "song_id": "tjpdf-28999",
+  "title": "FREEDOM",
+  "verdict": "REJECT",
+  "reason": "増田俊樹's FREEDOM is not among candidates; all candidates (Ado/BLUE ENCOUNT/福山雅治/10-FEET/KAT-TUN) are different songs sharing the title."
+ },
+ {
+  "song_id": "tjpdf-29000",
+  "title": "pride-Louis Ver.-",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-563923",
+  "candidate_joysound": "685223",
+  "reason": "CV case: KING OF PRISM character version; TJ credits actor 蒼井翔太, JOYSOUND credits character 如月ルヰ(CV.蒼井翔太). Same -Louis ver.- designation on both sides."
+ },
+ {
+  "song_id": "blog-630-10",
+  "title": "Better Half",
+  "verdict": "REJECT",
+  "reason": "정한(SEVENTEEN JEONGHAN) feat. Omoinotake song is not among candidates; 酒井法子 and 玉置成実 entries are different songs sharing the title."
+ },
+ {
+  "song_id": "tj-52588",
+  "title": "道化師のソネット",
+  "verdict": "REJECT",
+  "reason": "TJ entry is 歌心りえ's cover; さだまさし is the original and 石川ひとみ《レコおと》 another cover. Cover relationship = REJECT per tier-B rules."
+ },
+ {
+  "song_id": "tj-52747",
+  "title": "POP IN 2(TVアニメ '推しの子' OST)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1051360",
+  "candidate_joysound": "630725",
+  "reason": "CV case: Oshi no Ko in-universe unit B小町 on both sides; JOYSOUND appends member/CV list. Same song."
+ },
+ {
+  "song_id": "blog-163-92",
+  "title": "死の魔法",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-152123",
+  "candidate_joysound": "129581",
+  "reason": "Rename case, web-verified: band renamed 世界の終わり → SEKAI NO OWARI (2011); 死の魔法 is track 5 on indie album EARTH (2010) released under the old name (official site/Wikipedia confirm)."
+ },
+ {
+  "song_id": "tj-52925",
+  "title": "Step by Step(フジテレビ 'めざましどようび' テーマソング)",
+  "verdict": "REJECT",
+  "reason": "TOMORROW X TOGETHER's Step by Step is not among candidates; all five candidates are different songs sharing the title."
+ },
+ {
+  "song_id": "blog-698-21",
+  "title": "ゆらぎ",
+  "verdict": "REJECT",
+  "reason": "KK(上北健)'s ゆらぎ is not among candidates; 森進一/FANATIC◇CRISIS/優河 entries are different songs sharing the title."
+ },
+ {
+  "song_id": "tj-6115",
+  "title": "北空港",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-320",
+  "candidate_joysound": "320",
+  "reason": "Notation variant: identical duet 桂銀淑,浜圭介 = 浜圭介/桂銀淑 (order/delimiter only). Other candidates (五木ひろし×日野美歌, 浜圭介/奥村チヨ) are different duet versions = reject."
+ },
+ {
+  "song_id": "tj-6177",
+  "title": "生命のブルース",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-16090",
+  "candidate_joysound": "16100",
+  "reason": "Notation variant: 黑澤明とロス・プリモス = 黒沢明とロス・プリモス (TJ uses traditional kanji 黑澤 for 黒沢). Same group, same song."
+ },
+ {
+  "song_id": "tj-6184",
+  "title": "愛されてセレナーデ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-84",
+  "candidate_joysound": "84",
+  "reason": "Notation variant: ヤンㆍスギョン = ヤン・スギョン (Korean middle dot ㆍ vs katakana middle dot). 五木まり candidate is a different artist = reject."
+ },
+ {
+  "song_id": "tj-6233",
+  "title": "抱 擁",
+  "verdict": "REJECT",
+  "reason": "箱崎晋一郎's 抱擁 is not among candidates; all five candidates are different songs/artists sharing the title."
+ },
+ {
+  "song_id": "tj-6260",
+  "title": "信濃川慕情",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-16096",
+  "candidate_joysound": "16106",
+  "reason": "Notation variant: 黑澤明とロス・プリモス = 黒沢明とロス・プリモス. 葵美家 candidate is a different artist = reject."
+ },
+ {
+  "song_id": "tj-6277",
+  "title": "昴",
+  "verdict": "REJECT",
+  "reason": "谷村新司's 昴 is not among candidates; candidates are covers or unrelated same-title songs (アリス九號. is a different band from 谷村新司's アリス; 天童よしみ is a cover)."
+ },
+ {
+  "song_id": "tj-6282",
+  "title": "城ヶ崎ブルース",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-22979",
+  "candidate_joysound": "23848",
+  "reason": "Notation variant: 黑澤明とロス・プリモス = 黒沢明とロス・プリモス. Same group, same song."
+ },
+ {
+  "song_id": "tj-6313",
+  "title": "はたらくくるま 1",
+  "verdict": "REJECT",
+  "reason": "Different performer version: JOYSOUND credits original singer のこいのこ; TJ credits 堀江美都子/森の木児童合唱団 (cover recording). Cover/version = REJECT."
+ },
+ {
+  "song_id": "tj-6314",
+  "title": "はたらくくるま 3",
+  "verdict": "REJECT",
+  "reason": "Different performer version: JOYSOUND credits 佐々木真里; TJ credits 堀江美都子/森の木児童合唱団. Cover/version = REJECT."
+ },
+ {
+  "song_id": "tj-6315",
+  "title": "こねこのしーにゃん",
+  "verdict": "REJECT",
+  "reason": "Different performer credit: JOYSOUND credits 小笠原ちあき; TJ credits 田中眞弓. Same children's song title but different recorded version = REJECT."
+ },
+ {
+  "song_id": "tj-6318",
+  "title": "おっぱいがいっぱい",
+  "verdict": "REJECT",
+  "reason": "Different performer credit: JOYSOUND credits ぶんけかな; TJ credits 林香生. Different recorded version of the children's song = REJECT."
+ },
+ {
+  "song_id": "tj-6339",
+  "title": "愛のふれあい",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25655",
+  "candidate_joysound": "27166",
+  "reason": "Notation variant: 澤ひろしとTOKYO 99 = 沢ひろしとTokyo99 (kanji 澤/沢 and case/spacing only). Same group, same song."
+ },
+ {
+  "song_id": "tj-6352",
+  "title": "アマン",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2165",
+  "candidate_joysound": "2165",
+  "reason": "Notation variant: 菅原洋一＆シルビア = 菅原洋一/シルヴィア (ビ/ヴィ transliteration). 菅原やすのり's アマン(愛人) is a different artist = reject."
+ },
+ {
+  "song_id": "tj-6408",
+  "title": "グッドナイト",
+  "verdict": "REJECT",
+  "reason": "マヒナスターズ/松尾和子's グッドナイト is not among candidates; グソクムズ entry is a different song sharing the title."
+ },
+ {
+  "song_id": "tj-6447",
+  "title": "すみだ川",
+  "verdict": "REJECT",
+  "reason": "TJ credits original 東海林太郎; candidate is 島倉千代子's version. Different performer version/cover = REJECT."
+ },
+ {
+  "song_id": "tj-6451",
+  "title": "武田節",
+  "verdict": "UNCERTAIN",
+  "reason": "Web-verified same musical work: 武田節 (1961, 米山愛紫/明本京静) originally sung by 三橋美智也 (million seller), now commonly treated as 山梨県民謡 — JOYSOUND credits it as the folk song. Same song but the credit-convention difference (original singer vs prefecture folk attribution) falls outside the 4 allowed merge categories; deferring to owner. 氷川きよし candidate is a cover = reject."
+ },
+ {
+  "song_id": "tj-6455",
+  "title": "誰よりも君を愛す",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25672",
+  "candidate_joysound": "27183",
+  "reason": "Notation variant: same duet — TJ マヒナスターズ,松尾和子 = JOYSOUND 松尾和子/和田弘とマヒナスターズ (order + full group name 和田弘と prefix). 真奈尚子 candidate is a cover = reject."
+ },
+ {
+  "song_id": "tj-6459",
+  "title": "だんご3兄弟(おかあさんといっしょよりだんご３兄弟 主題歌)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-19734",
+  "candidate_joysound": "19748",
+  "reason": "Credit abbreviation: TJ 'だんご合唱団 外' (外 = et al.) abbreviates the original full credit 速水けんたろう/茂森あゆみ/ひまわりキッズ&だんご合唱団; だんご合唱団 appears in both. Same original recording credit."
+ },
+ {
+  "song_id": "tj-6520",
+  "title": "麦畑",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-994",
+  "candidate_joysound": "994",
+  "reason": "Credit variant, web-verified: official full credit is 'オヨネーズ、むぎふみ・シスターズ' (GIGA PARK lyrics credit) — TJ concatenates the full credit, JOYSOUND shortens to オヨネーズ. Same 1989 song. はやぶさ/かじのつよし candidates are covers = reject."
+ },
+ {
+  "song_id": "tj-6541",
+  "title": "演歌みたいな別れでも",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-360",
+  "candidate_joysound": "360",
+  "reason": "Notation variant: 梅澤富美男 = 梅沢富美男 (kanji 澤/沢). Same artist, same song."
+ },
+ {
+  "song_id": "tj-6543",
+  "title": "夜霧よ今夜もありがとう",
+  "verdict": "REJECT",
+  "reason": "TJ credits original 石原裕次郎; sole candidate is 中森明菜's cover. Cover = REJECT."
+ },
+ {
+  "song_id": "tj-6584",
+  "title": "雨の銀座",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-16089",
+  "candidate_joysound": "16099",
+  "reason": "Notation variant: 黑澤明とロス・プリモス = 黒沢明とロス・プリモス. Same group, same song."
+ },
+ {
+  "song_id": "tj-6627",
+  "title": "FOREVER",
+  "verdict": "REJECT",
+  "reason": "藤重正孝's FOREVER is not among candidates; all five candidates are different songs sharing the title."
+ },
+ {
+  "song_id": "tj-6710",
+  "title": "2億4千万の瞳",
+  "verdict": "REJECT",
+  "reason": "TJ credits original 郷ひろみ (鄕 kanji variant); sole candidate OVER SKA DRIVES is a cover. Cover = REJECT."
+ },
+ {
+  "song_id": "tj-6782",
+  "title": "夫婦酒",
+  "verdict": "REJECT",
+  "reason": "大川栄作/大杉美栄子 duet is not among candidates; all five candidates are different artists' same-title enka duets."
+ },
+ {
+  "song_id": "tj-6794",
+  "title": "ひだまりの詩",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-16133",
+  "candidate_joysound": "16143",
+  "reason": "Notation variant: TJ 'La Couple' is a misspelling of Le Couple(ル・クプル), the original artist of ひだまりの詩. メロン記念日 candidate is a cover = reject."
+ },
+ {
+  "song_id": "tj-6796",
+  "title": "BURN",
+  "verdict": "REJECT",
+  "reason": "THE YELLOW MONKEY's BURN is not among candidates; all five candidates are different songs sharing the title."
+ },
+ {
+  "song_id": "tj-68059",
+  "title": "366LOVEダイアリー(KING OF PRISM-Shiny Seven Stars- ED)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-745689",
+  "candidate_joysound": "439222",
+  "reason": "CV case: KING OF PRISM ED. TJ lists the 7 voice actors; JOYSOUND lists the 7 characters with CV = exactly those actors. Same song."
+ }
+]

@@ -1,0 +1,366 @@
+[
+ {
+  "song_id": "ky-43555",
+  "title": "それはやっぱり君でした",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-244465",
+  "candidate_joysound": "731660",
+  "reason": "동일곡, 크레딧 표기 변형: 嵐 앨범 수록 니노미야 솔로곡. JOYSOUND 제목에 'Vocal:Kazunari Ninomiya' 명시 — 멤버 솔로↔그룹 크레딧 차이일 뿐"
+ },
+ {
+  "song_id": "ky-40314",
+  "title": "そんな夕子にほれました",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6242",
+  "candidate_joysound": "2621",
+  "reason": "표기 변형: 増位山太志郞=増位山太志郎 (한자 이체자 郞/郎, KY의 한국식 한자 정규화), 제목 동일"
+ },
+ {
+  "song_id": "ky-40318",
+  "title": "そんな女のひとりごと",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-857",
+  "candidate_joysound": "857",
+  "reason": "표기 변형: 増位山太志郞=増位山太志郎 (이체자). 細川たかし 후보는 커버로 제외"
+ },
+ {
+  "song_id": "ky-41089",
+  "title": "だんご3兄弟",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-19734",
+  "candidate_joysound": "19748",
+  "reason": "표기 변형: '速水けんたろう、他'는 풀크레딧(速水けんたろう/茂森あゆみ/ひまわりキッズ&だんご合唱団)의 축약, 동일 원곡"
+ },
+ {
+  "song_id": "ky-40364",
+  "title": "なみだ船",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25676",
+  "candidate_joysound": "27187",
+  "reason": "표기 변형: 北島三郞=北島三郎 (이체자), 제목 동일"
+ },
+ {
+  "song_id": "ky-40867",
+  "title": "ぬれて大阪",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-375",
+  "candidate_joysound": "375",
+  "reason": "표기 변형: アローナイツ = 秋庭豊とアローナイツ (그룹 풀네임/축약), 제목 동일"
+ },
+ {
+  "song_id": "ky-40405",
+  "title": "まつり",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6511",
+  "candidate_joysound": "2726",
+  "reason": "표기 변형: 北島三郞=北島三郎 (이체자). 藤井風/赤い鳥/あさみちゆき는 동명이곡·별곡으로 제외"
+ },
+ {
+  "song_id": "ky-40918",
+  "title": "め組のひと",
+  "verdict": "MERGE",
+  "candidate_id": "tj-52758",
+  "candidate_joysound": "1006",
+  "reason": "표기 변형: ラッツ&スター=RATS&STAR (로마자 표기), CM 주석은 타이업 표기일 뿐. 山猿/倖田來未/CAMEL은 커버·동명이곡으로 제외"
+ },
+ {
+  "song_id": "ky-41858",
+  "title": "アニメタル",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25729",
+  "candidate_joysound": "14837",
+  "reason": "표기 변형: ANIMETAL=アニメタル (동일 밴드, 웹 확인). 셀프타이틀 테마곡, 제목·아티스트 완전 일치"
+ },
+ {
+  "song_id": "ky-40120",
+  "title": "アマン(Amant)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2165",
+  "candidate_joysound": "2165",
+  "reason": "표기 변형: 菅原洋一&シルビア = 菅原洋一/シルヴィア (동일 듀엣, ビ/ヴィ 표기 차). 菅原やすのり(愛人)는 다른 인물·다른 곡으로 제외"
+ },
+ {
+  "song_id": "ky-43142",
+  "title": "ウォーアイニー",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26967",
+  "candidate_joysound": "137186",
+  "reason": "표기 변형: 高橋瞳xBEAT CRUSADERS = 高橋瞳×BEAT CRUSADERS (x/× 기호 차), 은혼 ED 동일곡. 타 후보는 동명이곡"
+ },
+ {
+  "song_id": "ky-44886",
+  "title": "カナデトモスソラ",
+  "verdict": "MERGE",
+  "candidate_id": "tj-68745",
+  "candidate_joysound": "612018",
+  "reason": "크레딧 표기 변형: 프로세카 25時、ナイトコードで。 유닛곡, KY는 공식 크레딧(×巡音ルカ) 포함·TJ는 유닛명만. 동일 게임 수록 버전"
+ },
+ {
+  "song_id": "ky-42244",
+  "title": "カリソメ乙女(DEATH JAZZ ver.)",
+  "verdict": "MERGE",
+  "candidate_id": "blog-688-170",
+  "candidate_joysound": "21908",
+  "reason": "크레딧 축약: 동일 DEATH JAZZ ver. 명시, 椎名林檎×SOIL&\"PIMP\"SESSIONS의 SOIL 측 크레딧 생략일 뿐"
+ },
+ {
+  "song_id": "ky-41251",
+  "title": "グッド・ナイト",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25669",
+  "candidate_joysound": "27180",
+  "reason": "표기 변형: 和田弘とマヒナスターズ、松尾和子 = 松尾和子/和田弘とマヒナスターズ (듀엣 크레딧 순서 차). 早風美里는 커버로 제외"
+ },
+ {
+  "song_id": "ky-41294",
+  "title": "サライ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-4036",
+  "candidate_joysound": "4036",
+  "reason": "표기 변형: 谷村新司、加山雄三 = 加山雄三/谷村新司 (듀엣 순서 차). ソロ・ヴァージョン은 별버전으로 제외"
+ },
+ {
+  "song_id": "ky-44297",
+  "title": "シャンパンゴールド",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-666307",
+  "candidate_joysound": "425317",
+  "reason": "성우↔캐릭터: 힙노시스마이크 伊弉冉一二三의 솔로곡, CV가 木島隆一. ET-KING은 동명이곡으로 제외"
+ },
+ {
+  "song_id": "ky-42488",
+  "title": "セーラースターソング",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26616",
+  "candidate_joysound": "14062",
+  "reason": "표기 변형: 花沢加絵=花澤加繪 (이체자), 세일러문 스타즈 OP 동일곡"
+ },
+ {
+  "song_id": "ky-40832",
+  "title": "ダンスパーティーの夜",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25559",
+  "candidate_joysound": "27070",
+  "reason": "표기 변형: 林伊佐緖=林伊佐緒 (이체자 緖/緒), 제목 동일"
+ },
+ {
+  "song_id": "ky-44356",
+  "title": "チグリジア",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-666308",
+  "candidate_joysound": "425316",
+  "reason": "성우↔캐릭터: 힙노시스마이크 観音坂独歩의 솔로곡, CV가 伊東健人"
+ },
+ {
+  "song_id": "ky-42423",
+  "title": "チチをもげ!",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26007",
+  "candidate_joysound": "62537",
+  "reason": "성우↔캐릭터: 금색의 가쉬벨 パルコ・フォルゴレ 캐릭터송, CV가 高橋広樹 (후보 크레딧에 병기됨)"
+ },
+ {
+  "song_id": "ky-41058",
+  "title": "チュッ! 夏パ~ティ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-11629",
+  "candidate_joysound": "11637",
+  "reason": "표기 변형: 3人祭=三人祭 (숫자/한자 표기, 동일 H!P 셔플유닛). Berryz공방 멤버·スマイレージ판은 커버로 제외"
+ },
+ {
+  "song_id": "ky-43515",
+  "title": "ハッピーシンセサイザ",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27289",
+  "candidate_joysound": "106500",
+  "reason": "보컬로이드 크레딧: EasyPop feat.巡音ルカ、GUMI ↔ 巡音ルカ,GUMI — 동일 원곡(프로듀서↔보컬 크레딧 차). CV 커버 2건은 제외"
+ },
+ {
+  "song_id": "ky-43533",
+  "title": "ヒカリへ",
+  "verdict": "REJECT",
+  "reason": "후보 전부 별곡: tj-26376은 The Baby Stars의 원피스 OP(ヒカリへ), KY 곡은 miwa의 リッチマン,プアウーマン 주제가 — 제목만 같은 다른 곡. 나머지도 동명이곡"
+ },
+ {
+  "song_id": "ky-41934",
+  "title": "ヒカリヘ",
+  "verdict": "REJECT",
+  "reason": "후보는 miwa의 ヒカリヘ(리치맨 푸어우먼 OST), KY 곡은 The Babystars의 원피스 OP — 제목만 같은 다른 곡 (miwa곡과 상호 교차매칭된 상태)"
+ },
+ {
+  "song_id": "ky-42426",
+  "title": "ベリーメロン ~私の心をつかんだ良いメロン~",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-48717",
+  "candidate_joysound": "67136",
+  "reason": "성우↔캐릭터: 금색의 가쉬벨 ビクトリーム 캐릭터송, CV가 若本規夫 (후보 크레딧에 병기됨)"
+ },
+ {
+  "song_id": "ky-42046",
+  "title": "マイペース大王",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25988",
+  "candidate_joysound": "67500",
+  "reason": "개명/표기 변형: manzo=萬Z(量産型) 동일인 (공식 사이트 manzo-sound.jp에서 웹 확인), げんしけん OP 동일곡"
+ },
+ {
+  "song_id": "ky-40901",
+  "title": "ミオ・ミオ・ミオ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-24",
+  "candidate_joysound": "24",
+  "reason": "표기 변형: チョー・ヨンピル = 趙容弼(チョー・ヨンピル) (조용필, 한자/가타카나 병기 차)"
+ },
+ {
+  "song_id": "ky-44013",
+  "title": "ユメノトビラ",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28515",
+  "candidate_joysound": "312250",
+  "reason": "표기 변형: u's = μ's (그리스문자 μ의 ASCII 훼손 표기), 러브라이브 동일곡. 캐릭터 솔로·타 그룹판은 커버로 제외"
+ },
+ {
+  "song_id": "ky-40141",
+  "title": "ロボキッス",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25875",
+  "candidate_joysound": "10140",
+  "reason": "표기 변형: W(ダブルユー) = ダブルユー (동일 듀오, 유닛명 병기 차)"
+ },
+ {
+  "song_id": "ky-42675",
+  "title": "ワッハッハー",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-115253",
+  "candidate_joysound": "27512",
+  "reason": "개명: 関ジャニ∞는 2024년 SUPER EIGHT로 그룹명 변경, JOYSOUND가 신명의로 재크레딧한 동일곡"
+ },
+ {
+  "song_id": "ky-41335",
+  "title": "一円玉の旅がらす",
+  "verdict": "REJECT",
+  "reason": "웹 확인: 広野ゆき는 이 곡의 커버 가수(원곡=晴山さおり, NHK みんなのうた). 후보 晴山さおり(원곡)·水森かおり(커버) 모두 다른 가수의 별도 엔트리"
+ },
+ {
+  "song_id": "ky-40427",
+  "title": "与作",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6180",
+  "candidate_joysound": "2177",
+  "reason": "표기 변형: 北島三郞=北島三郎 (이체자). ジェロ/千昌夫판은 별도 가수 버전으로 제외"
+ },
+ {
+  "song_id": "ky-41995",
+  "title": "世界はそれを愛と呼ぶんだぜ",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-18482",
+  "candidate_joysound": "18492",
+  "reason": "표기 변형: Sambo Master = サンボマスター (로마자/가타카나), 동일곡"
+ },
+ {
+  "song_id": "ky-40882",
+  "title": "二人の銀座",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-4056",
+  "candidate_joysound": "4056",
+  "reason": "표기 변형: 山内賢、和泉雅子 = 和泉雅子/山内賢 (듀엣 크레딧 순서 차)"
+ },
+ {
+  "song_id": "ky-40303",
+  "title": "人生劇場",
+  "verdict": "REJECT",
+  "reason": "원곡 가수 楠木繁夫 후보 없음: 村田英雄판은 유명 커버(별도 엔트리), ケツメイシ는 동명이곡"
+ },
+ {
+  "song_id": "ky-41277",
+  "title": "今夜は離さない",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6143",
+  "candidate_joysound": "2644",
+  "reason": "표기 변형: 安倍里律子는 安倍里葎子의 KY측 오기(律/葎), 橋幸夫와의 동일 듀엣곡"
+ },
+ {
+  "song_id": "ky-43943",
+  "title": "僕たちはひとつの光",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27747",
+  "candidate_joysound": "675365",
+  "reason": "표기 변형: u's = μ's (ASCII 훼손 표기), 러브라이브 ED 동일곡"
+ },
+ {
+  "song_id": "ky-40981",
+  "title": "冬物語",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2790",
+  "candidate_joysound": "2790",
+  "reason": "표기 변형: チョー・ヨンピル = 趙容弼(チョー・ヨンピル). ケツメイシ 등 나머지 4건은 전부 동명이곡"
+ },
+ {
+  "song_id": "ky-42159",
+  "title": "別れ道",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-48001",
+  "candidate_joysound": "66418",
+  "reason": "표기 변형/개명: ガゼット = the GazettE (2006년 표기 변경 전 가타카나명, 동일 밴드), 초기 싱글 동일곡"
+ },
+ {
+  "song_id": "ky-40230",
+  "title": "北の漁場",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6114",
+  "candidate_joysound": "2628",
+  "reason": "표기 변형: 北島三郞=北島三郎 (이체자). 福田こうへい/島津亜矢/大江裕/氷川きよし판은 커버로 제외"
+ },
+ {
+  "song_id": "ky-42709",
+  "title": "吾亦紅",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-114757",
+  "candidate_joysound": "27500",
+  "reason": "개명/표기 변형: 杉本眞人(작곡가명)=すぎもとまさと(가수명) 동일인 (웹 확인, 위키·歌ネット), 2007년 본인 히트곡. 타 후보는 커버"
+ },
+ {
+  "song_id": "ky-40151",
+  "title": "命くれない",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6196",
+  "candidate_joysound": "2531",
+  "reason": "표기 변형: 瀬川瑛子=瀨川瑛子 (이체자 瀬/瀨). 井上由美子/氷川きよし/Nina77판은 커버로 제외"
+ },
+ {
+  "song_id": "ky-75876",
+  "title": "命短し尽くせよ奴隷",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-928686",
+  "candidate_joysound": "618669",
+  "reason": "성우↔캐릭터 (웹 확인): 本橋依央利는 블랙스타 -Theater Starless- 캐릭터명, CV가 福原かつみ (utaten 크레딧 '本橋依央利(福原かつみ)'), 동일곡"
+ },
+ {
+  "song_id": "ky-40363",
+  "title": "夏の終りのハーモニー",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1800",
+  "candidate_joysound": "1800",
+  "reason": "크레딧 축약: 원곡은 井上陽水/安全地帯 합작 싱글, KY가 井上陽水만 크레딧. 玉置浩二 단독판·MOOMIN·INSPi판은 별도 버전/커버로 제외"
+ },
+ {
+  "song_id": "ky-40982",
+  "title": "夢夜舟",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2765",
+  "candidate_joysound": "2765",
+  "reason": "표기 변형: チョー・ヨンピル = 趙容弼(チョー・ヨンピル)"
+ },
+ {
+  "song_id": "ky-40661",
+  "title": "大きな玉ねぎの下で",
+  "verdict": "REJECT",
+  "reason": "원곡 爆風スランプ(BAKUFU-SLUMP) 후보 없음: asmi·山崎まさよし판은 모두 커버"
+ },
+ {
+  "song_id": "ky-41502",
+  "title": "大切なもの",
+  "verdict": "REJECT",
+  "reason": "ロードオブメジャー(ROAD OF MAJOR) 곡 후보 없음: 林明日香/みつき/橘杏/AI/滴草由実 전부 제목만 같은 동명이곡"
+ }
+]

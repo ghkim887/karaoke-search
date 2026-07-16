@@ -1,0 +1,1219 @@
+[
+ {
+  "song": {
+   "id": "tjpdf-28062",
+   "title": "Great Distance",
+   "artist": "ryo(supercell)(F eat.chelly)",
+   "tj": "28062",
+   "ky": "43918"
+  },
+  "candidates": [
+   {
+    "id": "blog-442-59",
+    "joysound": "156116",
+    "title": "Great Distance",
+    "artist": "supercell",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43358",
+   "title": "Os-宇宙人",
+   "artist": "神聖かまってちゃん",
+   "tj": "28098",
+   "ky": "43358"
+  },
+  "candidates": [
+   {
+    "id": "joysound-165676",
+    "joysound": "94502",
+    "title": "Os-宇宙人",
+    "artist": "エリオをかまってちゃん",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28121",
+   "title": "Rose",
+   "artist": "ANNA inspi' NANA(BLACK STONES)",
+   "tj": "28121",
+   "ky": "42277"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1091242",
+    "joysound": "635511",
+    "title": "ROSE",
+    "artist": "HANA",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1128938",
+    "joysound": "640638",
+    "title": "rose",
+    "artist": "堂本光一",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-113580",
+    "joysound": "169368",
+    "title": "Rose",
+    "artist": "長瀬実夕",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-130528",
+    "joysound": "90615",
+    "title": "Rose",
+    "artist": "AI",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-153388",
+    "joysound": "100355",
+    "title": "ROSE",
+    "artist": "BREAKERZ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28132",
+   "title": "Someone Else",
+   "artist": "阿澄佳奈,藤田咲,喜多村英梨",
+   "tj": "28132",
+   "ky": "43264"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1021206",
+    "joysound": "624692",
+    "title": "Someone Else",
+    "artist": "Anna Aya",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-153828",
+    "joysound": "100546",
+    "title": "SOMEONE ELSE",
+    "artist": "種島ぽぷら(阿澄佳奈)・伊波まひる(藤田咲)・轟八千代(喜多村英梨)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28138",
+   "title": "Super∞Stream",
+   "artist": "日笠陽子,ゆかな 他",
+   "tj": "28138",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-163199",
+    "joysound": "106236",
+    "title": "SUPER∞STREAM",
+    "artist": "篠ノ之箒(cv.日笠陽子)、セシリア・オルコット(cv.ゆかな)、凰鈴音(cv.下田麻美)、シャルル・デュノア(cv.花澤香菜)、ラウラ・ボーデヴィッヒ(cv.井上麻里奈)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28141",
+   "title": "The Galaxy Express 999",
+   "artist": "ゴダイゴ",
+   "tj": "28141",
+   "ky": "42061"
+  },
+  "candidates": [
+   {
+    "id": "joysound-123481",
+    "joysound": "176064",
+    "title": "THE GALAXY EXPRESS 999",
+    "artist": "I'iwi",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28187",
+   "title": "オレンジ",
+   "artist": "釘宮理恵,堀江由衣,喜多村英梨",
+   "tj": "28187",
+   "ky": "42936"
+  },
+  "candidates": [
+   {
+    "id": "blog-149-43",
+    "joysound": "643351",
+    "title": "オレンジ",
+    "artist": "Saucy Dog",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-155-111",
+    "joysound": "690695",
+    "title": "オレンジ",
+    "artist": "sumika",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-1568-20",
+    "joysound": "442134",
+    "title": "オレンジ",
+    "artist": "Hump Back",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-178-26",
+    "joysound": "617787",
+    "title": "オレンジ",
+    "artist": "川崎鷹也",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-338-3",
+    "joysound": "196259",
+    "title": "オレンジ",
+    "artist": "GReeeeN",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28188",
+   "title": "お願い!シンデレラ",
+   "artist": "高垣楓,他",
+   "tj": "28188",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-419206",
+    "joysound": "672515",
+    "title": "お願い!シンデレラ",
+    "artist": "高垣楓、城ヶ崎美嘉、小日向美穂、十時愛梨、川島瑞樹、日野茜、輿水幸子、佐久間まゆ、白坂小梅",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-536175",
+    "joysound": "678196",
+    "title": "お願い!シンデレラ",
+    "artist": "CINDERELLA PROJECT",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-254883",
+    "joysound": "725732",
+    "title": "お願い!シンデレラ(M@STER VERSION)",
+    "artist": "THE IDOLM@STER CINDERELLA GIRLS(島村卯月/小日向美穂/三村かな子/渋谷凛/多田李衣菜/神崎蘭子/本田未央/城ヶ崎美嘉/城ヶ崎莉嘉)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-408990",
+    "joysound": "314313",
+    "title": "お願い!シンデレラ(ハピ☆ハピver.)",
+    "artist": "CINDERELLA GIRLS for あんきら(諸星きらり/双葉杏)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42649",
+   "title": "かえして!ニーソックス",
+   "artist": "平野綾",
+   "tj": "28189",
+   "ky": "42649"
+  },
+  "candidates": [
+   {
+    "id": "joysound-106899",
+    "joysound": "165114",
+    "title": "かえして!ニーソックス",
+    "artist": "泉こなた(平野綾)、柊かがみ(加藤英美里)、柊つかさ(福原香織)、高良みゆき(遠藤綾)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28193",
+   "title": "ギー太に首ったけ",
+   "artist": "豊崎愛生",
+   "tj": "28193",
+   "ky": "43103"
+  },
+  "candidates": [
+   {
+    "id": "joysound-133292",
+    "joysound": "136422",
+    "title": "ギー太に首ったけ",
+    "artist": "平沢唯(豊崎愛生)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28217",
+   "title": "ススメ→トゥモロウ",
+   "artist": "新田恵海,内田彩,三森すずこ",
+   "tj": "28217",
+   "ky": "43850"
+  },
+  "candidates": [
+   {
+    "id": "joysound-255119",
+    "joysound": "726244",
+    "title": "ススメ→トゥモロウ",
+    "artist": "高坂穂乃果(CV.新田恵海)南ことり(CV.内田彩)園田海未(CV.三森すずこ)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28230",
+   "title": "ドラマチックマーケットライド",
+   "artist": "洲崎綾",
+   "tj": "28230",
+   "ky": "43600"
+  },
+  "candidates": [
+   {
+    "id": "joysound-248646",
+    "joysound": "721971",
+    "title": "ドラマチックマーケットライド",
+    "artist": "北白川たまこ(cv:洲崎綾)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42576",
+   "title": "どんだけファンファーレ",
+   "artist": "平野綾",
+   "tj": "28231",
+   "ky": "42576"
+  },
+  "candidates": [
+   {
+    "id": "joysound-108903",
+    "joysound": "166422",
+    "title": "どんだけファンファーレ",
+    "artist": "泉こなた(平野綾)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28234",
+   "title": "ハートの確率",
+   "artist": "blue drops",
+   "tj": "28234",
+   "ky": "43327"
+  },
+  "candidates": [
+   {
+    "id": "joysound-158294",
+    "joysound": "103142",
+    "title": "ハートの確率(Main Vocal Hitomi)",
+    "artist": "blue drops(吉田仁美&イカロス(早見沙織))",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28238",
+   "title": "はっぴぃにゅうにゃあ",
+   "artist": "伊藤かな恵,井口裕香,竹達彩奈",
+   "tj": "28238",
+   "ky": "43326"
+  },
+  "candidates": [
+   {
+    "id": "joysound-153961",
+    "joysound": "100624",
+    "title": "はっぴぃ にゅう にゃあ",
+    "artist": "芹沢文乃(伊藤かな恵)&梅ノ森千世(井口裕香)&霧谷希(竹達彩奈)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42686",
+   "title": "パラレルDays",
+   "artist": "平野綾",
+   "tj": "28244",
+   "ky": "42686"
+  },
+  "candidates": [
+   {
+    "id": "joysound-85967",
+    "joysound": "124976",
+    "title": "パラレルDays",
+    "artist": "涼宮ハルヒ(C.V.平野綾)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28257",
+   "title": "プレパレード",
+   "artist": "釘宮理恵,堀江由衣,喜多村英梨",
+   "tj": "28257",
+   "ky": "42961"
+  },
+  "candidates": [
+   {
+    "id": "joysound-124168",
+    "joysound": "176434",
+    "title": "プレパレード",
+    "artist": "逢坂大河(釘宮理恵)・櫛枝実乃梨(堀江由衣)・川嶋亜美(喜多村英梨)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-134982",
+    "joysound": "137031",
+    "title": "プレパレード〈男汁MAX SINGLE ver.〉",
+    "artist": "高須竜児・北村祐作・能登久光・春田浩次(間島淳司・野島裕史・興津和幸・吉野裕行)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28261",
+   "title": "ポワゾンKISS",
+   "artist": "QUARTET NIGHT",
+   "tj": "28261",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-297710",
+    "joysound": "728580",
+    "title": "ポワゾンKISS",
+    "artist": "QUARTET NIGHT(寿嶺二・黒崎蘭丸・美風藍・カミュ/CV:森久保祥太郎・鈴木達央・蒼井翔太・前野智昭)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28270",
+   "title": "まどろみの約束",
+   "artist": "佐藤聡美,茅野愛衣",
+   "tj": "28270",
+   "ky": "43522"
+  },
+  "candidates": [
+   {
+    "id": "joysound-231292",
+    "joysound": "198862",
+    "title": "まどろみの約束",
+    "artist": "千反田える(佐藤聡美)&伊原摩耶花(茅野愛衣)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28292",
+   "title": "経験値上昇中☆",
+   "artist": "佐藤利奈,井上麻里奈,茅原実里",
+   "tj": "28292",
+   "ky": "42650"
+  },
+  "candidates": [
+   {
+    "id": "joysound-112111",
+    "joysound": "168428",
+    "title": "経験値上昇中☆",
+    "artist": "南春香(佐藤利奈)/南夏奈(井上麻里奈)/南千秋(茅原実里)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28336",
+   "title": "僕らのLove Style",
+   "artist": "鈴村健一,藤田圭宣",
+   "tj": "28336",
+   "ky": "42689"
+  },
+  "candidates": [
+   {
+    "id": "joysound-104561",
+    "joysound": "163662",
+    "title": "僕らのLove Style",
+    "artist": "常陸院光・馨(鈴村健一・藤田圭宣)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28371",
+   "title": "俺達のJOY!",
+   "artist": "市瀬秀和 vs 井上優",
+   "tj": "28371",
+   "ky": "42907"
+  },
+  "candidates": [
+   {
+    "id": "joysound-114862",
+    "joysound": "171198",
+    "title": "俺達のJOY!",
+    "artist": "獄寺隼人(市瀬秀和) vs 山本武(井上優)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28394",
+   "title": "地獄の沙汰も君次第",
+   "artist": "地獄の沙汰オールスターズ",
+   "tj": "28394",
+   "ky": "43719"
+  },
+  "candidates": [
+   {
+    "id": "joysound-404061",
+    "joysound": "737474",
+    "title": "地獄の沙汰も君次第",
+    "artist": "地獄の沙汰オールスターズ(鬼灯CV:安元洋貴/閻魔大王CV:長嶝高士/シロCV:小林由美子/唐瓜CV:柿原徹也/茄子CV:青山桐子/お香CV:喜多村英梨/YOUR SONG IS GOOD)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42730",
+   "title": "最強パレパレード",
+   "artist": "平野綾",
+   "tj": "28404",
+   "ky": "42730"
+  },
+  "candidates": [
+   {
+    "id": "joysound-96170",
+    "joysound": "170533",
+    "title": "最強パレパレード",
+    "artist": "涼宮ハルヒ(CV.平野綾)、長門有希(CV.茅原実里)、朝比奈みくる(CV.後藤邑子)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28522",
+   "title": "ビュンビュン!トッキュウジャー",
+   "artist": "Project.R",
+   "tj": "28522",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-403670",
+    "joysound": "736143",
+    "title": "ビュンビュン! トッキュウジャー",
+    "artist": "Project.R(YOFFY、谷本貴義、鎌田章吾)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28549",
+   "title": "真夜中の饗宴(MIDNIGHT PLEASURE)",
+   "artist": "緑川光,鳥海浩輔,近藤隆",
+   "tj": "28549",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-422078",
+    "joysound": "501261",
+    "title": "真夜中の饗宴",
+    "artist": "逆巻アヤト(CV.緑川光)・逆巻シュウ(CV.鳥海浩輔)・逆巻スバル(CV.近藤隆)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "blog-1229-209",
+   "title": "Blue Moon",
+   "artist": "水樹奈々",
+   "tj": "28640",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-153-51",
+    "joysound": "696351",
+    "title": "Blue Moon",
+    "artist": "LiSA",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1057530",
+    "joysound": "629711",
+    "title": "Blue moon",
+    "artist": "水口晴幸",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-109122",
+    "joysound": "166558",
+    "title": "BLUE MOON",
+    "artist": "越中睦",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-124583",
+    "joysound": "176683",
+    "title": "Blue Moon",
+    "artist": "嘉神川クロエ(後藤邑子)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-125145",
+    "joysound": "177020",
+    "title": "Blue Moon",
+    "artist": "ほしな歌唄(水樹奈々)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28644",
+   "title": "絶世美人",
+   "artist": "大槻ケンヂと絶望少女達",
+   "tj": "28644",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-110845",
+    "joysound": "167646",
+    "title": "絶世美人",
+    "artist": "絶望少女達(風浦可符香、木津千里、木村カエレ、日塔奈美)",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44103",
+   "title": "時ノ雨、最終戦争",
+   "artist": "Orangestar",
+   "tj": "28650",
+   "ky": "44103"
+  },
+  "candidates": [
+   {
+    "id": "joysound-561576",
+    "joysound": "689105",
+    "title": "時ノ雨、最終戦争",
+    "artist": "ウォルピスカーター",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28677",
+   "title": "ようこそジャパリパークへ(けものフレンズ OP)",
+   "artist": "どうぶつビスケッツxPPP",
+   "tj": "28677",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-400-5",
+    "joysound": "699855",
+    "title": "ようこそジャパリパークへ",
+    "artist": "オーイシマサヨシ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-604068",
+    "joysound": "692747",
+    "title": "ようこそジャパリパークへ",
+    "artist": "どうぶつビスケッツ×PPP",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-617132",
+    "joysound": "696541",
+    "title": "ようこそジャパリパークへ(with かばん)",
+    "artist": "どうぶつビスケッツ+かばん×PPP",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-661677",
+    "joysound": "425667",
+    "title": "ようこそジャパリパークへ (サーバル ver.)",
+    "artist": "サーバル",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-661678",
+    "joysound": "425666",
+    "title": "ようこそジャパリパークへ (アラフェネ ver.)",
+    "artist": "アライグマとフェネック",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28689",
+   "title": "金曜日のおはよう",
+   "artist": "HoneyWorks(Feat.GUMI)",
+   "tj": "28689",
+   "ky": "44146"
+  },
+  "candidates": [
+   {
+    "id": "joysound-408790",
+    "joysound": "314245",
+    "title": "金曜日のおはよう",
+    "artist": "Gero",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-565473",
+    "joysound": "685410",
+    "title": "金曜日のおはよう",
+    "artist": "アイドルネッサンス",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-632867",
+    "joysound": "698878",
+    "title": "金曜日のおはよう",
+    "artist": "浦島坂田船",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28697",
+   "title": "ロメオ",
+   "artist": "LIPxLIP",
+   "tj": "28697",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-18062",
+    "joysound": "18072",
+    "title": "ロメオ",
+    "artist": "BLANKEY JET CITY",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-610836",
+    "joysound": "692986",
+    "title": "ロメオ",
+    "artist": "LIP×LIP(勇次郎・愛蔵/CV:内山昂輝・島崎信長)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-696512",
+    "joysound": "430482",
+    "title": "ロメオ",
+    "artist": "浦島坂田船",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-828321",
+    "joysound": "716079",
+    "title": "ロメオ《本人映像》",
+    "artist": "LIP×LIP(勇次郎・愛蔵/CV:内山昂輝・島崎信長)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tjpdf-28701",
+   "title": "ニワカアメ",
+   "artist": "花たん",
+   "tj": "28701",
+   "ky": "44145"
+  },
+  "candidates": [
+   {
+    "id": "joysound-300807",
+    "joysound": "733640",
+    "title": "ニワカアメ",
+    "artist": "天野月",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28713",
+   "title": "Precious You☆(ロクでなし魔術講師と禁忌教典 ED)",
+   "artist": "藤田茜,宮本侑芽,小澤亜李",
+   "tj": "28713",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-615752",
+    "joysound": "696746",
+    "title": "Precious You☆",
+    "artist": "システィーナ=フィーベル(CV:藤田茜) ルミア=ティンジェル(CV:宮本侑芽) リィエル=レイフォード(CV:小澤亜李)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28741",
+   "title": "JUMPin' JUMP UP!!!!(NEW GAME!! ED)",
+   "artist": "Fourfolium",
+   "tj": "28741",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-631269",
+    "joysound": "696487",
+    "title": "JUMPin' JUMP UP!!!!",
+    "artist": "fourfolium 涼風青葉(CV:高田憂希)、滝本ひふみ(CV:山口愛)、篠田はじめ(CV:戸田めぐみ)、飯島ゆん(CV:竹尾歩美)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-632017",
+    "joysound": "697276",
+    "title": "JUMPin' JUMP UP!!!! (TVサイズ)",
+    "artist": "fourfolium 涼風青葉(CV:高田憂希)、滝本ひふみ(CV:山口愛)、篠田はじめ(CV:戸田めぐみ)、飯島ゆん(CV:竹尾歩美)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44205",
+   "title": "DIARY",
+   "artist": "KK(上北健)",
+   "tj": "28761",
+   "ky": "44205"
+  },
+  "candidates": [
+   {
+    "id": "blog-162-163",
+    "joysound": "488359",
+    "title": "DIARY",
+    "artist": "斉藤和義",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1086239",
+    "joysound": "635397",
+    "title": "Diary",
+    "artist": "M!LK",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-112143",
+    "joysound": "85803",
+    "title": "Diary",
+    "artist": "コブクロ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-116057",
+    "joysound": "83515",
+    "title": "DIARY",
+    "artist": "青山テルマ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-170449",
+    "joysound": "110159",
+    "title": "Diary",
+    "artist": "遊佐未森",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28763",
+   "title": "自力本願レボリューション(暗殺教室 OP)",
+   "artist": "3年E組うた担",
+   "tj": "28763",
+   "ky": "44202"
+  },
+  "candidates": [
+   {
+    "id": "joysound-420827",
+    "joysound": "674317",
+    "title": "自力本願レボリューション",
+    "artist": "3年E組うた担 (渚&茅野&業&磯貝&前原)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28792",
+   "title": "ノンファンタジー(いつだって僕らの恋は10センチだった。OP)",
+   "artist": "LIPxLIP",
+   "tj": "28792",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-652873",
+    "joysound": "423462",
+    "title": "ノンファンタジー",
+    "artist": "LIP×LIP(勇次郎・愛蔵/CV:内山昂輝・島崎信長)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28800",
+   "title": "By Your Side",
+   "artist": "Wise(Feat.西野カナ)",
+   "tj": "28800",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-401-5",
+    "joysound": "490415",
+    "title": "By Your Side",
+    "artist": "大橋ちっぽけ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-111668",
+    "joysound": "168153",
+    "title": "By Your Side",
+    "artist": "高野健一",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-171607",
+    "joysound": "29168",
+    "title": "By Your Side",
+    "artist": "超新星",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-187592",
+    "joysound": "915719",
+    "title": "By Your Side",
+    "artist": "TIMBALAND-Kiley Dean-Utada",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-199998",
+    "joysound": "928164",
+    "title": "By your side",
+    "artist": "PINKLOOP",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28803",
+   "title": "Destiny(ドラマ'リバース' OST)",
+   "artist": "Che'Nelle",
+   "tj": "28803",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-307-14",
+    "joysound": "615455",
+    "title": "DESTINY",
+    "artist": "BLUE ENCOUNT",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-104495",
+    "joysound": "163619",
+    "title": "destiny〈rearrange version〉",
+    "artist": "愛内里菜&三枝夕夏",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-105391",
+    "joysound": "164132",
+    "title": "Destiny",
+    "artist": "COHAKU",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1063692",
+    "joysound": "630826",
+    "title": "DESTINY",
+    "artist": "EXILE TAKAHIRO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1099904",
+    "joysound": "637788",
+    "title": "Destiny",
+    "artist": "Aぇ! group",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28852",
+   "title": "Howling(七つの大罪-戒めの復活 OP)",
+   "artist": "FLOW X GRANRODEO",
+   "tj": "28852",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-105627",
+    "joysound": "164327",
+    "title": "Howling",
+    "artist": "surface",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1073238",
+    "joysound": "631988",
+    "title": "HOWLING",
+    "artist": "XG",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1129281",
+    "joysound": "823483",
+    "title": "Howling (Rearrange ver.)《レコおと》",
+    "artist": "大神ミオ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1166971",
+    "joysound": "825680",
+    "title": "Howling《本人映像》",
+    "artist": "大神ミオ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1184987",
+    "joysound": "649218",
+    "title": "Howling",
+    "artist": "青木陽菜",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44274",
+   "title": "月が綺麗",
+   "artist": "KK(上北健)",
+   "tj": "28868",
+   "ky": "44274"
+  },
+  "candidates": [
+   {
+    "id": "blog-349-132",
+    "joysound": "434071",
+    "title": "月が綺麗",
+    "artist": "amazarashi",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1086355",
+    "joysound": "634094",
+    "title": "月が綺麗",
+    "artist": "藤本真希",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1148604",
+    "joysound": "644989",
+    "title": "月が綺麗",
+    "artist": "岩見拓馬",
+    "match": "exact-title"
+   },
+   {
+    "id": "blog-533-11",
+    "joysound": "808822",
+    "title": "月が綺麗《本人映像》",
+    "artist": "TENSONG",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28876",
+   "title": "奇跡(映画'今夜、ロマンス劇場で' OST)",
+   "artist": "Che'Nelle",
+   "tj": "28876",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-180-30",
+    "joysound": "640337",
+    "title": "奇跡",
+    "artist": "手嶌葵",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-349-54",
+    "joysound": "676290",
+    "title": "奇跡",
+    "artist": "amazarashi",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1040186",
+    "joysound": "628641",
+    "title": "奇跡",
+    "artist": "Sizuk",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-117618",
+    "joysound": "172878",
+    "title": "奇跡",
+    "artist": "アリス九號.",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-127404",
+    "joysound": "178271",
+    "title": "奇跡〈Acoustic Ver.〉",
+    "artist": "岡野宏典",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28893",
+   "title": "WAR WAR WAR(ヒプノシスマイク)",
+   "artist": "Buster Bros!!!,MAD TRIGGER CREW",
+   "tj": "28893",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "blog-790-80",
+    "joysound": "691895",
+    "title": "WARWARWAR",
+    "artist": "THE ORAL CIGARETTES",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-687330",
+    "joysound": "429142",
+    "title": "WAR WAR WAR",
+    "artist": "Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平)・MAD TRIGGER CREW(CV.浅沼晋太郎・駒田航・神尾晋一郎)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28894",
+   "title": "IKEBUKURO WEST GAME PARK(ヒプノシスマイク)",
+   "artist": "Buster Bros!!!",
+   "tj": "28894",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-690805",
+    "joysound": "429143",
+    "title": "IKEBUKURO WEST GAME PARK",
+    "artist": "Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-714561",
+    "joysound": "434379",
+    "title": "IKEBUKURO WEST GAME PARK(Boyz Sunshine remix)",
+    "artist": "Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28899",
+   "title": "ステップアップLove(血界戦線 ED)",
+   "artist": "DAOKO X 岡村靖幸",
+   "tj": "28899",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-648355",
+    "joysound": "699477",
+    "title": "ステップアップLOVE",
+    "artist": "DAOKO × 岡村靖幸",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "tj-28901",
+   "title": "シャンパンゴールド(ヒプノシスマイク)",
+   "artist": "木島隆一",
+   "tj": "28901",
+   "ky": null
+  },
+  "candidates": [
+   {
+    "id": "joysound-122568",
+    "joysound": "175533",
+    "title": "シャンパンゴールド",
+    "artist": "ET-KING",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-666307",
+    "joysound": "425317",
+    "title": "シャンパンゴールド",
+    "artist": "伊弉冉一二三(CV.木島隆一)",
+    "match": "stripped-title"
+   }
+  ]
+ }
+]

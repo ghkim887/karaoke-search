@@ -1,0 +1,939 @@
+[
+ {
+  "song": {
+   "id": "ky-42941",
+   "title": "Rule",
+   "artist": "浜崎あゆみ",
+   "tj": null,
+   "ky": "42941"
+  },
+  "candidates": [
+   {
+    "id": "blog-157-89",
+    "joysound": "612568",
+    "title": "Rule",
+    "artist": "ナオト・インティライミ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-125448",
+    "joysound": "177159",
+    "title": "rule",
+    "artist": "鈴木トオル",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-201665",
+    "joysound": "929835",
+    "title": "RULE",
+    "artist": "sifow",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-215999",
+    "joysound": "944224",
+    "title": "Rule",
+    "artist": "[iksi:d]",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-128642",
+    "joysound": "90305",
+    "title": "Rule〈Original mix〉",
+    "artist": "浜崎あゆみ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40568",
+   "title": "shine more",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "40568"
+  },
+  "candidates": [
+   {
+    "id": "tj-25515",
+    "joysound": "28526",
+    "title": "shine more",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-51826",
+    "joysound": "70925",
+    "title": "SHINE MORE",
+    "artist": "松浦亜弥",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1079523",
+    "joysound": "820338",
+    "title": "Shine More《本人映像》",
+    "artist": "MISTY",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41756",
+   "title": "SO CRAZY",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41756"
+  },
+  "candidates": [
+   {
+    "id": "tj-25637",
+    "joysound": "31857",
+    "title": "SO CRAZY",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-405941",
+    "joysound": "738212",
+    "title": "so Crazy",
+    "artist": "中山優馬",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-858190",
+    "joysound": "647684",
+    "title": "So Crazy",
+    "artist": "超特急",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42412",
+   "title": "TAKE ME HIGHER (特撮\"ウルトラマンティガ\")",
+   "artist": "V6",
+   "tj": null,
+   "ky": "42412"
+  },
+  "candidates": [
+   {
+    "id": "joysound-14392",
+    "joysound": "14400",
+    "title": "TAKE ME HIGHER",
+    "artist": "V6",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-1165-21",
+    "joysound": "680928",
+    "title": "Take Me Higher",
+    "artist": "BRADIO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-150176",
+    "joysound": "128513",
+    "title": "Take Me Higher",
+    "artist": "JUJU",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-402966",
+    "joysound": "736648",
+    "title": "Take Me Higher",
+    "artist": "りすこ・もえ・ゆな from STAR☆ANIS",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-43522",
+    "joysound": "61586",
+    "title": "take me higher",
+    "artist": "m.o.v.e",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42566",
+   "title": "talkin' 2 myself",
+   "artist": "浜崎あゆみ",
+   "tj": null,
+   "ky": "42566"
+  },
+  "candidates": [
+   {
+    "id": "joysound-108804",
+    "joysound": "25472",
+    "title": "talkin' 2 myself〈Original mix〉",
+    "artist": "浜崎あゆみ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-117296",
+    "joysound": "83627",
+    "title": "talkin' 2 myself〈STONEBRIDGE Radio Edit〉",
+    "artist": "浜崎あゆみ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41932",
+   "title": "WANT ME,WANT ME",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41932"
+  },
+  "candidates": [
+   {
+    "id": "tj-25983",
+    "joysound": "10756",
+    "title": "Want me, want me",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42396",
+   "title": "w-inds. Single Mega-Mix",
+   "artist": "w-inds.",
+   "tj": null,
+   "ky": "42396"
+  },
+  "candidates": [
+   {
+    "id": "joysound-101205",
+    "joysound": "162258",
+    "title": "w-inds. Single Mega-Mix〈Radio Edit Version〉",
+    "artist": "w-inds.",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41096",
+   "title": "いつも何度でも　(\"千と千尋の神隠し\")",
+   "artist": "木村弓",
+   "tj": null,
+   "ky": "41096"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-29809",
+    "joysound": "11690",
+    "title": "いつも何度でも",
+    "artist": "木村弓",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-55755",
+    "joysound": "74881",
+    "title": "いつも何度でも",
+    "artist": "HEAVY HITTER♂ & The Friends",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44649",
+   "title": "うやむや",
+   "artist": "SixTONES",
+   "tj": null,
+   "ky": "44649"
+  },
+  "candidates": [
+   {
+    "id": "joysound-35874",
+    "joysound": "50402",
+    "title": "うやむや",
+    "artist": "一青窈",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-68384",
+    "joysound": "488132",
+    "title": "うやむや(YouTube Ver.)",
+    "artist": "SixTONES",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44751",
+   "title": "おもかげ (produced by Vaundy)",
+   "artist": "milet×Aimer×幾田りら",
+   "tj": null,
+   "ky": "44751"
+  },
+  "candidates": [
+   {
+    "id": "tj-25017",
+    "joysound": "495453",
+    "title": "おもかげ",
+    "artist": "milet & Aimer & 幾田りら(produced by Vaundy)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-224-120",
+    "joysound": "690661",
+    "title": "おもかげ(House ver.)",
+    "artist": "星野源",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-197197",
+    "joysound": "925357",
+    "title": "おもかげ",
+    "artist": "香田晋",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-202736",
+    "joysound": "930906",
+    "title": "おもかげ",
+    "artist": "岸井千恵子",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-254374",
+    "joysound": "725697",
+    "title": "おもかげ",
+    "artist": "キム・ヨンジャ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42459",
+   "title": "くればいいのに feat.草野マサムネ from SPITZ",
+   "artist": "KREVA",
+   "tj": null,
+   "ky": "42459"
+  },
+  "candidates": [
+   {
+    "id": "joysound-105484",
+    "joysound": "24771",
+    "title": "くればいいのに feat.草野マサムネ from SPITZ〈Single Edit〉",
+    "artist": "KREVA",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-108445",
+    "joysound": "166142",
+    "title": "くればいいのに feat.草野マサムネ from SPITZ(Album Version)",
+    "artist": "KREVA",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41614",
+   "title": "さくら (独唱）",
+   "artist": "森山直太朗",
+   "tj": null,
+   "ky": "41614"
+  },
+  "candidates": [
+   {
+    "id": "blog-1628-52",
+    "joysound": "677314",
+    "title": "さくら(独唱)",
+    "artist": "クリス・ハート",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-202755",
+    "joysound": "930925",
+    "title": "さくら(独唱)",
+    "artist": "夏川りみ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-639664",
+    "joysound": "423390",
+    "title": "さくら (独唱)",
+    "artist": "中澤卓也",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-693658",
+    "joysound": "430849",
+    "title": "さくら(独唱)",
+    "artist": "天童よしみ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-810512",
+    "joysound": "445065",
+    "title": "さくら(二〇一九)",
+    "artist": "森山直太朗",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40794",
+   "title": "さよならはダンスの後に",
+   "artist": "倍賞千恵子",
+   "tj": null,
+   "ky": "40794"
+  },
+  "candidates": [
+   {
+    "id": "tj-6633",
+    "joysound": "27068",
+    "title": "さよならはダンスの後に",
+    "artist": "倍賞千惠子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-540327",
+    "joysound": "678252",
+    "title": "さよならはダンスの後に",
+    "artist": "由紀さおり",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40823",
+   "title": "それは...黄昏",
+   "artist": "五木ひろし",
+   "tj": null,
+   "ky": "40823"
+  },
+  "candidates": [
+   {
+    "id": "joysound-2041",
+    "joysound": "2041",
+    "title": "それは…黄昏(たそがれ)",
+    "artist": "五木ひろし",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44882",
+   "title": "とても痛い痛がりたい",
+   "artist": "EZFG feat.VY1,VY2",
+   "tj": null,
+   "ky": "44882"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-68746",
+    "joysound": "147267",
+    "title": "とても痛い痛がりたい(カバー)",
+    "artist": "EZFG(Feat.灯油)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41351",
+   "title": "とんちんかんちん一休さん(\"一休さん\")",
+   "artist": "相内恵、ヤングフレッシュ",
+   "tj": null,
+   "ky": "41351"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28453",
+    "joysound": "5374",
+    "title": "とんちんかんちん一休さん",
+    "artist": "相内恵,ヤングフレッシュ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-107158",
+    "joysound": "165302",
+    "title": "とんちんかんちん一休さん",
+    "artist": "南明奈",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-538563",
+    "joysound": "678784",
+    "title": "とんちんかんちん一休さん",
+    "artist": "でんぱ組.inc",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42085",
+   "title": "アゲ♂アゲ♂EVERY☆騎士",
+   "artist": "DJ OZMA",
+   "tj": null,
+   "ky": "42085"
+  },
+  "candidates": [
+   {
+    "id": "joysound-84594",
+    "joysound": "54486",
+    "title": "アゲ♂アゲ♂EVERY☆騎士(ナイト)",
+    "artist": "DJ OZMA",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41247",
+   "title": "ウイスキーが、お好きでしょ",
+   "artist": "石川さゆり",
+   "tj": null,
+   "ky": "41247"
+  },
+  "candidates": [
+   {
+    "id": "joysound-143141",
+    "joysound": "137793",
+    "title": "ウイスキーが、お好きでしょ",
+    "artist": "The Gospellers",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-2458",
+    "joysound": "2458",
+    "title": "ウイスキーが、お好きでしょ",
+    "artist": "SAYURI(石川さゆり)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-411688",
+    "joysound": "316324",
+    "title": "ウイスキーが、お好きでしょ",
+    "artist": "三浦あずさ(たかはし智秋)",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-421546",
+    "joysound": "502178",
+    "title": "ウイスキーが、お好きでしょ",
+    "artist": "ハナレグミ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-962467",
+    "joysound": "616550",
+    "title": "ウイスキーが、お好きでしょ(Transcend ver.)",
+    "artist": "石川さゆり",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42826",
+   "title": "エージェント夜を往く (\"THE IDOLM@STER\"OST)",
+   "artist": "平田宏美",
+   "tj": null,
+   "ky": "42826"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28179",
+    "joysound": "138579",
+    "title": "エージェント夜を往く",
+    "artist": "平田宏美",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-104036",
+    "joysound": "163308",
+    "title": "エージェント夜を往く〈M@STER VERSION〉",
+    "artist": "菊地真(平田宏美)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-125006",
+    "joysound": "176936",
+    "title": "エージェント夜を往く〈REM@STER-B〉",
+    "artist": "如月千早(今井麻美)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-141811",
+    "joysound": "137237",
+    "title": "エージェント夜を往く",
+    "artist": "双海亜美/真美(下田麻美)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-143832",
+    "joysound": "138218",
+    "title": "エージェント夜を往く〈Hoover & Acid MIX〉",
+    "artist": "双海亜美/真美(下田麻美)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40747",
+   "title": "カスマプゲ（胸がせつない）",
+   "artist": "李成愛",
+   "tj": null,
+   "ky": "40747"
+  },
+  "candidates": [
+   {
+    "id": "tj-6151",
+    "joysound": "2337",
+    "title": "カスマプゲ",
+    "artist": "李 成愛",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-106879",
+    "joysound": "24862",
+    "title": "カスマプゲ",
+    "artist": "八代亜紀",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42419",
+   "title": "キッス~帰り道のラブソング~ (\"ラブ★コン\")",
+   "artist": "テゴマス",
+   "tj": null,
+   "ky": "42419"
+  },
+  "candidates": [
+   {
+    "id": "tj-26713",
+    "joysound": "24677",
+    "title": "キッス~帰り道の ラブソング~(ラブ★コン ED)",
+    "artist": "テゴマス",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1170209",
+    "joysound": "646863",
+    "title": "キッス～帰り道のラブソング～",
+    "artist": "増田貴久",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40119",
+   "title": "スクランブル",
+   "artist": "堀江由衣 with UNSCANDAL",
+   "tj": null,
+   "ky": "40119"
+  },
+  "candidates": [
+   {
+    "id": "blog-223-38",
+    "joysound": "423715",
+    "title": "スクランブル",
+    "artist": "SPYAIR",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-106612",
+    "joysound": "164922",
+    "title": "スクランブル",
+    "artist": "PhilHarmoUniQue",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-195030",
+    "joysound": "923177",
+    "title": "スクランブル",
+    "artist": "奥井雅美",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-199760",
+    "joysound": "927925",
+    "title": "スクランブル",
+    "artist": "竹仲絵里",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-25918",
+    "joysound": "65161",
+    "title": "スクランブル(スクールランブル OP)",
+    "artist": "堀江由衣",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44228",
+   "title": "ノンファンタジー(いつだって僕らの恋は10センチだった)",
+   "artist": "LIP×LIP",
+   "tj": null,
+   "ky": "44228"
+  },
+  "candidates": [
+   {
+    "id": "joysound-652873",
+    "joysound": "423462",
+    "title": "ノンファンタジー",
+    "artist": "LIP×LIP(勇次郎・愛蔵/CV:内山昂輝・島崎信長)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43610",
+   "title": "マジLOVE2000%(\"うたの☆プリンスさまっマジLOVE2000%\")",
+   "artist": "ST☆RISH",
+   "tj": null,
+   "ky": "43610"
+  },
+  "candidates": [
+   {
+    "id": "tj-27438",
+    "joysound": "723883",
+    "title": "マジLOVE2000%(うたの☆プリンスさまっ♪マジLOVE2000％ ED)",
+    "artist": "ST☆RISH",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-57747",
+   "title": "メズマライザー",
+   "artist": "사츠키",
+   "tj": null,
+   "ky": "57747"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1039915",
+    "joysound": "627223",
+    "title": "メズマライザー",
+    "artist": "サツキ",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43311",
+   "title": "一番の宝物",
+   "artist": "Girls Dead Monster",
+   "tj": null,
+   "ky": "43311"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28380",
+    "joysound": "100811",
+    "title": "一番の宝物(Yui Ver.)",
+    "artist": "Girls Dead Monster",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1024856",
+    "joysound": "636542",
+    "title": "一番の宝物 (Crow Ver.)",
+    "artist": "marina",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-155245",
+    "joysound": "101361",
+    "title": "一番の宝物〈Original Version〉",
+    "artist": "karuta",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43143",
+   "title": "右肩の蝶",
+   "artist": "のりP feat.鏡音リン",
+   "tj": null,
+   "ky": "43143"
+  },
+  "candidates": [
+   {
+    "id": "joysound-165328",
+    "joysound": "107313",
+    "title": "右肩の蝶",
+    "artist": "うさ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-143101",
+    "joysound": "137779",
+    "title": "右肩の蝶〈リンver.〉",
+    "artist": "のりP feat.鏡音リン",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-143658",
+    "joysound": "138116",
+    "title": "右肩の蝶〈レンver.〉",
+    "artist": "のりP feat.鏡音レン",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44076",
+   "title": "君のこころは輝いてるかい? (\"ラブライブ! サンシャイン\")",
+   "artist": "Aqours",
+   "tj": null,
+   "ky": "44076"
+  },
+  "candidates": [
+   {
+    "id": "tj-27955",
+    "joysound": "678050",
+    "title": "君のこころは 輝いてるかい?(ラブライブ!サンシャイン!! OST)",
+    "artist": "Aqours",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43914",
+   "title": "夕映えプレゼント (アイドルマスターシンデレラガールズ)",
+   "artist": "CINDERELLA PROJECT",
+   "tj": null,
+   "ky": "43914"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28346",
+    "joysound": "672838",
+    "title": "夕映えプレゼント",
+    "artist": "CINDERELLA PROJECT",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41219",
+   "title": "夢であるように (\"Tales of Destiny\")",
+   "artist": "DEEN",
+   "tj": null,
+   "ky": "41219"
+  },
+  "candidates": [
+   {
+    "id": "joysound-205363",
+    "joysound": "933539",
+    "title": "夢であるように(テイルズオブデスティニーVersion)",
+    "artist": "DEEN",
+    "match": "stripped-title"
+   },
+   {
+    "id": "tj-6815",
+    "joysound": "16881",
+    "title": "夢であるように",
+    "artist": "DEEN",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43299",
+   "title": "天樂",
+   "artist": "ゆうゆ feat.鏡音リン",
+   "tj": null,
+   "ky": "43299"
+  },
+  "candidates": [
+   {
+    "id": "tj-27035",
+    "joysound": "313880",
+    "title": "天樂",
+    "artist": "鏡音リン",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-231490",
+    "joysound": "199011",
+    "title": "天樂",
+    "artist": "ピコ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-406762",
+    "joysound": "312769",
+    "title": "天樂",
+    "artist": "和楽器バンド",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41503",
+   "title": "太陽のSEASON",
+   "artist": "安室奈美恵",
+   "tj": null,
+   "ky": "41503"
+  },
+  "candidates": [
+   {
+    "id": "tj-25358",
+    "joysound": "9148",
+    "title": "太陽のSEASON",
+    "artist": "安室奈美惠",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-64172",
+    "joysound": "86594",
+    "title": "太陽のSEASON〈SALSOULIKE MIX〉",
+    "artist": "安室奈美恵",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40878",
+   "title": "女性は愛に生きる",
+   "artist": "三浦弘とハニーシックス",
+   "tj": null,
+   "ky": "40878"
+  },
+  "candidates": [
+   {
+    "id": "joysound-197",
+    "joysound": "197",
+    "title": "女性は愛に生きる(ひとはあいにいきる)",
+    "artist": "三浦弘とハニー・シックス",
+    "match": "stripped-title"
+   }
+  ]
+ }
+]

@@ -1,0 +1,238 @@
+[
+ {
+  "song_id": "ky-43437",
+  "title": "好きだよ。~100回の後悔~",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27388",
+  "candidate_joysound": "94800",
+  "reason": "동일곡. Sonar Pocket=ソナーポケット 로마자/가타카나 표기차, 제목 정확 일치. 15th Anniversary ver./アコースティックver.는 버전차로 제외."
+ },
+ {
+  "song_id": "ky-41543",
+  "title": "島唄",
+  "verdict": "REJECT",
+  "reason": "동일 아티스트(THE BOOM) 후보는 ウチナーグチ(오키나와어) 언어판 버전뿐 — 언어판/버전차. 나머지 후보는 전부 타가수 커버."
+ },
+ {
+  "song_id": "ky-44059",
+  "title": "恋になりたいAQUARIUM (\"ラブライブ! サンシャイン!!\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-27918",
+  "candidate_joysound": "684469",
+  "reason": "동일곡(러브라이브! 선샤인!! 곡), 동일 아티스트 Aqours. 띄어쓰기와 타이업 주석 표기 차이만."
+ },
+ {
+  "song_id": "ky-40635",
+  "title": "愛の讚歌 (IF YOU LOVE ME)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6693",
+  "candidate_joysound": "2693",
+  "reason": "동일곡(사랑의 찬가/Hymne à l'amour 일본어판), 동일 가수 越路吹雪. KY의 괄호 영문 부제만 차이."
+ },
+ {
+  "song_id": "ky-40886",
+  "title": "故郷",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-1119",
+  "candidate_joysound": "1119",
+  "reason": "동일 가수 小林幸子, 후리가나 괄호(ふるさと) 표기 차이만. 타 후보 4건은 전부 타가수 동명이곡."
+ },
+ {
+  "song_id": "ky-40327",
+  "title": "旅鴉",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-70",
+  "candidate_joysound": "70",
+  "reason": "동일 가수 五木ひろし, 후리가나 괄호(たびがらす) 표기 차이만. 福田こうへい/三山ひろし/氷川きよし는 타가수."
+ },
+ {
+  "song_id": "ky-44282",
+  "title": "日曜日の秘密 (ずっと前から好きでした。告白実行委員会)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-28889",
+  "candidate_joysound": "425240",
+  "reason": "동일곡, 동일 아티스트 HoneyWorks meets CHiCO & sana. 타이업 주석 표기 차이만."
+ },
+ {
+  "song_id": "ky-40968",
+  "title": "春告鳥",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-3276",
+  "candidate_joysound": "3276",
+  "reason": "동일 가수 キム・ヨンジャ, 후리가나 괄호(はるつげどり) 표기 차이만. 타 후보는 타가수 동명이곡."
+ },
+ {
+  "song_id": "ky-41821",
+  "title": "暁の車",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25823",
+  "candidate_joysound": "58967",
+  "reason": "동일곡(기동전사 건담 SEED 삽입곡). FictionJunction YUUKA vs Fiction Junction YUUKA는 띄어쓰기 변형(동일 아티스트)."
+ },
+ {
+  "song_id": "ky-40374",
+  "title": "暖簾",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-995",
+  "candidate_joysound": "995",
+  "reason": "동일 가수 五木ひろし, 후리가나 괄호(のれん) 표기 차이만. 타 후보는 타가수 동명이곡."
+ },
+ {
+  "song_id": "ky-44240",
+  "title": "未来の僕らは知ってるよ (ラブライブ! サンシャイン!!)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-28778",
+  "candidate_joysound": "698956",
+  "reason": "동일곡(러브라이브! 선샤인!! OP), 동일 아티스트 Aqours. 주석 표기 차이만."
+ },
+ {
+  "song_id": "ky-40979",
+  "title": "未来女",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2399",
+  "candidate_joysound": "2399",
+  "reason": "동일 가수 桂銀淑, 후리가나 괄호(みらいびと) 표기 차이만."
+ },
+ {
+  "song_id": "ky-42082",
+  "title": "本日ハ晴天ナリ (\"Jリーグウィニングイレブンタクティス\")",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25650",
+  "candidate_joysound": "31761",
+  "reason": "동일곡(Do As Infinity 2002년 싱글, 해당 게임 타이업). KY 타이업 주석만 차이. 槇原敬之/アリス九號./KIM CARNES는 동명이곡."
+ },
+ {
+  "song_id": "ky-40417",
+  "title": "柔",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-25679",
+  "candidate_joysound": "27190",
+  "reason": "동일 가수 美空ひばり, 후리가나 괄호(やわら) 표기 차이만."
+ },
+ {
+  "song_id": "ky-40543",
+  "title": "檄! 帝国華撃団",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25232",
+  "candidate_joysound": "14786",
+  "reason": "사쿠라대전 OP 원곡. 橫山智佐 外 = 横山智佐&帝国歌劇団(대표자+외 표기 변형). (改)/(改II)는 별도 버전, MI→NA는 커버."
+ },
+ {
+  "song_id": "ky-42883",
+  "title": "泪のムコウ",
+  "verdict": "REJECT",
+  "reason": "유일 후보가 〈AIMI Acoustic Version〉 — 동일 아티스트지만 명시적 버전차. 원곡 레코드가 후보에 없음."
+ },
+ {
+  "song_id": "ky-44081",
+  "title": "海色",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-417677",
+  "candidate_joysound": "671782",
+  "reason": "동일 아티스트 AKINO from bless4(함대컬렉션 OP), 후리가나 괄호(みいろ) 표기 차이만."
+ },
+ {
+  "song_id": "ky-43061",
+  "title": "炉心融解",
+  "verdict": "MERGE",
+  "candidate_id": "tj-26903",
+  "candidate_joysound": "138428",
+  "reason": "보컬로이드 크레딧 차이 — KY 'iroha feat.鏡音リン' vs TJ '鏡音リン', 동일 원곡(iroha 작 炉心融解)."
+ },
+ {
+  "song_id": "ky-42007",
+  "title": "熊野古道",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-76270",
+  "candidate_joysound": "20765",
+  "reason": "동일 가수 水森かおり, 후리가나 괄호(くまのこどう) 표기 차이만. 成見定男은 타가수."
+ },
+ {
+  "song_id": "ky-43484",
+  "title": "猛烈宇宙交響曲・第七楽章「無限の愛」(モーレツ宇宙海賊)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-222984",
+  "candidate_joysound": "30935",
+  "reason": "동일 제목·동일 아티스트 ももいろクローバーZ. KY 타이업 주석만 차이."
+ },
+ {
+  "song_id": "ky-40613",
+  "title": "神田川",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-2553",
+  "candidate_joysound": "2553",
+  "reason": "원곡은 かぐや姫(남코세츠와 카구야히메, 1973) — 리드보컬 南こうせつ 명의는 크레딧 표기 변형이지 커버 아님. '2014年新録音'은 버전차, 中森明菜/坂本冬美/井上由美子는 커버."
+ },
+ {
+  "song_id": "ky-41223",
+  "title": "秋風の狂詩曲",
+  "verdict": "MERGE",
+  "candidate_id": "tj-25072",
+  "candidate_joysound": "35192",
+  "reason": "동일곡, 동일 아티스트 Raphael. (ラプソディー) 독음 괄호 표기 차이만."
+ },
+ {
+  "song_id": "ky-43982",
+  "title": "自分REST@RT (\"THE IDOLM@STER\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "tj-28450",
+  "candidate_joysound": "146870",
+  "reason": "동일곡, 동일 아티스트 765PRO ALLSTARS. 타이업 주석 표기 차이만."
+ },
+ {
+  "song_id": "ky-42805",
+  "title": "英雄 (特撮\"ウルトラマンネクサス\")",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-68001",
+  "candidate_joysound": "65322",
+  "reason": "동일곡(doa, 울트라맨 넥서스 OP). KY 타이업 주석만 차이. 谷村新司/GARNET CROW/吉田拓郎/井上陽水는 동명이곡."
+ },
+ {
+  "song_id": "ky-44342",
+  "title": "蒼い鳥 (\"THE IDOLM@STER\"OST)",
+  "verdict": "MERGE",
+  "candidate_id": "tjpdf-28969",
+  "candidate_joysound": "136105",
+  "reason": "동일 가수 今井麻美 명의의 무버전판. 〈M@STER VERSION〉/〈REM@STER-A/B〉 및 타 캐릭터 명의는 버전차."
+ },
+ {
+  "song_id": "ky-44062",
+  "title": "越後水原",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-562254",
+  "candidate_joysound": "156704",
+  "reason": "동일 가수 水森かおり, 후리가나 괄호(すいばら) 표기 차이만."
+ },
+ {
+  "song_id": "ky-40952",
+  "title": "離別",
+  "verdict": "MERGE",
+  "candidate_id": "tj-6324",
+  "candidate_joysound": "2331",
+  "reason": "동일곡(이별/離別), 李成愛 vs 李 成愛 띄어쓰기 + 독음(イビョル) 괄호 차이만. 松よしゆき/杉良太郎/菅原洋一는 타가수."
+ },
+ {
+  "song_id": "ky-42003",
+  "title": "雪簾",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-18619",
+  "candidate_joysound": "18629",
+  "reason": "동일 가수 神野美伽의 원판(후리가나 괄호 차이만). 〈ニューアレンジヴァージョン〉은 버전차."
+ },
+ {
+  "song_id": "ky-42614",
+  "title": "青春(SEISYuN)",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-111055",
+  "candidate_joysound": "25824",
+  "reason": "TOKIO 2007년 38번째 싱글 青春(SEISYuN). JOYSOUND는 「青春」으로 등재(선곡번호 25824, 웹 확인) — TOKIO에 동명 타곡 없음."
+ },
+ {
+  "song_id": "ky-42471",
+  "title": "魔法戦隊マジレンジャー (特撮\"魔法戦隊マジレンジャ-\")",
+  "verdict": "MERGE",
+  "candidate_id": "joysound-47345",
+  "candidate_joysound": "65703",
+  "reason": "동일 제목·동일 아티스트 岩崎貴文(특촬 주제가). KY 타이업 주석만 차이."
+ }
+]

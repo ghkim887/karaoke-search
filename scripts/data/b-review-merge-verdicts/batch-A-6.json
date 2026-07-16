@@ -1,0 +1,864 @@
+[
+ {
+  "song": {
+   "id": "ky-43437",
+   "title": "好きだよ。~100回の後悔~",
+   "artist": "Sonar Pocket",
+   "tj": null,
+   "ky": "43437"
+  },
+  "candidates": [
+   {
+    "id": "tj-27388",
+    "joysound": "94800",
+    "title": "好きだよ。 ~100回の後悔~",
+    "artist": "ソナーポケット",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-983756",
+    "joysound": "619358",
+    "title": "好きだよ。～100回の後悔～ (15th Anniversary ver.)",
+    "artist": "Sonar Pocket",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-222453",
+    "joysound": "147337",
+    "title": "好きだよ。～100回の後悔～ (アコースティックver.)",
+    "artist": "ソナーポケット",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41543",
+   "title": "島唄",
+   "artist": "THE BOOM",
+   "tj": null,
+   "ky": "41543"
+  },
+  "candidates": [
+   {
+    "id": "joysound-107967",
+    "joysound": "165797",
+    "title": "島唄",
+    "artist": "九州男",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-193640",
+    "joysound": "921785",
+    "title": "島唄",
+    "artist": "中村ゆみ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-204147",
+    "joysound": "932319",
+    "title": "島唄",
+    "artist": "Sotte Bosse",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-207234",
+    "joysound": "935418",
+    "title": "島唄",
+    "artist": "LOW IQ 01",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-22606",
+    "joysound": "23327",
+    "title": "島唄〈ウチナーグチ・ヴァージョン〉",
+    "artist": "THE BOOM",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44059",
+   "title": "恋になりたいAQUARIUM (\"ラブライブ! サンシャイン!!\")",
+   "artist": "Aqours",
+   "tj": null,
+   "ky": "44059"
+  },
+  "candidates": [
+   {
+    "id": "tj-27918",
+    "joysound": "684469",
+    "title": "恋になりたい AQUARIUM(ラブライブ!サンシャイン!! OST)",
+    "artist": "Aqours",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40635",
+   "title": "愛の讚歌 (IF YOU LOVE ME)",
+   "artist": "越路吹雪",
+   "tj": null,
+   "ky": "40635"
+  },
+  "candidates": [
+   {
+    "id": "tj-6693",
+    "joysound": "2693",
+    "title": "愛の讚歌",
+    "artist": "越路吹雪",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40886",
+   "title": "故郷",
+   "artist": "小林幸子",
+   "tj": null,
+   "ky": "40886"
+  },
+  "candidates": [
+   {
+    "id": "joysound-1073202",
+    "joysound": "631957",
+    "title": "故郷",
+    "artist": "佐藤省吾",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-200236",
+    "joysound": "928403",
+    "title": "故郷",
+    "artist": "古賀健治",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-281224",
+    "joysound": "666713",
+    "title": "故郷",
+    "artist": "ROUSE of SOUL",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-301548",
+    "joysound": "734109",
+    "title": "故郷",
+    "artist": "由紀さおり",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-1119",
+    "joysound": "1119",
+    "title": "故郷(ふるさと)",
+    "artist": "小林幸子",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40327",
+   "title": "旅鴉",
+   "artist": "五木ひろし",
+   "tj": null,
+   "ky": "40327"
+  },
+  "candidates": [
+   {
+    "id": "joysound-416543",
+    "joysound": "670781",
+    "title": "旅鴉",
+    "artist": "福田こうへい",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-467570",
+    "joysound": "681561",
+    "title": "旅鴉",
+    "artist": "三山ひろし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-70",
+    "joysound": "70",
+    "title": "旅鴉(たびがらす)",
+    "artist": "五木ひろし",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-48058",
+    "joysound": "66475",
+    "title": "旅鴉(たびがらす)",
+    "artist": "氷川きよし",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44282",
+   "title": "日曜日の秘密 (ずっと前から好きでした。告白実行委員会)",
+   "artist": "HoneyWorks meets CHiCO & sana",
+   "tj": null,
+   "ky": "44282"
+  },
+  "candidates": [
+   {
+    "id": "tj-28889",
+    "joysound": "425240",
+    "title": "日曜日の秘密(ずっと前から好きでした。~告白実行委員会~ OST)",
+    "artist": "HoneyWorks meets CHiCO & sana",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40968",
+   "title": "春告鳥",
+   "artist": "キム・ヨンジャ",
+   "tj": null,
+   "ky": "40968"
+  },
+  "candidates": [
+   {
+    "id": "joysound-125402",
+    "joysound": "177125",
+    "title": "春告鳥",
+    "artist": "さだまさし",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-206065",
+    "joysound": "934243",
+    "title": "春告鳥",
+    "artist": "三城ひかるこ",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-418970",
+    "joysound": "672856",
+    "title": "春告鳥",
+    "artist": "順弘子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-3276",
+    "joysound": "3276",
+    "title": "春告鳥(はるつげどり)",
+    "artist": "キム・ヨンジャ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41821",
+   "title": "暁の車",
+   "artist": "FictionJunction YUUKA",
+   "tj": null,
+   "ky": "41821"
+  },
+  "candidates": [
+   {
+    "id": "tj-25823",
+    "joysound": "58967",
+    "title": "暁の車(機動戦士ガンダムSEED)",
+    "artist": "Fiction Junction YUUKA",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40374",
+   "title": "暖簾",
+   "artist": "五木ひろし",
+   "tj": null,
+   "ky": "40374"
+  },
+  "candidates": [
+   {
+    "id": "joysound-201310",
+    "joysound": "929480",
+    "title": "暖簾",
+    "artist": "太郎",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-422492",
+    "joysound": "501864",
+    "title": "暖簾",
+    "artist": "永井龍雲",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-990897",
+    "joysound": "620560",
+    "title": "暖簾",
+    "artist": "福田こうへい",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-995",
+    "joysound": "995",
+    "title": "暖簾(のれん)",
+    "artist": "五木ひろし",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44240",
+   "title": "未来の僕らは知ってるよ (ラブライブ! サンシャイン!!)",
+   "artist": "Aqours",
+   "tj": null,
+   "ky": "44240"
+  },
+  "candidates": [
+   {
+    "id": "tj-28778",
+    "joysound": "698956",
+    "title": "未来の僕らは知ってるよ(ラブライブ!サンシャイン!! OP)",
+    "artist": "Aqours",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40979",
+   "title": "未来女",
+   "artist": "桂銀淑",
+   "tj": null,
+   "ky": "40979"
+  },
+  "candidates": [
+   {
+    "id": "joysound-2399",
+    "joysound": "2399",
+    "title": "未来女(みらいびと)",
+    "artist": "桂銀淑",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42082",
+   "title": "本日ハ晴天ナリ (\"Jリーグウィニングイレブンタクティス\")",
+   "artist": "Do As Infinity",
+   "tj": null,
+   "ky": "42082"
+  },
+  "candidates": [
+   {
+    "id": "tj-25650",
+    "joysound": "31761",
+    "title": "本日ハ晴天ナリ",
+    "artist": "Do As Infinity",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-26064",
+    "joysound": "28172",
+    "title": "本日ハ晴天ナリ",
+    "artist": "槇原敬之",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-81263",
+    "joysound": "123707",
+    "title": "本日ハ晴天ナリ",
+    "artist": "アリス九號.",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-99170",
+    "joysound": "56712",
+    "title": "本日ハ晴天ナリ",
+    "artist": "KIM CARNES",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40417",
+   "title": "柔",
+   "artist": "美空ひばり",
+   "tj": null,
+   "ky": "40417"
+  },
+  "candidates": [
+   {
+    "id": "joysound-25679",
+    "joysound": "27190",
+    "title": "柔(やわら)",
+    "artist": "美空ひばり",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40543",
+   "title": "檄! 帝国華撃団",
+   "artist": "横山智佐&帝国歌劇団",
+   "tj": null,
+   "ky": "40543"
+  },
+  "candidates": [
+   {
+    "id": "joysound-164566",
+    "joysound": "106835",
+    "title": "檄!帝国華撃団",
+    "artist": "MI→NA",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-17522",
+    "joysound": "17532",
+    "title": "檄! 帝国華撃団(改)",
+    "artist": "帝国歌劇団",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-213083",
+    "joysound": "941302",
+    "title": "檄!帝国華撃団(改II)",
+    "artist": "李紅蘭(渕崎ゆり子)/アイリス(西原久美子)/桐島カンナ(田中真弓)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "tj-25232",
+    "joysound": "14786",
+    "title": "檄! 帝国華撃団(サクラ大戦 OP)",
+    "artist": "橫山智佐 外",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42883",
+   "title": "泪のムコウ",
+   "artist": "ステレオポニー",
+   "tj": null,
+   "ky": "42883"
+  },
+  "candidates": [
+   {
+    "id": "joysound-132900",
+    "joysound": "136213",
+    "title": "泪のムコウ〈AIMI Acoustic Version〉",
+    "artist": "ステレオポニー",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44081",
+   "title": "海色",
+   "artist": "AKINO from bless4",
+   "tj": null,
+   "ky": "44081"
+  },
+  "candidates": [
+   {
+    "id": "joysound-417677",
+    "joysound": "671782",
+    "title": "海色(みいろ)",
+    "artist": "AKINO from bless4",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43061",
+   "title": "炉心融解",
+   "artist": "iroha feat.鏡音リン",
+   "tj": null,
+   "ky": "43061"
+  },
+  "candidates": [
+   {
+    "id": "tj-26903",
+    "joysound": "138428",
+    "title": "炉心融解",
+    "artist": "鏡音リン",
+    "match": "exact-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42007",
+   "title": "熊野古道",
+   "artist": "水森かおり",
+   "tj": null,
+   "ky": "42007"
+  },
+  "candidates": [
+   {
+    "id": "joysound-76270",
+    "joysound": "20765",
+    "title": "熊野古道(くまのこどう)",
+    "artist": "水森かおり",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-166420",
+    "joysound": "107620",
+    "title": "熊野古道(くまのこどう)",
+    "artist": "成見定男",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43484",
+   "title": "猛烈宇宙交響曲・第七楽章「無限の愛」(モーレツ宇宙海賊)",
+   "artist": "ももいろクローバーZ",
+   "tj": null,
+   "ky": "43484"
+  },
+  "candidates": [
+   {
+    "id": "joysound-222984",
+    "joysound": "30935",
+    "title": "猛烈宇宙交響曲・第七楽章「無限の愛」",
+    "artist": "ももいろクローバーZ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40613",
+   "title": "神田川",
+   "artist": "南こうせつ",
+   "tj": null,
+   "ky": "40613"
+  },
+  "candidates": [
+   {
+    "id": "blog-539-139",
+    "joysound": "935460",
+    "title": "神田川",
+    "artist": "中森明菜",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-159537",
+    "joysound": "93764",
+    "title": "神田川",
+    "artist": "坂本冬美",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-244700",
+    "joysound": "732284",
+    "title": "神田川",
+    "artist": "井上由美子",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-2553",
+    "joysound": "2553",
+    "title": "神田川",
+    "artist": "かぐや姫",
+    "match": "exact-title"
+   },
+   {
+    "id": "joysound-407133",
+    "joysound": "738954",
+    "title": "神田川 (2014年新録音)",
+    "artist": "南こうせつ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-41223",
+   "title": "秋風の狂詩曲",
+   "artist": "Raphael",
+   "tj": null,
+   "ky": "41223"
+  },
+  "candidates": [
+   {
+    "id": "tj-25072",
+    "joysound": "35192",
+    "title": "秋風の狂詩曲 (ラプソディー)",
+    "artist": "Raphael",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-43982",
+   "title": "自分REST@RT (\"THE IDOLM@STER\"OST)",
+   "artist": "765PRO ALLSTARS",
+   "tj": null,
+   "ky": "43982"
+  },
+  "candidates": [
+   {
+    "id": "tj-28450",
+    "joysound": "146870",
+    "title": "自分REST@RT(THE IDOLM@STER 2nd OP)",
+    "artist": "765PRO ALLSTARS",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42805",
+   "title": "英雄 (特撮\"ウルトラマンネクサス\")",
+   "artist": "doa",
+   "tj": null,
+   "ky": "42805"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-68001",
+    "joysound": "65322",
+    "title": "英雄",
+    "artist": "doa",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1893",
+    "joysound": "1893",
+    "title": "英雄",
+    "artist": "谷村新司",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-298555",
+    "joysound": "729164",
+    "title": "英雄",
+    "artist": "GARNET CROW",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-34195",
+    "joysound": "38701",
+    "title": "英雄",
+    "artist": "吉田拓郎",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-66781",
+    "joysound": "89210",
+    "title": "英雄",
+    "artist": "井上陽水",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44342",
+   "title": "蒼い鳥 (\"THE IDOLM@STER\"OST)",
+   "artist": "今井麻美",
+   "tj": null,
+   "ky": "44342"
+  },
+  "candidates": [
+   {
+    "id": "tjpdf-28969",
+    "joysound": "136105",
+    "title": "蒼い鳥",
+    "artist": "今井麻美",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-111405",
+    "joysound": "167959",
+    "title": "蒼い鳥〈M@STER VERSION〉",
+    "artist": "如月千早(今井麻美)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-124555",
+    "joysound": "176654",
+    "title": "蒼い鳥〈REM@STER-A〉",
+    "artist": "天海春香(CV:中村繪里子)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-149663",
+    "joysound": "128205",
+    "title": "蒼い鳥〈REM@STER-B〉",
+    "artist": "萩原雪歩(落合祐里香)",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-172746",
+    "joysound": "111556",
+    "title": "蒼い鳥",
+    "artist": "双海亜美/真美(下田麻美)",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-44062",
+   "title": "越後水原",
+   "artist": "水森かおり",
+   "tj": null,
+   "ky": "44062"
+  },
+  "candidates": [
+   {
+    "id": "joysound-562254",
+    "joysound": "156704",
+    "title": "越後水原(すいばら)",
+    "artist": "水森かおり",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-40952",
+   "title": "離別",
+   "artist": "李成愛",
+   "tj": null,
+   "ky": "40952"
+  },
+  "candidates": [
+   {
+    "id": "joysound-204936",
+    "joysound": "933109",
+    "title": "離別",
+    "artist": "松よしゆき",
+    "match": "exact-title"
+   },
+   {
+    "id": "tj-6324",
+    "joysound": "2331",
+    "title": "離別(イビョル)",
+    "artist": "李 成愛",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-192931",
+    "joysound": "921076",
+    "title": "離別(りべつ)",
+    "artist": "杉良太郎",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-415681",
+    "joysound": "501505",
+    "title": "離別 (デュエット:渡辺とも子)",
+    "artist": "菅原洋一",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42003",
+   "title": "雪簾",
+   "artist": "神野美伽",
+   "tj": null,
+   "ky": "42003"
+  },
+  "candidates": [
+   {
+    "id": "joysound-108176",
+    "joysound": "165932",
+    "title": "雪簾(ゆきすだれ)〈ニューアレンジヴァージョン〉",
+    "artist": "神野美伽",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-18619",
+    "joysound": "18629",
+    "title": "雪簾(ゆきすだれ)",
+    "artist": "神野美伽",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42614",
+   "title": "青春(SEISYuN)",
+   "artist": "TOKIO",
+   "tj": null,
+   "ky": "42614"
+  },
+  "candidates": [
+   {
+    "id": "joysound-111055",
+    "joysound": "25824",
+    "title": "青春",
+    "artist": "TOKIO",
+    "match": "stripped-title"
+   },
+   {
+    "id": "blog-119-47",
+    "joysound": "439819",
+    "title": "青春",
+    "artist": "スキマスイッチ",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1045",
+    "joysound": "1045",
+    "title": "青春",
+    "artist": "近藤真彦",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1102159",
+    "joysound": "636937",
+    "title": "青春",
+    "artist": "三山ひろし",
+    "match": "stripped-title"
+   },
+   {
+    "id": "joysound-1107686",
+    "joysound": "638337",
+    "title": "青春",
+    "artist": "ウルフルズ",
+    "match": "stripped-title"
+   }
+  ]
+ },
+ {
+  "song": {
+   "id": "ky-42471",
+   "title": "魔法戦隊マジレンジャー (特撮\"魔法戦隊マジレンジャ-\")",
+   "artist": "岩崎貴文",
+   "tj": null,
+   "ky": "42471"
+  },
+  "candidates": [
+   {
+    "id": "joysound-47345",
+    "joysound": "65703",
+    "title": "魔法戦隊マジレンジャー",
+    "artist": "岩崎貴文",
+    "match": "stripped-title"
+   }
+  ]
+ }
+]
