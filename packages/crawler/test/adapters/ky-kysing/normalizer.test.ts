@@ -52,7 +52,7 @@ describe('normalizeKyRecord', () => {
   it('strips the tie-up suffix so title_primary is tie-up-canonical', () => {
     const rec = normalizeKyRecord({
       ky: '1',
-      title: 'この世の限り(錯乱 OST)',
+      title: 'この世の限り (映画"さくらん")',
       artist: '椎名林檎,椎名純平',
       crawledAt: CRAWLED_AT,
     });
@@ -61,32 +61,41 @@ describe('normalizeKyRecord', () => {
 });
 
 describe('normalizeKyTitle', () => {
-  it('peels a trailing role/tie-up parenthetical', () => {
-    expect(normalizeKyTitle('この世の限り(錯乱 OST)')).toBe('この世の限り');
+  it('peels media-name context parens — real KY tie-up formats (Phase 1b)', () => {
+    // Real KY rows (ky-42263 / ky-42655 / ky-40538) whose dominant tie-up format
+    // — `(映画"X")` / `(ドラマ"X")` — the role-tail stripper missed.
+    expect(normalizeKyTitle('この世の限り (映画"さくらん")')).toBe('この世の限り');
+    expect(normalizeKyTitle('be with you. (映画"犬と私の10の約束")')).toBe('be with you.');
+    expect(normalizeKyTitle('STEADY (ドラマ"イタズラなKiss")')).toBe('STEADY');
+  });
+  it('still peels a trailing ROLE parenthetical (real ky-44218 / ky-41905 format)', () => {
+    expect(normalizeKyTitle('fake town baby ("血界戦線 & BEYOND"OP)')).toBe('fake town baby');
     expect(normalizeKyTitle('* ~アスタリスク~ ("BLEACH"OP)')).toBe('* ~アスタリスク~');
   });
   it('KEEPS a version/cut marker (distinct karaoke cut, must not merge)', () => {
     expect(normalizeKyTitle('メルト(Short Ver.)')).toBe('メルト(Short Ver.)');
     expect(normalizeKyTitle('曲名(Live)')).toBe('曲名(Live)');
+    // Media keyword AND a version marker → version wins (distinct cut kept).
+    expect(normalizeKyTitle('曲名 (アニメ Ver.)')).toBe('曲名 (アニメ Ver.)');
   });
   it('KEEPS a plain title with no tie-up suffix', () => {
     expect(normalizeKyTitle('怪物')).toBe('怪物');
   });
   it('does NOT strip to empty when the title is only a parenthetical', () => {
-    expect(normalizeKyTitle('(錯乱 OST)')).toBe('(錯乱 OST)');
+    expect(normalizeKyTitle('(映画"さくらん")')).toBe('(映画"さくらん")');
   });
 });
 
 describe('KY tie-up strip — end-to-end merge lock (audit follow-up A)', () => {
   it('a stripped KY row now clusters with its clean-titled JOYSOUND twin (Tier C)', () => {
-    // The cited audit miss: KY `この世の限り(錯乱 OST)` / `椎名林檎,椎名純平` did
-    // not merge with JOYSOUND `この世の限り` / `椎名林檎×斎藤ネコ+椎名純平`
-    // (Tier C blocked by the raw suffix; Tier D by the whole-artist key). With
-    // the adapter strip, the KY title is clean and Tier C's title+lead-artist
-    // key matches.
+    // Real audit miss (ky-42263): KY `この世の限り (映画"さくらん")` /
+    // `椎名林檎,椎名純平` did not merge with JOYSOUND `この世の限り` /
+    // `椎名林檎×斎藤ネコ+椎名純平` (Tier C blocked by the raw media suffix; Tier D
+    // by the whole-artist key). With the adapter strip, the KY title is clean and
+    // Tier C's title+lead-artist key matches.
     const ky = normalizeKyRecord({
       ky: '1',
-      title: 'この世の限り(錯乱 OST)',
+      title: 'この世の限り (映画"さくらん")',
       artist: '椎名林檎,椎名純平',
       crawledAt: CRAWLED_AT,
     });
