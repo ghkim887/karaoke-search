@@ -272,3 +272,108 @@ describe('KyKysingCrawler — decision log', () => {
     expect(recs.map((r) => r.id)).toEqual(['ky-20']);
   });
 });
+
+describe('KyKysingCrawler — error / abort paths (M1)', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('aborts the walk when the row-parse-error ratio exceeds 1% over a meaningful sample', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    // 58 valid rows + 2 empty-title rows = 60 rows (≥ MIN_ROWS_FOR_SKIP_RATIO
+    // 50); 2/60 = 3.3% > the 1% threshold → the post-page ratio check throws.
+    const rows: FakeRow[] = [];
+    for (let i = 0; i < 58; i++)
+      rows.push({ ky: String(1000 + i), title: '怪物', artist: 'YOASOBI' });
+    rows.push({ ky: '2001', title: '', artist: 'YOASOBI' });
+    rows.push({ ky: '2002', title: '', artist: 'YOASOBI' });
+    const { http } = fakeHttp({ pages: { 'あ:1': rows } });
+    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    await expect(async () => {
+      for await (const _ of crawler.crawl()) {
+        /* drain */
+      }
+    }).rejects.toThrow(/row-parse-error ratio.*exceeds.*aborting/);
+  });
+
+  it('does NOT abort below the minimum sample even with a high error ratio', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    // 1 valid + 1 empty-title (50% error) but only 2 rows (< 50) → no abort.
+    const { http } = fakeHttp({
+      pages: {
+        'あ:1': [
+          { ky: '10', title: '怪物', artist: 'YOASOBI' },
+          { ky: '11', title: '', artist: 'YOASOBI' },
+        ],
+      },
+    });
+    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const recs = [];
+    for await (const r of crawler.crawl()) recs.push(r);
+    expect(recs.map((r) => r.id)).toEqual(['ky-10']);
+  });
+
+  it('drops an empty-title row as row-parse-error and records it in the decision log', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { http } = fakeHttp({
+      pages: {
+        'あ:1': [
+          { ky: '30', title: '怪物', artist: 'YOASOBI' }, // admit
+          { ky: '31', title: '', artist: 'YOASOBI' }, // empty title → row-parse-error
+        ],
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'ky-decisions-'));
+    const outPath = join(dir, 'ky-filter.jsonl');
+    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const recs = [];
+    for await (const r of crawler.crawl({ kyDecisionsOutPath: outPath })) recs.push(r);
+
+    // The empty-title row is not emitted.
+    expect(recs.map((r) => r.id)).toEqual(['ky-30']);
+    const lines = (await readFile(outPath, 'utf8'))
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    // A row-parse-error drop is recorded with a null step (never reached a gate).
+    expect(lines).toContainEqual({
+      ky: '31',
+      title: '',
+      artist: 'YOASOBI',
+      decision: 'drop',
+      step: null,
+      reason: 'row-parse-error',
+    });
+  });
+
+  it('records a detail-fetch-failed drop (step=truncation-repair) when repair fails', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { http } = fakeHttp({
+      // Truncated index row; the detail fetch returns non-2xx → repair fails.
+      pages: {
+        'あ:1': [{ ky: '40', title: 'とても長いタイトルがここで切れる..', artist: 'ある歌手' }],
+      },
+      detailStatus: { '40': 500 },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'ky-decisions-'));
+    const outPath = join(dir, 'ky-filter.jsonl');
+    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const recs = [];
+    for await (const r of crawler.crawl({ kyDecisionsOutPath: outPath })) recs.push(r);
+
+    // The truncated row is dropped, not emitted.
+    expect(recs).toHaveLength(0);
+    const lines = (await readFile(outPath, 'utf8'))
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    expect(lines).toEqual([
+      {
+        ky: '40',
+        title: 'とても長いタイトルがここで切れる..',
+        artist: 'ある歌手',
+        decision: 'drop',
+        step: 'truncation-repair',
+        reason: 'detail-fetch-failed',
+      },
+    ]);
+  });
+});
