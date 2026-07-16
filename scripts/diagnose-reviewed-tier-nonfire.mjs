@@ -146,8 +146,13 @@ export function classify(pairs, merged, rawByJoysound, samples) {
       const rawOthers = otherVendorsPresent(rawJoy?.karaoke_numbers, 'joysound');
       const mergedJoyOthers = otherVendorsPresent(joyRec.karaoke_numbers, 'joysound');
       const targetOthers = otherVendorsPresent(targetRec.karaoke_numbers, p.vendor);
+      // The joysound row was absorbed into a larger cluster whose survivor id is
+      // a different record — including a joysound↔joysound automatic merge (same
+      // title+artist, two JOYSOUND numbers), which leaves no extra tj/ky cell to
+      // detect. Treat it as the joy-merged-into-cluster (Case B) family.
+      const joyAbsorbed = rawJoy !== undefined && rawJoy.id !== joyRec.id;
       if (rawOthers.length > 0) bucket = 'joy-native-multivendor';
-      else if (mergedJoyOthers.length > 0) bucket = 'joy-merged-into-cluster';
+      else if (mergedJoyOthers.length > 0 || joyAbsorbed) bucket = 'joy-merged-into-cluster';
       else if (targetOthers.length > 0) bucket = 'target-nonsingleton';
       else bucket = 'both-single-unfired';
     }

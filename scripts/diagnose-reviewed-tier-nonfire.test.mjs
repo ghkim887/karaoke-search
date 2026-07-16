@@ -67,6 +67,22 @@ describe('classify — un-fired cause buckets', () => {
     expect(counts['joy-native-multivendor']).toBe(1);
   });
 
+  it('joy-merged-into-cluster: joysound↔joysound absorption (no extra tj/ky, different survivor id)', () => {
+    // The joysound-9 row was auto-merged with joysound-99; the survivor id is
+    // joysound-99 while the pair still targets joysound 9. No tj/ky cell to spot.
+    const joyRec = { id: 'joysound-99', karaoke_numbers: kn({ joysound: '9' }) };
+    const targetRec = { id: 'ky-1', karaoke_numbers: kn({ ky: '1' }) };
+    const raw = new Map([['9', { id: 'joysound-9', karaoke_numbers: kn({ joysound: '9' }) }]]);
+    const { counts } = classify(
+      [{ tier: 'F', vendor: 'ky', number: '1', joysound: '9' }],
+      [joyRec, targetRec],
+      raw,
+      5,
+    );
+    expect(counts['joy-merged-into-cluster']).toBe(1);
+    expect(counts['both-single-unfired']).toBe(0);
+  });
+
   it('both-single-unfired: both clean singletons yet not unioned (real bug signal)', () => {
     const joyRec = { id: 'joysound-9', karaoke_numbers: kn({ joysound: '9' }) };
     const targetRec = { id: 'ky-1', karaoke_numbers: kn({ ky: '1' }) };
