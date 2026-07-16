@@ -1,5 +1,5 @@
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
-import { stripContextSuffix } from '../../merge.js';
+import { CONTEXT_VERSION_RE, stripContextSuffix } from '../../merge.js';
 import { normalizeKyNumber } from './normalizeKyNumber.js';
 
 export interface NormalizeKyArgs {
@@ -24,15 +24,6 @@ export function kySourceUrl(ky: string): string {
  * left un-stripped, undercounting the merge candidates).
  */
 const KY_MEDIA_CONTEXT_RE = /映画|ドラマ|劇場版|アニメ/u;
-/**
- * Version/cut markers — a trailing paren carrying one is a DISTINCT karaoke cut
- * and must NOT be stripped even if it also names a work (version wins, matching
- * the reviewer-confirmed version-first rule in `stripContextSuffix`). Copied
- * verbatim from merge.ts `CONTEXT_VERSION_RE`; keep in sync (KY-adapter-local so
- * the media strip below stays consistent without changing the merger).
- */
-const KY_VERSION_MARKER_RE =
-  /(?:tv\s*size|tvサイズ|テレビ.*サイズ|サイズ|\bsize\b|anime\s*ver\.?|アニメ\s*ver\.?|movie\s*ver\.?|short\s*ver\.?|remix|リミックス|cover|カバー|version|\bver\.?\b|バージョン|m@ster|acoustic|live|instrumental)/iu;
 /** Trailing parenthetical (half/full-width), inner text captured. */
 const KY_TRAILING_PAREN_RE = /[（(]([^（）()]{1,180})[）)]\s*$/u;
 
@@ -48,7 +39,9 @@ function stripMediaContext(title: string): string {
     const match = current.match(KY_TRAILING_PAREN_RE);
     if (!match) break;
     const inner = (match[1] ?? '').trim();
-    if (KY_VERSION_MARKER_RE.test(inner)) break; // version/cut → keep
+    // Version/cut marker → distinct karaoke cut → keep (version wins, the SAME
+    // rule + regex as the merger's role-tail strip; imported, not copied).
+    if (CONTEXT_VERSION_RE.test(inner)) break;
     if (!KY_MEDIA_CONTEXT_RE.test(inner)) break; // not a media tie-up → keep
     const next = current.slice(0, match.index).trimEnd();
     if (next === '') break; // never strip to empty

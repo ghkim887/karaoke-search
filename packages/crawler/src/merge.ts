@@ -180,7 +180,10 @@ function tierCKey(r: SongRecord): string | null {
 const CONTEXT_SUFFIX_RE = /\s*[\(（]([^()（）]{1,180})[\)）]\s*$/u;
 const CONTEXT_ROLE_RE =
   /(?:^|[^a-z])(?:op|ed|ost|opening|ending|theme)(?:$|[^a-z])|ＯＰ|ＥＤ|ＯＳＴ|主題歌|挿入歌|オープニング|エンディング|テーマ/iu;
-const CONTEXT_VERSION_RE =
+// Exported so the R5 KY normalizer's media-tie-up strip reuses the SAME
+// version/cut markers as this module's role-tail strip (no drift) — see
+// `stripContextSuffix` (version-first) and ky-kysing/normalizer `stripMediaContext`.
+export const CONTEXT_VERSION_RE =
   /(?:tv\s*size|tvサイズ|テレビ.*サイズ|サイズ|\bsize\b|anime\s*ver\.?|アニメ\s*ver\.?|movie\s*ver\.?|short\s*ver\.?|remix|リミックス|cover|カバー|version|\bver\.?\b|バージョン|m@ster|acoustic|live|instrumental)/iu;
 const CONTEXT_ROLE_TOKEN_RE =
   /(?<![a-z])(?:op|ed|ost|opening|ending|theme)(?:\s*[\d０-９]+)?(?=$|[^a-z])|(?:ＯＰ|ＥＤ|ＯＳＴ|主題歌|挿入歌|オープニング|エンディング|テーマ)(?:\s*[\d０-９]+)?/giu;
