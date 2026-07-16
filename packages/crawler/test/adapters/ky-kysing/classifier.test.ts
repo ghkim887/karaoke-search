@@ -29,15 +29,15 @@ describe('classifyKyRow — reason enum branches', () => {
     expect(r).toEqual({ admit: true, reason: 'admit-index' });
   });
 
-  it('admits a repaired row as admit-detail-repaired', () => {
+  it('admits a recovered row as admit-title-recovered', () => {
     const r = classifyKyRow({
       ky: '44418',
-      title: '366LOVEダイアリー',
-      artist: '寺島惇太',
-      repaired: true,
+      title: '366LOVEダイアリー ("KING OF PRISM -Shiny Seven Stars-")',
+      artist: '寺島惇太、斉藤壮馬、畠中祐、八代拓、五十嵐雅',
+      recovered: true,
       overrides: NO_OVERRIDES,
     });
-    expect(r).toEqual({ admit: true, reason: 'admit-detail-repaired' });
+    expect(r).toEqual({ admit: true, reason: 'admit-title-recovered' });
   });
 
   it('drops a Korean-drop-list artist (any component) as drop-korean-artist', () => {
@@ -133,7 +133,7 @@ describe('kyStepForReason', () => {
     expect(kyStepForReason('drop-chinese-artist')).toBe('drop-list');
     expect(kyStepForReason('drop-korean-script')).toBe('script-guard');
     expect(kyStepForReason('drop-simplified-han')).toBe('script-guard');
-    expect(kyStepForReason('admit-detail-repaired')).toBe('truncation-repair');
+    expect(kyStepForReason('admit-title-recovered')).toBe('truncation-recovery');
     expect(kyStepForReason('admit-index')).toBe('index');
   });
 });

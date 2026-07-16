@@ -2,11 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import {
-  isKyTruncated,
-  parseKyDetailRow,
-  parseKyIndexRows,
-} from '../../../src/adapters/ky-kysing/parser.js';
+import { isKyTruncated, parseKyIndexRows } from '../../../src/adapters/ky-kysing/parser.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const FIXTURES = resolve(HERE, '../../fixtures/ky');
@@ -53,30 +49,5 @@ describe('parseKyIndexRows — live jp index fixture', () => {
 
   it('returns [] for an empty (out-of-range) page', () => {
     expect(parseKyIndexRows(load('index-jp-a-page99-empty.html'))).toEqual([]);
-  });
-});
-
-describe('parseKyDetailRow — live category=1 detail fixtures', () => {
-  it('returns the matching row for a short (untruncated) title', () => {
-    const row = parseKyDetailRow(load('detail-41905.html'), '41905');
-    expect(row).toEqual({
-      ky: '41905',
-      title: '* ~アスタリスク~ ("BLEACH"OP)',
-      artist: 'ORANGE RANGE',
-      truncated: false,
-    });
-  });
-
-  it('reports truncated:true when the detail view ALSO truncates a long title', () => {
-    // Empirical: category=1 applies the same width truncation as the index, so
-    // it does not recover this long title — the crawler drops such a row.
-    const row = parseKyDetailRow(load('detail-44418.html'), '44418');
-    expect(row).not.toBeNull();
-    expect(row?.title.endsWith('..')).toBe(true);
-    expect(row?.truncated).toBe(true);
-  });
-
-  it('returns null when the requested number is not on the page (mismatch)', () => {
-    expect(parseKyDetailRow(load('detail-41905.html'), '99999')).toBeNull();
   });
 });

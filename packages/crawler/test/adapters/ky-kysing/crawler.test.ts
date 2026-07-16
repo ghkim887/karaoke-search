@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { KY_KARAOKE_BOOK_INDEX, KyKysingCrawler } from '../../../src/adapters/ky-kysing/crawler.js';
+import type { KyTitleRecoveryEntry } from '../../../src/adapters/ky-kysing/curatedTitleRecovery.js';
 import type { HttpClient } from '../../../src/http.js';
 
 interface FakeRow {
@@ -19,23 +20,16 @@ function indexHtml(rows: FakeRow[]): string {
   return `<!doctype html><html><body>${rows.map(indexRow).join('')}</body></html>`;
 }
 
-function detailHtml(r: FakeRow): string {
-  const header =
-    '<ul class="search_chart_list"><li class="search_chart_num">곡번호</li><li class="search_chart_tit">곡명</li><li class="search_chart_sng">아티스트</li></ul>';
-  const data = `<ul class="search_chart_list"><li class="search_chart_num">${r.ky}</li><li class="search_chart_tit clear"><span title="${r.title}" class="tit">${r.title}</span><span title="${r.artist}" class="tit mo-art">${r.artist}</span></li><li class="search_chart_sng" title="${r.artist}">${r.artist}</li></ul>`;
-  return `<!doctype html><html><body>${header}${data}</body></html>`;
-}
-
 /**
- * Build a fake HttpClient. `pages` maps `${s_value}:${s_page}` to index rows
- * (a page absent from the map returns 0 rows → walk ends). `details` maps a KY
- * number to the detail row served by the `category=1` page.
+ * Build a fake HttpClient serving only the karaoke-book index. `pages` maps
+ * `${s_value}:${s_page}` to index rows (a page absent from the map returns 0
+ * rows → walk ends). The adapter makes NO other fetch (truncation recovery is a
+ * synchronous map lookup, not a detail fetch), so any other path is a 404.
  */
-function fakeHttp(opts: {
-  pages: Record<string, FakeRow[]>;
-  details?: Record<string, FakeRow>;
-  detailStatus?: Record<string, number>;
-}): { http: Pick<HttpClient, 'fetch'>; fetched: string[] } {
+function fakeHttp(opts: { pages: Record<string, FakeRow[]> }): {
+  http: Pick<HttpClient, 'fetch'>;
+  fetched: string[];
+} {
   const fetched: string[] = [];
   const http: Pick<HttpClient, 'fetch'> = {
     async fetch(url: string) {
@@ -46,18 +40,15 @@ function fakeHttp(opts: {
         const sp = parsed.searchParams.get('s_page') ?? '1';
         return { status: 200, body: indexHtml(opts.pages[`${sv}:${sp}`] ?? []) };
       }
-      if (parsed.pathname.startsWith('/search')) {
-        const kw = parsed.searchParams.get('keyword') ?? '';
-        const st = opts.detailStatus?.[kw];
-        if (st !== undefined && st !== 200) return { status: st, body: '' };
-        const row = opts.details?.[kw];
-        if (!row) return { status: 200, body: '<html><body></body></html>' };
-        return { status: 200, body: detailHtml(row) };
-      }
       return { status: 404, body: '' };
     },
   };
   return { http, fetched };
+}
+
+/** Build an injectable title-recovery lookup from a fixed `{ ky: entry }` map. */
+function fakeRecovery(map: Record<string, KyTitleRecoveryEntry>) {
+  return (ky: string): KyTitleRecoveryEntry | null => map[ky] ?? null;
 }
 
 describe('KY_KARAOKE_BOOK_INDEX', () => {
@@ -144,55 +135,67 @@ describe('KyKysingCrawler — index walk', () => {
   });
 });
 
-describe('KyKysingCrawler — truncation repair', () => {
+describe('KyKysingCrawler — truncation recovery (curated map, no fetch)', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('repairs a truncated index row from the detail page (admit-detail-repaired)', async () => {
+  it('recovers a truncated index row from the curated map (admit-title-recovered) and makes NO detail fetch', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const { http, fetched } = fakeHttp({
       pages: {
-        'あ:1': [{ ky: '500', title: 'あの素晴らしい愛を(オリジナ..', artist: 'ある歌手' }],
-      },
-      details: {
-        '500': { ky: '500', title: 'あの素晴らしい愛をもう一度', artist: 'ある歌手' },
+        'あ:1': [{ ky: '500', title: 'あの素晴らしい愛を(オリジナ..', artist: 'ある歌..' }],
       },
     });
-    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const crawler = new KyKysingCrawler(http as HttpClient, {
+      indexValues: ['あ'],
+      titleRecovery: fakeRecovery({
+        '500': { title: 'あの素晴らしい愛をもう一度', artist: 'ある歌手', source: 'test' },
+      }),
+    });
     const recs = [];
     for await (const r of crawler.crawl()) recs.push(r);
 
     expect(recs).toHaveLength(1);
-    expect(recs[0]?.title_primary).toBe('あの素晴らしい愛をもう一度'); // repaired, full
-    // The detail page was fetched for the truncated row.
-    expect(fetched.some((u) => u.includes('/search') && u.includes('keyword=500'))).toBe(true);
+    // Both title AND artist come from the recovery map (index artist was truncated).
+    expect(recs[0]?.title_primary).toBe('あの素晴らしい愛をもう一度');
+    expect(recs[0]?.artist_primary).toBe('ある歌手');
+    // No detail/search fetch — recovery is a local map lookup; only index pages hit.
+    expect(fetched.every((u) => u.includes('/karaoke-book'))).toBe(true);
   });
 
-  it('drops a truncated row when the detail is ALSO truncated (repair failure)', async () => {
+  it('drops a truncated row whose number is NOT in the recovery map (truncation-unrecovered)', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    const { http } = fakeHttp({
+    const { http, fetched } = fakeHttp({
       pages: {
         'あ:1': [{ ky: '501', title: '長い長いタイトル(補足情報がここに..', artist: 'ある歌手' }],
       },
-      details: {
-        '501': { ky: '501', title: '長い長いタイトル(補足情報がここに..', artist: 'ある歌手' },
-      },
     });
-    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const crawler = new KyKysingCrawler(http as HttpClient, {
+      indexValues: ['あ'],
+      titleRecovery: fakeRecovery({}), // empty map → unrecovered
+    });
     const recs = [];
     for await (const r of crawler.crawl()) recs.push(r);
     expect(recs).toHaveLength(0);
+    expect(fetched.every((u) => u.includes('/karaoke-book'))).toBe(true);
   });
 
-  it('drops a truncated row when the detail fetch is non-2xx', async () => {
+  it('admits a NON-truncated row without consulting the recovery map', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
+    let consulted = false;
     const { http } = fakeHttp({
-      pages: { 'あ:1': [{ ky: '502', title: 'タイトルが切れている..', artist: 'ある歌手' }] },
-      detailStatus: { '502': 500 },
+      pages: { 'あ:1': [{ ky: '44655', title: '怪物', artist: 'YOASOBI' }] },
     });
-    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const crawler = new KyKysingCrawler(http as HttpClient, {
+      indexValues: ['あ'],
+      titleRecovery: (ky) => {
+        consulted = true;
+        return null;
+      },
+    });
     const recs = [];
     for await (const r of crawler.crawl()) recs.push(r);
-    expect(recs).toHaveLength(0);
+    expect(recs.map((r) => r.id)).toEqual(['ky-44655']);
+    expect(consulted).toBe(false); // non-truncated rows never hit the map
   });
 });
 
@@ -344,18 +347,20 @@ describe('KyKysingCrawler — error / abort paths (M1)', () => {
     });
   });
 
-  it('records a detail-fetch-failed drop (step=truncation-repair) when repair fails', async () => {
+  it('records a truncation-unrecovered drop (step=truncation-recovery) when the row is not in the map', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const { http } = fakeHttp({
-      // Truncated index row; the detail fetch returns non-2xx → repair fails.
+      // Truncated index row; the recovery map has no entry for it → drop.
       pages: {
         'あ:1': [{ ky: '40', title: 'とても長いタイトルがここで切れる..', artist: 'ある歌手' }],
       },
-      detailStatus: { '40': 500 },
     });
     const dir = await mkdtemp(join(tmpdir(), 'ky-decisions-'));
     const outPath = join(dir, 'ky-filter.jsonl');
-    const crawler = new KyKysingCrawler(http as HttpClient, { indexValues: ['あ'] });
+    const crawler = new KyKysingCrawler(http as HttpClient, {
+      indexValues: ['あ'],
+      titleRecovery: fakeRecovery({}),
+    });
     const recs = [];
     for await (const r of crawler.crawl({ kyDecisionsOutPath: outPath })) recs.push(r);
 
@@ -371,8 +376,53 @@ describe('KyKysingCrawler — error / abort paths (M1)', () => {
         title: 'とても長いタイトルがここで切れる..',
         artist: 'ある歌手',
         decision: 'drop',
-        step: 'truncation-repair',
-        reason: 'detail-fetch-failed',
+        step: 'truncation-recovery',
+        reason: 'truncation-unrecovered',
+      },
+    ]);
+  });
+
+  it('records an admit-title-recovered decision (step=truncation-recovery) when the row is in the map', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { http } = fakeHttp({
+      pages: {
+        'あ:1': [
+          {
+            ky: '44418',
+            title: '366LOVEダイアリー ("KING OF PRISM -Shiny..',
+            artist: '寺島惇太、斉藤壮..',
+          },
+        ],
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'ky-decisions-'));
+    const outPath = join(dir, 'ky-filter.jsonl');
+    const crawler = new KyKysingCrawler(http as HttpClient, {
+      indexValues: ['あ'],
+      titleRecovery: fakeRecovery({
+        '44418': {
+          title: '366LOVEダイアリー ("KING OF PRISM -Shiny Seven Stars-")',
+          artist: '寺島惇太、斉藤壮馬、畠中祐、八代拓、五十嵐雅',
+          source: 'anisong-book-42',
+        },
+      }),
+    });
+    const recs = [];
+    for await (const r of crawler.crawl({ kyDecisionsOutPath: outPath })) recs.push(r);
+
+    expect(recs.map((r) => r.id)).toEqual(['ky-44418']);
+    const lines = (await readFile(outPath, 'utf8'))
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    expect(lines).toEqual([
+      {
+        ky: '44418',
+        title: '366LOVEダイアリー ("KING OF PRISM -Shiny Seven Stars-")',
+        artist: '寺島惇太、斉藤壮馬、畠中祐、八代拓、五十嵐雅',
+        decision: 'admit',
+        step: 'truncation-recovery',
+        reason: 'admit-title-recovered',
       },
     ]);
   });
