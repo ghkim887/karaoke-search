@@ -111,3 +111,45 @@ decisions 기록(step `truncation-repair`, reason `detail-fetch-failed`) —
 
 new_ky.asp 델타 / kacsv 시드 / 애니송북 조인(한글독음·타이업) / 작곡·작사·
 출시월 필드 / KO_CHAIN 편입. 재고 트리거는 research 문서 참조.
+
+## 부록 A — D2 개정: 절단 보정 fetch 제거 + 제목 회수 맵 (오너 결정 2026-07-16)
+
+**배경(#158 머지 후 단독 실측 run2, 4,691곡/566req)**: ①절단 보정 fetch
+성공률 **0.37%**(270 시도 중 1 — 상세 `category=1` 페이지도 색인과 **동일 폭
+절단**, 전체 제목이 HTML에 없음) = 요청의 47.8% 순수 낭비. ②blog KY 대조
+**92.26%**(1,157/1,254), 미스 97 = 절단드롭 87 + 미도달 10. → 오너 지시:
+"절단 보정 제거하고 1곡(ky 44092)은 수동 admit" + "절단 회수(애니송북) 진행".
+
+D2(절단 보정)를 아래로 개정한다. **D1·D3–D8은 불변.**
+
+- **D2-1 보정 fetch 제거**: 절단 감지(`..` 센티넬) 유지, 상세(category=1)
+  fetch 경로 삭제. `parseKyDetailRow`·`repairTruncatedRow` 삭제, http
+  ALLOWED_HOSTS의 kysing `/search` 프리픽스 제거(fetch 콜사이트 소멸). 절단
+  행은 곧장 회수 맵 조회로.
+- **D2-2 큐레이션 제목 회수 맵**: 커밋 데이터 파일
+  `packages/crawler/src/adapters/ky-kysing/curated-title-recovery.json`
+  (`{ ky: { title, artist, source } }`, 번호순 정렬). 절단 행이 맵에 있으면
+  전체 title/artist로 치환 admit(reason `admit-title-recovered`, step
+  `truncation-recovery`), 없으면 드롭(reason `truncation-unrecovered` — 구
+  `detail-fetch-failed` 개명, step `truncation-recovery`). 분류기 admit
+  플래그 `repaired`→`recovered`. 드롭리스트/스크립트 가드는 회수된 title/
+  artist에 그대로 적용(한국·중국 회수곡은 여전히 드롭).
+- **D2-3 맵 생성 스크립트** `scripts/build-ky-title-recovery.mjs`: 애니송북
+  42탄 HTML(`article.song-card` → `.song-no`/`.song-title`/`.artist-name`)에서
+  추출. 로컬 사본 `--html`(재fetch 금지), 없으면 URL 1회 fetch. 무결성
+  강제(키 digits·title/artist 비어있지 않음·`..` 없음). 스크립트+생성 JSON
+  커밋, 1.3MB HTML 원본 미커밋. **수록 = 2,077**(애니송북 2,076 + 수동 1).
+  애니송북 카드 2,521 중 445는 `artist-name` 빈값(가사·아티스트 미표기
+  한국어 더빙곡, kr 탭 성격 → jp 워크 미도달)이라 제외 — 모든 맵 엔트리가
+  완전한 title+artist를 보장(제외 시 회수곡의 아티스트가 여전히 절단일
+  위험 제거).
+- **D2-4 수동 엔트리**: ky **44092** `Connecting` / `halyosy feat.初音ミク、
+  鏡音リン・レン、巡音ルカ、KAITO、MEIKO`(run2 상세 보정으로 확보, source
+  `manual-20260716`) — 맵에 병합(수동 우선).
+- **D2-5 회수율 실측(정적, run2 decisions × 맵)**: 절단 드롭 **269**곡 중
+  맵 회수 **215**(79.9%). blog KY 대조 관점 = 절단드롭 미스 **87** 중
+  **61** 회수 → blog KY 대조 **92.26% → 97.13%**(1,157→1,218/1,254) 투영.
+  남은 미스 36 = 미회수 절단 26 + 미도달 10. D7 임계(≥95%)는 회수 반영 후
+  달성.
+
+발효는 여전히 크롤 재개(오너 1.0 선언) 후 첫 릴리스부터.

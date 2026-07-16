@@ -38,8 +38,8 @@ function readsAsKoreanScript(text: string): boolean {
  *  - `drop-simplified-han` — the row carries a curated simplified-Chinese-only
  *    Han character (a Mandopop/Cantopop leak signal).
  *  - `admit-index` — admitted straight from the index render.
- *  - `admit-detail-repaired` — admitted after a truncated index row was repaired
- *    from the `category=1` detail page.
+ *  - `admit-title-recovered` — admitted after a truncated index row's title (and
+ *    artist) was recovered from the curated title-recovery map.
  */
 export type KyClassifyReason =
   | 'reviewed-allow'
@@ -49,19 +49,19 @@ export type KyClassifyReason =
   | 'drop-korean-script'
   | 'drop-simplified-han'
   | 'admit-index'
-  | 'admit-detail-repaired';
+  | 'admit-title-recovered';
 
 /**
  * The decision-log STEP a reason belongs to (D8 observability). One step per
- * gate phase plus the operational repair/parse steps the crawler stamps
- * directly (`truncation-repair` for `detail-fetch-failed`, and `index` /
+ * gate phase plus the operational recovery/parse steps the crawler stamps
+ * directly (`truncation-recovery` for `truncation-unrecovered`, and `index` /
  * `null` for `row-parse-error`).
  */
 export type KyDecisionStep =
   | 'reviewed-override'
   | 'drop-list'
   | 'script-guard'
-  | 'truncation-repair'
+  | 'truncation-recovery'
   | 'index';
 
 /** Map a classifier reason to its decision-log step. */
@@ -76,8 +76,8 @@ export function kyStepForReason(reason: KyClassifyReason): KyDecisionStep {
     case 'drop-korean-script':
     case 'drop-simplified-han':
       return 'script-guard';
-    case 'admit-detail-repaired':
-      return 'truncation-repair';
+    case 'admit-title-recovered':
+      return 'truncation-recovery';
     case 'admit-index':
       return 'index';
   }
@@ -103,8 +103,8 @@ export interface KyClassifyArgs {
   ky: string;
   title: string;
   artist: string;
-  /** True when the row was repaired from the detail page (picks the admit reason). */
-  repaired?: boolean;
+  /** True when title/artist were recovered from the curated map (picks the admit reason). */
+  recovered?: boolean;
   overrides?: KyOverridePredicates;
 }
 
@@ -144,7 +144,7 @@ type KyGateVerdict =
 /** Precomputed row surfaces shared by every gate, built once per record. */
 interface KyClassifyContext {
   ky: string;
-  repaired: boolean;
+  recovered: boolean;
   overrides: KyOverridePredicates;
   /** Collab components of the artist (any-component drop-list scan). */
   components: string[];
@@ -203,8 +203,8 @@ const scriptGuardGate: KyGate = {
 const admitGate: KyGate = {
   name: 'admit',
   phase: 'admit',
-  evaluate({ repaired }): KyGateVerdict {
-    return { decision: 'admit', reason: repaired ? 'admit-detail-repaired' : 'admit-index' };
+  evaluate({ recovered }): KyGateVerdict {
+    return { decision: 'admit', reason: recovered ? 'admit-title-recovered' : 'admit-index' };
   },
 };
 
@@ -260,12 +260,12 @@ export function classifyKyRow({
   ky,
   title,
   artist,
-  repaired = false,
+  recovered = false,
   overrides = DEFAULT_OVERRIDES,
 }: KyClassifyArgs): { admit: boolean; reason: KyClassifyReason } {
   const ctx: KyClassifyContext = {
     ky,
-    repaired,
+    recovered,
     overrides,
     components: splitArtistCollab(artist),
     surface: `${title} ${artist}`,
@@ -275,5 +275,5 @@ export function classifyKyRow({
     if (verdict.decision === 'pass') continue;
     return { admit: verdict.decision === 'admit', reason: verdict.reason };
   }
-  return { admit: true, reason: repaired ? 'admit-detail-repaired' : 'admit-index' };
+  return { admit: true, reason: recovered ? 'admit-title-recovered' : 'admit-index' };
 }

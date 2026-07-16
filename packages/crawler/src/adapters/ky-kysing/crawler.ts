@@ -5,11 +5,14 @@ import type { HttpClient } from '../../http.js';
 import type { CrawlOptions, Crawler } from '../index.js';
 import { resolveCrawlLimit } from '../limit.js';
 import { type KyClassifyReason, classifyKyRow, kyStepForReason } from './classifier.js';
+import { type KyTitleRecoveryEntry, lookupKyTitleRecovery } from './curatedTitleRecovery.js';
 import { normalizeKyRecord } from './normalizer.js';
-import { type KyRawRow, parseKyDetailRow, parseKyIndexRows } from './parser.js';
+import { type KyRawRow, parseKyIndexRows } from './parser.js';
 
 const KARAOKE_BOOK_BASE = 'https://kysing.kr/karaoke-book/';
-const DETAIL_BASE = 'https://kysing.kr/search/';
+
+/** Look up a truncated row's full title/artist in the curated recovery map. */
+type KyTitleRecoveryLookup = (ky: string) => KyTitleRecoveryEntry | null;
 
 /**
  * Index letters for the `city=jp` (Japanese) karaoke-book walk. These are the
@@ -144,7 +147,7 @@ const MIN_ROWS_FOR_SKIP_RATIO = 50;
 const MAX_ROW_PARSE_SKIP_RATIO = 0.01;
 
 /** One decision-log row (D8), TJ/JOYSOUND-isomorphic. `reason` is a string
- * superset of the classifier enum (adds operational `detail-fetch-failed` /
+ * superset of the classifier enum (adds operational `truncation-unrecovered` /
  * `row-parse-error`). */
 interface KyDecisionRecord {
   ky: string;
@@ -160,6 +163,12 @@ export interface KyKysingCrawlerOptions {
   name?: string;
   /** Test/audit hook to narrow the index-letter set (JOYSOUND fullCatalogKana precedent). */
   indexValues?: readonly string[];
+  /**
+   * Curated title-recovery lookup for truncated rows. Defaults to the committed
+   * production map ({@link lookupKyTitleRecovery}); tests inject a fake map to
+   * exercise the recovered/unrecovered paths without the full data file.
+   */
+  titleRecovery?: KyTitleRecoveryLookup;
 }
 
 /** Mutable per-run state threaded through the walk. */
@@ -176,17 +185,21 @@ interface RunState {
  * (`/karaoke-book/?city=jp&s_cd=2&s_value={letter}&s_page={n}`), one index
  * letter at a time, s_page 1 until a page yields 0 rows (total pages are not
  * advertised — JOYSOUND full-catalog walk pattern). Rows are deduped by KY
- * number, classified conservatively, and — for rows the index truncated — a
- * `category=1` detail fetch attempts a repair before admit (drop on repair
- * failure). Admitted rows yield `SongRecord`s populating only
- * `karaoke_numbers.ky` (never TJ / JOYSOUND numbers nor Korean translations).
+ * number, classified conservatively, and — for rows the index truncated — the
+ * full title/artist is recovered from the curated title-recovery map before
+ * admit (drop when the number is not in the map). Admitted rows yield
+ * `SongRecord`s populating only `karaoke_numbers.ky` (never TJ / JOYSOUND
+ * numbers nor Korean translations). This adapter makes NO detail fetch: the KY
+ * index and its `category=1` detail truncate identically, so the former per-row
+ * detail-repair fetch recovered ~0.37% of long titles (run2: 1/270) and was
+ * pure wasted requests (D2 revision, owner decision 2026-07-16).
  *
  * Failure semantics:
  *   - Index page fetch null (robots) / non-2xx: THROW (a skipped index page is
  *     a coverage hole — JOYSOUND listing principle, D5).
- *   - Detail (repair) fetch null / non-2xx / 0-row / number-mismatch / still-
- *     truncated: per-row DROP with reason `detail-fetch-failed` (D2) — the
- *     truncated title never enters the corpus.
+ *   - Truncated row whose KY number is NOT in the recovery map: per-row DROP
+ *     with reason `truncation-unrecovered` (D2') — the truncated title never
+ *     enters the corpus.
  *   - Empty title/artist or normalize throw: per-row DROP with reason
  *     `row-parse-error` (D5); if the row-parse-error ratio exceeds 1% over a
  *     meaningful sample, the walk ABORTS.
@@ -197,6 +210,7 @@ interface RunState {
 export class KyKysingCrawler implements Crawler {
   readonly name: string;
   private readonly indexValues: readonly string[];
+  private readonly titleRecovery: KyTitleRecoveryLookup;
 
   constructor(
     private http: HttpClient,
@@ -204,6 +218,7 @@ export class KyKysingCrawler implements Crawler {
   ) {
     this.name = options.name ?? 'ky-kysing';
     this.indexValues = options.indexValues ?? KY_KARAOKE_BOOK_INDEX;
+    this.titleRecovery = options.titleRecovery ?? lookupKyTitleRecovery;
   }
 
   async *crawl(options?: CrawlOptions): AsyncIterable<SongRecord> {
@@ -241,7 +256,7 @@ export class KyKysingCrawler implements Crawler {
           state.rowsSeen++;
           if (state.seen.has(row.ky)) continue; // dedup by KY number
           state.seen.add(row.ky);
-          const record = await this.processRow(row, state);
+          const record = this.processRow(row, state);
           if (record !== null) {
             yield record;
             yielded++;
@@ -269,10 +284,11 @@ export class KyKysingCrawler implements Crawler {
   }
 
   /**
-   * Process one deduped index row: repair-if-truncated, classify, record the
-   * decision, and return a normalized record on admit (else `null`).
+   * Process one deduped index row: recover-if-truncated, classify, record the
+   * decision, and return a normalized record on admit (else `null`). No network:
+   * truncation recovery is a synchronous lookup in the curated map.
    */
-  private async processRow(row: KyRawRow, state: RunState): Promise<SongRecord | null> {
+  private processRow(row: KyRawRow, state: RunState): SongRecord | null {
     // Empty title/artist from the index is unparseable — record + skip (D5).
     if (row.title.trim() === '' || row.artist.trim() === '') {
       state.rowParseErrors++;
@@ -281,32 +297,33 @@ export class KyKysingCrawler implements Crawler {
     }
 
     let effective = row;
-    let repaired = false;
+    let recovered = false;
     if (row.truncated) {
-      const detail = await this.repairTruncatedRow(row);
-      if (detail === null) {
-        // Repair failed (fetch failure / 0-row / mismatch / still truncated):
-        // drop so a truncated title never enters the corpus (D2).
+      const entry = this.titleRecovery(row.ky);
+      if (entry === null) {
+        // Not in the curated recovery map: drop so a truncated title never
+        // enters the corpus (D2'). No detail fetch — the index and its
+        // `category=1` detail truncate identically, so a fetch cannot recover it.
         this.record(
           state,
           row.ky,
           row.title,
           row.artist,
           'drop',
-          'truncation-repair',
-          'detail-fetch-failed',
+          'truncation-recovery',
+          'truncation-unrecovered',
         );
         return null;
       }
-      effective = detail;
-      repaired = true;
+      effective = { ky: row.ky, title: entry.title, artist: entry.artist, truncated: false };
+      recovered = true;
     }
 
     const { admit, reason } = classifyKyRow({
       ky: effective.ky,
       title: effective.title,
       artist: effective.artist,
-      repaired,
+      recovered,
     });
     this.record(
       state,
@@ -344,24 +361,6 @@ export class KyKysingCrawler implements Crawler {
     }
   }
 
-  /**
-   * Fetch the `category=1` detail page for a truncated row and return the
-   * repaired row, or `null` when repair is not possible (fetch failure, 0-row /
-   * number mismatch, or the detail is ALSO truncated). See parser
-   * {@link parseKyDetailRow} for why the detail often does not recover a long
-   * title (same server-side width truncation as the index).
-   */
-  private async repairTruncatedRow(row: KyRawRow): Promise<KyRawRow | null> {
-    const url = `${DETAIL_BASE}?category=1&keyword=${row.ky}`;
-    const res = await this.http.fetch(url);
-    if (res === null || res.status < 200 || res.status >= 300) return null;
-    const detail = parseKyDetailRow(res.body, row.ky);
-    if (detail === null) return null;
-    if (detail.truncated) return null; // still truncated — cannot repair
-    if (detail.title.trim() === '' || detail.artist.trim() === '') return null;
-    return detail;
-  }
-
   private record(
     state: RunState,
     ky: string,
@@ -369,7 +368,7 @@ export class KyKysingCrawler implements Crawler {
     artist: string,
     decision: 'admit' | 'drop',
     step: string | null,
-    reason: KyClassifyReason | 'detail-fetch-failed' | 'row-parse-error',
+    reason: KyClassifyReason | 'truncation-unrecovered' | 'row-parse-error',
   ): void {
     state.decisions.push({ ky, title, artist, decision, step, reason });
   }

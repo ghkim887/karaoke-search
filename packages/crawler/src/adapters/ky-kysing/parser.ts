@@ -2,10 +2,10 @@ import { load } from 'cheerio';
 import { normalizeKyNumber } from './normalizeKyNumber.js';
 
 /**
- * A raw KY row as parsed from the karaoke-book index (or a repaired detail row).
- * `truncated` marks that the index render cut the title and/or artist short
- * (see {@link isKyTruncated}); the crawler uses it to decide whether to attempt
- * a detail-page repair before admitting the row.
+ * A raw KY row as parsed from the karaoke-book index. `truncated` marks that the
+ * index render cut the title and/or artist short (see {@link isKyTruncated});
+ * the crawler uses it to decide whether to look the row up in the curated
+ * title-recovery map before admitting (else drop it as truncation-unrecovered).
  */
 export interface KyRawRow {
   /** Canonical KY catalog number (bare digits). */
@@ -19,9 +19,9 @@ export interface KyRawRow {
 }
 
 /**
- * Fixed-width truncation sentinel. kysing.kr renders the karaoke-book index and
- * the `category=1` detail with a server-side field-width truncation that appends
- * a literal two-dot marker (`..`) to any title/artist it cut.
+ * Fixed-width truncation sentinel. kysing.kr renders the karaoke-book index
+ * with a server-side field-width truncation that appends a literal two-dot
+ * marker (`..`) to any title/artist it cut.
  *
  * The truncation WIDTH is deliberately NOT keyed on: measured across the live
  * `city=jp&s_value=あ&s_page=1` fixture, truncated titles span 37–53 display
@@ -30,9 +30,9 @@ export interface KyRawRow {
  * byte/charset measure that does not map cleanly to display columns or code
  * points). The appended `..` is therefore the ONLY reliable signal, so we key
  * on it. A genuine title that itself ends in exactly two dots is a rare false
- * positive; it merely triggers a detail-repair fetch that conservatively drops
- * it (matching the design's "never put a truncated title in the corpus" rule),
- * so biasing toward detection here is safe.
+ * positive; it merely triggers a curated-recovery-map lookup that (on a miss)
+ * conservatively drops the row (matching the design's "never put a truncated
+ * title in the corpus" rule), so biasing toward detection here is safe.
  */
 const TRUNCATION_SENTINEL = '..';
 
@@ -71,47 +71,4 @@ export function parseKyIndexRows(html: string): KyRawRow[] {
     rows.push({ ky, title, artist, truncated: isKyTruncated(title) || isKyTruncated(artist) });
   });
   return rows;
-}
-
-/**
- * Parse the `category=1` (곡번호) detail page and return the row matching
- * `expectedKy`, or `null` when no matching row is present (0 results / number
- * mismatch — a repair failure the crawler treats as a drop).
- *
- * The detail table is `<ul class="search_chart_list">` rows; the first such
- * `<ul>` is the column HEADER (its `li.search_chart_num` reads `곡번호`, which
- * fails the digit normalization and is skipped like any non-data row). A data
- * row carries:
- *   - `li.search_chart_num` — the catalog number,
- *   - `li.search_chart_tit > span.tit` (first span) — the title,
- *   - `li.search_chart_sng` — the artist.
- *
- * We select the FIRST `span.tit` for the title: the second `span.tit` carries
- * the class `mo-art` and is a mobile-layout artist duplicate, and the
- * `li.search_chart_tit` element also wraps a lyrics popup, so reading the whole
- * cell's text would concatenate title + artist + lyrics. `search_chart_cmp`
- * (composer), `search_chart_wrt` (lyricist), and `search_chart_rel` (release
- * month) are intentionally NOT read (out of scope per the design).
- *
- * NOTE (empirical, 2026-07-16): the detail view applies the SAME width
- * truncation as the index for a given field, so it recovers a full title only
- * for rows the index truncated in one field but not the other (or borderline
- * widths); a row truncated on the detail too is reported with `truncated: true`
- * and the crawler drops it. The detail fetch still serves the design's
- * repair-or-drop contract; it just recovers fewer long titles than the source
- * survey assumed.
- */
-export function parseKyDetailRow(html: string, expectedKy: string): KyRawRow | null {
-  const $ = load(html);
-  let match: KyRawRow | null = null;
-  $('ul.search_chart_list').each((_i, ul) => {
-    if (match !== null) return;
-    const $ul = $(ul);
-    const ky = normalizeKyNumber($ul.find('li.search_chart_num').first().text());
-    if (ky === null || ky !== expectedKy) return;
-    const title = $ul.find('li.search_chart_tit span.tit').first().text().trim();
-    const artist = $ul.find('li.search_chart_sng').first().text().trim();
-    match = { ky, title, artist, truncated: isKyTruncated(title) || isKyTruncated(artist) };
-  });
-  return match;
 }

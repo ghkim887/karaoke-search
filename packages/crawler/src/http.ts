@@ -30,8 +30,10 @@ interface HostRule {
  *   - www.joysound.com             → listing `/web/karaoke/contents/new`,
  *                                    full songlist `/web/search/songlist/{kana}`,
  *                                    and detail `/apis/v1/ise/fetchContentsDetail` only
- *   - kysing.kr                    → KY karaoke-book index `/karaoke-book` and
- *                                    per-song detail `/search` only (R5 adapter)
+ *   - kysing.kr                    → KY karaoke-book index `/karaoke-book` only
+ *                                    (R5 adapter; the detail-fetch path under
+ *                                    `/search` was removed with the title-recovery
+ *                                    map, so no call site reaches `/search`)
  *
  * Throw on any other host or (for path-restricted hosts) any other path.
  * Do NOT add catch-all entries — every entry must trace to a real call site.
@@ -52,7 +54,7 @@ const ALLOWED_HOSTS: ReadonlyMap<string, HostRule> = new Map<string, HostRule>([
   [
     'kysing.kr',
     {
-      pathPrefixes: ['/karaoke-book', '/search'],
+      pathPrefixes: ['/karaoke-book'],
     },
   ],
 ]);
