@@ -180,7 +180,10 @@ function tierCKey(r: SongRecord): string | null {
 const CONTEXT_SUFFIX_RE = /\s*[\(（]([^()（）]{1,180})[\)）]\s*$/u;
 const CONTEXT_ROLE_RE =
   /(?:^|[^a-z])(?:op|ed|ost|opening|ending|theme)(?:$|[^a-z])|ＯＰ|ＥＤ|ＯＳＴ|主題歌|挿入歌|オープニング|エンディング|テーマ/iu;
-const CONTEXT_VERSION_RE =
+// Exported so the R5 KY normalizer's media-tie-up strip reuses the SAME
+// version/cut markers as this module's role-tail strip (no drift) — see
+// `stripContextSuffix` (version-first) and ky-kysing/normalizer `stripMediaContext`.
+export const CONTEXT_VERSION_RE =
   /(?:tv\s*size|tvサイズ|テレビ.*サイズ|サイズ|\bsize\b|anime\s*ver\.?|アニメ\s*ver\.?|movie\s*ver\.?|short\s*ver\.?|remix|リミックス|cover|カバー|version|\bver\.?\b|バージョン|m@ster|acoustic|live|instrumental)/iu;
 const CONTEXT_ROLE_TOKEN_RE =
   /(?<![a-z])(?:op|ed|ost|opening|ending|theme)(?:\s*[\d０-９]+)?(?=$|[^a-z])|(?:ＯＰ|ＥＤ|ＯＳＴ|主題歌|挿入歌|オープニング|エンディング|テーマ)(?:\s*[\d０-９]+)?/giu;
@@ -198,7 +201,17 @@ function hasNonRoleContextText(inner: string): boolean {
   );
 }
 
-function stripContextSuffix(title: string): { title: string; changed: boolean } {
+/**
+ * Peel trailing role/tie-up parentheticals (`(錯乱 OST)`, `("BLEACH"OP)`) from a
+ * title, conservatively: only when the inner text carries a role token
+ * (`CONTEXT_ROLE_RE`: OP/ED/OST/主題歌/…) AND a work name AND is NOT a
+ * version/cut marker (`CONTEXT_VERSION_RE`: Live/Ver./Remix/…). Exported so the
+ * R5 KY adapter can normalize its titles to the SAME canonical form Tier D
+ * keys on — a KY row `この世の限り(錯乱 OST)` then keys/clusters identically to
+ * a JOYSOUND `この世の限り`. Reusing this exact stripper (rather than a private
+ * copy) guarantees the adapter and the merger cannot drift.
+ */
+export function stripContextSuffix(title: string): { title: string; changed: boolean } {
   let current = title;
   let changed = false;
   while (true) {

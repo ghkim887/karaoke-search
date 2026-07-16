@@ -1,4 +1,5 @@
 import { type SongRecord, validateSongRecord } from '@karaoke/schema';
+import { CONTEXT_VERSION_RE, stripContextSuffix } from '../../merge.js';
 import { normalizeKyNumber } from './normalizeKyNumber.js';
 
 export interface NormalizeKyArgs {
@@ -11,6 +12,85 @@ export interface NormalizeKyArgs {
 /** Per-song stable back-link: the `category=1` detail page for the number. */
 export function kySourceUrl(ky: string): string {
   return `https://kysing.kr/search/?category=1&keyword=${ky}`;
+}
+
+/**
+ * Media tie-up keywords that mark a trailing parenthetical as a WORK annotation
+ * of the same song (`(映画"さくらん")`, `(ドラマ"…")`, `(TVアニメ「…」)`,
+ * `(劇場版…)`) — the dominant KY tie-up format that the merger's role-tail
+ * stripper (`stripContextSuffix`, keyed on OP/ED/OST/主題歌) does NOT cover.
+ * `アニメ` subsumes `TVアニメ`. Added audit follow-up A Phase 1b (2026-07-16)
+ * after real-data confirmation (ky-42263 `この世の限り (映画"さくらん")` etc. were
+ * left un-stripped, undercounting the merge candidates).
+ */
+const KY_MEDIA_CONTEXT_RE = /映画|ドラマ|劇場版|アニメ/u;
+/** Trailing parenthetical (half/full-width), inner text captured. */
+const KY_TRAILING_PAREN_RE = /[（(]([^（）()]{1,180})[）)]\s*$/u;
+
+/**
+ * Peel trailing media-tie-up parentheticals (`(映画"X")`, `(ドラマ"X")`, …) —
+ * repeatedly, so `曲(映画"A")(ドラマ"B")` fully cleans — but STOP at a paren that
+ * (a) carries a version/cut marker (distinct cut → keep, version wins), or
+ * (b) has no media keyword, or (c) would empty the title.
+ */
+function stripMediaContext(title: string): string {
+  let current = title;
+  while (true) {
+    const match = current.match(KY_TRAILING_PAREN_RE);
+    if (!match) break;
+    const inner = (match[1] ?? '').trim();
+    // Version/cut marker → distinct karaoke cut → keep (version wins, the SAME
+    // rule + regex as the merger's role-tail strip; imported, not copied).
+    if (CONTEXT_VERSION_RE.test(inner)) break;
+    if (!KY_MEDIA_CONTEXT_RE.test(inner)) break; // not a media tie-up → keep
+    const next = current.slice(0, match.index).trimEnd();
+    if (next === '') break; // never strip to empty
+    current = next;
+  }
+  return current;
+}
+
+/**
+ * Normalize a KY title to the merger's tie-up-canonical form (audit follow-up A,
+ * owner decision 2026-07-16).
+ *
+ * KY renders a trailing tie-up parenthetical — a ROLE tail (`("BLEACH"OP)`) OR,
+ * far more commonly, a MEDIA-name annotation (`(映画"さくらん")`, `(ドラマ"X")`) —
+ * where the JOYSOUND row it should cluster with carries the clean title
+ * (`この世の限り`). The merger's Tier C keys on the RAW title (suffix present →
+ * no match) and Tier D keys on the WHOLE artist (collab format differs → no
+ * match), so these rows never merged (v23 audit: 89% of the unmerged Tier-A
+ * candidates were `ky-*`). We clean the title HERE (KY-only blast radius, vs a
+ * merger tier change that would re-cluster all ~313k rows) in two passes:
+ *   1. the merger's own {@link stripContextSuffix} for ROLE tails (zero drift);
+ *   2. {@link stripMediaContext} for MEDIA-name context parens (Phase 1b — the
+ *      dominant KY format the role stripper missed).
+ * The two are looped to stable so interleaved tails (`曲(OST)(映画"X")`) fully
+ * clean. Tier C's title+lead-artist key then matches the JOYSOUND twin.
+ *
+ * Version/cut markers (`(Live)`, `(Short Ver.)`, `(アニメ Ver.)`) are KEPT by
+ * BOTH passes — they denote distinct karaoke cuts. A title that is ONLY a
+ * parenthetical keeps its original form (never strips to empty).
+ *
+ * DISPLAY IMPACT: a KY-ONLY record (no JOYSOUND/TJ/blog twin) now displays the
+ * stripped title, dropping the tie-up hint. This diverges from the blog
+ * convention of keeping tie-ups, but is the accepted cost of clustering — and a
+ * merged record's title always comes from a higher `TITLE_ARTIST_CHAIN` source
+ * (ky is last), so only unmerged KY-only rows are visibly affected.
+ */
+export function normalizeKyTitle(rawTitle: string): string {
+  let current = rawTitle;
+  // Bounded loop: alternate role-tail + media-context peels until stable. A KY
+  // title has at most a handful of trailing parens; 8 is a generous ceiling.
+  for (let i = 0; i < 8; i += 1) {
+    const roleStripped = stripContextSuffix(current).title;
+    const afterRole = roleStripped.trim() === '' ? current : roleStripped;
+    const afterMedia = stripMediaContext(afterRole);
+    const next = afterMedia.trim() === '' ? afterRole : afterMedia;
+    if (next === current) break;
+    current = next;
+  }
+  return current;
 }
 
 /**
@@ -28,6 +108,8 @@ export function kySourceUrl(ky: string): string {
  *    Japanese and KY contributes no Korean translation. Threading anything into
  *    the KO fields would lie about provenance and contaminate the merger's
  *    KO_CHAIN.
+ *  - `title_primary` is the tie-up-canonical form ({@link normalizeKyTitle}) so
+ *    a KY row clusters with its clean-titled JOYSOUND twin.
  *  - `artist_aliases` is NOT set here — the pipeline's `resolveArtistAliases`
  *    owns alias derivation centrally.
  *
@@ -49,7 +131,7 @@ export function normalizeKyRecord(args: NormalizeKyArgs): SongRecord {
   const record: SongRecord = {
     id: `ky-${number}`,
     source_url: kySourceUrl(number),
-    title_primary: title,
+    title_primary: normalizeKyTitle(title),
     title_ko: null,
     artist_primary: artist,
     artist_ko: null,
