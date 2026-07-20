@@ -256,6 +256,31 @@ promotion are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md).)
 and the filter-seam script guard — SHIPPED 2026-07-13, PR #143 — are archived
 in [ROADMAP-LOG.md](ROADMAP-LOG.md).)*
 
+### 미병합 잔여 (2026-07-20 검증) — 오너 결정 큐
+
+v24 서빙 기준 JOYSOUND 미병합 576곡을 전수 교차검증한 결과 (리포트: NAS
+`runs/ky-v23-20260716/audit-v24r2/unmerged-xref.json`):
+
+576 = **C 253** (진성 커버리지 갭 — 무행동) + **reject 176** (B-wave 리뷰의
+reject 판정 유지) + **merge-판정 잔존 141** (merge 판정이 v24 재병합에서 발화하지
+못한 잔여) + **uncertain 5** (버전 애매, 목록은 #163 본문) + **fresh 1** (신규).
+
+이 PR은 merge-판정 잔존 141곡 중 **46곡(both-vendor, non-tj id)** 을 Tier E로
+인코딩한다. #163이 "표현불가(both-vendor non-tj id)"로 남긴 클래스이며, #165가
+리뷰드 티어의 tj-슬러그/싱글턴 가드를 제거해 인코딩이 가능해졌다. 남은
+141 − 46 = 95곡 + fresh 1은 오너 결정 대기:
+
+1. **3-way 클래스 83곡 + fresh 1 = 84곡** — Tier E/F의 dup-J(unique-joysound)
+   불변식 완화 설계가 필요하다 (리뷰드 쌍으로 한정하고 벤더번호 충돌가드는
+   유지). #165의 후속 설계 항목.
+2. **forbidden 충돌 8곡** — 수동 판정 필요 (목록은 PR #163 본문 표).
+3. **벤더번호 진짜 충돌 3곡** (tj-6579 / tj-27098 / tj-27416) — 수동 판정 필요.
+   #165 충돌가드가 설계대로 스킵한 케이스.
+4. **tj-26737 1곡** — R1 "메커니즘 표현불가" 클래스.
+
+**발효 캐비엇:** 이 PR의 46곡을 포함해 어떤 조치든 실제 발효는 다음 재병합
+(크롤 재개 또는 v25 재구성) 시점이다. 이 PR에 데이터/코퍼스 재생성은 없다.
+
 ## Completed (archived)
 
 Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).

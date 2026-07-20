@@ -91,9 +91,22 @@ describe('buildPlan tier assignment', () => {
     expect(p.tierE[0]).toMatchObject({ v: 'tj', n: '500', J: '102' });
     expect(p.tierF).toHaveLength(0);
   });
-  it('rejects a both-vendor row with a non-tj id (Tier mechanism cannot target)', () => {
-    const p = buildPlan([row({ song_id: 'ky-500', tj: '500', ky: '600', J: '103' })], ex);
-    expect(p.unencodable['both-vendor-non-tj-id']).toHaveLength(1);
+  // #165 removed the reviewed-tier tj-slug/singleton guard, so a Tier E
+  // [tj, joysound] pair fires by the tj vendor-number cell regardless of the
+  // affected row's id-slug. A both-vendor (tj+ky) row therefore encodes to Tier
+  // E via its tj number even under a ky-/tjpdf-/blog- id-slug.
+  it.each(['ky-500', 'tjpdf-500', 'blog-500-3'])(
+    'routes a both-vendor row with a non-tj id (%s) to Tier E via its tj number',
+    (songId) => {
+      const p = buildPlan([row({ song_id: songId, tj: '500', ky: '600', J: '103' })], ex);
+      expect(p.tierE[0]).toMatchObject({ v: 'tj', n: '500', J: '103' });
+      expect(p.tierF).toHaveLength(0);
+      expect(p.unencodable['both-vendor-non-tj-id']).toBeUndefined();
+    },
+  );
+  it('classifies a both-vendor non-tj row whose joysound is already owned as both-vendor-number', () => {
+    const p = buildPlan([row({ song_id: 'ky-500', tj: '500', ky: '600', J: '888888' })], ex);
+    expect(p.unencodable['both-vendor-number']).toHaveLength(1);
     expect(p.tierE.length + p.tierF.length).toBe(0);
   });
 });
