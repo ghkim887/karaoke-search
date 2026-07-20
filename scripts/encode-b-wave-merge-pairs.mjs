@@ -29,10 +29,22 @@
  *     auto-reversed here.
  *   - `already-encoded` / `*-conflict-existing`: the joysound target or the
  *     tj/vendor:number target is already present in the committed tables.
- *   - `3way-dupJ`: two affected rows (one tj, one ky) map to one joysound. The
- *     unique-joysound invariant permits only one entry per J, so the tj-side is
- *     encoded and the ky-side is reported (this is the rejected attach-tier's
- *     class — a second single-vendor target on an already-consumed joysound).
+ *   - `3way-dupJ`: two affected rows of the SAME vendor map to one joysound
+ *     within this batch. Only the first is kept; the later same-vendor row is
+ *     reported (a single vendor cell cannot hold two values).
+ *
+ * 3-way attach (option B2, 2026-07-20): when a reviewed `merge` row's joysound
+ * is already owned by an existing Tier E/F pair of a DIFFERENT vendor, the row
+ * is the same song's SECOND single-vendor bridge (e.g. a ky row for a joysound
+ * a tj pair owns, or — vendor-symmetric — a tj row for a joysound a ky pair
+ * owns). It is emitted to `REVIEWED_TIER_F_3WAY_ATTACH_PAIRS`, not left
+ * unencodable, provided the attach vendor:number cell is free of any existing
+ * reviewed target or committed attach. This relaxes the unique-joysound
+ * invariant to "one bridge per vendor per J" for human-confirmed 3-way songs
+ * only. A same-vendor J reuse (owner and candidate share a vendor) is NOT an
+ * attach — it stays in `3way-existing-reviewed` (ky) / `both-vendor-number`
+ * (tj). Re-running against a source that already carries the attach entry
+ * reports it as `already-encoded` (idempotent).
  *
  * Input verdict `verdict` field is case-insensitive (`merge`/`MERGE`).
  *
@@ -134,7 +146,25 @@ export function parseReviewedSource(sourceText) {
     forbiddenF.add(`${m[1]}|${m[2]}|${m[3]}`);
   }
 
-  return { tierE, tierF, existingJ, forbiddenE, forbiddenF };
+  // Tier F 3-way attach pairs: ['tj'|'ky', 'NUM', 'NUM'],. The reviewed 3-way
+  // attach table (option B2) — a SECOND single-vendor bridge to a joysound that
+  // an existing Tier E/F pair already owns. Parsed so the encoder recognizes an
+  // already-committed attach as idempotent (already-encoded) rather than
+  // re-deriving it.
+  const attachBlock = block('const REVIEWED_TIER_F_3WAY_ATTACH_PAIRS');
+  const attach = new Map(); // "vendor:number" -> Set<joysound>
+  const attachTargets = new Set(); // "vendor:number"
+  const attachJ = new Set(); // every joysound already bridged by an attach entry
+  for (const m of attachBlock.matchAll(/\[\s*'(tj|ky)'\s*,\s*'(\d+)'\s*,\s*'(\d+)'\s*\]/g)) {
+    const [, v, n, j] = m;
+    const key = `${v}:${n}`;
+    if (!attach.has(key)) attach.set(key, new Set());
+    attach.get(key).add(j);
+    attachTargets.add(key);
+    attachJ.add(j);
+  }
+
+  return { tierE, tierF, existingJ, forbiddenE, forbiddenF, attach, attachTargets, attachJ };
 }
 
 /**
@@ -224,6 +254,7 @@ function encodeVendor(row) {
 export function buildPlan(reviews, existing) {
   const tierE = [];
   const tierF = [];
+  const tierF3wayAttach = []; // second single-vendor bridge to an owned joysound
   const unencodable = {
     forbidden: [],
     'already-encoded': [],
@@ -234,12 +265,25 @@ export function buildPlan(reviews, existing) {
     'dup-target-inbatch': [],
     'no-vendor-number': [],
   };
-  // Reverse index of every joysound already used → its existing owner label.
+  // Reverse index of every joysound already used → its existing owner label and
+  // owner vendor. The vendor drives the 3-way attach decision (attach only when
+  // the candidate vendor differs from the owner's).
   const jOwner = new Map();
-  for (const [tj, set] of existing.tierE) for (const j of set) jOwner.set(j, `tierE tj-${tj}`);
-  for (const [key, set] of existing.tierF) for (const j of set) jOwner.set(j, `tierF ${key}`);
+  const jOwnerVendor = new Map();
+  for (const [tj, set] of existing.tierE)
+    for (const j of set) {
+      jOwner.set(j, `tierE tj-${tj}`);
+      jOwnerVendor.set(j, 'tj');
+    }
+  for (const [key, set] of existing.tierF)
+    for (const j of set) {
+      jOwner.set(j, `tierF ${key}`);
+      jOwnerVendor.set(j, key.split(':')[0]);
+    }
   const claimedJ = new Map(); // joysound -> song_id (first winner)
   const claimedTarget = new Set(); // "E:tj" / "F:vendor:number"
+  const claimedAttachJ = new Map(); // attach joysound -> song_id (first winner)
+  const claimedAttachTarget = new Set(); // attach "vendor:number"
 
   // Sort: group by J, tj-side first, then stable by song_id — so a 3-way's tj
   // row wins the joysound and the ky row is the reported loser.
@@ -294,12 +338,60 @@ export function buildPlan(reviews, existing) {
       continue;
     }
     if (existing.existingJ.has(entry.J)) {
-      // The joysound target is already merged to another reviewed pair. A ky
-      // row here is a 3-way second single-vendor member (joysound consumed by
-      // an existing tj-pair; would be inert since Tier E runs first / dup-J in
-      // Tier F). A tj row here means both sides carry a non-joysound vendor
-      // number (tj↔tj/tjpdf) with no joysound target — the R1
-      // "mechanism-inexpressible" class. Either way, not encodable.
+      // The joysound target is already merged to an existing reviewed pair.
+      const ownerVendor = jOwnerVendor.get(entry.J) ?? null;
+      const attachTargetKey = `${entry.v}:${entry.n}`;
+      // Idempotent: this exact 3-way attach bridge is already committed.
+      if (existing.attach.get(attachTargetKey)?.has(entry.J)) {
+        push('already-encoded', {
+          entry,
+          attach: true,
+          existingOwner: jOwner.get(entry.J) ?? null,
+        });
+        continue;
+      }
+      // 3-way attach: joysound owned by an existing pair of a DIFFERENT vendor,
+      // so this reviewed row is the same song's SECOND single-vendor bridge.
+      // Vendor-symmetric: the owner may be tj (attach ky) or ky (attach tj).
+      if (ownerVendor !== null && ownerVendor !== entry.v) {
+        // The joysound must not already carry a bridge (one bridge per J) — a
+        // different committed/in-batch attach cell on the same J is a dup.
+        if (existing.attachJ.has(entry.J) || claimedAttachJ.has(entry.J)) {
+          push('3way-dupJ', { entry, winner: claimedAttachJ.get(entry.J) ?? 'committed-attach' });
+          continue;
+        }
+        // The attach vendor cell must be free: no existing reviewed target on it
+        // (Tier F vendor:number, or a Tier E tj number for a tj attach) and no
+        // committed attach, or the attach would double-map that cell.
+        const targetTaken =
+          existing.tierF.has(attachTargetKey) ||
+          (entry.v === 'tj' && existing.tierE.has(entry.n)) ||
+          existing.attachTargets.has(attachTargetKey);
+        if (targetTaken) {
+          push('target-conflict-existing', { entry, existingOwner: jOwner.get(entry.J) ?? null });
+          continue;
+        }
+        if (claimedAttachTarget.has(attachTargetKey)) {
+          push('dup-target-inbatch', { entry });
+          continue;
+        }
+        claimedAttachJ.set(entry.J, row.song_id);
+        claimedAttachTarget.add(attachTargetKey);
+        tierF3wayAttach.push({
+          ...entry,
+          song_id: row.song_id,
+          title: row.title,
+          artist: row.artist,
+          candTitle: row.candTitle,
+          candArtist: row.candArtist,
+          existingOwner: jOwner.get(entry.J) ?? null,
+        });
+        continue;
+      }
+      // Same-vendor J reuse (owner and candidate share a vendor): a genuine
+      // duplicate, not a 3-way bridge. A ky row is inert (dup-J in Tier F / Tier
+      // E runs first); a tj row means both sides carry a non-joysound vendor
+      // number with no joysound target — the R1 "mechanism-inexpressible" class.
       const bucket = entry.v === 'ky' ? '3way-existing-reviewed' : 'both-vendor-number';
       push(bucket, { entry, existingOwner: jOwner.get(entry.J) ?? null });
       continue;
@@ -340,17 +432,22 @@ export function buildPlan(reviews, existing) {
   // Deterministic output order: by numeric target.
   tierE.sort((a, b) => Number(a.n) - Number(b.n));
   tierF.sort((a, b) => (a.v === b.v ? Number(a.n) - Number(b.n) : a.v.localeCompare(b.v)));
+  tierF3wayAttach.sort((a, b) =>
+    a.v === b.v ? Number(a.n) - Number(b.n) : a.v.localeCompare(b.v),
+  );
 
   const unencCount = Object.values(unencodable).reduce((n, xs) => n + xs.length, 0);
   return {
     tierE,
     tierF,
+    tierF3wayAttach,
     unencodable,
     counts: {
       merges: reviews.length,
       encodedTierE: tierE.length,
       encodedTierF: tierF.length,
-      encodedTotal: tierE.length + tierF.length,
+      encodedTierF3wayAttach: tierF3wayAttach.length,
+      encodedTotal: tierE.length + tierF.length + tierF3wayAttach.length,
       unencodable: unencCount,
     },
   };
@@ -372,11 +469,14 @@ export function entryLines(plan) {
   return {
     tierE: plan.tierE.map((e) => `  ['${e.n}', '${e.J}'], // ${entryComment(e)}`),
     tierF: plan.tierF.map((e) => `  ['${e.v}', '${e.n}', '${e.J}'], // ${entryComment(e)}`),
+    tierF3wayAttach: plan.tierF3wayAttach.map(
+      (e) => `  ['${e.v}', '${e.n}', '${e.J}'], // ${entryComment(e)} [owner ${e.existingOwner}]`,
+    ),
   };
 }
 
 export function formatEntries(plan) {
-  const { tierE, tierF } = entryLines(plan);
+  const { tierE, tierF, tierF3wayAttach } = entryLines(plan);
   const lines = [];
   lines.push('=== Tier E additions (append to REVIEWED_TIER_E_STRONG_PAIRS) ===');
   lines.push('  // --- Audit follow-up B (2026-07-16 manual merge review, 16 batches) ---');
@@ -385,6 +485,9 @@ export function formatEntries(plan) {
   lines.push('=== Tier F additions (append to REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS) ===');
   lines.push('  // --- Audit follow-up B (2026-07-16 manual merge review, 16 batches) ---');
   lines.push(...tierF);
+  lines.push('');
+  lines.push('=== Tier F 3-way attach additions (append to REVIEWED_TIER_F_3WAY_ATTACH_PAIRS) ===');
+  lines.push(...tierF3wayAttach);
   return lines.join('\n');
 }
 
@@ -415,7 +518,7 @@ async function main() {
     }
   }
   console.log(
-    `[encode-b] encoded: Tier E ${plan.counts.encodedTierE}, Tier F ${plan.counts.encodedTierF} (total ${plan.counts.encodedTotal})`,
+    `[encode-b] encoded: Tier E ${plan.counts.encodedTierE}, Tier F ${plan.counts.encodedTierF}, Tier F 3-way attach ${plan.counts.encodedTierF3wayAttach} (total ${plan.counts.encodedTotal})`,
   );
   console.log(`[encode-b] unencodable: ${plan.counts.unencodable}`);
   for (const [k, xs] of Object.entries(plan.unencodable)) {
@@ -433,6 +536,7 @@ async function main() {
         counts: plan.counts,
         tierE: plan.tierE,
         tierF: plan.tierF,
+        tierF3wayAttach: plan.tierF3wayAttach,
         unencodable: plan.unencodable,
         uncertain,
       },

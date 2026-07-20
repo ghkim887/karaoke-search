@@ -1,6 +1,7 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   buildPlan,
@@ -9,6 +10,10 @@ import {
   parseArgs,
   parseReviewedSource,
 } from './encode-b-wave-merge-pairs.mjs';
+
+const REPO_ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
+const REAL_REVIEWS = resolve(REPO_ROOT, 'scripts/data/b-review-merge-verdicts');
+const REAL_SOURCE = resolve(REPO_ROOT, 'packages/crawler/src/reviewedMergePairs.ts');
 
 const SAMPLE_SOURCE = `
 const REVIEWED_TIER_E_STRONG_PAIRS = [
@@ -32,6 +37,12 @@ const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 3;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
   ['tj', '6927', '19868'], // artist 19
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+
+const REVIEWED_TIER_F_3WAY_ATTACH_PAIRS = [
+  ['ky', '40141', '888888'], // existing attach: ky bridge onto tj-25875-owned joysound 888888
+] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+
+const EXPECTED_REVIEWED_TIER_F_3WAY_ATTACH_PAIR_COUNT = 1;
 `;
 
 function row(over) {
@@ -75,6 +86,11 @@ describe('parseReviewedSource', () => {
   it('collects every used joysound number across both tiers', () => {
     for (const j of ['1755', '999999', '634289', '689337', '888888'])
       expect(ex.existingJ.has(j)).toBe(true);
+  });
+  it('extracts the 3-way attach table (targets + joysounds)', () => {
+    expect(ex.attach.get('ky:40141')?.has('888888')).toBe(true);
+    expect(ex.attachTargets.has('ky:40141')).toBe(true);
+    expect(ex.attachJ.has('888888')).toBe(true);
   });
 });
 
@@ -126,10 +142,13 @@ describe('buildPlan guards', () => {
     const p = buildPlan([row({ song_id: 'ky-44158', ky: '44158', J: '689337' })], ex);
     expect(p.unencodable['already-encoded']).toHaveLength(1);
   });
-  it('classifies a ky row whose joysound is owned by an existing tj-pair as 3-way', () => {
-    const p = buildPlan([row({ song_id: 'ky-700', ky: '700', J: '888888' })], ex);
+  it('classifies a SAME-vendor ky reuse of a ky-owned joysound as 3way-existing-reviewed', () => {
+    // Owner and candidate share a vendor (ky↔ky owner) → a genuine duplicate,
+    // NOT a 3-way bridge; it stays unencodable in 3way-existing-reviewed.
+    const p = buildPlan([row({ song_id: 'ky-700', ky: '700', J: '689337' })], ex);
     expect(p.unencodable['3way-existing-reviewed']).toHaveLength(1);
-    expect(p.unencodable['3way-existing-reviewed'][0].existingOwner).toBe('tierF tj:25875');
+    expect(p.unencodable['3way-existing-reviewed'][0].existingOwner).toBe('tierF ky:44158');
+    expect(p.tierF3wayAttach).toHaveLength(0);
   });
   it('classifies a tj row whose joysound is owned by another tj-pair as both-vendor-number', () => {
     const p = buildPlan([row({ song_id: 'tj-700', tj: '700', J: '888888' })], ex);
@@ -148,6 +167,46 @@ describe('buildPlan guards', () => {
     expect(p.unencodable['3way-dupJ']).toHaveLength(1);
     expect(p.unencodable['3way-dupJ'][0].song_id).toBe('ky-800');
     expect(p.unencodable['3way-dupJ'][0].winner).toBe('tj-801');
+  });
+});
+
+describe('buildPlan 3-way attach derivation (option B2)', () => {
+  const ex = parseReviewedSource(SAMPLE_SOURCE);
+  it('derives a ky bridge when a tj pair owns the joysound (owner tj → attach ky)', () => {
+    const p = buildPlan([row({ song_id: 'ky-700', ky: '700', J: '999999' })], ex);
+    expect(p.tierF3wayAttach).toHaveLength(1);
+    expect(p.tierF3wayAttach[0]).toMatchObject({ v: 'ky', n: '700', J: '999999' });
+    expect(p.tierF3wayAttach[0].existingOwner).toBe('tierE tj-25065');
+    expect(p.unencodable['3way-existing-reviewed']).toHaveLength(0);
+  });
+  it('derives a tj bridge when a ky pair owns the joysound (owner ky → attach tj, vendor-symmetric)', () => {
+    // The first tj-onto-ky-owned attach. Confirms the derivation is vendor
+    // symmetric, not hard-coded to "owner is tj".
+    const p = buildPlan([row({ song_id: 'tj-700', tj: '700', J: '689337' })], ex);
+    expect(p.tierF3wayAttach).toHaveLength(1);
+    expect(p.tierF3wayAttach[0]).toMatchObject({ v: 'tj', n: '700', J: '689337' });
+    expect(p.tierF3wayAttach[0].existingOwner).toBe('tierF ky:44158');
+    expect(p.unencodable['both-vendor-number']).toHaveLength(0);
+  });
+  it('does NOT emit when the attach target cell collides with an existing reviewed target', () => {
+    // ky:44158 is already a Tier F target (owns 689337); reusing that cell for a
+    // different joysound would double-map it, so the attach is refused.
+    const p = buildPlan([row({ song_id: 'ky-44158', ky: '44158', J: '999999' })], ex);
+    expect(p.tierF3wayAttach).toHaveLength(0);
+    expect(p.unencodable['target-conflict-existing']).toHaveLength(1);
+  });
+  it('reports an already-committed attach as already-encoded (idempotent)', () => {
+    const p = buildPlan([row({ song_id: 'ky-40141', ky: '40141', J: '888888' })], ex);
+    expect(p.tierF3wayAttach).toHaveLength(0);
+    expect(p.unencodable['already-encoded']).toHaveLength(1);
+    expect(p.unencodable['already-encoded'][0].attach).toBe(true);
+  });
+  it('formats an attach code line with the owner annotation', () => {
+    const p = buildPlan([row({ song_id: 'ky-700', ky: '700', J: '999999' })], ex);
+    const { tierF3wayAttach } = entryLines(p);
+    expect(tierF3wayAttach[0]).toBe(
+      "  ['ky', '700', '999999'], // ky-700 T / A ↔ T2 / A2 [owner tierE tj-25065]",
+    );
   });
 });
 
@@ -243,5 +302,48 @@ describe('forbidden release path', () => {
     expect(p.unencodable.forbidden).toHaveLength(0);
     expect(p.tierF).toHaveLength(1);
     expect(p.tierF[0]).toMatchObject({ v: 'tj', n: '6927', J: '19868' });
+  });
+});
+
+// Integration against the committed verdicts + tables. Locks the reproducible
+// numbers the 2026-07-20 B2 PR is built on: the encoder derives EXACTLY 85
+// attach entries from an empty attach table (83 ky rows + ky-41123 + tj-26145),
+// and is idempotent against the populated table. Any table/verdict drift trips
+// this loudly.
+describe('encode-b integration (committed data)', () => {
+  const realSource = readFileSync(REAL_SOURCE, 'utf8');
+  const { merges, overrides } = loadReviews(REAL_REVIEWS);
+
+  it('loads 483 merge verdicts including the two B2 supplementals', () => {
+    expect(merges).toHaveLength(483);
+    expect(merges.find((m) => m.song_id === 'ky-41123')).toMatchObject({ J: '11509' });
+    expect(merges.find((m) => m.song_id === 'tj-26145')).toMatchObject({ J: '1546' });
+    // tj-26145's B-wave reject was overridden by the D-2 supplemental merge.
+    expect(overrides.find((o) => o.song_id === 'tj-26145')).toMatchObject({
+      from: { verdict: 'reject' },
+      to: { verdict: 'merge' },
+    });
+  });
+
+  it('derives exactly 85 attach entries from an empty attach table (83 + 2 supplementals)', () => {
+    const preEncode = realSource.replace(
+      /const REVIEWED_TIER_F_3WAY_ATTACH_PAIRS = \[[\s\S]*?\] as const/,
+      'const REVIEWED_TIER_F_3WAY_ATTACH_PAIRS = [] as const',
+    );
+    const p = buildPlan(merges, parseReviewedSource(preEncode));
+    expect(p.tierF3wayAttach).toHaveLength(85);
+    expect(p.unencodable['3way-existing-reviewed']).toHaveLength(0);
+    expect(p.unencodable['both-vendor-number']).toHaveLength(1); // tj-26737 (tj↔tj-owned)
+    // 84 ky bridges + the single tj-26145 (vendor-symmetric, ky-owned joysound).
+    expect(p.tierF3wayAttach.filter((e) => e.v === 'ky')).toHaveLength(84);
+    expect(p.tierF3wayAttach.filter((e) => e.v === 'tj')).toHaveLength(1);
+    expect(p.tierF3wayAttach.find((e) => e.v === 'tj')).toMatchObject({ n: '26145', J: '1546' });
+  });
+
+  it('is idempotent against the committed (populated) attach table', () => {
+    const p = buildPlan(merges, parseReviewedSource(realSource));
+    expect(p.tierF3wayAttach).toHaveLength(0);
+    expect(p.unencodable['3way-existing-reviewed']).toHaveLength(0);
+    expect(p.unencodable['already-encoded'].filter((e) => e.attach)).toHaveLength(85);
   });
 });

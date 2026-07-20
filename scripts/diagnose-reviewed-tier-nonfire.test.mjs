@@ -22,6 +22,22 @@ describe('reviewedPairs', () => {
       { tier: 'F', vendor: 'ky', number: '40138', joysound: '2238' },
     ]);
   });
+
+  it('flattens the 3-way attach table as distinct tier F3 units', () => {
+    const deps = {
+      REVIEWED_TIER_E_JOYS_BY_TJ: new Map([['100', new Set(['900'])]]),
+      REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER: new Map([['tj:25875', new Set(['10140'])]]),
+      REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER: new Map([
+        ['ky:40141', new Set(['10140'])],
+        ['tj:26145', new Set(['1546'])],
+      ]),
+    };
+    const pairs = reviewedPairs(deps);
+    // The attach units are counted in the reviewed total, tagged tier F3.
+    expect(pairs).toContainEqual({ tier: 'F3', vendor: 'ky', number: '40141', joysound: '10140' });
+    expect(pairs).toContainEqual({ tier: 'F3', vendor: 'tj', number: '26145', joysound: '1546' });
+    expect(pairs.filter((p) => p.tier === 'F3')).toHaveLength(2);
+  });
 });
 
 const kn = (o) => ({ tj: null, ky: null, joysound: null, ...o });

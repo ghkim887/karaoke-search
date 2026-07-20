@@ -1,0 +1,20 @@
+[
+  {
+    "song": {
+      "id": "tj-26145",
+      "title": "忘れていいの",
+      "artist": "小川知子,谷村新司",
+      "tj": "26145",
+      "ky": null
+    },
+    "candidates": [
+      {
+        "id": "joysound-1546",
+        "joysound": "1546",
+        "title": "忘れていいの -愛の幕切れ-",
+        "artist": "谷村新司/小川知子",
+        "match": "owner-adjudication"
+      }
+    ]
+  }
+]

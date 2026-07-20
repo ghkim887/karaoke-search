@@ -4,6 +4,7 @@ import { normalize } from './normalize.js';
 import {
   type NonJoysoundVendor,
   REVIEWED_TIER_E_JOYS_BY_TJ,
+  REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER,
   REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER,
   VENDORS,
   type Vendor,
@@ -562,6 +563,42 @@ function collectTierFPostcrawlReviewedGroups(
 ): Map<string, number[]> {
   const pairs: { vendor: Vendor; number: string; joysound: string; clusterKey: string }[] = [];
   for (const [vendorNumberKey, joysoundValues] of REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER) {
+    const [vendor, number] = vendorNumberKey.split(':') as [NonJoysoundVendor, string];
+    for (const joysound of joysoundValues) {
+      pairs.push({
+        vendor,
+        number,
+        joysound,
+        clusterKey: tierFClusterKey(vendor, number, joysound),
+      });
+    }
+  }
+  return collectReviewedClusterAttachGroups(records, uf, conflicts, pairs);
+}
+
+/**
+ * Reviewed 3-way attach (option B2). A dedicated stage that runs the SAME
+ * reviewed cluster-attach collector over `REVIEWED_TIER_F_3WAY_ATTACH_PAIRS` —
+ * the SECOND single-vendor bridge onto a joysound an existing Tier E/F pair
+ * already owns. It is scheduled immediately AFTER Tier F (see TIER_PIPELINE), so
+ * by the time it plans, the owning pair's E/F union is already applied and the
+ * joysound cluster carries the owning vendor's row. The conflict guard inside
+ * `collectReviewedClusterAttachGroups` therefore sees the full 3-way union: a
+ * vendor-cell collision skips ONLY this attach (logged) and leaves the owning
+ * pair's merge intact — graceful partial failure. The soft cluster key reuses
+ * `tierFClusterKey` so the formed cluster is marked and reported exactly like a
+ * Tier F merge.
+ */
+function collectTierF3wayAttachGroups(
+  records: SongRecord[],
+  uf: UnionFind,
+  conflicts: MergeConflict[],
+): Map<string, number[]> {
+  const pairs: { vendor: Vendor; number: string; joysound: string; clusterKey: string }[] = [];
+  for (const [
+    vendorNumberKey,
+    joysoundValues,
+  ] of REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER) {
     const [vendor, number] = vendorNumberKey.split(':') as [NonJoysoundVendor, string];
     for (const joysound of joysoundValues) {
       pairs.push({
@@ -1516,6 +1553,20 @@ const TIER_PIPELINE: readonly TierDescriptor[] = [
     name: 'F',
     plan: (ctx) =>
       plannedFromGroups(collectTierFPostcrawlReviewedGroups(ctx.records, ctx.uf, ctx.conflicts)),
+    softKey: (_cluster, clusterKey) => clusterKey,
+    softKeyFallThroughOnNull: true,
+    marker: (conflicts, cluster, id, softKey) =>
+      recordTierFConflict(conflicts, cluster, id, softKey ?? ''),
+  },
+  {
+    // Reviewed 3-way attach (option B2). Reuses the Tier F name so TierName /
+    // ClusterTier and every downstream consumer stay untouched (the pipeline is
+    // an array, so a name may appear twice; TIER_BY_NAME['F'] resolves to this,
+    // behaviorally identical, descriptor). Runs AFTER Tier F so the owning
+    // pair's union is already applied — see collectTierF3wayAttachGroups.
+    name: 'F',
+    plan: (ctx) =>
+      plannedFromGroups(collectTierF3wayAttachGroups(ctx.records, ctx.uf, ctx.conflicts)),
     softKey: (_cluster, clusterKey) => clusterKey,
     softKeyFallThroughOnNull: true,
     marker: (conflicts, cluster, id, softKey) =>

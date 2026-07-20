@@ -76,13 +76,25 @@ export async function loadDeps() {
     }
   }
   const { mergeRecords } = await import(pathToFileURL(MERGE_JS).href);
-  const { REVIEWED_TIER_E_JOYS_BY_TJ, REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER } = await import(
-    pathToFileURL(REVIEWED_JS).href
-  );
-  return { mergeRecords, REVIEWED_TIER_E_JOYS_BY_TJ, REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER };
+  const {
+    REVIEWED_TIER_E_JOYS_BY_TJ,
+    REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER,
+    REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER,
+  } = await import(pathToFileURL(REVIEWED_JS).href);
+  return {
+    mergeRecords,
+    REVIEWED_TIER_E_JOYS_BY_TJ,
+    REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER,
+    REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER,
+  };
 }
 
-/** Flatten the reviewed tables into `{ tier, vendor, number, joysound }` pairs. */
+/**
+ * Flatten the reviewed tables into `{ tier, vendor, number, joysound }` pairs.
+ * The 3-way attach table (tier `F3`) is a SECOND single-vendor bridge onto a
+ * joysound an E/F pair owns, so it is a distinct reviewed unit — counted in the
+ * total and tracked separately from the Tier F owning pairs.
+ */
 export function reviewedPairs(deps) {
   const pairs = [];
   for (const [tj, joys] of deps.REVIEWED_TIER_E_JOYS_BY_TJ) {
@@ -91,6 +103,10 @@ export function reviewedPairs(deps) {
   for (const [key, joys] of deps.REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER) {
     const [vendor, number] = key.split(':');
     for (const j of joys) pairs.push({ tier: 'F', vendor, number, joysound: j });
+  }
+  for (const [key, joys] of deps.REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER ?? new Map()) {
+    const [vendor, number] = key.split(':');
+    for (const j of joys) pairs.push({ tier: 'F3', vendor, number, joysound: j });
   }
   return pairs;
 }
@@ -169,9 +185,13 @@ export function buildReport(pairs, merged, corpus, samples) {
     if (j != null) rawByJoysound.set(j, r);
   }
   const { counts, samples: sampleBuckets } = classify(pairs, merged, rawByJoysound, samples);
-  const byTier = { E: { total: 0, fired: 0 }, F: { total: 0, fired: 0 } };
+  const byTier = {
+    E: { total: 0, fired: 0 },
+    F: { total: 0, fired: 0 },
+    F3: { total: 0, fired: 0 },
+  };
   for (const p of pairs) byTier[p.tier].total += 1;
-  const firedByTier = { E: 0, F: 0 };
+  const firedByTier = { E: 0, F: 0, F3: 0 };
   // recompute fired-by-tier for the summary
   const mergedByJoysound = new Map();
   const mergedByVendor = { tj: new Map(), ky: new Map() };
@@ -188,6 +208,7 @@ export function buildReport(pairs, merged, corpus, samples) {
   }
   byTier.E.fired = firedByTier.E;
   byTier.F.fired = firedByTier.F;
+  byTier.F3.fired = firedByTier.F3;
   return { totalReviewedPairs: pairs.length, byTier, counts, samples: sampleBuckets };
 }
 
@@ -211,7 +232,7 @@ async function main() {
 
   writeJsonAtomic(resolve(args.out), report, { indent: 2, trailingNewline: true });
   console.log(
-    `[diag-reviewed] pairs ${report.totalReviewedPairs} | Tier E ${report.byTier.E.fired}/${report.byTier.E.total} fired | Tier F ${report.byTier.F.fired}/${report.byTier.F.total} fired`,
+    `[diag-reviewed] pairs ${report.totalReviewedPairs} | Tier E ${report.byTier.E.fired}/${report.byTier.E.total} fired | Tier F ${report.byTier.F.fired}/${report.byTier.F.total} fired | Tier F 3-way attach ${report.byTier.F3.fired}/${report.byTier.F3.total} fired`,
   );
   for (const [k, v] of Object.entries(report.counts)) console.log(`  ${k}: ${v}`);
   console.log(`[diag-reviewed] wrote ${args.out}`);

@@ -1,0 +1,20 @@
+[
+  {
+    "song": {
+      "id": "ky-41123",
+      "title": "ひとりぼっちのハブラシ",
+      "artist": "桜庭裕一郎",
+      "tj": null,
+      "ky": "41123"
+    },
+    "candidates": [
+      {
+        "id": "joysound-11509",
+        "joysound": "11509",
+        "title": "ひとりぼっちのハブラシ",
+        "artist": "桜庭裕一郎(長瀬智也)",
+        "match": "owner-adjudication"
+      }
+    ]
+  }
+]
