@@ -26,54 +26,48 @@ review; numbers below were measured against the live serving DB
 > The joyless-unmerged decision queue is now EXHAUSTED (v25 audit: 424
 > remaining = 244 genuine gaps + 173 human-rejected + 7 owner no-action).
 
-## R3. Full-corpus offline (PWA / fallback) — DECIDED direction, opt-in pack (2026-07-04)
+## R3. Offline bundle (PWA / fallback) — ✅ DONE (owner-scoped subset, 2026-07-20)
 
-> **Feasibility spike ✅ DONE (2026-07-12):** see
-> `docs/research/2026-07-12-offline-pack-spike.md` (PR #130). Headlines:
-> client DB is far smaller than estimated (FTS5 75.1 MiB raw / 21.6 MiB
-> brotli download vs the 150–300 MB guess); HTTP-range transport works
-> (~9 KiB per point query @ 1 KiB pages); FTS5/trigram floor at 3-char CJK
-> confirmed empirically → the parity-complete HYBRID index remains the real
-> design problem; iOS risk = eviction not quota (installed-PWA exemption;
-> opfs-sahpool VFS). Verdicts: OPFS pack GO(needs device test), HTTP-range
-> hybrid GO(needs real-browser follow-up). Implementation stays owner-gated.
+The offline/fallback path ships a client bundle
+(`apps/web/public/data/songs.json`) that the browser downloads once, indexes
+with MiniSearch, and searches locally when the worker API is unreachable
+(apps/web/src/lib/backend.ts `FallbackBackend`). Shipping the whole ~312k-song
+serving corpus client-side is infeasible on client index build/memory (the
+2026-07-12 spike measured ~316 MB heap / ~5.7 s for a 221k corpus on desktop
+Node — worse on phones), so the bundle is a curated SUBSET.
 
-**Owner question:** the whole DB is ~1 GB — why not ship it wholesale to the
-PWA/offline fallback?
+**Owner scope decision (2026-07-20):** the earlier "opt-in full offline pack"
+direction — a client-optimized SQLite in OPFS via sqlite-wasm, or sqlite-wasm
+over HTTP range requests, with an FTS5/trigram *hybrid* index — is RETIRED.
+The offline bundle instead ships the **TJ ∪ KY ∪ blog-*** subset of the
+current serving release: the two Korean-facing vendor catalogues (TJ, KY) plus
+the curated blog-sourced J-pop/anime/Vocaloid list. The 2026-07-12 feasibility
+spike (OPFS pack / HTTP-range / FTS5-hybrid measurements, PR #130) is preserved
+for the record in [ROADMAP-LOG.md](ROADMAP-LOG.md) and
+`docs/research/2026-07-12-offline-pack-spike.md`.
 
-**Answer (measured):** the 1.1 GiB serving SQLite is the WRONG artifact to
-ship — 77 % of it is the server-side inverted index (`search_tokens` 845 MB +
-`search_token_stats` 67 MB), which only makes sense next to the worker's
-query planner. The actual payload is small: `songs` 45 MB +
-`karaoke_numbers` 26 MB + `search_texts` 52 MB (~130 MB uncompressed;
-canonical `full-corpus.json` is 93 MB, ~25–30 MB gzipped). The current
-offline path ships a 25,842-song / 10.9 MB subset and builds a MiniSearch
-index client-side; the Open questions section (post-JOYSOUND data topology)
-already measured client-side index build for a 221k corpus at ~316 MB heap /
-~5.7 s on desktop Node — worse on
-phones, and today's corpus is 307k. So "wholesale" fails not on download
-size but on client index build/memory.
+**Shipped (this PR):** `scripts/extract-offline-subset.mjs` extracts the subset
+reproducibly from a full serving corpus (membership = a TJ number OR a KY
+number OR a `blog-*` id). The committed bundle is the v25 subset — **26,398
+songs** (tj 6,111 ∪ ky 4,787 ∪ blog-* 19,730; of the blog rows 19,099 are
+JOYSOUND-only). Size is essentially unchanged from the prior bundle (~11 MB /
+~26k songs), so client build/memory characteristics are unaffected. It is a
+pure row filter — the SongRecord schema is untouched, so every serving surface
+reads it unchanged.
 
-**Direction:** keep the default PWA as-is (subset + MiniSearch + API
-fallback), and add an OPT-IN "full offline pack": a client-optimized SQLite
-(songs + numbers + an FTS5 or trigram index built FOR sqlite-wasm, no server
-token tables) stored in OPFS via sqlite-wasm — realistic size ~150–300 MB
-download, index prebuilt so no client build cost. Risks to validate: iOS
-Safari storage eviction of large OPFS files, and a second index
-implementation needing its own parity gate against the worker (the golden
-parity harness generalizes). Alternative worth prototyping first:
-sqlite-wasm over HTTP range requests against a statically-hosted DB — no
-full download, but online-only, so it complements rather than replaces the
-pack.
+**Regenerate on release promotion / crawl** (whenever `db/current` advances):
 
-**FTS5 is not a drop-in — only a hybrid spike is open.** The FTS5-or-trigram
-index above cannot simply replace the client-side MiniSearch build: FTS5 lacks
-the 1–2-char CJK, choseong, and romaji-prefix expansion that today's search
-depends on, so a straight FTS5 index would regress short-query and phonetic
-matching. The one open path is a *hybrid* spike — FTS5 (or trigram) for the
-bulk term index plus a supplementary structure covering the short-CJK /
-choseong / romaji-prefix cases — validated against the same golden parity gate
-before it could replace anything.
+    node scripts/extract-offline-subset.mjs \
+      --corpus <full-corpus.json> \
+      --out apps/web/public/data/songs.json
+
+then regenerate the search-parity golden baseline (the gate pins the corpus
+sha256, so a bundle swap forces it) and review the per-query Jaccard/top-1
+diff — a shrinking Jaccard is a real divergence, not a rubber stamp (see the
+test-file header):
+
+    UPDATE_PARITY_SNAPSHOT=1 pnpm --filter @karaoke/web exec vitest run \
+      src/lib/search-parity.golden.test.ts
 
 ## R4. Search enrichment from already-crawled JOYSOUND detail fields (ruby and more)
 
@@ -319,6 +313,7 @@ Full narratives live in [ROADMAP-LOG.md](ROADMAP-LOG.md).
 
 - **R1** — TJ/KY-without-JOYSOUND audit: DONE 2026-07-05 (#73/#76/#84–#88); merger-mechanism + version-ambiguous pairs RESOLVED 2026-07-10 (owner, unlinked-by-design).
 - **R2** — UI language separation (ko/en/ja chrome): DONE 2026-07-04 (#75, #81).
+- **R3 — opt-in full offline pack (retired direction)** — DECIDED 2026-07-04, spike DONE 2026-07-12 (#130); SUPERSEDED by the 2026-07-20 owner scope decision → the offline bundle ships the TJ∪KY∪blog-* serving subset instead (live R3 above; `scripts/extract-offline-subset.mjs`). Spike measurements preserved in the log.
 - **R6** — Pages-Functions liveness check: DONE 2026-07-10 (PR #117).
 - **R7** — tjpdf PDF ingest replaced by TJ searchSong probe: COMPLETE 2026-07-12 (PR #125 + discovery sweep #131).
 - **JOYSOUND runbook owner checkpoints** — HISTORICAL / COMPLETED 2026-07-10 (shipped as serving release v21).

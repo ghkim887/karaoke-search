@@ -2,12 +2,12 @@
   "_readme": "AUTO-GENERATED baseline for search-parity.golden.test.ts. Regenerate with UPDATE_PARITY_SNAPSHOT=1 (see the test file header). jaccard/top1Match are the FROZEN divergence floor; web/worker lists are the top-10 ids at generation time (informational, for reading divergences). Do not hand-edit.",
   "corpus": {
     "path": "apps/web/public/data/songs.json",
-    "sha256": "147fe6b523e48cc2e3f7869ecadd87dab9009d468dcf21a382721516e00eef99",
-    "records": 26462
+    "sha256": "cd39370e1a9a15cc185fa262708a4f41bacb0637ca1d076ab495b1adc642492e",
+    "records": 26398
   },
   "aggregate": {
     "queryCount": 61,
-    "meanJaccard": 0.621183,
+    "meanJaccard": 0.602813,
     "top1MatchRate": 0.786885
   },
   "queries": {
@@ -17,15 +17,15 @@
       "jaccard": 0.3,
       "top1Match": true,
       "web": [
-        "blog-99-1",
+        "ky-44656",
         "blog-99-52",
         "blog-226-63"
       ],
       "worker": [
-        "blog-99-1",
+        "ky-44656",
         "blog-99-52",
         "blog-226-63",
-        "blog-463-4",
+        "ky-44866",
         "blog-654-29",
         "blog-524-116",
         "blog-464-85",
@@ -41,11 +41,11 @@
       "top1Match": false,
       "web": [
         "blog-153-10",
-        "blog-153-1",
+        "ky-44419",
         "blog-153-2"
       ],
       "worker": [
-        "blog-153-1",
+        "ky-44419",
         "blog-153-10",
         "blog-153-2",
         "tj-27457"
@@ -57,11 +57,11 @@
       "jaccard": 0.333333,
       "top1Match": true,
       "web": [
-        "blog-105-0",
+        "ky-44343",
         "blog-105-74"
       ],
       "worker": [
-        "blog-105-0",
+        "ky-44343",
         "blog-105-74",
         "tj-26170",
         "blog-338-73",
@@ -86,7 +86,7 @@
         "blog-686-41",
         "tjpdf-28301",
         "tj-6769",
-        "blog-99-9",
+        "ky-44665",
         "blog-361-216",
         "blog-226-10",
         "blog-101-64",
@@ -100,19 +100,19 @@
       "jaccard": 0.1,
       "top1Match": true,
       "web": [
-        "blog-226-7"
+        "ky-41927"
       ],
       "worker": [
-        "blog-226-7",
-        "blog-224-0",
-        "tjpdf-28557",
+        "ky-41927",
+        "ky-44096",
         "blog-576-48",
-        "tj-28828",
-        "blog-828-39",
-        "blog-147-27",
-        "blog-224-52",
-        "blog-242-31",
-        "blog-228-75"
+        "blog-837-21",
+        "blog-687-29",
+        "blog-226-148",
+        "blog-576-79",
+        "blog-579-55",
+        "blog-168-170",
+        "tj-28828"
       ]
     },
     "jp-full-ageha": {
@@ -121,22 +121,22 @@
       "jaccard": 0.4,
       "top1Match": true,
       "web": [
-        "blog-229-1",
+        "ky-41051",
         "blog-229-86",
         "blog-229-18",
         "blog-162-11"
       ],
       "worker": [
-        "blog-229-1",
+        "ky-41051",
         "blog-229-18",
         "blog-229-86",
         "blog-162-11",
         "blog-908-6",
+        "joysound-84594",
         "blog-500-5",
         "blog-350-2",
         "blog-539-54",
-        "blog-654-89",
-        "blog-654-91"
+        "blog-654-89"
       ]
     },
     "jp-part-mayonaka": {
@@ -149,12 +149,12 @@
         "blog-217-51",
         "blog-826-5",
         "blog-162-25",
+        "joysound-19053",
         "blog-493-39",
         "blog-168-125",
         "blog-730-82",
         "tj-6272",
-        "blog-1165-17",
-        "blog-579-12"
+        "blog-1165-17"
       ],
       "worker": [
         "blog-594-34",
@@ -162,11 +162,11 @@
         "tj-27644",
         "tjpdf-28549",
         "tj-6272",
-        "blog-299-0",
+        "ky-75921",
         "blog-826-5",
         "blog-168-125",
-        "blog-579-12",
-        "blog-539-53"
+        "joysound-19053",
+        "blog-579-12"
       ]
     },
     "jp-part-kakeru": {
@@ -179,10 +179,10 @@
         "blog-355-103"
       ],
       "worker": [
-        "blog-99-1",
+        "ky-44656",
         "blog-99-52",
         "blog-226-63",
-        "blog-463-4",
+        "ky-44866",
         "blog-654-29",
         "blog-524-116",
         "blog-464-85",
@@ -203,20 +203,20 @@
         "blog-499-49",
         "blog-162-175",
         "blog-336-96",
-        "blog-826-82",
-        "blog-350-19",
+        "ky-41789",
         "blog-322-9",
-        "blog-524-9"
+        "ky-40536",
+        "joysound-11948"
       ],
       "worker": [
         "tj-25782",
         "blog-229-118",
         "tj-25371",
-        "blog-350-19",
+        "ky-41789",
         "tj-26747",
         "tjpdf-27563",
         "blog-1229-10",
-        "blog-163-91",
+        "joysound-157401",
         "tj-52409",
         "blog-484-31"
       ]
@@ -229,25 +229,25 @@
       "web": [
         "tj-6595",
         "blog-117-2",
-        "blog-162-237",
         "blog-174-26",
         "blog-195-22",
         "blog-317-12",
         "blog-338-37",
         "blog-539-132",
         "blog-576-181",
+        "joysound-843",
         "tj-6412"
       ],
       "worker": [
         "tj-6595",
         "blog-117-2",
-        "blog-162-237",
         "blog-174-26",
         "blog-195-22",
         "blog-317-12",
         "blog-338-37",
         "blog-539-132",
         "blog-576-181",
+        "joysound-843",
         "tj-25086"
       ]
     },
@@ -257,14 +257,14 @@
       "jaccard": 0.285714,
       "top1Match": true,
       "web": [
-        "blog-135-1",
+        "ky-75999",
         "blog-135-73"
       ],
       "worker": [
-        "blog-135-1",
+        "ky-75999",
         "blog-135-73",
         "blog-200-2",
-        "blog-262-1",
+        "ky-59999",
         "blog-499-14",
         "blog-1142-5",
         "blog-476-11"
@@ -290,7 +290,7 @@
         "blog-1491-19",
         "tj-25304",
         "tj-27248",
-        "blog-802-0",
+        "ky-41597",
         "tj-25543",
         "tj-25684",
         "tj-26067"
@@ -299,30 +299,31 @@
     "jp-kana-cherry": {
       "query": "チェリー",
       "vendors": [],
-      "jaccard": 0.357143,
+      "jaccard": 0.428571,
       "top1Match": true,
       "web": [
-        "blog-226-0",
+        "ky-41564",
         "blog-1628-50",
         "blog-576-85",
         "blog-358-6",
         "blog-564-21",
         "blog-418-10",
         "blog-524-7",
+        "joysound-94456",
         "blog-475-11",
         "tj-25179"
       ],
       "worker": [
-        "blog-226-0",
+        "ky-41564",
         "blog-1628-50",
         "blog-576-85",
         "blog-524-7",
         "blog-418-10",
+        "joysound-94456",
         "tj-25975",
-        "tjpdf-68111",
-        "blog-517-42",
-        "tj-26782",
-        "blog-517-12"
+        "joysound-554607",
+        "joysound-108726",
+        "blog-517-42"
       ]
     },
     "jp-kana-saudade": {
@@ -331,21 +332,21 @@
       "jaccard": 0.3,
       "top1Match": true,
       "web": [
-        "blog-229-0",
+        "ky-41085",
         "blog-539-61",
         "blog-229-14"
       ],
       "worker": [
-        "blog-229-0",
+        "ky-41085",
         "blog-539-61",
         "blog-229-14",
         "tj-28977",
+        "ky-44358",
         "blog-420-31",
         "blog-724-5",
         "blog-736-7",
         "tj-6475",
-        "blog-594-1",
-        "blog-655-8"
+        "blog-594-1"
       ]
     },
     "jp-kana-robinson": {
@@ -354,19 +355,19 @@
       "jaccard": 0.1,
       "top1Match": true,
       "web": [
-        "blog-226-2"
+        "ky-41844"
       ],
       "worker": [
-        "blog-226-2",
+        "ky-41844",
         "blog-828-101",
         "tj-27042",
         "blog-162-59",
         "blog-151-135",
         "blog-594-13",
+        "joysound-618",
         "tj-26622",
         "blog-539-77",
-        "blog-492-14",
-        "blog-135-75"
+        "blog-492-14"
       ]
     },
     "jp-kana-sayonarabus": {
@@ -393,17 +394,16 @@
     "ko-full-hongryeonhwa": {
       "query": "홍련화",
       "vendors": [],
-      "jaccard": 0.25,
+      "jaccard": 0.272727,
       "top1Match": true,
       "web": [
-        "blog-153-1",
+        "ky-44419",
         "blog-153-10",
         "blog-153-2",
-        "tj-27111",
-        "tj-27457"
+        "tj-27111"
       ],
       "worker": [
-        "blog-153-1",
+        "ky-44419",
         "blog-153-10",
         "blog-153-2",
         "tj-26809",
@@ -418,31 +418,31 @@
     "ko-full-bameul": {
       "query": "밤을 달리다",
       "vendors": [],
-      "jaccard": 0.25,
+      "jaccard": 0.333333,
       "top1Match": true,
       "web": [
-        "blog-99-1",
+        "ky-44656",
         "blog-226-63",
         "blog-99-52",
-        "blog-1143-49",
         "blog-691-52",
         "blog-686-49",
         "blog-168-130",
         "blog-535-40",
         "blog-504-37",
-        "tj-27459"
+        "tjpdf-28179",
+        "joysound-897254"
       ],
       "worker": [
-        "blog-99-1",
+        "ky-44656",
         "blog-226-63",
         "blog-99-52",
-        "tj-26337",
-        "tj-27459",
         "tjpdf-28179",
         "tj-6779",
-        "blog-449-14",
+        "joysound-897254",
         "blog-175-81",
-        "blog-445-46"
+        "blog-445-46",
+        "blog-127-77",
+        "blog-383-17"
       ]
     },
     "ko-full-sikkeureowo": {
@@ -451,7 +451,7 @@
       "jaccard": 0.7,
       "top1Match": true,
       "web": [
-        "blog-135-1",
+        "ky-75999",
         "blog-596-48",
         "blog-1142-5",
         "blog-420-42",
@@ -460,14 +460,14 @@
         "blog-200-2"
       ],
       "worker": [
-        "blog-135-1",
+        "ky-75999",
         "blog-596-48",
         "blog-1142-5",
         "blog-135-73",
         "blog-420-42",
         "blog-200-2",
         "blog-489-7",
-        "blog-217-3",
+        "ky-57787",
         "blog-828-39",
         "blog-688-72"
       ]
@@ -478,7 +478,7 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-105-0",
+        "ky-44343",
         "blog-105-74",
         "blog-562-5",
         "blog-434-9",
@@ -486,7 +486,7 @@
         "blog-336-56"
       ],
       "worker": [
-        "blog-105-0",
+        "ky-44343",
         "blog-105-74",
         "blog-336-56",
         "blog-434-9",
@@ -508,8 +508,8 @@
         "blog-355-40",
         "blog-157-44",
         "tj-25464",
-        "tj-26423",
-        "tjpdf-28190"
+        "tjpdf-28190",
+        "blog-117-62"
       ],
       "worker": [
         "tj-25022",
@@ -519,39 +519,39 @@
         "blog-495-5",
         "tj-25464",
         "tj-25604",
-        "tj-26423",
         "tjpdf-28190",
-        "blog-157-44"
+        "blog-157-44",
+        "blog-117-62"
       ]
     },
     "ko-part-sarang": {
       "query": "사랑",
       "vendors": [],
-      "jaccard": 0.428571,
+      "jaccard": 0.538462,
       "top1Match": false,
       "web": [
         "blog-423-74",
         "blog-499-62",
         "blog-172-7",
-        "tj-26162",
         "tj-6595",
         "blog-117-2",
-        "blog-162-237",
         "blog-174-26",
         "blog-195-22",
-        "blog-317-12"
+        "blog-317-12",
+        "blog-338-37",
+        "blog-539-132"
       ],
       "worker": [
         "tj-6595",
         "blog-117-2",
-        "blog-162-237",
         "blog-174-26",
         "blog-195-22",
         "blog-317-12",
         "blog-338-37",
         "blog-539-132",
         "blog-576-181",
-        "blog-1627-30"
+        "blog-1627-30",
+        "blog-174-27"
       ]
     },
     "ko-part-dallida": {
@@ -560,7 +560,7 @@
       "jaccard": 0.176471,
       "top1Match": true,
       "web": [
-        "blog-99-1",
+        "ky-44656",
         "blog-226-63",
         "blog-99-52",
         "blog-229-142",
@@ -569,10 +569,10 @@
         "tj-27366",
         "blog-225-34",
         "blog-336-5",
-        "tjpdf-28554"
+        "blog-105-25"
       ],
       "worker": [
-        "blog-99-1",
+        "ky-44656",
         "blog-99-52",
         "blog-226-63",
         "blog-457-11",
@@ -597,7 +597,7 @@
         "tj-25373",
         "tj-25707",
         "tj-25735",
-        "blog-688-84",
+        "ky-41843",
         "tj-25815",
         "tj-26232"
       ],
@@ -647,25 +647,25 @@
       "jaccard": 0.1,
       "top1Match": true,
       "web": [
-        "blog-226-2"
+        "ky-41844"
       ],
       "worker": [
-        "blog-226-2",
+        "ky-41844",
         "blog-828-101",
         "tj-27042",
         "blog-162-59",
         "blog-151-135",
         "blog-594-13",
+        "joysound-618",
+        "joysound-857",
         "blog-133-18",
-        "tjpdf-27653",
-        "blog-440-74",
-        "blog-336-31"
+        "tjpdf-27653"
       ]
     },
     "romaji-sayonara": {
       "query": "sayonara",
       "vendors": [],
-      "jaccard": 0.666667,
+      "jaccard": 0.333333,
       "top1Match": false,
       "web": [
         "tj-25779",
@@ -675,9 +675,9 @@
         "blog-224-59",
         "blog-707-21",
         "blog-423-57",
+        "joysound-1787",
         "tj-26278",
-        "tj-26501",
-        "blog-828-118"
+        "tj-26501"
       ],
       "worker": [
         "blog-828-20",
@@ -685,11 +685,11 @@
         "blog-183-8",
         "blog-224-59",
         "tj-6951",
-        "blog-101-6",
-        "tj-25779",
-        "tj-26278",
-        "tj-26501",
-        "blog-707-21"
+        "joysound-1787",
+        "ky-75948",
+        "joysound-20302",
+        "joysound-11649",
+        "joysound-1098"
       ]
     },
     "romaji-sakura": {
@@ -698,28 +698,28 @@
       "jaccard": 0.818182,
       "top1Match": false,
       "web": [
-        "blog-301-20",
+        "ky-41263",
         "blog-539-78",
         "blog-523-70",
-        "blog-523-37",
+        "ky-42663",
         "blog-301-94",
         "tj-27462",
         "blog-159-8",
         "blog-909-3",
-        "tj-27018",
-        "tj-27377"
+        "joysound-27194",
+        "tj-27018"
       ],
       "worker": [
         "tj-27462",
         "blog-159-8",
         "blog-909-3",
-        "blog-301-20",
-        "blog-523-37",
+        "ky-41263",
+        "ky-42663",
         "blog-523-70",
         "blog-539-78",
         "blog-381-2",
         "blog-301-94",
-        "tj-27018"
+        "joysound-27194"
       ]
     },
     "romaji-cherry": {
@@ -729,27 +729,27 @@
       "top1Match": false,
       "web": [
         "blog-161-27",
+        "joysound-108726",
         "blog-576-231",
         "blog-826-151",
         "blog-615-16",
+        "joysound-94456",
         "blog-615-142",
         "tj-26719",
         "tj-26729",
-        "tj-26803",
-        "tj-27275",
-        "tj-27785"
+        "tj-26803"
       ],
       "worker": [
         "blog-576-231",
         "blog-826-151",
-        "blog-537-0",
+        "ky-42342",
         "blog-161-27",
+        "joysound-108726",
+        "joysound-94456",
         "blog-615-16",
         "blog-615-142",
         "tj-26803",
-        "tj-26719",
-        "tj-26729",
-        "tj-27275"
+        "tj-26719"
       ]
     },
     "hangul-initials-oosb": {
@@ -758,7 +758,7 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-418-18",
+        "ky-43267",
         "tj-6445",
         "tj-6562",
         "blog-218-10",
@@ -770,7 +770,7 @@
         "blog-1259-13"
       ],
       "worker": [
-        "blog-418-18",
+        "ky-43267",
         "tj-6445",
         "tj-6562",
         "blog-218-10",
@@ -792,7 +792,7 @@
         "tj-26887",
         "tj-26889",
         "tjpdf-28246",
-        "blog-153-1",
+        "ky-44419",
         "blog-730-63",
         "blog-455-13",
         "blog-728-15",
@@ -804,7 +804,7 @@
         "tj-26887",
         "tj-26889",
         "tjpdf-28246",
-        "blog-153-1",
+        "ky-44419",
         "blog-730-63",
         "blog-455-13",
         "blog-728-15",
@@ -824,10 +824,8 @@
         "blog-707-17",
         "blog-802-47",
         "blog-436-25",
-        "blog-1149-35",
         "tj-26407",
-        "tjpdf-68074",
-        "tjpdf-68206"
+        "tjpdf-68074"
       ],
       "worker": [
         "tj-26724",
@@ -836,10 +834,8 @@
         "blog-707-17",
         "blog-802-47",
         "blog-436-25",
-        "blog-1149-35",
         "tj-26407",
-        "tjpdf-68074",
-        "tjpdf-68206"
+        "tjpdf-68074"
       ]
     },
     "artist-yoasobi": {
@@ -848,28 +844,28 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-5",
-        "blog-99-25",
-        "blog-99-17",
+        "ky-75979",
+        "ky-76524",
+        "ky-76512",
         "blog-99-27",
         "blog-99-33",
         "blog-99-37",
-        "blog-99-18",
-        "blog-99-8",
-        "blog-99-12",
-        "blog-99-1"
+        "ky-57797",
+        "ky-44642",
+        "ky-44636",
+        "ky-44656"
       ],
       "worker": [
-        "blog-99-5",
-        "blog-99-25",
-        "blog-99-17",
+        "ky-75979",
+        "ky-76524",
+        "ky-76512",
         "blog-99-27",
         "blog-99-33",
         "blog-99-37",
-        "blog-99-18",
-        "blog-99-8",
-        "blog-99-12",
-        "blog-99-1"
+        "ky-57797",
+        "ky-44642",
+        "ky-44636",
+        "ky-44656"
       ]
     },
     "artist-alias-zutomayo": {
@@ -878,25 +874,25 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-105-46",
-        "blog-105-0",
-        "blog-105-6",
-        "blog-105-23",
+        "ky-44773",
+        "ky-44343",
+        "ky-44354",
+        "ky-44367",
         "blog-105-14",
         "blog-105-12",
-        "blog-105-10",
+        "ky-57761",
         "blog-105-9",
         "blog-105-31",
         "blog-105-8"
       ],
       "worker": [
-        "blog-105-46",
-        "blog-105-0",
-        "blog-105-6",
-        "blog-105-23",
+        "ky-44773",
+        "ky-44343",
+        "ky-44354",
+        "ky-44367",
         "blog-105-14",
         "blog-105-12",
-        "blog-105-10",
+        "ky-57761",
         "blog-105-9",
         "blog-105-31",
         "blog-105-8"
@@ -905,27 +901,27 @@
     "artist-alias-spitz": {
       "query": "Spitz",
       "vendors": [],
-      "jaccard": 0.818182,
+      "jaccard": 0.666667,
       "top1Match": false,
       "web": [
+        "ky-42459",
         "blog-594-93",
         "blog-226-13",
-        "blog-226-0",
-        "blog-226-7",
-        "blog-226-2",
-        "blog-226-21",
-        "blog-226-20",
+        "ky-41564",
+        "ky-41927",
+        "ky-41844",
+        "ky-41029",
+        "ky-41846",
         "blog-226-12",
-        "blog-226-15",
-        "blog-226-30"
+        "blog-226-15"
       ],
       "worker": [
         "blog-226-13",
-        "blog-226-0",
-        "blog-226-7",
-        "blog-226-2",
-        "blog-226-21",
-        "blog-226-20",
+        "ky-41564",
+        "ky-41927",
+        "ky-41844",
+        "ky-41029",
+        "ky-41846",
         "blog-226-12",
         "blog-226-15",
         "blog-226-30",
@@ -940,56 +936,56 @@
       "web": [
         "blog-749-57",
         "blog-749-70",
-        "blog-749-1",
+        "ky-40062",
         "blog-749-5",
         "blog-749-10",
-        "blog-749-11",
+        "ky-42037",
         "blog-749-8",
-        "blog-749-0",
-        "blog-749-4",
+        "ky-41215",
+        "ky-41295",
         "blog-749-9"
       ],
       "worker": [
         "blog-749-57",
-        "blog-749-1",
+        "ky-40062",
         "blog-749-5",
         "blog-749-10",
-        "blog-749-11",
+        "ky-42037",
         "blog-749-8",
-        "blog-749-0",
-        "blog-749-4",
+        "ky-41215",
+        "ky-41295",
         "blog-749-9",
-        "blog-749-41"
+        "ky-41356"
       ]
     },
     "artist-yonezu": {
       "query": "米津玄師",
       "vendors": [],
-      "jaccard": 1,
-      "top1Match": true,
+      "jaccard": 0.818182,
+      "top1Match": false,
       "web": [
-        "blog-101-32",
-        "blog-101-21",
-        "blog-101-30",
-        "blog-101-22",
-        "blog-101-4",
-        "blog-101-17",
-        "blog-101-10",
-        "blog-101-3",
-        "blog-101-12",
-        "blog-101-2"
+        "joysound-583800",
+        "ky-44048",
+        "ky-44057",
+        "ky-44066",
+        "ky-44195",
+        "ky-44040",
+        "ky-44128",
+        "ky-44148",
+        "ky-44170",
+        "ky-44227"
       ],
       "worker": [
-        "blog-101-32",
-        "blog-101-21",
-        "blog-101-30",
-        "blog-101-22",
-        "blog-101-4",
-        "blog-101-17",
-        "blog-101-10",
-        "blog-101-3",
-        "blog-101-12",
-        "blog-101-2"
+        "ky-44048",
+        "ky-44057",
+        "ky-44066",
+        "ky-44195",
+        "ky-44040",
+        "ky-44128",
+        "ky-44148",
+        "ky-44170",
+        "ky-44227",
+        "ky-44253"
       ]
     },
     "artist-ko-yonezu": {
@@ -998,28 +994,28 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-101-32",
-        "blog-101-21",
-        "blog-101-30",
-        "blog-101-22",
-        "blog-101-4",
-        "blog-101-17",
-        "blog-101-10",
-        "blog-101-3",
-        "blog-101-29",
-        "blog-101-5"
+        "ky-44048",
+        "ky-44057",
+        "ky-44066",
+        "ky-44195",
+        "ky-44040",
+        "ky-44128",
+        "ky-44148",
+        "ky-44170",
+        "joysound-651036",
+        "ky-44190"
       ],
       "worker": [
-        "blog-101-32",
-        "blog-101-21",
-        "blog-101-30",
-        "blog-101-22",
-        "blog-101-4",
-        "blog-101-17",
-        "blog-101-10",
-        "blog-101-3",
-        "blog-101-29",
-        "blog-101-5"
+        "ky-44048",
+        "ky-44057",
+        "ky-44066",
+        "ky-44195",
+        "ky-44040",
+        "ky-44128",
+        "ky-44148",
+        "ky-44170",
+        "joysound-651036",
+        "ky-44190"
       ]
     },
     "artist-lisa": {
@@ -1029,27 +1025,27 @@
       "top1Match": false,
       "web": [
         "blog-219-17",
-        "blog-153-24",
-        "blog-153-5",
-        "blog-153-6",
-        "blog-153-7",
-        "blog-153-12",
+        "ky-43994",
+        "ky-43528",
+        "ky-43438",
+        "ky-43734",
+        "ky-43870",
         "blog-153-39",
-        "blog-153-23",
-        "blog-153-4",
-        "blog-153-19"
+        "ky-44131",
+        "ky-44134",
+        "ky-44185"
       ],
       "worker": [
-        "blog-153-24",
-        "blog-153-5",
-        "blog-153-6",
-        "blog-153-7",
-        "blog-153-12",
+        "ky-43994",
+        "ky-43528",
+        "ky-43438",
+        "ky-43734",
+        "ky-43870",
         "blog-153-39",
-        "blog-153-23",
-        "blog-153-4",
-        "blog-153-19",
-        "blog-153-22"
+        "ky-44131",
+        "ky-44134",
+        "ky-44185",
+        "ky-44231"
       ]
     },
     "artist-utada": {
@@ -1058,37 +1054,37 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-301-11",
-        "blog-301-19",
-        "blog-301-10",
+        "ky-41184",
+        "ky-41338",
+        "ky-41217",
         "blog-301-32",
-        "blog-301-20",
-        "blog-301-15",
-        "blog-301-21",
-        "blog-301-55",
-        "blog-301-25",
+        "ky-41263",
+        "ky-41588",
+        "ky-42217",
+        "ky-40311",
+        "ky-42261",
         "blog-301-6"
       ],
       "worker": [
-        "blog-301-11",
-        "blog-301-19",
-        "blog-301-10",
+        "ky-41184",
+        "ky-41338",
+        "ky-41217",
         "blog-301-32",
-        "blog-301-20",
-        "blog-301-15",
-        "blog-301-21",
-        "blog-301-55",
-        "blog-301-25",
+        "ky-41263",
+        "ky-41588",
+        "ky-42217",
+        "ky-40311",
+        "ky-42261",
         "blog-301-6"
       ]
     },
     "short-hikari": {
       "query": "光",
       "vendors": [],
-      "jaccard": 1,
+      "jaccard": 0.818182,
       "top1Match": true,
       "web": [
-        "blog-301-10",
+        "ky-41217",
         "tj-25957",
         "blog-180-31",
         "blog-215-182",
@@ -1100,7 +1096,7 @@
         "tj-25144"
       ],
       "worker": [
-        "blog-301-10",
+        "ky-41217",
         "tj-25957",
         "blog-180-31",
         "blog-215-182",
@@ -1109,7 +1105,7 @@
         "blog-646-37",
         "blog-696-72",
         "blog-751-35",
-        "tj-25144"
+        "tjpdf-27875"
       ]
     },
     "short-natsu": {
@@ -1121,10 +1117,10 @@
         "blog-1172-61",
         "blog-179-17",
         "tj-6919",
+        "joysound-2486",
         "blog-576-134",
         "tj-25526",
-        "tj-27025",
-        "blog-112-36",
+        "ky-43989",
         "blog-169-2",
         "blog-168-51",
         "blog-361-113"
@@ -1149,6 +1145,7 @@
       "top1Match": true,
       "web": [
         "blog-164-127",
+        "joysound-130558",
         "blog-1229-142",
         "blog-521-55",
         "blog-464-43",
@@ -1156,12 +1153,11 @@
         "blog-654-105",
         "blog-211-44",
         "blog-304-19",
-        "blog-594-30",
-        "blog-229-195"
+        "blog-594-30"
       ],
       "worker": [
         "blog-164-127",
-        "blog-226-7",
+        "ky-41927",
         "tj-25115",
         "tj-25274",
         "tj-25287",
@@ -1175,19 +1171,19 @@
     "short-ai": {
       "query": "ai",
       "vendors": [],
-      "jaccard": 0.538462,
-      "top1Match": false,
+      "jaccard": 0.666667,
+      "top1Match": true,
       "web": [
-        "blog-1508-105",
-        "blog-1321-45",
         "blog-307-43",
         "blog-460-14",
         "blog-456-49",
         "blog-374-18",
         "tj-26590",
         "blog-465-63",
+        "blog-1575-6",
         "tj-68772",
-        "blog-1575-6"
+        "tj-27382",
+        "tj-27419"
       ],
       "worker": [
         "blog-307-43",
@@ -1195,17 +1191,17 @@
         "tj-27382",
         "tj-27419",
         "tj-28655",
-        "blog-1508-105",
-        "blog-1321-45",
+        "joysound-18487",
         "tj-26590",
         "blog-456-49",
-        "blog-1575-6"
+        "blog-1575-6",
+        "blog-374-18"
       ]
     },
     "short-love": {
       "query": "love",
       "vendors": [],
-      "jaccard": 0,
+      "jaccard": 0.052632,
       "top1Match": false,
       "web": [
         "blog-828-139",
@@ -1215,9 +1211,9 @@
         "tj-6914",
         "blog-133-5",
         "blog-635-4",
-        "tj-25580",
         "tj-25165",
-        "blog-311-4"
+        "ky-42189",
+        "tj-26156"
       ],
       "worker": [
         "tj-25114",
@@ -1229,7 +1225,7 @@
         "blog-730-324",
         "blog-790-31",
         "tj-52956",
-        "tjpdf-68675"
+        "tj-25159"
       ]
     },
     "short-jamo-g": {
@@ -1246,10 +1242,10 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-1"
+        "ky-44656"
       ],
       "worker": [
-        "blog-99-1"
+        "ky-44656"
       ]
     },
     "num-joy-full": {
@@ -1258,10 +1254,10 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-1"
+        "ky-44656"
       ],
       "worker": [
-        "blog-99-1"
+        "ky-44656"
       ]
     },
     "num-ky-full": {
@@ -1270,13 +1266,13 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-1",
-        "blog-150-8",
+        "ky-44656",
+        "ky-57780",
         "blog-218-11"
       ],
       "worker": [
-        "blog-99-1",
-        "blog-150-8",
+        "ky-44656",
+        "ky-57780",
         "blog-218-11"
       ]
     },
@@ -1286,10 +1282,10 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-1"
+        "ky-44656"
       ],
       "worker": [
-        "blog-99-1"
+        "ky-44656"
       ]
     },
     "num-joy-prefixed": {
@@ -1298,10 +1294,10 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-1"
+        "ky-44656"
       ],
       "worker": [
-        "blog-99-1"
+        "ky-44656"
       ]
     },
     "num-short-prefix": {
@@ -1310,28 +1306,28 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-112-12",
-        "blog-308-0",
-        "blog-349-2",
-        "tj-6840",
-        "blog-384-29",
-        "tj-68401",
-        "blog-99-10",
-        "tj-68403",
-        "blog-146-4",
-        "blog-350-7"
+        "tj-25690",
+        "tj-26454",
+        "tj-27899",
+        "tj-27904",
+        "tj-27918",
+        "tjpdf-27923",
+        "tj-27932",
+        "tj-27966",
+        "ky-44114",
+        "tjpdf-28630"
       ],
       "worker": [
-        "blog-112-12",
-        "blog-308-0",
-        "blog-349-2",
-        "tj-6840",
-        "blog-384-29",
-        "tj-68401",
-        "blog-99-10",
-        "tj-68403",
-        "blog-146-4",
-        "blog-350-7"
+        "tj-25690",
+        "tj-26454",
+        "tj-27899",
+        "tj-27904",
+        "tj-27918",
+        "tjpdf-27923",
+        "tj-27932",
+        "tj-27966",
+        "ky-44114",
+        "tjpdf-28630"
       ]
     },
     "num-tj-cherry": {
@@ -1340,10 +1336,10 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-226-0"
+        "ky-41564"
       ],
       "worker": [
-        "blog-226-0"
+        "ky-41564"
       ]
     },
     "vendor-love-joysound": {
@@ -1351,21 +1347,22 @@
       "vendors": [
         "joysound"
       ],
-      "jaccard": 0.111111,
+      "jaccard": 0.052632,
       "top1Match": false,
       "web": [
         "blog-828-139",
         "blog-828-296",
+        "tj-25159",
+        "tj-6708",
+        "tj-6914",
         "blog-133-5",
         "blog-635-4",
-        "blog-311-4",
-        "blog-826-13",
-        "blog-272-23",
-        "blog-730-349",
-        "blog-730-241",
-        "blog-577-7"
+        "tj-25165",
+        "ky-42189",
+        "tj-26156"
       ],
       "worker": [
+        "tj-25114",
         "blog-101-111",
         "blog-164-63",
         "blog-307-28",
@@ -1373,9 +1370,8 @@
         "blog-521-68",
         "blog-730-324",
         "blog-790-31",
-        "blog-311-25",
-        "blog-577-7",
-        "blog-826-13"
+        "tj-52956",
+        "tj-25159"
       ]
     },
     "vendor-yoasobi-tj": {
@@ -1386,28 +1382,28 @@
       "jaccard": 1,
       "top1Match": true,
       "web": [
-        "blog-99-5",
-        "blog-99-25",
-        "blog-99-17",
+        "ky-75979",
+        "ky-76524",
+        "ky-76512",
         "blog-99-27",
         "blog-99-33",
         "blog-99-37",
-        "blog-99-18",
-        "blog-99-8",
-        "blog-99-12",
-        "blog-99-1"
+        "ky-57797",
+        "ky-44642",
+        "ky-44636",
+        "ky-44656"
       ],
       "worker": [
-        "blog-99-5",
-        "blog-99-25",
-        "blog-99-17",
+        "ky-75979",
+        "ky-76524",
+        "ky-76512",
         "blog-99-27",
         "blog-99-33",
         "blog-99-37",
-        "blog-99-18",
-        "blog-99-8",
-        "blog-99-12",
-        "blog-99-1"
+        "ky-57797",
+        "ky-44642",
+        "ky-44636",
+        "ky-44656"
       ]
     },
     "vendor-gurenge-ky": {
@@ -1415,13 +1411,14 @@
       "vendors": [
         "ky"
       ],
-      "jaccard": 1,
+      "jaccard": 0.5,
       "top1Match": true,
       "web": [
-        "blog-153-1"
+        "ky-44419"
       ],
       "worker": [
-        "blog-153-1"
+        "ky-44419",
+        "tj-27457"
       ]
     },
     "vendor-sarang-tjky": {
@@ -1431,30 +1428,30 @@
         "ky"
       ],
       "jaccard": 0.176471,
-      "top1Match": false,
+      "top1Match": true,
       "web": [
-        "tj-26162",
         "tj-6595",
-        "blog-338-1",
+        "tj-26162",
+        "ky-42465",
         "tj-27002",
         "tj-27964",
-        "tjpdf-29831",
-        "tjpdf-29914",
         "blog-381-6",
         "tj-6164",
-        "tj-6222"
+        "tj-6222",
+        "tj-6412",
+        "tj-6414"
       ],
       "worker": [
         "tj-6595",
         "tjpdf-29981",
         "tj-25633",
-        "blog-338-1",
+        "ky-42465",
         "tjpdf-28313",
         "tj-28709",
         "tjpdf-29910",
-        "tjpdf-29914",
-        "blog-145-8",
-        "tj-52832"
+        "ky-57771",
+        "tj-52832",
+        "tj-6164"
       ]
     },
     "vendor-yonezu-joysound": {
@@ -1462,31 +1459,31 @@
       "vendors": [
         "joysound"
       ],
-      "jaccard": 1,
-      "top1Match": true,
+      "jaccard": 0.818182,
+      "top1Match": false,
       "web": [
-        "blog-101-32",
-        "blog-101-21",
-        "blog-101-30",
-        "blog-101-22",
-        "blog-101-4",
-        "blog-101-17",
-        "blog-101-10",
-        "blog-101-3",
-        "blog-101-12",
-        "blog-101-2"
+        "joysound-583800",
+        "ky-44048",
+        "ky-44057",
+        "ky-44066",
+        "ky-44195",
+        "ky-44040",
+        "ky-44128",
+        "ky-44148",
+        "ky-44170",
+        "ky-44227"
       ],
       "worker": [
-        "blog-101-32",
-        "blog-101-21",
-        "blog-101-30",
-        "blog-101-22",
-        "blog-101-4",
-        "blog-101-17",
-        "blog-101-10",
-        "blog-101-3",
-        "blog-101-12",
-        "blog-101-2"
+        "ky-44048",
+        "ky-44057",
+        "ky-44066",
+        "ky-44195",
+        "ky-44040",
+        "ky-44128",
+        "ky-44148",
+        "ky-44170",
+        "ky-44227",
+        "ky-44253"
       ]
     },
     "empty-latin-gibberish": {
@@ -1513,15 +1510,15 @@
       "web": [],
       "worker": [
         "tj-27249",
-        "tjpdf-28573",
         "blog-525-6",
-        "blog-1508-84",
-        "blog-263-58",
         "tj-27307",
         "tj-28585",
         "tjpdf-68045",
         "tj-25517",
-        "tj-25840"
+        "tj-25840",
+        "tj-26180",
+        "blog-1508-84",
+        "blog-263-58"
       ]
     }
   }
