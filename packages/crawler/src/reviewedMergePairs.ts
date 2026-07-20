@@ -978,3 +978,190 @@ function assertReviewedTierFPairInvariant(): void {
 }
 
 assertReviewedTierFPairInvariant();
+
+/**
+ * Reviewed 3-way attach pairs (option B2, 2026-07-20 owner adjudication).
+ *
+ * A joysound number is normally owned by exactly ONE reviewed Tier E/F pair
+ * (the unique-joysound invariant). For a small human-confirmed class the same
+ * song exists under BOTH a tj and a ky number plus a joysound — a "3-way". The
+ * owning pair supplies one single-vendor bridge; this table supplies the SECOND
+ * single-vendor bridge (the OTHER non-joysound vendor) so all three records
+ * collapse into one cluster. Each entry is `[vendor, number, joysound]` where
+ * `joysound` is already owned by a Tier E/F pair of a DIFFERENT vendor.
+ *
+ * Semantics: the existing Tier E/F entries are untouched (diff 0). A dedicated
+ * reviewed pipeline stage (merge.ts, in the Tier F position of TIER_PIPELINE)
+ * runs the SAME `collectReviewedClusterAttachGroups` collector over these pairs
+ * immediately AFTER Tier F. Because the E/F union is already applied, the
+ * joysound cluster already carries the owning vendor's row, so the vendor-number
+ * conflict guard sees the full 3-way union — a vendor-cell collision skips only
+ * this attach and leaves the owning pair's merge intact (graceful partial
+ * failure, unlike an atomic triple).
+ *
+ * The dup-J invariant is preserved in spirit: "one bridge per VENDOR per J".
+ * The import-time assertions below add the FIRST cross-table invariant (every
+ * attach J must exist in Tier E or F), STRENGTHENING the reviewed-tier
+ * guarantees rather than weakening them.
+ *
+ * Lines emitted verbatim by scripts/encode-b-wave-merge-pairs.mjs from the
+ * committed verdicts (83 derived ky rows whose joysound a tj pair owns, plus
+ * the ky-41123 and tj-26145 supplemental adjudications — the latter is the
+ * vendor-symmetric case: a tj bridge onto a ky-owned joysound). Effective at the
+ * next JOYSOUND-crawl corpus (v24+ re-merge). See docs/ROADMAP.md and
+ * docs/specs/2026-07-20-reviewed-3way-attach-design.md.
+ */
+const REVIEWED_TIER_F_3WAY_ATTACH_PAIRS = [
+  ['ky', '40110', '2542'], // ky-40110 愛して愛して愛しちゃったのよ / 田代美代子 ↔ 愛して愛して愛しちゃったのよ / 田代美代子/和田弘とマヒナスターズ [owner tierF tj:26162]
+  ['ky', '40119', '65161'], // ky-40119 スクランブル / 堀江由衣 with UNSCANDAL ↔ スクランブル(スクールランブル OP) / 堀江由衣 [owner tierE tj-25918]
+  ['ky', '40120', '2165'], // ky-40120 アマン(Amant) / 菅原洋一&シルビア ↔ アマン / 菅原洋一/シルヴィア [owner tierF tj:6352]
+  ['ky', '40126', '2120'], // ky-40126 熱海の夜 / 箱崎晋一郞 ↔ 熱海の夜 / 箱崎晋一郎 [owner tierE tj-6679]
+  ['ky', '40141', '10140'], // ky-40141 ロボキッス / W(ダブルユー) ↔ ロボキッス / ダブルユー [owner tierF tj:25875]
+  ['ky', '40150', '353'], // ky-40150 居酒屋 / 木の実ナナ、五木ひろし ↔ 居酒屋 / 五木ひろしと木の実ナナ [owner tierE tj-6191]
+  ['ky', '40350', '27004'], // ky-40350 東京の灯よいつまでも / 新川二郞 ↔ 東京の灯よいつまでも / 新川二郎 [owner tierE tj-6464]
+  ['ky', '40367', '21147'], // ky-40367 Catch You Catch Me / グミ ↔ Catch You Catch Me(カードキャプターさくら OP) / 日向めぐみ [owner tierE tj-25543]
+  ['ky', '40543', '14786'], // ky-40543 檄! 帝国華撃団 / 横山智佐&帝国歌劇団 ↔ 檄! 帝国華撃団(サクラ大戦 OP) / 橫山智佐 外 [owner tierE tj-25232]
+  ['ky', '40568', '28526'], // ky-40568 shine more / 安室奈美恵 ↔ shine more / 安室奈美惠 [owner tierF tj:25515]
+  ['ky', '40576', '32521'], // ky-40576 あぁ いいな! / W(ダブルユー) ↔ あぁいいな!(ドラえもん ED) / ダブルユー [owner tierE tj-25963]
+  ['ky', '40579', '37378'], // ky-40579 FIRE WARS / JAM Project featuring 影山ヒロノブ ↔ Fire wars(マジンカイザーOP) / JAM Project [owner tierE tj-25663]
+  ['ky', '40747', '2337'], // ky-40747 カスマプゲ（胸がせつない） / 李成愛 ↔ カスマプゲ / 李 成愛 [owner tierE tj-6151]
+  ['ky', '40794', '27068'], // ky-40794 さよならはダンスの後に / 倍賞千恵子 ↔ さよならはダンスの後に / 倍賞千惠子 [owner tierF tj:6633]
+  ['ky', '40822', '27150'], // ky-40822 蘇州夜曲 / 霧島昇、渡辺はま子 ↔ 蘇州夜曲 / 渡辺はま子 [owner tierF tj:6449]
+  ['ky', '40918', '1006'], // ky-40918 め組のひと / ラッツ&スター ↔ め組のひと('UQ mobile' CM) / RATS&STAR [owner tierE tj-52758]
+  ['ky', '40952', '2331'], // ky-40952 離別 / 李成愛 ↔ 離別(イビョル) / 李 成愛 [owner tierF tj:6324]
+  ['ky', '41015', '24985'], // ky-41015 NEVER END / 安室奈美恵 ↔ NEVER END / 安室奈美惠 [owner tierF tj:6942]
+  ['ky', '41050', '19877'], // ky-41050 RESPECT the POWER OF LOVE / 安室奈美恵 ↔ RESPECT the POWER OF LOVE / 安室奈美惠 [owner tierF tj:6878]
+  ['ky', '41089', '19748'], // ky-41089 だんご3兄弟 / 速水けんたろう、他 ↔ だんご3兄弟 / 速水けんたろう/茂森あゆみ/ひまわりキッズ&だんご合唱団 [owner tierF tj:6459]
+  ['ky', '41123', '11509'], // ky-41123 ひとりぼっちのハブラシ / 桜庭裕一郎 ↔ ひとりぼっちのハブラシ / 桜庭裕一郎(長瀬智也) [owner tierF tj:25640]
+  ['ky', '41155', '21879'], // ky-41155 LOVE 2000 / 安室奈美恵 ↔ LOVE 2000 / 安室奈美惠 [owner tierF tj:25041]
+  ['ky', '41206', '27183'], // ky-41206 誰よりも君を愛す / 和田弘とマヒナスターズ、松尾和子 ↔ 誰よりも君を愛す / 松尾和子/和田弘とマヒナスターズ [owner tierF tj:6455]
+  ['ky', '41332', '22448'], // ky-41332 I WILL / 安室奈美恵 ↔ I WILL / 安室奈美惠 [owner tierF tj:25169]
+  ['ky', '41393', '9678'], // ky-41393 Chase the Chance / 安室奈美恵 ↔ Chase the Chance / 安室奈美惠 [owner tierF tj:25427]
+  ['ky', '41503', '9148'], // ky-41503 太陽のSEASON / 安室奈美恵 ↔ 太陽のSEASON / 安室奈美惠 [owner tierF tj:25358]
+  ['ky', '41578', '36852'], // ky-41578 For フルーツバスケット / 岡崎律子 ↔ For フルーツバスケット(フルーツバスケット OP) / 岡崎律子 外 [owner tierE tj-25257]
+  ['ky', '41743', '30774'], // ky-41743 ALARM / 安室奈美恵 ↔ ALARM / 安室奈美惠 [owner tierF tj:25772]
+  ['ky', '41756', '31857'], // ky-41756 SO CRAZY / 安室奈美恵 ↔ SO CRAZY / 安室奈美惠 [owner tierF tj:25637]
+  ['ky', '41788', '32720'], // ky-41788 ALL FOR YOU / 安室奈美恵 ↔ ALL FOR YOU / 安室奈美惠 [owner tierF tj:25828]
+  ['ky', '41821', '58967'], // ky-41821 暁の車 / FictionJunction YUUKA ↔ 暁の車(機動戦士ガンダムSEED) / Fiction Junction YUUKA [owner tierF tj:25823]
+  ['ky', '41932', '10756'], // ky-41932 WANT ME,WANT ME / 安室奈美恵 ↔ Want me, want me / 安室奈美惠 [owner tierF tj:25983]
+  ['ky', '42046', '67500'], // ky-42046 マイペース大王 / manzo ↔ マイペース大王(げんしけん OP) / 萬Ｚ(量産型) [owner tierE tj-25988]
+  ['ky', '42131', '20003'], // ky-42131 REDEMPTION ("DIRGE of CERBERUS-FINAL FANTASY VII") / Gackt ↔ Redemption / Gackt [owner tierF tj:28115]
+  ['ky', '42370', '24536'], // ky-42370 FUNKY TOWN / 安室奈美恵 ↔ FUNKY TOWN / 安室奈美惠 [owner tierF tj:26439]
+  ['ky', '42383', '51537'], // ky-42383 EMOTION / 田中理恵 ↔ Emotion(機動戦士ガンダムSEED Character Song) / 田中理恵 [owner tierF tj:26419]
+  ['ky', '42390', '125614'], // ky-42390 恋のミクル伝説 / 後藤邑子 ↔ 恋のミクル伝説 / 朝比奈みくる(後藤邑子) [owner tierF tj:26452]
+  ['ky', '42423', '62537'], // ky-42423 チチをもげ! / 高橋広樹 ↔ チチをもげ!(金色のガッシュベル!! OST) / パルコ・フォルゴレ(高橋広樹) [owner tierE tj-26007]
+  ['ky', '42488', '14062'], // ky-42488 セーラースターソング / 花沢加絵 ↔ セーラースターソング(美少女戦士セーラームーンスターズ OST) / 花澤加繪 [owner tierE tj-26616]
+  ['ky', '42572', '162969'], // ky-42572 GUILTY BEAUTY LOVE / 宮野真守 ↔ GUILTY BEAUTY LOVE / 須王環(宮野真守) [owner tierF tj:26576]
+  ['ky', '42651', '168735'], // ky-42651 BAMBOO BEAT / 広橋涼/豊口めぐみ/小島幸子/桑島法子/佐藤利奈 ↔ BAMBOO BEAT / 川添珠姫(広橋涼)/千葉紀梨乃(豊口めぐみ)/桑原鞘子(小島幸子)/宮崎都(桑島法子)/東聡莉(佐藤利奈) [owner tierF tj:28015]
+  ['ky', '42790', '164310'], // ky-42790 your gravitation / SUN ↔ Your gravitation(瀬戸の花嫁 OST) / 桃井はるこ [owner tierE tj-26754]
+  ['ky', '42826', '138579'], // ky-42826 エージェント夜を往く ("THE IDOLM@STER"OST) / 平田宏美 ↔ エージェント夜を往く / 平田宏美 [owner tierF tj:28179]
+  ['ky', '43061', '138428'], // ky-43061 炉心融解 / iroha feat.鏡音リン ↔ 炉心融解 / 鏡音リン [owner tierF tj:26903]
+  ['ky', '43125', '137780'], // ky-43125 magnet / minato feat.初音ミク・巡音ルカ ↔ Magnet / 初音ミク, 巡音ルカ [owner tierF tj:27029]
+  ['ky', '43143', '137779'], // ky-43143 右肩の蝶 / のりP feat.鏡音リン ↔ 右肩の蝶〈リンver.〉 / のりP feat.鏡音リン [owner tierF tj:27038]
+  ['ky', '43281', '138115'], // ky-43281 IMITATION BLACK / natsuP feat.神威がくぽ,KAITO,鏡音レン ↔ IMITATION BLACK / natsuP(SCL Project) feat.VanaN'Ice [owner tierF tj:27066]
+  ['ky', '43299', '313880'], // ky-43299 天樂 / ゆうゆ feat.鏡音リン ↔ 天樂 / 鏡音リン [owner tierF tj:27035]
+  ['ky', '43404', '110661'], // ky-43404 READY!!(M@STER VERSION) ("THE iDOLM@STER"OP) / 765PRO ALLSTARS ↔ Ready!! / 765PRO ALLSTARS [owner tierF tj:28113]
+  ['ky', '43515', '106500'], // ky-43515 ハッピーシンセサイザ / EasyPop feat.巡音ルカ、GUMI ↔ ハッピーシンセサイザ / 巡音ルカ,GUMI [owner tierF tj:27289]
+  ['ky', '43851', '27017'], // ky-43851 小樽のひとよ / 鶴岡雅義と東京ロマンチカ ↔ 小樽のひとよ / 鶴岡雅儀と東京ロマンチカ [owner tierE tj-6379]
+  ['ky', '43868', '726245'], // ky-43868 START:DASH!! / 新田恵海/内田彩/三森すずこ ↔ START:DASH!! / 高坂穂乃果(CV.新田恵海)南ことり(CV.内田彩)園田海未(CV.三森すずこ) [owner tierF tj:27657]
+  ['ky', '43877', '119568'], // ky-43877 R.Y.U.S.E.I. / 三代目 J Soul Brothers from EXILE TRIBE ↔ R.Y.U.S.E.I. / 三代目 J Soul Brothers [owner tierF tj:27930]
+  ['ky', '43982', '146870'], // ky-43982 自分REST@RT ("THE IDOLM@STER"OST) / 765PRO ALLSTARS ↔ 自分REST@RT(THE IDOLM@STER 2nd OP) / 765PRO ALLSTARS [owner tierE tj-28450]
+  ['ky', '44002', '145876'], // ky-44002 CHANGE!!!!(M@STER VERSION) ("THE IDOLM@STER"OP) / 765PRO ALLSTARS ↔ CHANGE!!!!(M@STER VER)(THE IDOLM@STER 2nd OP) / 765PRO ALLSTARS [owner tierE tj-27861]
+  ['ky', '44071', '156842'], // ky-44071 好きな人がいること / JY ↔ 好きな人がいること(ドラマ'好きな人がいること' OST) / JY(知英) [owner tierE tj-27962]
+  ['ky', '44081', '671782'], // ky-44081 海色 / AKINO from bless4 ↔ 海色(みいろ) / AKINO from bless4 [owner tierF tj:27823]
+  ['ky', '44228', '423462'], // ky-44228 ノンファンタジー(いつだって僕らの恋は10センチだった) / LIP×LIP ↔ ノンファンタジー / LIP×LIP(勇次郎・愛蔵/CV:内山昂輝・島崎信長) [owner tierF tj:28792]
+  ['ky', '44239', '689913'], // ky-44239 旅立ちのうた / 3年E組 ↔ 旅立ちのうた(暗殺教室 OST) / 3年E組うた担 [owner tierE tj-28802]
+  ['ky', '44297', '425317'], // ky-44297 シャンパンゴールド / 木島隆一 ↔ シャンパンゴールド / 伊弉冉一二三(CV.木島隆一) [owner tierF tj:28901]
+  ['ky', '44300', '431013'], // ky-44300 BATTLE BATTLE BATTLE / Fling Posse・麻天狼 ↔ BATTLE BATTLE BATTLE / Fling Posse (CV. 白井悠介・斉藤壮馬・野津山幸宏)・麻天狼 (CV. 速水奨・木島隆一・伊東健人) [owner tierF tj:28905]
+  ['ky', '44303', '429142'], // ky-44303 WAR WAR WAR / Buster Bros!!!・MAD TRIGGER CREW ↔ WAR WAR WAR / Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平)・MAD TRIGGER CREW(CV.浅沼晋太郎・駒田航・神尾晋一郎) [owner tierF tj:28893]
+  ['ky', '44304', '429143'], // ky-44304 IKEBUKURO WEST GAME PARK / Buster Bros!!! ↔ IKEBUKURO WEST GAME PARK / Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平) [owner tierF tj:28894]
+  ['ky', '44308', '431015'], // ky-44308 Shibuya Marble Texture-PCCS- / Fling Posse ↔ Shibuya Marble Texture-PCCS- / Fling Posse (CV. 白井悠介・斉藤壮馬・野津山幸宏) [owner tierF tj:28917]
+  ['ky', '44312', '431014'], // ky-44312 Shinjuku Style ~笑わすな~ / 麻天狼 ↔ Shinjuku Style~笑わすな~ / 摩天狼 [owner tierF tj:28930]
+  ['ky', '44318', '429144'], // ky-44318 Yokohama Walker / MAD TRIGGER CREW ↔ Yokohama Walker / MAD TRIGGER CREW(CV.浅沼晋太郎・駒田航・神尾晋一郎) [owner tierF tj:28924]
+  ['ky', '44338', '434190'], // ky-44338 DEATH RESPECT / MAD TRIGGER CREW・麻天狼 ↔ DEATH RESPECT / MAD TRIGGER CREW (CV.浅沼晋太郎・駒田航・神尾晋一郎)・麻天狼 (CV.速水奨・木島隆一・伊東健人) [owner tierF tj:28936]
+  ['ky', '44342', '136105'], // ky-44342 蒼い鳥 ("THE IDOLM@STER"OST) / 今井麻美 ↔ 蒼い鳥 / 今井麻美 [owner tierF tj:28969]
+  ['ky', '44356', '425316'], // ky-44356 チグリジア / 伊東健人 ↔ チグリジア / 観音坂独歩(CV.伊東健人) [owner tierF tj:28982]
+  ['ky', '44615', '424125'], // ky-44615 Reason!! / 315 STARS ↔ Reason!!(THE IDOLM@STER SideM OP) / 315 STARS [owner tierE tj-28998]
+  ['ky', '44649', '488132'], // ky-44649 うやむや / SixTONES ↔ うやむや(YouTube Ver.) / SixTONES [owner tierE tj-68384]
+  ['ky', '44676', '489561'], // ky-44676 Black Journey / Fling Posse ↔ Black Journey / Fling Posse (CV. 白井悠介・斉藤壮馬・野津山幸宏) [owner tierF tj:68412]
+  ['ky', '44751', '495453'], // ky-44751 おもかげ (produced by Vaundy) / milet×Aimer×幾田りら ↔ おもかげ / milet & Aimer & 幾田りら(produced by Vaundy) [owner tierE tj-25017]
+  ['ky', '44791', '489049'], // ky-44791 Re:start!!! / Buster Bros!!! ↔ Re:start!!! / Buster Bros!!!(CV.木村昴・石谷春貴・天崎滉平) [owner tierF tj:68594]
+  ['ky', '44799', '489421'], // ky-44799 開眼 / Bad Ass Temple ↔ 開眼 / Bad Ass Temple(CV:葉山翔太・榊原優希・竹内栄治) [owner tierF tj:68593]
+  ['ky', '57811', '613071'], // ky-57811 愛じゃない / ダズビー ↔ 愛じゃない / DAZBEE [owner tierE tj-52800]
+  ['ky', '75839', '487547'], // ky-75839 Life Is Beautiful ("Paradox Live"OST) / The Cat's Whiskers ↔ Life Is Beautiful(プロジェクト 'Paradox Live' ソング) / The Cat's Whiskers [owner tierE tj-68889]
+  ['ky', '75840', '487548'], // ky-75840 FRE△KOUT ("Paradox Live"OST) / BAE ↔ FRE△KOUT(プロジェクト 'Paradox Live' ソング) / BAE [owner tierE tj-68890]
+  ['ky', '75858', '487546'], // ky-75858 Back Off ("Paradox Live"OST) / cozmez ↔ Back Off / cozmez [owner tierF tj:68913]
+  ['ky', '75876', '618669'], // ky-75876 命短し尽くせよ奴隷 / 福原かつみ ↔ 命短し尽くせよ奴隷 / 本橋依央利 [owner tierF tj:68935]
+  ['ky', '75877', '618670'], // ky-75877 秩序宣言 / 山中真尋 ↔ 秩序宣言 / 草薙理解 [owner tierF tj:68936]
+  ['ky', '75891', '619503'], // ky-75891 Charisma Battle Anthem / 小野友樹 feat.六人のカリスマ ↔ Charisma Battle Anthem / 伊藤ふみや feat. 六人のカリスマ [owner tierF tj:68948]
+  ['ky', '75897', '618642'], // ky-75897 When The Charisma Go Marching In / 小野友樹 ↔ When The Charisma Go Marching In / 伊藤ふみや [owner tierF tj:68959]
+  ['ky', '75898', '618646'], // ky-75898 LOVE MYSELF / 大河元気 ↔ LOVE MYSELF / テラ [owner tierF tj:68962]
+  ['tj', '26145', '1546'], // tj-26145 忘れていいの / 小川知子,谷村新司 ↔ 忘れていいの -愛の幕切れ- / 谷村新司/小川知子 [owner tierF ky:40449]
+] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
+
+const EXPECTED_REVIEWED_TIER_F_3WAY_ATTACH_PAIR_COUNT = 85;
+
+export const REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER = new Map<string, Set<string>>();
+for (const [vendor, number, joysound] of REVIEWED_TIER_F_3WAY_ATTACH_PAIRS) {
+  const key = `${vendor}:${number}`;
+  const existing = REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER.get(key);
+  if (existing) existing.add(joysound);
+  else REVIEWED_TIER_F_3WAY_ATTACH_JOYS_BY_VENDOR_NUMBER.set(key, new Set([joysound]));
+}
+
+function assertReviewedTierF3wayAttachInvariant(): void {
+  // (1) exact length.
+  if (
+    REVIEWED_TIER_F_3WAY_ATTACH_PAIRS.length !== EXPECTED_REVIEWED_TIER_F_3WAY_ATTACH_PAIR_COUNT
+  ) {
+    throw new Error(
+      `Tier F 3-way attach table must contain exactly ${EXPECTED_REVIEWED_TIER_F_3WAY_ATTACH_PAIR_COUNT} pairs`,
+    );
+  }
+
+  // Reverse index: every joysound owned by an existing Tier E/F pair → owner
+  // vendor. Drives assertions (4) orphan and (5) vendor-distinctness.
+  const ownerVendorByJoysound = new Map<string, NonJoysoundVendor>();
+  for (const joys of REVIEWED_TIER_E_JOYS_BY_TJ.values())
+    for (const j of joys) ownerVendorByJoysound.set(j, 'tj');
+  for (const [key, joys] of REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER) {
+    const vendor = key.split(':')[0] as NonJoysoundVendor;
+    for (const j of joys) ownerVendorByJoysound.set(j, vendor);
+  }
+  // Existing reviewed TARGET cells the attach must not collide with: every Tier
+  // F vendor:number plus every Tier E tj number (as `tj:<n>`).
+  const existingTargets = new Set<string>();
+  for (const key of REVIEWED_TIER_F_JOYS_BY_VENDOR_NUMBER.keys()) existingTargets.add(key);
+  for (const tj of REVIEWED_TIER_E_JOYS_BY_TJ.keys()) existingTargets.add(`tj:${tj}`);
+
+  const vendorNumbers = new Set<string>();
+  const joys = new Set<string>();
+  for (const [vendor, number, joysound] of REVIEWED_TIER_F_3WAY_ATTACH_PAIRS) {
+    const vendorNumberKey = `${vendor}:${number}`;
+    // (2) attach vendor:number unique + cross-exclusive with existing targets.
+    if (vendorNumbers.has(vendorNumberKey))
+      throw new Error(`Tier F 3-way attach duplicate target cell: ${vendorNumberKey}`);
+    if (existingTargets.has(vendorNumberKey))
+      throw new Error(
+        `Tier F 3-way attach target cell collides with an existing reviewed target: ${vendorNumberKey}`,
+      );
+    // (3) JOYSOUND unique within the attach table (one bridge per J).
+    if (joys.has(joysound))
+      throw new Error(`Tier F 3-way attach duplicate JOYSOUND number: ${joysound}`);
+    // (4) orphan guard: every attach J must be owned by an existing E/F pair.
+    const ownerVendor = ownerVendorByJoysound.get(joysound);
+    if (ownerVendor === undefined)
+      throw new Error(
+        `Tier F 3-way attach JOYSOUND ${joysound} has no owning Tier E/F pair (orphan attach)`,
+      );
+    // (5) attach vendor must differ from the owning pair's vendor.
+    if (ownerVendor === vendor)
+      throw new Error(
+        `Tier F 3-way attach vendor ${vendor} equals the owning vendor for JOYSOUND ${joysound}`,
+      );
+    vendorNumbers.add(vendorNumberKey);
+    joys.add(joysound);
+  }
+}
+
+assertReviewedTierF3wayAttachInvariant();

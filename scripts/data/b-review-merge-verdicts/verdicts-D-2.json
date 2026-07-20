@@ -1,0 +1,10 @@
+[
+  {
+    "song_id": "tj-26145",
+    "title": "忘れていいの",
+    "verdict": "merge",
+    "candidate_id": "joysound-1546",
+    "candidate_joysound": "1546",
+    "reason": "B-wave reject(verdicts-A-1)는 당시 JOYSOUND 후보가 谷村新司 솔로판(joysound-501008)·欧陽菲菲판(joysound-132027)뿐이라 듀엣 원곡과 매칭 불가였음. 듀엣 행 joysound-1546(忘れていいの -愛の幕切れ-, 谷村新司/小川知子) 실재가 2026-07-20 웹·코퍼스 확인 — 오너 판정으로 merge로 뒤집음(later-file-wins로 verdicts-A-1 reject 대체). joysound-1546은 ky-40449(Tier F ['ky','40449','1546'])가 소유하므로 tj-26145는 3-way 두 번째 브리지(tj)로 Tier F 3way attach 표에 편입 — 벤더 대칭(tj가 ky-소유 J에 어태치되는 최초 사례)."
+  }
+]

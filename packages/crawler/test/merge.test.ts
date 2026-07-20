@@ -2107,6 +2107,126 @@ describe('mergeRecords — reviewed-tier cluster-attach relaxation', () => {
 });
 
 // ---------------------------------------------------------------------
+// Reviewed 3-way attach (option B2, 2026-07-20 owner adjudication). A SECOND
+// single-vendor bridge onto a joysound an existing Tier E/F pair already owns,
+// so a tj + ky + joysound "3-way" collapses to one record. The dedicated stage
+// runs the reviewed cluster-attach collector immediately AFTER Tier F. Uses the
+// real attach entries ky-40141 ↔ joysound-10140 (owner Tier F tj-25875,
+// ロボキッス) and ky-40918 ↔ joysound-1006 (owner Tier E tj-52758, め組のひと).
+// Artists/titles are deliberately distinct so the automatic tiers stay off and
+// only the reviewed vendor-number rules union the rows.
+// ---------------------------------------------------------------------
+describe('mergeRecords — reviewed 3-way attach (option B2)', () => {
+  it('F-owner: attaches the ky bridge to a Tier F tj↔joysound pair (ロボキッス)', () => {
+    // tj-25875 ↔ joysound-10140 is a reviewed Tier F pair; ky-40141 is the 3-way
+    // attach bridge. All three collapse into one record with all vendor cells.
+    const tjOwner = record({
+      id: 'tj-25875',
+      source_url: 'https://tj.test/25875',
+      title_primary: 'ロボキッスTJ',
+      artist_primary: 'ArtistTJ',
+      karaoke_numbers: { tj: '25875', ky: null, joysound: null },
+    });
+    const joy = record({
+      id: 'joysound-10140',
+      source_url: 'https://www.joysound.com/web/search/song/10140',
+      title_primary: 'ロボキッスJOY',
+      artist_primary: 'ArtistJOY',
+      karaoke_numbers: { tj: null, ky: null, joysound: '10140' },
+    });
+    const kyBridge = record({
+      id: 'ky-40141',
+      source_url: 'https://ky.test/40141',
+      title_primary: 'ロボキッスKY',
+      artist_primary: 'ArtistKY',
+      karaoke_numbers: { tj: null, ky: '40141', joysound: null },
+    });
+    const { records, conflicts } = mergeRecords([tjOwner, joy, kyBridge]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25875', ky: '40141', joysound: '10140' });
+    // The attach stage forms the final root, so the cluster is marked as a Tier
+    // F merge under the attach's cluster key (membership overwrite, harmless —
+    // the key is an opaque reviewed marker downstream).
+    const marker = conflicts.find(
+      (c) =>
+        c.field === 'tier_f_postcrawl_split_merge' && c.cluster_key === 'ky:40141|joysound:10140',
+    );
+    expect(marker).toBeDefined();
+  });
+
+  it('E-owner: attaches the ky bridge to a Tier E tj↔joysound pair (め組のひと)', () => {
+    // tj-52758 ↔ joysound-1006 is a reviewed Tier E pair; ky-40918 is the attach.
+    const tjOwner = record({
+      id: 'tj-52758',
+      source_url: 'https://tj.test/52758',
+      title_primary: 'め組のひとTJ',
+      artist_primary: 'ArtistTJ',
+      karaoke_numbers: { tj: '52758', ky: null, joysound: null },
+    });
+    const joy = record({
+      id: 'joysound-1006',
+      source_url: 'https://www.joysound.com/web/search/song/1006',
+      title_primary: 'め組のひとJOY',
+      artist_primary: 'ArtistJOY',
+      karaoke_numbers: { tj: null, ky: null, joysound: '1006' },
+    });
+    const kyBridge = record({
+      id: 'ky-40918',
+      source_url: 'https://ky.test/40918',
+      title_primary: 'め組のひとKY',
+      artist_primary: 'ArtistKY',
+      karaoke_numbers: { tj: null, ky: '40918', joysound: null },
+    });
+    const { records } = mergeRecords([tjOwner, joy, kyBridge]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '52758', ky: '40918', joysound: '1006' });
+  });
+
+  it('conflict: the owning pair still fires, only the ky attach is skipped + logged', () => {
+    // The joysound row natively carries a DIFFERENT ky (990700) than the attach
+    // bridge (40141). The Tier F owning pair (tj-25875 ↔ joysound-10140) fires
+    // because the tj cell is free; the attach then collides on the ky cell, so
+    // ky-40141 is skipped + logged and stays a separate record — graceful
+    // partial failure (not an all-or-nothing triple).
+    const tjOwner = record({
+      id: 'tj-25875',
+      source_url: 'https://tj.test/25875',
+      title_primary: 'ロボキッスTJ',
+      artist_primary: 'ArtistTJ',
+      karaoke_numbers: { tj: '25875', ky: null, joysound: null },
+    });
+    const joy = record({
+      id: 'joysound-10140',
+      source_url: 'https://www.joysound.com/web/search/song/10140',
+      title_primary: 'ロボキッスJOY',
+      artist_primary: 'ArtistJOY',
+      karaoke_numbers: { tj: null, ky: '990700', joysound: '10140' },
+    });
+    const kyBridge = record({
+      id: 'ky-40141',
+      source_url: 'https://ky.test/40141',
+      title_primary: 'ロボキッスKY',
+      artist_primary: 'ArtistKY',
+      karaoke_numbers: { tj: null, ky: '40141', joysound: null },
+    });
+    const { records, conflicts } = mergeRecords([tjOwner, joy, kyBridge]);
+    expect(records).toHaveLength(2);
+    // The owning pair fired: tj + joysound + the native ky in one record.
+    const owned = records.find((r) => r.karaoke_numbers.joysound === '10140');
+    expect(owned?.karaoke_numbers).toEqual({ tj: '25875', ky: '990700', joysound: '10140' });
+    // The attach ky stays split.
+    const split = records.find((r) => r.karaoke_numbers.ky === '40141');
+    expect(split?.karaoke_numbers).toEqual({ tj: null, ky: '40141', joysound: null });
+    // The blocked attach is logged as a ky conflict under the attach cluster key.
+    const kyConflict = conflicts.find(
+      (c) => c.field === 'ky' && c.cluster_key === 'ky:40141|joysound:10140',
+    );
+    expect(kyConflict).toBeDefined();
+    expect(kyConflict?.values.map((v) => v.value).sort()).toEqual(['40141', '990700']);
+  });
+});
+
+// ---------------------------------------------------------------------
 // R1 audit batch (2026-07-02 owner-reviewed missing-JOYSOUND residuals)
 // ---------------------------------------------------------------------
 describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {

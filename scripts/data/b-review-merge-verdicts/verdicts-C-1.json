@@ -1,0 +1,10 @@
+[
+  {
+    "song_id": "ky-41123",
+    "title": "ひとりぼっちのハブラシ",
+    "verdict": "merge",
+    "candidate_id": "joysound-11509",
+    "candidate_joysound": "11509",
+    "reason": "桜庭裕一郎(= TOKIO 長瀬智也의 드라마 ムコ殿 캐릭터 명의) 동일곡. B-wave가 tj-25640을 동일 근거로 병합 확정(verdicts-B-1, Tier F ['tj','25640','11509']). KY행 ky-41123은 B-wave 배치에 없었고 v24 unmerged-xref(audit-v24r2)에서 fresh 발견 — 오너 판정으로 동일 joysound-11509에 merge. 어쿠스틱판·つんく♂ 셀프커버는 별개. 3-way 두 번째 브리지(ky)로 Tier F 3way attach 표에 편입."
+  }
+]
