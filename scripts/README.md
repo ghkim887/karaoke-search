@@ -31,6 +31,7 @@ and run via `python -m unittest discover -s scripts -p "test_*.py"`.
 | `audit-corpus-guardrails.mjs` | Ad-hoc corpus audit | As-needed | Manual |
 | `audit-crawler-quality.mjs` | Ad-hoc crawler-quality report | As-needed | Manual |
 | `manual-fix-title-ko.mjs` | Ad-hoc single-record title_ko fix | As-needed | Manual |
+| `extract-offline-subset.mjs` | Web offline-bundle refresh (extract the TJ∪KY∪blog-* subset of a full serving corpus → `apps/web/public/data/songs.json`) | On release promotion / crawl | Manual (`--corpus <full-corpus.json> --out apps/web/public/data/songs.json`) |
 | `test_*.py` | Tests (Python) | CI / local | `python -m unittest discover -s scripts -p "test_*.py"` (CI runs `test_splitter_parity.py` in `crawl.yml`) |
 | `*.test.mjs` | Tests (JS) | Local | `corepack pnpm exec vitest run scripts` |
 

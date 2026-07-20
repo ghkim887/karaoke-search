@@ -174,6 +174,59 @@ messages (T5 error surfacing), PWA `manifest.webmanifest` name/description,
 banner. Song DATA fields (`title_ko` etc.) are out of scope — this is chrome
 i18n, not data translation. No decision blockers; pure implementation.
 
+### R3. Full-corpus offline (PWA / fallback)
+
+*Archived 2026-07-20. DECIDED direction (opt-in full offline pack) 2026-07-04;
+feasibility spike DONE 2026-07-12 (PR #130); direction SUPERSEDED by an owner
+scope decision 2026-07-20 → shipped as a serving-subset bundle (the tj/ky/blog
+`extract-offline-subset.mjs` PR). This section preserves the retired
+direction's measurements; the shipped disposition lives in
+[ROADMAP.md](ROADMAP.md) R3.*
+
+**Owner scope decision (2026-07-20):** the offline bundle needs only the
+Korean-facing scope. First cut was "tj + ky only", then widened to "tj/ky +
+blog-* as a fallback tier". This retires the opt-in-full-pack direction below:
+the offline bundle ships the **TJ ∪ KY ∪ blog-*** subset of the current
+serving release (see `scripts/extract-offline-subset.mjs`), not a wholesale or
+sqlite-wasm client DB.
+
+**Original owner question (2026-07-04):** the whole DB is ~1 GB — why not ship
+it wholesale to the PWA/offline fallback?
+
+**Answer (measured):** the 1.1 GiB serving SQLite is the WRONG artifact to
+ship — 77 % of it is the server-side inverted index (`search_tokens` 845 MB +
+`search_token_stats` 67 MB), which only makes sense next to the worker's query
+planner. The actual payload is small: `songs` 45 MB + `karaoke_numbers` 26 MB +
+`search_texts` 52 MB (~130 MB uncompressed; canonical `full-corpus.json` is
+93 MB, ~25–30 MB gzipped). The offline path already shipped a ~26k-song /
+~11 MB subset and built a MiniSearch index client-side; the post-JOYSOUND data
+topology work measured client-side index build for a 221k corpus at ~316 MB
+heap / ~5.7 s on desktop Node — worse on phones. So "wholesale" fails not on
+download size but on client index build/memory.
+
+**Feasibility spike ✅ DONE (2026-07-12)** — see
+`docs/research/2026-07-12-offline-pack-spike.md` (PR #130). Headlines: client DB
+is far smaller than estimated (FTS5 75.1 MiB raw / 21.6 MiB brotli download vs
+the 150–300 MB guess); HTTP-range transport works (~9 KiB per point query @
+1 KiB pages); FTS5/trigram floor at 3-char CJK confirmed empirically → a
+parity-complete HYBRID index was the real design problem; iOS risk = eviction
+not quota (installed-PWA exemption; opfs-sahpool VFS). Verdicts at the time:
+OPFS pack GO (needs device test), HTTP-range hybrid GO (needs real-browser
+follow-up).
+
+**Retired direction (for the record):** keep the default PWA as a subset +
+MiniSearch + API fallback, and add an OPT-IN "full offline pack" — a
+client-optimized SQLite (songs + numbers + an FTS5 or trigram index built FOR
+sqlite-wasm, no server token tables) stored in OPFS, ~150–300 MB download,
+index prebuilt so no client build cost; alternatively sqlite-wasm over HTTP
+range requests against a statically-hosted DB (online-only, complements rather
+than replaces the pack). The open problem was that FTS5 is not a drop-in: it
+lacks the 1–2-char CJK, choseong, and romaji-prefix expansion today's search
+depends on, so only a *hybrid* (FTS5/trigram bulk index + a supplementary
+short-CJK/choseong/romaji structure), validated against the golden parity gate,
+could have replaced the MiniSearch build. The 2026-07-20 scope decision means
+none of this is pursued.
+
 ### R6. Ops / monitoring follow-ups
 
 *Archived 2026-07-13. DONE — PR #117 (2026-07-10).*
