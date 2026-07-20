@@ -173,7 +173,151 @@ describe('runDropArtistLeaks', () => {
 
   it('documents the reviewed anomaly-ID set', () => {
     expect([...CATALOG_ANOMALY_IDS].sort()).toEqual(['tj-71365', 'tj-72638']);
-    expect([...KOREAN_CATALOG_ANOMALY_IDS].sort()).toEqual(['tj-70438']);
+    // tj-70438 (2026-07 CUTIE STREET KOR row) + the 2026-07-20 leak triage
+    // (10 Western-pop tj-* + the CUTIE STREET Korean row's positional blog id).
+    expect([...KOREAN_CATALOG_ANOMALY_IDS].sort()).toEqual([
+      'blog-1601-1',
+      'tj-21873',
+      'tj-23450',
+      'tj-23502',
+      'tj-70438',
+      'tj-7653',
+      'tj-79222',
+      'tj-79627',
+      'tj-79697',
+      'tj-79756',
+      'tj-79914',
+      'tj-79973',
+    ]);
+  });
+
+  it('korean: drops the 2026-07-20 Western-pop leaks by exact tj-* ID, keeps the JP homonym rows', async () => {
+    // The Western-pop leaks drop by exact record ID — their credited artists
+    // are NOT on the Korean drop list (and must not be, to spare the Japanese
+    // homonyms). A Japanese girl-group MAX row and a Japanese anison LiSA row
+    // (different TJ numbers, same artist string) must SURVIVE.
+    const jpMax = { ...record('tj-30001', 'MAX', 'Tacata'), karaoke_numbers: { tj: '30001' } };
+    const jpLisa = { ...record('tj-30002', 'LiSA', '紅蓮華'), karaoke_numbers: { tj: '30002' } };
+    writeCorpus(corpusPath, [
+      ...SURVIVORS,
+      record('tj-79627', 'LiSA', 'Rockstar'), // BLACKPINK Lisa leak
+      record('tj-23450', 'MAX,Felly', 'Acid Dreams'), // US MAX leak
+      record('tj-21873', 'Mary McGregor', 'This Girl Has Turned Into A Woman'),
+      jpMax,
+      jpLisa,
+    ]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'tj-30001', 'tj-30002']);
+  });
+
+  it('korean: drops the CUTIE STREET Korean-ver blog row (blog-1601-1), keeps the JP original', async () => {
+    // blog-1601-1 is the KOR-language row (dropped by positional ID); the JP
+    // original (blog-1601-0) and the JOYSOUND-hosted "(Korean ver.)"
+    // (blog-1601-19) are not anomaly IDs and must survive.
+    writeCorpus(corpusPath, [
+      ...SURVIVORS,
+      {
+        ...record('blog-1601-1', 'CUTIE STREET', '귀엽기만 하면 안 되나요?'),
+        karaoke_numbers: { tj: '52093' },
+      },
+      {
+        ...record('blog-1601-0', 'CUTIE STREET', 'かわいいだけじゃ だめですか?'),
+        karaoke_numbers: { tj: '52410' },
+      },
+      {
+        ...record('blog-1601-19', 'CUTIE STREET', 'かわいいだけじゃだめですか? (Korean ver.)'),
+        karaoke_numbers: { tj: null },
+      },
+    ]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-1601-0', 'blog-1601-19', 'blog-2']);
+  });
+
+  it('chinese pass leaves the korean leak anomaly IDs alone (scoped to korean pass)', async () => {
+    writeCorpus(corpusPath, [...SURVIVORS, record('tj-79627', 'LiSA', 'Rockstar')]);
+    const code = await runDropArtistLeaks({ list: 'chinese', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'tj-79627']);
+  });
+
+  it('JOYSOUND-anchored guard (korean): spares a drop-list artist row that has a joysound number, drops its joyless sibling', async () => {
+    // 東方神起 is on the Korean drop list. Its genuine JP release carrying a
+    // JOYSOUND number is in the Japanese catalog → not a leak → SPARED. Its
+    // joyless sibling row (same artist) still drops by artist-name match. This
+    // is the guard that stops the post-v21-JOYSOUND-import corpus over-drop.
+    const jpRelease = {
+      ...record('joysound-1001', '東方神起', 'Share The World(ONE PIECE OP)'),
+      karaoke_numbers: { tj: null, ky: null, joysound: '990123' },
+    };
+    const joyless = {
+      ...record('tj-90010', '東方神起', 'generic KR row'),
+      karaoke_numbers: { tj: '90010', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, jpRelease, joyless]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'joysound-1001']);
+  });
+
+  it('JOYSOUND-anchored guard (chinese): applies to the chinese pass too (テレサ・テン-class JP release)', async () => {
+    const jpRelease = {
+      ...record('joysound-2002', 'BEYOND', '海闊天空'),
+      karaoke_numbers: { tj: null, ky: null, joysound: '881234' },
+    };
+    const joyless = {
+      ...record('tj-70170', 'BEYOND', '大地'),
+      karaoke_numbers: { tj: '70170', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, jpRelease, joyless]);
+    const code = await runDropArtistLeaks({ list: 'chinese', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'joysound-2002']);
+  });
+
+  it('catalog-anomaly per-ID drop is NOT spared by the joysound guard', async () => {
+    // A curated per-ID anomaly drops regardless of a joysound number — the guard
+    // only fences the artist-name match, never the hand-curated per-row list.
+    const anomalyWithJoysound = {
+      ...record('tj-70438', 'CUTIE STREET', '프리큐큐'),
+      karaoke_numbers: { tj: '70438', ky: null, joysound: '990999' },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, anomalyWithJoysound]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2']);
+  });
+
+  it('--decisions-out: logs a joysound-anchored skip as decision=skip', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    const jpRelease = {
+      ...record('joysound-1001', '방탄소년단', 'Japanese ver.'),
+      karaoke_numbers: { tj: null, ky: null, joysound: '990500' },
+    };
+    const joyless = {
+      ...record('tj-99999', '방탄소년단', 'Dynamite'),
+      karaoke_numbers: { tj: '99999', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, jpRelease, joyless]);
+    const code = await runDropArtistLeaks({
+      list: 'korean',
+      corpusPath,
+      decisionsOut: decisionsPath,
+      log: quietLog,
+    });
+    expect(code).toBe(0);
+    // Corpus: joyless dropped, joysound-anchored spared.
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'joysound-1001']);
+    const lines = readFileSync(decisionsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    const byId = Object.fromEntries(lines.map((l) => [l.id, l]));
+    expect(byId['tj-99999'].decision).toBe('drop');
+    expect(byId['tj-99999'].reason).toBe('korean-drop-list');
+    expect(byId['joysound-1001'].decision).toBe('skip');
+    expect(byId['joysound-1001'].reason).toBe('skipped-joysound-anchored');
   });
 
   it('korean: drops a catalog-anomaly ID even though its artist (CUTIE STREET) matches no list', async () => {

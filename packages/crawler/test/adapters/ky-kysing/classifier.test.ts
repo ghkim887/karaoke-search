@@ -95,6 +95,18 @@ describe('classifyKyRow — reason enum branches', () => {
     const r = classifyKyRow({ ky: '77', title: '怪物', artist: 'YOASOBI', overrides: drop('77') });
     expect(r).toEqual({ admit: false, reason: 'reviewed-drop' });
   });
+
+  it('production overrides drop the 2026-07-20 leak-triage KY row (ky 51322)', () => {
+    // No injected overrides → the real reviewedKySongOverrides list decides.
+    // CUTIE STREET's Korean-language row is dropped at the reviewed-drop gate
+    // (which precedes the script-guard that would also flag the Hangul title).
+    const r = classifyKyRow({
+      ky: '51322',
+      title: '귀엽기만 하면 안 되나요?',
+      artist: 'CUTIE STREET',
+    });
+    expect(r).toEqual({ admit: false, reason: 'reviewed-drop' });
+  });
 });
 
 describe('KY classifier gate order', () => {
