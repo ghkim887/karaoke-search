@@ -242,6 +242,84 @@ describe('runDropArtistLeaks', () => {
     expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'tj-79627']);
   });
 
+  it('JOYSOUND-anchored guard (korean): spares a drop-list artist row that has a joysound number, drops its joyless sibling', async () => {
+    // 東方神起 is on the Korean drop list. Its genuine JP release carrying a
+    // JOYSOUND number is in the Japanese catalog → not a leak → SPARED. Its
+    // joyless sibling row (same artist) still drops by artist-name match. This
+    // is the guard that stops the post-v21-JOYSOUND-import corpus over-drop.
+    const jpRelease = {
+      ...record('joysound-1001', '東方神起', 'Share The World(ONE PIECE OP)'),
+      karaoke_numbers: { tj: null, ky: null, joysound: '990123' },
+    };
+    const joyless = {
+      ...record('tj-90010', '東方神起', 'generic KR row'),
+      karaoke_numbers: { tj: '90010', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, jpRelease, joyless]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'joysound-1001']);
+  });
+
+  it('JOYSOUND-anchored guard (chinese): applies to the chinese pass too (テレサ・テン-class JP release)', async () => {
+    const jpRelease = {
+      ...record('joysound-2002', 'BEYOND', '海闊天空'),
+      karaoke_numbers: { tj: null, ky: null, joysound: '881234' },
+    };
+    const joyless = {
+      ...record('tj-70170', 'BEYOND', '大地'),
+      karaoke_numbers: { tj: '70170', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, jpRelease, joyless]);
+    const code = await runDropArtistLeaks({ list: 'chinese', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'joysound-2002']);
+  });
+
+  it('catalog-anomaly per-ID drop is NOT spared by the joysound guard', async () => {
+    // A curated per-ID anomaly drops regardless of a joysound number — the guard
+    // only fences the artist-name match, never the hand-curated per-row list.
+    const anomalyWithJoysound = {
+      ...record('tj-70438', 'CUTIE STREET', '프리큐큐'),
+      karaoke_numbers: { tj: '70438', ky: null, joysound: '990999' },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, anomalyWithJoysound]);
+    const code = await runDropArtistLeaks({ list: 'korean', corpusPath, log: quietLog });
+    expect(code).toBe(0);
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2']);
+  });
+
+  it('--decisions-out: logs a joysound-anchored skip as decision=skip', async () => {
+    const decisionsPath = join(dir, 'decisions.jsonl');
+    const jpRelease = {
+      ...record('joysound-1001', '방탄소년단', 'Japanese ver.'),
+      karaoke_numbers: { tj: null, ky: null, joysound: '990500' },
+    };
+    const joyless = {
+      ...record('tj-99999', '방탄소년단', 'Dynamite'),
+      karaoke_numbers: { tj: '99999', ky: null, joysound: null },
+    };
+    writeCorpus(corpusPath, [...SURVIVORS, jpRelease, joyless]);
+    const code = await runDropArtistLeaks({
+      list: 'korean',
+      corpusPath,
+      decisionsOut: decisionsPath,
+      log: quietLog,
+    });
+    expect(code).toBe(0);
+    // Corpus: joyless dropped, joysound-anchored spared.
+    expect(readIds(corpusPath).sort()).toEqual(['blog-1', 'blog-2', 'joysound-1001']);
+    const lines = readFileSync(decisionsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    const byId = Object.fromEntries(lines.map((l) => [l.id, l]));
+    expect(byId['tj-99999'].decision).toBe('drop');
+    expect(byId['tj-99999'].reason).toBe('korean-drop-list');
+    expect(byId['joysound-1001'].decision).toBe('skip');
+    expect(byId['joysound-1001'].reason).toBe('skipped-joysound-anchored');
+  });
+
   it('korean: drops a catalog-anomaly ID even though its artist (CUTIE STREET) matches no list', async () => {
     // CUTIE STREET is a Japanese act — not on any drop list and it must stay so
     // (their JP rows are admittable). tj-70438 is their KOR-language row; it
