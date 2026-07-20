@@ -9,17 +9,20 @@
  * reviewable diff, and a machine-readable plan (--plan-out).
  *
  * Tier mechanism (mirrors merge.ts, which is the source of truth):
- *   - Tier E `[tj, joysound]`: unions a `tj`-slug singleton with a joysound
- *     singleton. Tier E does NOT require the tj row to be single-vendor, so it
- *     is the ONLY table that can encode a both-vendor (tj+ky) affected row —
- *     but only when that row's id-slug is `tj`.
+ *   - Tier E `[tj, joysound]`: unions the record carrying `tj` (its tj
+ *     vendor-number cell) with the joysound record. Since #165 the reviewed
+ *     tiers look both sides up via a FULL vendor index (any cluster state, any
+ *     id-slug) and union their clusters, gated only by the vendor-number
+ *     conflict guard — the old tj-slug/singleton requirement is gone. So a
+ *     Tier E `[tj, joysound]` entry fires for a both-vendor (tj+ky) affected
+ *     row regardless of that row's id-slug (ky-, tjpdf-, blog-), and Tier E is
+ *     the table used to encode every both-vendor target (its tj number is the
+ *     stable, unique key).
  *   - Tier F `[vendor, number, joysound]`: unions a SINGLE-vendor (exactly one
  *     of tj/ky, joysound null) target with a joysound row. Used for tj-only,
  *     ky-only, tjpdf and blog single-vendor targets.
  *
  * Guard chain — a verdict is left UNENCODABLE (reported, never forced) when:
- *   - `both-vendor-non-tj-id`: the affected row carries both tj+ky but its id is
- *     ky-, tjpdf- or blog-slug (Tier E needs a tj slug, Tier F needs single-vendor).
  *   - `forbidden`: the pair is present in a reviewedMergePairs.ts FORBIDDEN set
  *     (a prior review explicitly held it back — e.g. ハッピー☆マテリアル
  *     multi-variant, "artist 19" manual holds, reviewed-but-not-strong). Never
@@ -69,7 +72,6 @@ export function parseArgs(argv) {
   return args;
 }
 
-const idSlug = (id) => String(id).split('-')[0];
 const norm = (v) => (v == null || v === '' ? null : String(v));
 
 /**
@@ -172,11 +174,14 @@ export function loadReviews(dir) {
   return { merges, uncertain, counts, songCount: songs.size };
 }
 
-/** Deterministic sort so dup-joysound resolution prefers the tj side. */
+/**
+ * Deterministic sort so dup-joysound resolution prefers the tj side. A
+ * both-vendor (tj+ky) row now encodes as Tier E via its tj number (see
+ * buildPlan), so it counts as a tj-side encoder here regardless of id-slug.
+ */
 function encodeVendor(row) {
   const hasTj = row.tj != null;
   const hasKy = row.ky != null;
-  if (hasTj && hasKy) return idSlug(row.song_id) === 'tj' ? 'tj' : null;
   if (hasTj) return 'tj';
   if (hasKy) return 'ky';
   return null;
@@ -186,7 +191,6 @@ export function buildPlan(reviews, existing) {
   const tierE = [];
   const tierF = [];
   const unencodable = {
-    'both-vendor-non-tj-id': [],
     forbidden: [],
     'already-encoded': [],
     '3way-existing-reviewed': [],
@@ -223,16 +227,16 @@ export function buildPlan(reviews, existing) {
     const hasTj = row.tj != null;
     const hasKy = row.ky != null;
     const both = hasTj && hasKy;
-    const slug = idSlug(row.song_id);
 
     // Decide intended tier/entry.
     let entry;
     if (both) {
-      if (slug === 'tj') entry = { tier: 'E', v: 'tj', n: row.tj, J: row.J };
-      else {
-        push('both-vendor-non-tj-id', { tj: row.tj, ky: row.ky, slug });
-        continue;
-      }
+      // Both-vendor (tj+ky) target → Tier E `[tj, joysound]`, regardless of the
+      // row's id-slug. Since #165 removed the reviewed-tier tj-slug/singleton
+      // guard, a Tier E entry fires by matching the tj vendor-number cell of any
+      // record (ky-/tjpdf-/blog-slug included), gated only by the cluster
+      // vendor-number conflict guard. The tj number is the stable unique key.
+      entry = { tier: 'E', v: 'tj', n: row.tj, J: row.J };
     } else if (hasTj) entry = { tier: 'F', v: 'tj', n: row.tj, J: row.J };
     else if (hasKy) entry = { tier: 'F', v: 'ky', n: row.ky, J: row.J };
     else {

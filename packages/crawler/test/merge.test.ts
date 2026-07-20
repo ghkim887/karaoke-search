@@ -1982,6 +1982,31 @@ describe('mergeRecords — reviewed-tier cluster-attach relaxation', () => {
     expect(records[0]?.karaoke_numbers).toEqual({ tj: '6284', ky: '990900', joysound: '1755' });
   });
 
+  it('both-vendor non-tj id: a Tier E pair fires via the tj cell of a ky-slug row (ky-42670 メルト)', () => {
+    // The reviewed MERGE target carries BOTH tj (26749) and ky (42670) under a
+    // KY id-slug — a "both-vendor, non-tj id" row #163 could not encode. The
+    // Tier E pair [26749, 91145] (encoded 2026-07-20) fires by matching the tj
+    // vendor-number cell irrespective of id-slug. Distinct artists (初音ミク vs
+    // supercell) keep the automatic tiers off, isolating the reviewed tier.
+    const bothVendor = record({
+      id: 'ky-42670',
+      source_url: 'https://ky.test/42670',
+      title_primary: 'メルト',
+      artist_primary: '初音ミク',
+      karaoke_numbers: { tj: '26749', ky: '42670', joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-91145',
+      source_url: 'https://www.joysound.com/web/search/song/91145',
+      title_primary: 'メルト',
+      artist_primary: 'supercell',
+      karaoke_numbers: { tj: null, ky: null, joysound: '91145' },
+    });
+    const { records } = mergeRecords([bothVendor, joyOnly]);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '26749', ky: '42670', joysound: '91145' });
+  });
+
   it('automatic-tier regression: an unreviewed KY row is NOT attached to a cluster', () => {
     // Same shape as Case B but with a NON-reviewed KY number: the relaxation is
     // scoped to reviewed pairs, so the automatic tiers must leave the KY row
@@ -2087,7 +2112,14 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
     expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
   });
 
-  it('leaves a both-vendor target (blog-1184-tj-28002) unmerged — outside Tier F scope', () => {
+  it('lands the JOYSOUND number for a both-vendor Tier E pair (blog-1184-tj-28002 ↔ &Z, #165 enablement)', () => {
+    // The reviewed MERGE target carries BOTH tj (28002) and ky (43884) under a
+    // blog id-slug. #163 left it unencodable ("both-vendor, non-tj id"): Tier E
+    // then needed a tj id-slug and Tier F a single-vendor target. #165 removed
+    // that guard, so the reviewed Tier E pair [28002, 670815] (encoded
+    // 2026-07-20) now fires by matching the tj vendor-number cell regardless of
+    // the row's id-slug. The distinct artists keep the automatic tiers from
+    // merging, so the merge proves the reviewed Tier E pair fired.
     const bothVendor = record({
       id: 'blog-1184-tj-28002',
       source_url: 'https://j-pop-playlist.tistory.com/1184',
@@ -2105,7 +2137,8 @@ describe('mergeRecords — R1 reviewed missing-JOYSOUND batch', () => {
 
     const { records } = mergeRecords([bothVendor, joyOnly]);
 
-    expect(records).toHaveLength(2);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '28002', ky: '43884', joysound: '670815' });
   });
 
   it('leaves a pair unmerged when the candidate carries its own conflicting TJ number (tj-25103 ↔ tj-6579)', () => {

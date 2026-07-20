@@ -267,6 +267,61 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['68524', '491303'], // tj-68524 ABC体操(うらみちお兄さん OP) / 宮野真守,水樹奈々 ↔ ABC体操 / いけてるお兄さん (CV:宮野真守) うたのお姉さん (CV:水樹奈々)
   ['68583', '424812'], // tj-68583 More One Night(少女終末旅行 ED) / 水瀬いのり,久保ユリカ ↔ More One Night / チト(CV:水瀬いのり)、ユーリ(CV:久保ユリカ)
   ['68930', '497330'], // tj-68930 Alive / Full Throttle4(Feat.HoneyWorks) ↔ Alive / Full Throttle4 (Vo:斉藤壮馬・内田雄馬) feat. HoneyWorks
+  // --- Audit follow-up B, both-vendor tail (2026-07-20). The 46 reviewed MERGE
+  // rows whose target carries BOTH tj+ky vendor numbers under a non-tj id-slug
+  // (ky-/tjpdf-/blog-). #163 left these unencodable ("both-vendor, non-tj id"):
+  // the reviewed tiers then needed a tj id-slug (Tier E) or a single-vendor
+  // target (Tier F). #165 removed that guard, so a Tier E [tj, joysound] pair
+  // now fires by matching the tj vendor-number cell regardless of id-slug,
+  // gated only by the cluster vendor-number conflict guard. Derived by
+  // scripts/encode-b-wave-merge-pairs.mjs. Effective at the next
+  // JOYSOUND-crawl corpus (v24+ re-merge). ---
+  ['26310', '21930'], // ky-42263 この世の限り(錯乱 OST) / 椎名林檎,椎名純平 ↔ この世の限り / 椎名林檎×斎藤ネコ+椎名純平
+  ['26525', '163385'], // ky-42453 もってけ!セーラーふく(らき☆すた OP) / 平野綾 ↔ もってけ!セーラーふく / 泉こなた(平野綾)、柊かがみ(加藤英美里)、柊つかさ(福原香織)、高良みゆき(遠藤綾)
+  ['26749', '91145'], // ky-42670 メルト / 初音ミク ↔ メルト / supercell
+  ['26865', '177033'], // ky-42833 ブラック★ ロックシューター / 初音ミク ↔ ブラック★ロックシューター / supercell
+  ['26906', '178844'], // ky-43058 悪ノ娘 / mothy_悪ノP(Feat.鏡音リン) ↔ 悪ノ娘 / mothy feat.鏡音リン
+  ['26963', '137288'], // ky-43128 止マレ!(涼宮ハルヒの憂鬱 ED) / 平野綾・茅原美里・後藤邑子 ↔ 止マレ! / 涼宮ハルヒ(CV.平野綾)、長門有希(CV.茅原実里)、朝比奈みくる(CV.後藤邑子)
+  ['27030', '136579'], // ky-43113 ロミオとシンデレラ / 初音ミク ↔ ロミオとシンデレラ / doriko
+  ['27031', '138844'], // ky-43185 ルカルカ★ナイトフィーバー / 巡音ルカ ↔ ルカルカ★ナイトフィーバー / samfree
+  ['27347', '31314'], // ky-43519 0 Game(アメイジング・スパイダーマン OST) / SPYAIR ↔ 0 GAME(ラブゲーム) / SPYAIR
+  ['27670', '725112'], // ky-43644 ロストワンの号哭 / 鏡音リン ↔ ロストワンの号哭 / Neru
+  ['27703', '128519'], // ky-44001 虹色の戦争 / SEKAI NO OWARI ↔ 虹色の戦争 / 世界の終わり
+  ['27757', '93423'], // ky-44021 天使と悪魔(霊能力者小田霧響子の嘘 OST) / SEKAI NO OWARI ↔ 天使と悪魔 / 世界の終わり
+  ['27768', '128343'], // ky-43971 幻の命 / SEKAI NO OWARI ↔ 幻の命 / 世界の終わり
+  ['28002', '670815'], // blog-1184-3 &Z / 澤野弘之 ↔ &Z / SawanoHiroyuki[nZk]:mizuki
+  ['28007', '316353'], // ky-43845 aLIEz / 澤野弘之 ↔ aLIEz / SawanoHiroyuki[nZk]:mizuki
+  ['28052', '162961'], // ky-42503 First Good-Bye / 平野綾 ↔ First Good-Bye / 涼宮ハルヒ(C.V.平野綾)
+  ['28056', '138451'], // tjpdf-28056 Funny Sunny Day / SxOxU ↔ Funny Sunny Day〈Japanese Version〉 / SxOxU
+  ['28062', '156116'], // tjpdf-28062 Great Distance / ryo(supercell)(F eat.chelly) ↔ Great Distance / supercell
+  ['28098', '94502'], // ky-43358 Os-宇宙人 / 神聖かまってちゃん ↔ Os-宇宙人 / エリオをかまってちゃん
+  ['28132', '100546'], // tjpdf-28132 Someone Else / 阿澄佳奈,藤田咲,喜多村英梨 ↔ SOMEONE ELSE / 種島ぽぷら(阿澄佳奈)・伊波まひる(藤田咲)・轟八千代(喜多村英梨)
+  ['28189', '165114'], // ky-42649 かえして!ニーソックス / 平野綾 ↔ かえして!ニーソックス / 泉こなた(平野綾)、柊かがみ(加藤英美里)、柊つかさ(福原香織)、高良みゆき(遠藤綾)
+  ['28193', '136422'], // tjpdf-28193 ギー太に首ったけ / 豊崎愛生 ↔ ギー太に首ったけ / 平沢唯(豊崎愛生)
+  ['28217', '726244'], // tjpdf-28217 ススメ→トゥモロウ / 新田恵海,内田彩,三森すずこ ↔ ススメ→トゥモロウ / 高坂穂乃果(CV.新田恵海)南ことり(CV.内田彩)園田海未(CV.三森すずこ)
+  ['28230', '721971'], // tjpdf-28230 ドラマチックマーケットライド / 洲崎綾 ↔ ドラマチックマーケットライド / 北白川たまこ(cv:洲崎綾)
+  ['28231', '166422'], // ky-42576 どんだけファンファーレ / 平野綾 ↔ どんだけファンファーレ / 泉こなた(平野綾)
+  ['28234', '103142'], // tjpdf-28234 ハートの確率 / blue drops ↔ ハートの確率(Main Vocal Hitomi) / blue drops(吉田仁美&イカロス(早見沙織))
+  ['28238', '100624'], // tjpdf-28238 はっぴぃにゅうにゃあ / 伊藤かな恵,井口裕香,竹達彩奈 ↔ はっぴぃ にゅう にゃあ / 芹沢文乃(伊藤かな恵)&梅ノ森千世(井口裕香)&霧谷希(竹達彩奈)
+  ['28244', '124976'], // ky-42686 パラレルDays / 平野綾 ↔ パラレルDays / 涼宮ハルヒ(C.V.平野綾)
+  ['28257', '176434'], // tjpdf-28257 プレパレード / 釘宮理恵,堀江由衣,喜多村英梨 ↔ プレパレード / 逢坂大河(釘宮理恵)・櫛枝実乃梨(堀江由衣)・川嶋亜美(喜多村英梨)
+  ['28270', '198862'], // tjpdf-28270 まどろみの約束 / 佐藤聡美,茅野愛衣 ↔ まどろみの約束 / 千反田える(佐藤聡美)&伊原摩耶花(茅野愛衣)
+  ['28287', '136931'], // tjpdf-28287 わたしの恋はホッチキス / 放課後ティータイム ↔ わたしの恋はホッチキス〈唯&澪MainVo.〉 / 放課後ティータイム
+  ['28292', '168428'], // tjpdf-28292 経験値上昇中☆ / 佐藤利奈,井上麻里奈,茅原実里 ↔ 経験値上昇中☆ / 南春香(佐藤利奈)/南夏奈(井上麻里奈)/南千秋(茅原実里)
+  ['28336', '163662'], // tjpdf-28336 僕らのLove Style / 鈴村健一,藤田圭宣 ↔ 僕らのLove Style / 常陸院光・馨(鈴村健一・藤田圭宣)
+  ['28371', '171198'], // tjpdf-28371 俺達のJOY! / 市瀬秀和 vs 井上優 ↔ 俺達のJOY! / 獄寺隼人(市瀬秀和) vs 山本武(井上優)
+  ['28384', '116266'], // tjpdf-28384 残念系隣人部★★☆ / 友達つくり隊 ↔ 残念系隣人部★★☆(星二つ半) / 友達つくり隊
+  ['28394', '737474'], // tjpdf-28394 地獄の沙汰も君次第 / 地獄の沙汰オールスターズ ↔ 地獄の沙汰も君次第 / 地獄の沙汰オールスターズ(鬼灯CV:安元洋貴/閻魔大王CV:長嶝高士/シロCV:小林由美子/唐瓜CV:柿原徹也/茄子CV:青山桐子/お香CV:喜多村英梨/YOUR SONG IS GOOD)
+  ['28404', '170533'], // ky-42730 最強パレパレード / 平野綾 ↔ 最強パレパレード / 涼宮ハルヒ(CV.平野綾)、長門有希(CV.茅原実里)、朝比奈みくる(CV.後藤邑子)
+  ['28724', '670058'], // ky-44171 アマテラス / 上北健 ↔ アマテラス / KK
+  ['28735', '678172'], // ky-44179 ミスト / KK(上北健) ↔ ミスト / 上北健
+  ['28736', '423053'], // ky-44181 砂の惑星 / ハチ(Feat.初音ミク) ↔ 砂の惑星 ( + 初音ミク ) / 米津玄師
+  ['28744', '723196'], // ky-44186 アストロノーツ / 椎名もた ↔ アストロノーツ / ぽわぽわP feat.初音ミク
+  ['68297', '197394'], // blog-1149-23 こいかぜ(アイドルマスターシンデレラガールズスターライトステージ OST) / 早見沙織 ↔ こいかぜ / 高垣楓(CV早見沙織)
+  ['68314', '738747'], // ky-44598 聖槍爆裂ボーイ / れるりり,もじゃ(大柴広己)(Feat.鏡音レン) ↔ 聖槍爆裂ボーイ / れるりり/もじゃ feat.鏡音レン
+  ['68356', '435281'], // ky-44627 眠れる森に行きたいな(ラブライブ！スクールアイドルフェスティバル ALL STAR OST) / 鬼頭明里 ↔ 眠れる森に行きたいな / 近江彼方(CV.鬼頭明里)
+  ['68728', '493602'], // tjpdf-68728 Ghosts / 土岐隼一 ↔ Ghosts / 羽宮一虎(CV:土岐隼一)
+  ['68835', '617946'], // ky-44962 Magic('コカ・コーラ' TVCM) / Mrs. GREEN APPLE ↔ Magic / Mrs. GREEN APPLE
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -276,7 +331,7 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 220;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 266;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
   '26121|65623',
   '26121|77873',
