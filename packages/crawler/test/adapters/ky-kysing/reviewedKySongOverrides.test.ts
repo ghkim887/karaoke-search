@@ -8,12 +8,18 @@ import {
 } from '../../../src/adapters/ky-kysing/reviewedKySongOverrides.js';
 
 describe('reviewedKySongOverrides', () => {
-  it('ships EMPTY allow/drop lists on day one', () => {
+  it('allow stays EMPTY; drop carries the 2026-07-20 leak-triage entry (ky 51322)', () => {
     expect(REVIEWED_KY_ALLOW_NUMBERS).toHaveLength(0);
-    expect(REVIEWED_KY_DROP_ENTRIES).toHaveLength(0);
+    expect(REVIEWED_KY_DROP_ENTRIES).toHaveLength(1);
+    // CUTIE STREET Korean-language row — the KY-side claim for the same song as
+    // the TJ-side drop tj 52093.
+    expect(isReviewedKyDrop('51322')).toBe(true);
+    expect(isReviewedKyAllow('51322')).toBe(false);
+    // The JP original's KY number (57750) stays admittable.
+    expect(isReviewedKyDrop('57750')).toBe(false);
   });
 
-  it('predicates return false for any number (no overrides wired yet)', () => {
+  it('predicates return false for non-member numbers', () => {
     for (const ky of ['44655', '1', '999999', '', '  ', 'not-a-number']) {
       expect(isReviewedKyAllow(ky)).toBe(false);
       expect(isReviewedKyDrop(ky)).toBe(false);

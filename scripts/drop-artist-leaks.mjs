@@ -44,9 +44,11 @@
  *   - chinese (`CATALOG_ANOMALY_IDS`): `artist_primary` is malformed in the TJ
  *     source (e.g. literal `-` for tj-72638, a record whose simplified-Chinese
  *     title `明天你是否依然爱我` confirms it as Mandopop).
- *   - korean (`KOREAN_CATALOG_ANOMALY_IDS`): `artist_primary` is a legitimate
- *     Japanese act (must stay admittable) but the specific TJ row is a
- *     Korean-catalog placement (e.g. tj-70438 CUTIE STREET's KOR-language row).
+ *   - korean (`KOREAN_CATALOG_ANOMALY_IDS`): the artist-name match neither does
+ *     nor SHOULD catch the row (its artist is a legitimate Japanese act, or a
+ *     Japanese homonym of the real Western-pop artist) but the specific row is a
+ *     leak that must drop by exact ID — e.g. tj-70438 CUTIE STREET's KOR-language
+ *     row, or the 2026-07-20 Western-pop leaks (US "MAX", BLACKPINK "LiSA").
  * Keep both lists small and reviewed.
  *
  * Behavior
@@ -116,18 +118,50 @@ const REVIEWED_OVERRIDES_DIST = resolve(
 export const CATALOG_ANOMALY_IDS = Object.freeze(new Set(['tj-72638', 'tj-71365']));
 
 /**
- * Catalog-anomaly IDs (korean pass only): records whose `artist_primary` is a
- * legitimate *Japanese* act — so the artist-name match neither does nor SHOULD
- * catch them — but whose specific TJ row is a Korean-catalog placement that
- * must drop by exact ID. Mirrors the crawl chain's reviewed-song-drop (step 0)
- * for the same TJ number (drop-artist-leaks does not load the cache, so it
- * re-applies these anomalies here instead). Keep this list small and reviewed.
- *   - tj-70438: "프리큐큐" / CUTIE STREET — Korean-language ver. of the JP
- *     single ぷりきゅきゅ (KR release 2026-06-06). CUTIE STREET is Japanese
- *     (ASOBISYSTEM / KAWAII LAB.) and stays admittable for their JP-language
- *     rows; only this KOR-tagged Korean-catalog row drops.
+ * Catalog-anomaly IDs (korean pass only): records the artist-name match neither
+ * does nor SHOULD catch (dropping the artist name would over-reject a legitimate
+ * Japanese homonym or a genuinely Japanese act) but whose specific row must drop
+ * by exact record ID. Mirrors the crawl chain's reviewed-song-drop (step 0) for
+ * the same songs (drop-artist-leaks does not load the cache, so it re-applies
+ * these anomalies here instead). Every entry here has a matching TJ-number entry
+ * in `reviewedSongOverrides.REVIEWED_TJ_SONG_DROP_LIST` — this list is the
+ * corpus-pass id-keyed mirror. Keep it small and reviewed.
+ *
+ * Two classes:
+ *   - Korean-catalog placement by a Japanese act (tj-70438 프리큐큐 / CUTIE
+ *     STREET; blog-1601-1 귀엽기만 하면 안 되나요? / CUTIE STREET). The act is
+ *     Japanese and stays admittable for its JP-language rows; only the
+ *     KOR-tagged row drops.
+ *   - Western pop mis-shelved on TJ, from the 2026-07-20 leak triage, whose
+ *     credited artist is not a drop-list signal (Mary McGregor) or COLLIDES with
+ *     a Japanese act of the same name (US "MAX" vs JP girl-group MAX; BLACKPINK
+ *     "LiSA/LISA" vs JP anison singer LiSA). Dropping the name would remove the
+ *     Japanese homonym's real J-pop rows, so these drop by exact ID only.
+ *
+ * ID-stability note: `tj-*` ids are derived from the (stable) TJ number, so they
+ * survive a re-crawl. `blog-1601-1` is a POSITIONAL blog id, stable only within
+ * the frozen v22/v23 lineage this corpus-cleanup step runs against (v25
+ * reconstruction). Its crawl-time coverage is the stable TJ number (tj 52093 on
+ * REVIEWED_TJ_SONG_DROP_LIST) plus the KY claim (ky 51322 on
+ * reviewedKySongOverrides) — not this positional id.
  */
-export const KOREAN_CATALOG_ANOMALY_IDS = Object.freeze(new Set(['tj-70438']));
+export const KOREAN_CATALOG_ANOMALY_IDS = Object.freeze(
+  new Set([
+    'tj-70438',
+    // 2026-07-20 K-pop / Western-pop leak triage (DROP 12/KEEP 32).
+    'tj-21873', // Mary McGregor — This Girl Has Turned Into A Woman (US pop)
+    'tj-7653', // Mary McGregor — Torn between two lovers (US pop)
+    'tj-23450', // MAX,Felly — Acid Dreams (US MAX)
+    'tj-23502', // MAX(Feat.Chromeo) — Checklist (US MAX)
+    'tj-79222', // MAX(Feat.Gnash) — Lights Down Low (US MAX)
+    'tj-79627', // LiSA — Rockstar (BLACKPINK Lisa)
+    'tj-79697', // LISA(Feat.ROSALIA) — New Woman (BLACKPINK Lisa)
+    'tj-79756', // LiSA — Moonlit Floor (BLACKPINK Lisa)
+    'tj-79914', // LISA(Feat.Doja Cat,RAYE) — Born Again (BLACKPINK Lisa)
+    'tj-79973', // LISA(Feat.Future) — FXCK UP THE WORLD (BLACKPINK Lisa)
+    'blog-1601-1', // CUTIE STREET — 귀엽기만 하면 안 되나요? (KOR ver.; positional id, frozen lineage only)
+  ]),
+);
 
 export const USAGE =
   'usage: node scripts/drop-artist-leaks.mjs --list korean|chinese [--dry-run] [--decisions-out <path>]';

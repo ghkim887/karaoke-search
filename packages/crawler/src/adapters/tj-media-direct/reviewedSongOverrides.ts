@@ -21,7 +21,7 @@
  *   - **Never** widen an entry to an artist-level admit — that is what the
  *     drop list / artist-tag steps are for.
  *
- * Counts: allow=113, drop=10 (asserted by
+ * Counts: allow=113, drop=21 (asserted by
  * `test/adapters/tj-media-direct/reviewedSongOverrides.test.ts`).
  */
 
@@ -934,6 +934,99 @@ export const REVIEWED_TJ_SONG_DROP_LIST: readonly ReviewedSongOverrideEntry[] = 
     // number) is the seam — the artist stays admittable for their Japanese
     // rows, so it MUST NOT go on koreanArtistDropList.
     note: 'drop_per_song_korean_language_row — KOR-language ver. of CUTIE STREET (JP group) single ぷりきゅきゅ, 2026-06-06 KR release; TJ nationalcode KOR. Korean-catalog row, not J-pop. Artist stays admittable — do NOT add to koreanArtistDropList.',
+  },
+  // ---------------------------------------------------------------------------
+  // 2026-07-20 K-pop / Western-pop leak triage (joyless-576 → 44-song parallel
+  // web review → DROP 12/KEEP 32). These are per-SONG drops keyed by exact TJ
+  // number. Two classes, both requiring the exact-TJ seam rather than an artist
+  // drop-list entry (which would over-reject a legitimate Japanese homonym):
+  //   - Western pop mis-shelved on TJ whose credited artist is either not a
+  //     drop-list signal (Mary McGregor) or COLLIDES with a Japanese act of the
+  //     same name (US "MAX" = Max Schneider vs JP girl-group MAX; "LiSA/LISA" =
+  //     BLACKPINK Lisa vs JP anison singer LiSA). Adding the name to
+  //     koreanArtistDropList would drop the Japanese homonym's real J-pop rows,
+  //     so we drop only these specific TJ numbers.
+  //   - Korean-language catalog rows by a Japanese act (CUTIE STREET), same
+  //     class as tj-70438 above — artist stays admittable for their JP rows.
+  // Sibling rows deliberately KEPT (proof the drop is song-level, not artist):
+  // tj 26278 SAYONARA (Mary McGregor, 銀河鉄道999 ED — JP tie-up) and CUTIE
+  // STREET's JP original tj 52410 ("かわいいだけじゃだめですか?").
+  {
+    tj: '21873',
+    title: 'This Girl Has Turned Into A Woman',
+    artist: 'Mary McGregor',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — 1976 US pop (album "Torn Between Two Lovers"), no JP release/tie-up. Song-level only: the same artist\'s tj 26278 "SAYONARA(銀河鉄道999劇場版 ED)" is a JP anime tie-up and stays. Do NOT add Mary McGregor to any artist drop list.',
+  },
+  {
+    tj: '7653',
+    title: 'Torn between two lovers',
+    artist: 'Mary McGregor',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — Mary MacGregor 1976 US pop (Billboard #1), no JP release/tie-up. Song-level only (see tj 26278 SAYONARA KEEP).',
+  },
+  {
+    tj: '23450',
+    title: 'Acid Dreams',
+    artist: 'MAX,Felly',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — US pop singer MAX (Max Schneider) 2019 release feat. Felly. Homonym collision with JP girl-group MAX — drop this TJ only, do NOT drop-list "MAX".',
+  },
+  {
+    tj: '23502',
+    title: 'Checklist',
+    artist: 'MAX(Feat.Chromeo)',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — US pop singer MAX 2019-11-01 single feat. Chromeo (Arista). Homonym collision with JP MAX — TJ-number drop only.',
+  },
+  {
+    tj: '79222',
+    title: 'Lights Down Low',
+    artist: 'MAX(Feat.Gnash)',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — US singer Max Schneider 2016 single feat. gnash. Homonym collision with JP MAX — TJ-number drop only.',
+  },
+  {
+    tj: '79627',
+    title: 'Rockstar',
+    artist: 'LiSA',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — BLACKPINK Lisa 2024-06-27 English global single ROCKSTAR, mis-tagged as "LiSA". Homonym collision with JP anison singer LiSA — drop this TJ only, do NOT drop-list "LiSA".',
+  },
+  {
+    tj: '79697',
+    title: 'New Woman',
+    artist: 'LISA(Feat.ROSALIA)',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — BLACKPINK Lisa feat. Rosalía 2024-08-15 English single (RCA), not a JP release. Homonym collision with JP LiSA — TJ-number drop only.',
+  },
+  {
+    tj: '79756',
+    title: 'Moonlit Floor',
+    artist: 'LiSA',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — BLACKPINK Lisa 2024-10-03 English single "Moonlit Floor (Kiss Me)". Homonym collision with JP LiSA — TJ-number drop only.',
+  },
+  {
+    tj: '79914',
+    title: 'Born Again',
+    artist: 'LISA(Feat.Doja Cat,RAYE)',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — BLACKPINK Lisa feat. Doja Cat/RAYE 2025-02-06 English single (RCA), no JP release. Homonym collision with JP LiSA — TJ-number drop only.',
+  },
+  {
+    tj: '79973',
+    title: 'FXCK UP THE WORLD',
+    artist: 'LISA(Feat.Future)',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_western_pop_leak — BLACKPINK Lisa feat. Future 2025-02-28 English single (Alter Ego), no JP release. Homonym collision with JP LiSA — TJ-number drop only.',
+  },
+  {
+    tj: '52093',
+    title: '귀엽기만 하면 안 되나요?',
+    artist: 'CUTIE STREET',
+    decidedOn: '2026-07',
+    note: 'drop_per_song_korean_language_row — KOR-language ver. of CUTIE STREET (JP group) "かわいいだけじゃだめですか?"; Korean-catalog row (tj 52093 / ky 51322, no JOYSOUND). Same class as tj-70438. JP original tj 52410 (ky 57750 / joy 630523) and the JOYSOUND-hosted "(Korean ver.)" joy 648842 both stay in scope. Artist stays admittable — do NOT add CUTIE STREET to koreanArtistDropList. KY-side claim ky 51322 is dropped via reviewedKySongOverrides.',
   },
 ];
 

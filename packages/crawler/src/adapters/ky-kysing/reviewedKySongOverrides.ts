@@ -8,9 +8,9 @@
  * admits a row the script/drop-list guard would otherwise reject; DROP forces a
  * row out even when the guard would admit it.
  *
- * Both lists are INTENTIONALLY EMPTY on day one — the KY classifier ships with
- * no adjudicated overrides yet. They are the code-free correction hook: when a
- * soak surfaces a KY misclassification, add the number here rather than
+ * ALLOW is INTENTIONALLY EMPTY. DROP carries the 2026-07-20 leak-triage KY
+ * claim (ky 51322, below). They are the code-free correction hook: when a soak
+ * or triage surfaces a KY misclassification, add the number here rather than
  * redeploying classifier logic. ALLOW is consulted before the curated
  * drop-list + script guard; DROP is consulted first (allow-precedes-droplist,
  * matching the TJ / JOYSOUND ordering).
@@ -33,8 +33,16 @@ export interface ReviewedKyOverrideEntry {
 /** Reviewed ALLOW numbers (bare digits). Empty on day one. */
 export const REVIEWED_KY_ALLOW_NUMBERS: readonly string[] = [];
 
-/** Reviewed DROP entries. Empty on day one. */
-export const REVIEWED_KY_DROP_ENTRIES: readonly ReviewedKyOverrideEntry[] = [];
+/** Reviewed DROP entries. */
+export const REVIEWED_KY_DROP_ENTRIES: readonly ReviewedKyOverrideEntry[] = [
+  {
+    ky: '51322',
+    title: '귀엽기만 하면 안 되나요?',
+    artist: 'CUTIE STREET',
+    decidedOn: '2026-07-20',
+    note: 'drop_per_song_korean_language_row — KOR-language ver. of CUTIE STREET (JP group) "かわいいだけじゃだめですか?" (2026-07-20 leak triage). Same song as the TJ-side drop tj 52093 (reviewedSongOverrides). The pure-Hangul title also trips the KY script-guard, but this exact-number DROP makes the KY ingress explicit and robust. JP original ky 57750 (tj 52410) stays admittable — do NOT add CUTIE STREET to koreanArtistDropList.',
+  },
+];
 
 /**
  * Canonical lookup key for a KY number: trim + require the bare-digit form.

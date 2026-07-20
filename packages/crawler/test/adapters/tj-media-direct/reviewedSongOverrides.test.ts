@@ -8,11 +8,12 @@ import {
 } from '../../../src/adapters/tj-media-direct/reviewedSongOverrides.js';
 
 describe('reviewedSongOverrides — 2026-06 FP/FN audit lists', () => {
-  it('carries exactly 113 allow entries and 10 drop entries (audit counts)', () => {
+  it('carries exactly 113 allow entries and 21 drop entries (audit counts)', () => {
     // Accidental dedup/loss of a single entry silently changes which songs
-    // are admitted/dropped — pin the audited counts.
+    // are admitted/dropped — pin the audited counts. drop = 10 (2026-06 audit)
+    // + 11 (2026-07-20 K-pop / Western-pop leak triage).
     expect(REVIEWED_TJ_SONG_ALLOW_LIST.length).toBe(113);
-    expect(REVIEWED_TJ_SONG_DROP_LIST.length).toBe(10);
+    expect(REVIEWED_TJ_SONG_DROP_LIST.length).toBe(21);
   });
 
   it('has no duplicate TJ numbers within or across the two lists', () => {
@@ -76,6 +77,39 @@ describe('reviewedSongOverrides — 2026-06 FP/FN audit lists', () => {
     // A plausible TJ number that was never audited must hit neither list.
     expect(isReviewedTjSongAllow('12345')).toBe(false);
     expect(isReviewedTjSongDrop('12345')).toBe(false);
+  });
+
+  it('2026-07-20 leak triage: drops all 11 leak TJ numbers, keeps the homonym/sibling KEEPs', () => {
+    // The 11 per-song leak drops (10 Western-pop mis-shelved on TJ + CUTIE
+    // STREET's Korean-language row). Each must be on the drop list and NOT the
+    // allow list.
+    const leakDrops = [
+      '21873', // Mary McGregor — This Girl Has Turned Into A Woman
+      '7653', // Mary McGregor — Torn between two lovers
+      '23450', // MAX,Felly — Acid Dreams
+      '23502', // MAX(Feat.Chromeo) — Checklist
+      '79222', // MAX(Feat.Gnash) — Lights Down Low
+      '79627', // LiSA — Rockstar (BLACKPINK Lisa)
+      '79697', // LISA(Feat.ROSALIA) — New Woman
+      '79756', // LiSA — Moonlit Floor
+      '79914', // LISA(Feat.Doja Cat,RAYE) — Born Again
+      '79973', // LISA(Feat.Future) — FXCK UP THE WORLD
+      '52093', // CUTIE STREET — 귀엽기만 하면 안 되나요? (KOR ver.)
+    ];
+    for (const tj of leakDrops) {
+      expect(isReviewedTjSongDrop(tj)).toBe(true);
+      expect(isReviewedTjSongAllow(tj)).toBe(false);
+    }
+
+    // Song-level, NOT artist-level: sibling rows by the same/homonym artists
+    // must NOT be dropped by this list.
+    //   26278 = SAYONARA (Mary McGregor, 銀河鉄道999 ED — JP tie-up, KEEP).
+    //   52410 = CUTIE STREET's JP original かわいいだけじゃだめですか? (KEEP).
+    //   44601 = Better Half -Japanese ver.- (Omoinotake) — already an ALLOW.
+    expect(isReviewedTjSongDrop('26278')).toBe(false);
+    expect(isReviewedTjSongDrop('52410')).toBe(false);
+    expect(isReviewedTjSongDrop('44601')).toBe(false);
+    expect(isReviewedTjSongAllow('44601')).toBe(true);
   });
 });
 
