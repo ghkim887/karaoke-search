@@ -1,74 +1,60 @@
-# 세션 핸드오프 — 2026-07-16 워커+웹 재배포 + funnel origin 리네임 커밋화 (#156)
+# 세션 핸드오프 — 2026-07-20 미병합 완결 사이클 + v25 승격 (#166~#169)
 
-직전 체크포인트(#155, blog 안정 식별자 #152+#154)를 갱신. 이 세션은 오너
-지시("재배포 해")로 **서빙 3표면 중 뒤처져 있던 워커·웹을 재배포**하고,
-그 과정에서 발견한 **미커밋 배포 지뢰(hermes-host→oci 리네임)를 PR #156으로
-커밋화 후 머지**(오너 명시 승인)까지 완결했다.
-오너 결정 잔여 = **3건: R3 본구현 / R5 KY 1k 스파이크 / 크롤 재개 시점.**
+직전 정본(#157, 2026-07-16)을 갱신. 2026-07-20 하루에 **v24 승격 → 미병합
+전수 검증 → K-pop/서양팝 유출 사냥 → 오너 판정 라운드 → 3-way 병합(B2) →
+v25 재구성·승격**까지 완결했다. 미병합 결정 큐는 **소진**됐다.
 
 ## Current state of record
 
-- **main**: `ac7fb4f`(#156 squash) — funnel origin hermes-host→oci 3파일 3줄
-  (`apps/web/functions/api/[[path]].js`, `functions/healthz.js`,
-  `wrangler.toml`). PR CI green(e2e/verify). **열린 PR: 이 체크포인트뿐.**
-- **왜 #156이 필요했나**: 2026-07-08경 호스트 리네임(hermes-host→oci)이
-  **라이브 NAS 트리의 미커밋 로컬 수정으로만** 존재했다. main 그대로 웹을
-  배포하면 Pages 프록시가 죽은 호스트명을 가리켜 API가 끊기는 상태.
-  이제 main == 라이브 배포 상태로 수렴.
-- **워커 재배포 (oci)**: 라이브 실행 트리 `/srv/nas/karaoke/app`
-  (`/srv/karaoke`는 심링크; `karaoke-api.service`가
-  `app/apps/worker/dist/node-server.js` 직접 실행)를 3c47b05→main으로 ff,
-  `corepack pnpm --filter @karaoke/worker... build`,
-  `sudo systemctl restart karaoke-api`. 이전 로컬 수정은 stash
-  `pre-redeploy-20260716`에 보존. **라이브 워커가 이제 #93~#148 serve측
-  픽스 포함**(직전엔 2026-07-03/04 빌드로 8PR 뒤였음).
-  검증: healthz ok / api/meta 2026-07-12 / 검색 정상 / journal 클린 /
-  공개체인(oci.tail04d970.ts.net + karaokedb.pages.dev/api/meta) ok.
-- **웹 재배포 (Pages)**: production `5de27093`(--branch main, source
-  f9d0498=#156 내용). 직전 production은 3c47b05(1주 전). 실브라우저 검증:
-  アイドル 50건 렌더(YOASOBI TJ 68781/KY 44923/JOY 616010), **ko 크롬
-  한국어 단독 유지**, DB 날짜 2026-07-12, 콘솔 에러 0.
-  ⚠️ 교훈: `wrangler pages deploy`는 **`--branch main` 없이는 프리뷰**로만
-  올라간다(첫 시도가 그랬음).
-- **oci SSH 복구 확인**: Tailscale SSH 정상(이전 "호스트키 보류" 해소),
-  passwordless sudo 가용.
-- **서빙 DB = v22 유지(무접촉)**. 크롤 `disabled_manually` 유지.
-- **라이브 트리 고아 문서 2건**(main에 없음, 언트랙 보존 — 커밋 후보):
-  `docs/runbooks/2026-07-08-soak-crawl-gates.md`,
-  `docs/specs/2026-07-08-search-hint-channel-and-dead-schema-cleanup.md`.
-- **R5 KY 소스 재서베이 완료**(오너 지시 "번호 다 긁는 건 너무 무식"):
-  **브루트포스 불필요 판정** — `/karaoke-book/` 색인 브라우즈(city=jp 일본곡
-  전용 가나 색인, 200행/페이지)로 전량 ~500–700요청(JP만 ~150–200), 델타는
-  무인증 `new_ky.asp` XML(최신 100곡), 시드 후보 kacsv 60,636곡 CSV. 핵심
-  주장 오케스트레이터 독립 재검증(라이브 재현+실측). 상세·막다른 길 목록 =
-  `docs/research/2026-07-16-ky-smart-enumeration-resurvey.md`(이 PR에 포함).
-  R5 스파이크 착수 시 이 문서가 출발점(1k 프로브 스파이크는 사실상 불필요,
-  바로 색인 워크 어댑터 설계 가능).
+- **main = `8e81c3f`**(#169). 오늘 머지: #166(both-vendor 46곡 Tier E),
+  #167(유출 11곡 per-song 드롭 + **drop-artist-leaks JOYSOUND-anchored
+  가드** — corpus-level 아티스트명 드롭이 일본발매 101곡을 오폭하던 잠복
+  결함 픽스), #168(오너 판정: forbidden 8 해제 + uncertain→merge 2,
+  later-file-wins 판정 규칙), #169(**B2 리뷰드 3-way 어태치표 85곡** —
+  dup-J 불변식 완화, 스펙 = docs/specs/2026-07-20-reviewed-3way-attach-design.md).
+- **서빙 = v25 라이브**: `db/current → releases/data-2026-07-20-v25-reviewed-cleanup`
+  (songs.sqlite 2,080,272,384B · **312,571곡** · SHA256SUMS). 체인 =
+  v22 corpus + KY stripped2 재병합(out 313,353) → 무번호 드롭 771 →
+  **drop-artist-leaks ko(−11, 101 spared)+zh(no-op)** → sqlite. 검증:
+  v24 대비 −152 전량 귀속(병합 흡수 141 — 번호 보존 141/141·유실 0 + 유출
+  11), 스팟 11/11(3-way 忘れていいの = tj 26145+ky 40449+joy 1546 한 행),
+  joy 312,147 불변, 공개체인+실브라우저(콘솔 0) green. 이전 v24/v23 잔존,
+  롤백 = 심링크 복귀. ⚠ `dbUpdatedAt`은 데이터 유래 날짜라 재구성 릴리스
+  에선 안 변함(2026-07-16 표시가 정상) — 승격 검증은 데이터 스팟으로.
+- **리뷰드 병합 표 최종 상태**: Tier E 271 · Tier F 482 · 3-way 어태치 85
+  = 838 단위, 실코퍼스 발화 834 + 벤더번호 충돌 스킵 4(의도된 가드).
+  판정 원천 = scripts/data/b-review-merge-verdicts/(A/B/C/D 시리즈).
+- **미병합 최종 현황(v25 감사 424곡, 결정 필요 0)**: 진성 갭 244 + 사람
+  reject 173 + 오너 무행동 종결 7(TJ 이중번호 4 — 두 번호 병행 실재라 두
+  행 유지가 정답 / uncertain 3). 교차검증 리포트 =
+  NAS runs/ky-v23-20260716/audit-v25/unmerged-xref.json.
+- **운영 교훈 2건**: ①merge-ky 드라이버는 conservation FAILED 시 **의도적
+  exit 3**(report-only go/no-go) — 체인 스크립트의 set -e가 여기서 끊긴다,
+  exit 3 허용 처리 필수(초기 "Tailscale이 nohup 킬" 진단은 오진으로 정정)
+  ②oci 장기 작업은 systemd-run transient unit + 라이브 트리 git 조작은
+  oci(NAS 로컬)측에서(SMB는 부분 체크아웃/unlink 실패 함정).
 
-## Grant Ledger (이 세션)
+## Grant Ledger (2026-07-20 세션)
 
-- **워커+웹 재배포** — "재배포 해. oci 아마 해결됐을거야" (2026-07-16).
-  라이브 트리 git 갱신·서비스 재시작·Pages 프로덕션 배포 포함. 실행 완결.
-- **PR #156 머지** — "머지 승인" (2026-07-16). 집행 완료(squash, ac7fb4f).
-- **KY 크롤 소스 재조사** — "하위 에이전트한테 insane search 쥐어주고 ky
-  크롤 소스 다시 조사하라그래" (2026-07-16). 조사 완결(kysing.kr 28요청,
-  무차단). **어댑터 구현은 별도 승인 필요.**
-- **미승인으로 남음**: 크롤 재개(오너 1.0 선언), R3 본구현, R5 KY 스파이크,
-  고아 문서 2건 커밋 여부.
+- v24 승격 / #164~#169 머지 / stale 릴리스 삭제(오너 직접 `!` 실행) /
+  유출 사냥·판정 라운드·B2 설계·구현 / v25 재구성·승격·정본 체크포인트 PR
+  — 전부 오너 지시·승인으로 집행 완료.
+- **미승인으로 남음**: 크롤 재개(오너 1.0 선언), R3 본구현.
 
 ## Open items
 
-- **오너 결정 3건**: ①R3 오프라인 풀팩 본구현 ②R5 KY 1k 프로브 스파이크
-  (권장 첫 수) ③크롤 재개 시점.
-- **크롤 재개 시 확인 목록(누적, #155와 동일)**: #151 캐시 발효분 + #152
-  발효분(무번호 −483, 벤더 id 전환 ~20.8k+, parity baseline 재생성) +
-  #154 시드 프로브 첫 실동작(`[tj-seed]` 라인) + 297 충돌-널 잔존 귀결.
-- **고아 문서 2건 커밋 여부**(위) — 오너 판단.
-- **휴면(무조치 결정 존중)**: #151과 동일.
+- **오너 결정 2건**: ①크롤 재개 시점(무기한 보류 유지 중) ②R3 오프라인
+  풀팩 본구현.
+- **크롤 재개 시 확인 목록(누적)**: #151/#152/#154 발효분 + #158/#159 KY
+  색인 워크 실동작 + blog-ky graduation + **#162~#169 크롤타임 발효분**
+  (KY 스트립·리뷰드 표 838 단위·유출 per-song 드롭·D3 프로브 차단) +
+  parity baseline 재생성.
+- 휴면: R4-2 타이업(장르 분류용 보류), R4-4 Option B, tjpdf 제목 오염
+  3건(28477 "! 서유기" 접두 등 — #167 본문 후속 메모).
 
 ## Next first action
 
-1. 새 세션: fresh clone → 이 정본 → 오너 결정 3건 중 지시된 것 착수.
-2. 크롤 재개 선언 시: 재개 첫 크롤 PR에서 #151+#152+#154 발효분 일괄 확인
-   (선행 작업 없음). 웹/워커 재배포 절차는 memory
-   `redeploy-runbook-worker-web` 및 이 문서 "재배포" 절 참조.
+1. 새 세션: fresh clone → 이 정본 + 루트 포인터(`Z:\karaoke\HANDOFF.md`,
+   더 상세한 당일 로그) 둘 다 읽기 → 오너 결정 2건 중 지시된 것 착수.
+2. 크롤 재개 선언 시: 위 확인 목록 일괄 검증. 재배포/승격 절차는 memory
+   `redeploy-runbook-worker-web` 참조.

@@ -9,19 +9,22 @@ review; numbers below were measured against the live serving DB
 
 **Completed, closed, and resolved items are archived in [ROADMAP-LOG.md](ROADMAP-LOG.md)** — this file holds only live work (a compact index of archived items is at the bottom).
 
-> **Serving state (2026-07-12): release v22 promoted** —
-> `db/current → releases/data-2026-07-12-v22-fullcatalog`: **313,467 songs,
-> joysound 312,170** (v21 306,822 +5,348), `title_ruby` coverage **91.7%**
-> (287,333; was ~77%), reviewedMergePairs Tier E 196 fully applied (the
-> #110 five fired for the first time), 167-row purge holds. Built from the
-> 2026-07-10 fresh fullCatalog listing (352,290 rows) + detail sweep;
-> public-chain verified (meta `dbUpdatedAt 2026-07-12`). Retention: v22+v21.
+> **Serving state (2026-07-20): release v25 promoted** —
+> `db/current → releases/data-2026-07-20-v25-reviewed-cleanup`: **312,571
+> songs, joysound 312,147**. Recomposed from the frozen v22 lineage + KY
+> integration with the full 2026-07-16~20 review cycle applied: reviewed
+> merge units 838 (Tier E 271 / F 482 / 3-way attach 85, #163~#169),
+> numberless purge (−771, #164), K-pop/Western-pop leak purge (−11 with the
+> JOYSOUND-anchored guard sparing 101 legitimate JP releases, #167).
+> Verified end-to-end (number conservation 141/141 on merges, public chain +
+> real browser). Note: `dbUpdatedAt` stays 2026-07-16 (data-derived — no new
+> crawl). Retention: v25+v24+v23+v22. History: v22 (2026-07-12, 313,467) →
+> v23 (2026-07-16, +KY 314,209) → v24 (2026-07-20, cleanup 312,723) → v25.
 >
-> **Weekly automatic crawl: INDEFINITE HOLD (owner, 2026-07-12)** — see the
-> [Open questions](#open-questions) subsection.
->
-> **Verification crawl (2026-07-13):** the tracked baseline updated to 26,462
-> records (crawl PR #140); the serving DB is unchanged (still v22).
+> **Weekly automatic crawl: INDEFINITE HOLD (owner, 2026-07-12, re-affirmed
+> 2026-07-13)** — see the [Open questions](#open-questions) subsection.
+> The joyless-unmerged decision queue is now EXHAUSTED (v25 audit: 424
+> remaining = 244 genuine gaps + 173 human-rejected + 7 owner no-action).
 
 ## R3. Full-corpus offline (PWA / fallback) — DECIDED direction, opt-in pack (2026-07-04)
 
