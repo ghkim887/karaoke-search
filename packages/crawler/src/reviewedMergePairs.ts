@@ -322,6 +322,16 @@ const REVIEWED_TIER_E_STRONG_PAIRS = [
   ['68356', '435281'], // ky-44627 眠れる森に行きたいな(ラブライブ！スクールアイドルフェスティバル ALL STAR OST) / 鬼頭明里 ↔ 眠れる森に行きたいな / 近江彼方(CV.鬼頭明里)
   ['68728', '493602'], // tjpdf-68728 Ghosts / 土岐隼一 ↔ Ghosts / 羽宮一虎(CV:土岐隼一)
   ['68835', '617946'], // ky-44962 Magic('コカ・コーラ' TVCM) / Mrs. GREEN APPLE ↔ Magic / Mrs. GREEN APPLE
+  // --- 2026-07-20 owner adjudication (forbidden-release). Five pairs moved out
+  // of REVIEWED_TIER_E_FORBIDDEN_PAIRS after the B-wave web review satisfied
+  // each prior hold. Lines emitted verbatim by
+  // scripts/encode-b-wave-merge-pairs.mjs. Effective at the next JOYSOUND-crawl
+  // corpus (v24+ re-merge). See docs/ROADMAP.md. ---
+  ['6927', '19868'], // tj-6927 あの紙ヒコーキ くもり空わって / 19 ↔ あの紙ヒコーキ くもり空わって / 19(ジューク)
+  ['6935', '21182'], // tj-6935 すべてへ / 19 ↔ すべてへ / 19(ジューク)
+  ['26121', '65623'], // tj-26121 ハッピー☆マテリアル(魔法先生 ネギま! OP) / 麻帆良学園中等部2-A ↔ ハッピー☆マテリアル / 麻帆良学園中等部2-A(相坂さよ/明石裕奈/朝倉和美/綾瀬夕映/和泉亜子/大河内アキラ)
+  ['26750', '168779'], // tj-26750 空想ルンバ(懺・さよなら絶望先生 OP) / 大槻ケンヂと絶望少女達 ↔ 空想ルンバ / 大槻ケンヂと絶望少女達(風浦可符香、木津千里、木村カエレ、関内・マリア・太郎、日塔奈美)
+  ['68258', '445312'], // tj-68258 ファンサ(告白実行委員会 ~恋愛シリーズ~ OST) / 夏川椎菜 ↔ ファンサ / mona(CV:夏川椎菜)
 ] as const satisfies ReadonlyArray<readonly [string, string]>;
 
 export const REVIEWED_TIER_E_JOYS_BY_TJ = new Map<string, Set<string>>();
@@ -331,19 +341,21 @@ for (const [tj, joysound] of REVIEWED_TIER_E_STRONG_PAIRS) {
   else REVIEWED_TIER_E_JOYS_BY_TJ.set(tj, new Set([joysound]));
 }
 
-const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 266;
+const EXPECTED_REVIEWED_TIER_E_STRONG_PAIR_COUNT = 271;
 const REVIEWED_TIER_E_FORBIDDEN_PAIRS = new Set([
-  '26121|65623',
+  // 2026-07-20 owner adjudication RELEASED 26121|65623, 26750|168779,
+  // 68183|683200, 68258|445312, 68290|731408 — the B-wave web confirmation
+  // satisfied each prior hold, so they move into the reviewed-strong allowlist
+  // (see the 2026-07-20 owner-adjudication section below and docs/ROADMAP.md).
+  // Still held: the ハッピー☆マテリアル multi-JOYSOUND variants (one TJ number,
+  // several month-specific JOYSOUND cuts — no single strong target) and the
+  // FLOW X GRANRODEO ↔ XG short-token false positive.
   '26121|77873',
   '26121|78108',
   '26121|78109',
   '26121|78110',
   '26121|78111',
-  '26750|168779',
   '28852|631988',
-  '68183|683200',
-  '68258|445312',
-  '68290|731408',
 ]);
 
 function assertReviewedTierEPairInvariant(): void {
@@ -881,18 +893,31 @@ const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS = [
   ['tj', '68965', '433738'], // tj-68965 不可思議のカルテ(アニメ '青春ブタ野郎シリーズ' OST) / 瀬戸麻沙美,東山奈央,種﨑敦美,内田真礼,久保ユリカ,水瀬いのり ↔ 不可思議のカルテ / 桜島麻衣、古賀朋絵、双葉理央、豊浜のどか、梓川かえで、牧之原翔子(CV:瀬戸麻沙美、東山奈央、種崎敦美、内田真礼、久保ユリカ、水瀬いのり)
   ['tj', '68988', '617202'], // tj-68988 Pieces of The World(劇場版 'IDOLiSH7 LIVE 4bit Compilation Album ''BEYOND THE PERiOD''' OST) / IDOLiSH7,TRIGGER,Re:vale,ZOOL ↔ Pieces of The World / IDOLiSH7 & TRIGGER & Re:vale & ZOOL
   ['tj', '68992', '680334'], // tj-68992 MONSTER GENERATiON('劇場版 IDOLiSH7 LIVE 4bit Compilation Album ''BEYOND THE PERiOD''' OST) / IDOLiSH7 ↔ MONSTER GENERATiON / IDOLiSH7
+  // --- 2026-07-20 owner adjudication. Three pairs released from
+  // REVIEWED_TIER_F_FORBIDDEN_PAIRS (25022|11802 short-numeric "19"; 68183|683200
+  // and 68290|731408 reviewed-but-not-strong credit) plus two B-wave "uncertain"
+  // rows the owner confirmed as merges via the D-1 supplemental verdicts
+  // (ky-40449 忘れていいの duet cut; tj-28672 Baby I Love U English Ver., a
+  // tj-only target so it lands in Tier F). Lines emitted verbatim by
+  // scripts/encode-b-wave-merge-pairs.mjs. Effective at the next JOYSOUND-crawl
+  // corpus (v24+ re-merge). See docs/ROADMAP.md. ---
+  ['ky', '40449', '1546'], // ky-40449 忘れていいの / 谷村新司、小川知子 ↔ 忘れていいの -愛の幕切れ- / 谷村新司/小川知子
+  ['tj', '25022', '11802'], // tj-25022 たいせつなひと / 19 ↔ たいせつなひと / 19(ジューク)
+  ['tj', '28672', '28921'], // tj-28672 Baby I Love U / Che'Nelle ↔ BABY I LOVE U (English Ver.) / Che'Nelle
+  ['tj', '68183', '683200'], // tj-68183 Radio Happy(アイドルマスターシンデレラガールズスターライトステージ OST) / 山下七海 ↔ Radio Happy / 大槻唯(CV:山下七海)
+  ['tj', '68290', '731408'], // tj-68290 S(mile)ING!(アイドルマスターシンデレラガールズスターライトステージ OST) / 大橋彩香 ↔ S(mile)ING! / 島村卯月(CV大橋彩香)
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
-const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 477;
+const EXPECTED_REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIR_COUNT = 482;
 const REVIEWED_TIER_F_FORBIDDEN_PAIRS = [
+  // 2026-07-20 owner adjudication RELEASED the "artist 19" short-numeric pairs
+  // (25022|11802, 6927|19868, 6935|21182) and the reviewed-but-not-strong
+  // tieup/credit pairs (26750|168779, 68183|683200, 68258|445312, 68290|731408)
+  // — the B-wave web confirmation satisfied each prior hold. They now live in
+  // the reviewed-strong allowlists (see the 2026-07-20 owner-adjudication
+  // sections and docs/ROADMAP.md). Still held: the MISIA feat. HIDE(GReeeeN)
+  // artist_ko-donor false positive.
   ['tj', '28895', '441874'], // MISIA feat. HIDE(GReeeeN) matched to GReeeeN-only artist_ko donor
-  ['tj', '25022', '11802'], // short numeric artist 19 requires manual review
-  ['tj', '6927', '19868'], // short numeric artist 19 requires manual review
-  ['tj', '6935', '21182'], // short numeric artist 19 requires manual review
-  ['tj', '26750', '168779'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
-  ['tj', '68183', '683200'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
-  ['tj', '68258', '445312'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
-  ['tj', '68290', '731408'], // Tier E reviewed-but-not-strong: raw tieup/credit evidence not retained
 ] as const satisfies ReadonlyArray<readonly [NonJoysoundVendor, string, string]>;
 
 // NOTE: the former `REVIEWED_TIER_F_ALLOWED_JOY_SIDE_EXTRA_PROVIDERS` allowlist

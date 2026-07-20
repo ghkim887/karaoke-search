@@ -1,0 +1,38 @@
+[
+  {
+    "song": {
+      "id": "tj-28672",
+      "title": "Baby I Love U",
+      "artist": "Che'Nelle",
+      "tj": "28672",
+      "ky": null
+    },
+    "candidates": [
+      {
+        "id": "joysound-170610",
+        "joysound": "28921",
+        "title": "BABY I LOVE U (English Ver.)",
+        "artist": "Che'Nelle",
+        "match": "owner-adjudication"
+      }
+    ]
+  },
+  {
+    "song": {
+      "id": "ky-40449",
+      "title": "忘れていいの",
+      "artist": "谷村新司、小川知子",
+      "tj": null,
+      "ky": "40449"
+    },
+    "candidates": [
+      {
+        "id": "joysound-1546",
+        "joysound": "1546",
+        "title": "忘れていいの -愛の幕切れ-",
+        "artist": "谷村新司/小川知子",
+        "match": "owner-adjudication"
+      }
+    ]
+  }
+]

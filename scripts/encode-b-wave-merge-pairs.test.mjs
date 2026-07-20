@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   buildPlan,
   entryLines,
+  loadReviews,
   parseArgs,
   parseReviewedSource,
 } from './encode-b-wave-merge-pairs.mjs';
@@ -160,5 +164,84 @@ describe('entryLines', () => {
     const { tierE, tierF } = entryLines(p);
     expect(tierE[0]).toBe("  ['500', '102'], // tj-500 S / A ↔ S2 / A2");
     expect(tierF[0]).toBe("  ['ky', '900', '300'], // ky-900 T / A ↔ T2 / A2");
+  });
+});
+
+describe('loadReviews later-file-wins dedup', () => {
+  let dir;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'encode-b-'));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const write = (name, obj) => writeFileSync(join(dir, name), JSON.stringify(obj));
+
+  it('a later verdict file overrides an earlier verdict for the same song_id (uncertain → merge)', () => {
+    write('batch-A-1.json', [
+      {
+        song: { id: 'tj-100', title: 'T', artist: 'A', tj: '100', ky: null },
+        candidates: [{ id: 'joysound-9', joysound: '900', title: 'Tc', artist: 'Ac' }],
+      },
+    ]);
+    write('verdicts-A-1.json', [{ song_id: 'tj-100', verdict: 'uncertain', reason: 'ambiguous' }]);
+    write('verdicts-D-1.json', [
+      {
+        song_id: 'tj-100',
+        verdict: 'merge',
+        candidate_id: 'joysound-9',
+        candidate_joysound: '900',
+        reason: 'owner confirmed',
+      },
+    ]);
+
+    const { merges, uncertain, counts, overrides } = loadReviews(dir);
+    // The D-1 merge supersedes the A-1 uncertain: one merge, zero uncertain.
+    expect(merges).toHaveLength(1);
+    expect(merges[0]).toMatchObject({ song_id: 'tj-100', J: '900', candTitle: 'Tc' });
+    expect(uncertain).toHaveLength(0);
+    expect(counts).toMatchObject({ merge: 1, uncertain: 0 });
+    // The override is recorded, not applied silently.
+    expect(overrides).toEqual([
+      {
+        song_id: 'tj-100',
+        from: { verdict: 'uncertain', file: 'verdicts-A-1.json' },
+        to: { verdict: 'merge', file: 'verdicts-D-1.json' },
+      },
+    ]);
+  });
+
+  it('records no override when each song_id is decided exactly once', () => {
+    write('batch-A-1.json', [
+      { song: { id: 'tj-1', title: 'X', artist: 'A', tj: '1', ky: null }, candidates: [] },
+    ]);
+    write('verdicts-A-1.json', [{ song_id: 'tj-1', verdict: 'reject', reason: 'no' }]);
+
+    const { overrides, counts, merges, uncertain } = loadReviews(dir);
+    expect(overrides).toHaveLength(0);
+    expect(counts).toMatchObject({ merge: 0, reject: 1, uncertain: 0 });
+    expect(merges).toHaveLength(0);
+    expect(uncertain).toHaveLength(0);
+  });
+});
+
+describe('forbidden release path', () => {
+  const stillForbidden = parseReviewedSource(SAMPLE_SOURCE);
+  // Simulate the owner adjudication removing the pair from the forbidden set.
+  const released = parseReviewedSource(
+    SAMPLE_SOURCE.replace("  ['tj', '6927', '19868'], // artist 19\n", ''),
+  );
+
+  it('leaves the pair unencodable while it is in the forbidden set', () => {
+    const p = buildPlan([row({ song_id: 'tj-6927', tj: '6927', J: '19868' })], stillForbidden);
+    expect(p.unencodable.forbidden).toHaveLength(1);
+    expect(p.tierE.length + p.tierF.length).toBe(0);
+  });
+
+  it('encodes the same pair once it is removed from the forbidden set', () => {
+    const p = buildPlan([row({ song_id: 'tj-6927', tj: '6927', J: '19868' })], released);
+    expect(p.unencodable.forbidden).toHaveLength(0);
+    expect(p.tierF).toHaveLength(1);
+    expect(p.tierF[0]).toMatchObject({ v: 'tj', n: '6927', J: '19868' });
   });
 });
