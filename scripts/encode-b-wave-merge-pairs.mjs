@@ -80,6 +80,11 @@ const norm = (v) => (v == null || v === '' ? null : String(v));
  * every joysound number already used, and both FORBIDDEN sets.
  */
 export function parseReviewedSource(sourceText) {
+  // Anchor every block on its `const <NAME>` declaration, not the bare name.
+  // A prose comment elsewhere may legitimately mention a set name (e.g. a
+  // forbidden-release note in the strong-pair table above the declaration);
+  // matching the bare name would silently slice the wrong block. The `const `
+  // prefix is unique to the declaration.
   const block = (startMarker) => {
     const start = sourceText.indexOf(startMarker);
     if (start < 0) throw new Error(`marker not found: ${startMarker}`);
@@ -96,7 +101,7 @@ export function parseReviewedSource(sourceText) {
   };
 
   // Tier E strong pairs: ['NUM', 'NUM'],
-  const eBlock = block('REVIEWED_TIER_E_STRONG_PAIRS');
+  const eBlock = block('const REVIEWED_TIER_E_STRONG_PAIRS');
   const tierE = new Map(); // tj -> Set<joysound>
   const existingJ = new Set();
   for (const m of eBlock.matchAll(/\[\s*'(\d+)'\s*,\s*'(\d+)'\s*\]/g)) {
@@ -107,7 +112,7 @@ export function parseReviewedSource(sourceText) {
   }
 
   // Tier F strong pairs: ['tj'|'ky', 'NUM', 'NUM'],
-  const fBlock = block('REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS');
+  const fBlock = block('const REVIEWED_TIER_F_POSTCRAWL_STRONG_PAIRS');
   const tierF = new Map(); // "vendor:number" -> Set<joysound>
   for (const m of fBlock.matchAll(/\[\s*'(tj|ky)'\s*,\s*'(\d+)'\s*,\s*'(\d+)'\s*\]/g)) {
     const [, v, n, j] = m;
@@ -119,12 +124,12 @@ export function parseReviewedSource(sourceText) {
 
   // Forbidden sets.
   const forbiddenE = new Set(); // "tj|joysound"
-  const forbiddenEBlock = setBlock('REVIEWED_TIER_E_FORBIDDEN_PAIRS');
+  const forbiddenEBlock = setBlock('const REVIEWED_TIER_E_FORBIDDEN_PAIRS');
   for (const m of forbiddenEBlock.matchAll(/'(\d+)\|(\d+)'/g)) {
     forbiddenE.add(`${m[1]}|${m[2]}`);
   }
   const forbiddenF = new Set(); // "vendor|number|joysound"
-  const forbiddenFBlock = block('REVIEWED_TIER_F_FORBIDDEN_PAIRS');
+  const forbiddenFBlock = block('const REVIEWED_TIER_F_FORBIDDEN_PAIRS');
   for (const m of forbiddenFBlock.matchAll(/\[\s*'(tj|ky)'\s*,\s*'(\d+)'\s*,\s*'(\d+)'\s*\]/g)) {
     forbiddenF.add(`${m[1]}|${m[2]}|${m[3]}`);
   }
@@ -132,12 +137,25 @@ export function parseReviewedSource(sourceText) {
   return { tierE, tierF, existingJ, forbiddenE, forbiddenF };
 }
 
-/** Load merge verdicts joined with their batch vendor numbers. */
+/**
+ * Load merge verdicts joined with their batch vendor numbers.
+ *
+ * Files are read in sorted name order so "later file wins" is deterministic for
+ * both the batch song index and the verdict dedup. Each song_id resolves to
+ * exactly ONE authoritative verdict: if the same song_id is decided in more than
+ * one verdict file, the last-sorted file's verdict supersedes the earlier one
+ * (e.g. a supplemental `verdicts-D-*.json` `merge` overrides an original B-wave
+ * `uncertain` for that song). Every such override is recorded in the returned
+ * `overrides` array (and logged by main) so the precedence is explicit and
+ * auditable rather than a silent last-writer-wins over an unsorted readdir.
+ */
 export function loadReviews(dir) {
-  const files = readdirSync(dir);
+  const files = readdirSync(dir).sort();
   const songs = new Map(); // song_id -> {tj, ky, title, artist, candidates}
   for (const f of files.filter((f) => /^batch-.*\.json$/.test(f))) {
     for (const b of JSON.parse(readFileSync(resolve(dir, f), 'utf8'))) {
+      // Later-sorted batch file wins (a supplemental batch-D-* redefinition
+      // overrides the original batch entry for the same song_id).
       songs.set(b.song.id, {
         tj: norm(b.song.tj),
         ky: norm(b.song.ky),
@@ -147,31 +165,47 @@ export function loadReviews(dir) {
       });
     }
   }
+
+  // Collapse to one verdict per song_id (later file wins), tracking overrides.
+  const verdictBySong = new Map(); // song_id -> { v, file }
+  const overrides = [];
+  for (const f of files.filter((f) => /^verdicts-.*\.json$/.test(f))) {
+    for (const v of JSON.parse(readFileSync(resolve(dir, f), 'utf8'))) {
+      const prev = verdictBySong.get(v.song_id);
+      if (prev) {
+        overrides.push({
+          song_id: v.song_id,
+          from: { verdict: String(prev.v.verdict).toLowerCase(), file: prev.file },
+          to: { verdict: String(v.verdict).toLowerCase(), file: f },
+        });
+      }
+      verdictBySong.set(v.song_id, { v, file: f });
+    }
+  }
+
   const merges = [];
   const uncertain = [];
   const counts = { merge: 0, reject: 0, uncertain: 0 };
-  for (const f of files.filter((f) => /^verdicts-.*\.json$/.test(f))) {
-    for (const v of JSON.parse(readFileSync(resolve(dir, f), 'utf8'))) {
-      const verdict = String(v.verdict).toLowerCase();
-      counts[verdict] = (counts[verdict] ?? 0) + 1;
-      const sv = songs.get(v.song_id);
-      const cand = sv?.candidates?.find((c) => c.id === v.candidate_id);
-      const row = {
-        song_id: v.song_id,
-        title: sv?.title ?? v.title ?? '',
-        artist: sv?.artist ?? '',
-        tj: sv?.tj ?? null,
-        ky: sv?.ky ?? null,
-        J: norm(v.candidate_joysound),
-        candTitle: cand?.title ?? '',
-        candArtist: cand?.artist ?? '',
-        reason: v.reason ?? '',
-      };
-      if (verdict === 'merge') merges.push(row);
-      else if (verdict === 'uncertain') uncertain.push(row);
-    }
+  for (const { v } of verdictBySong.values()) {
+    const verdict = String(v.verdict).toLowerCase();
+    counts[verdict] = (counts[verdict] ?? 0) + 1;
+    const sv = songs.get(v.song_id);
+    const cand = sv?.candidates?.find((c) => c.id === v.candidate_id);
+    const row = {
+      song_id: v.song_id,
+      title: sv?.title ?? v.title ?? '',
+      artist: sv?.artist ?? '',
+      tj: sv?.tj ?? null,
+      ky: sv?.ky ?? null,
+      J: norm(v.candidate_joysound),
+      candTitle: cand?.title ?? '',
+      candArtist: cand?.artist ?? '',
+      reason: v.reason ?? '',
+    };
+    if (verdict === 'merge') merges.push(row);
+    else if (verdict === 'uncertain') uncertain.push(row);
   }
-  return { merges, uncertain, counts, songCount: songs.size };
+  return { merges, uncertain, counts, songCount: songs.size, overrides };
 }
 
 /**
@@ -366,12 +400,20 @@ async function main() {
     return;
   }
   const existing = parseReviewedSource(readFileSync(args.source, 'utf8'));
-  const { merges, uncertain, counts } = loadReviews(args.reviews);
+  const { merges, uncertain, counts, overrides } = loadReviews(args.reviews);
   const plan = buildPlan(merges, existing);
 
   console.log(
     `[encode-b] verdicts: merge ${counts.merge}, reject ${counts.reject}, uncertain ${counts.uncertain}`,
   );
+  if (overrides.length) {
+    console.log(`[encode-b] verdict overrides (later file wins): ${overrides.length}`);
+    for (const o of overrides) {
+      console.log(
+        `  - ${o.song_id}: ${o.from.verdict} (${o.from.file}) → ${o.to.verdict} (${o.to.file})`,
+      );
+    }
+  }
   console.log(
     `[encode-b] encoded: Tier E ${plan.counts.encodedTierE}, Tier F ${plan.counts.encodedTierF} (total ${plan.counts.encodedTotal})`,
   );

@@ -1,0 +1,18 @@
+[
+  {
+    "song_id": "tj-28672",
+    "title": "Baby I Love U",
+    "verdict": "merge",
+    "candidate_id": "joysound-170610",
+    "candidate_joysound": "28921",
+    "reason": "JOYSOUND에 Che'Nelle 명의 행은 (English Ver.) 유일 — 2026-07-20 웹·코퍼스 확인. B-wave uncertain(라틴 표기만으로 판 확정 불가)을 오너가 merge로 확정 (D-1 보충 판정, later-file-wins로 B-wave uncertain 대체)."
+  },
+  {
+    "song_id": "ky-40449",
+    "title": "忘れていいの",
+    "verdict": "merge",
+    "candidate_id": "joysound-1546",
+    "candidate_joysound": "1546",
+    "reason": "JOYSOUND 듀엣 행(-愛の幕切れ-, 谷村新司/小川知子) 실재 확인, 솔로(抱擁-SATIN ROSE- 원판)와 구분. 2026-07-20 웹·코퍼스 확인. B-wave uncertain(듀엣/솔로 판별 불가)을 오너가 merge로 확정 (D-1 보충 판정, later-file-wins로 B-wave uncertain 대체)."
+  }
+]

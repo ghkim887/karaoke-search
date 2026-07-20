@@ -1599,20 +1599,25 @@ describe('mergeRecords — Tier E reviewed strong artist-credit merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(1);
   });
 
-  it('does not merge reviewed-but-not-strong pairs that need raw tieup/credit corroboration', () => {
+  it('does not merge a non-allowlisted artist-credit expansion', () => {
+    // The real example (tj-68183 / joysound 683200, Radio Happy) was one of the
+    // "reviewed-but-not-strong" holds released to a reviewed Tier F pair by the
+    // 2026-07-20 owner adjudication, so this Tier E conservatism assertion uses
+    // synthetic non-allowlisted numbers: an unreviewed CV-credit expansion must
+    // not merge on artist containment alone.
     const tj = record({
-      id: 'tj-68183',
-      source_url: 'https://tj.test/68183',
-      title_primary: 'Radio Happy(アイドルマスターシンデレラガールズスターライトステージ OST)',
+      id: 'tj-29950',
+      source_url: 'https://tj.test/29950',
+      title_primary: 'Radio Happy(synthetic OST)',
       artist_primary: '山下七海',
-      karaoke_numbers: { tj: '68183', ky: null, joysound: null },
+      karaoke_numbers: { tj: '29950', ky: null, joysound: null },
     });
     const js = record({
-      id: 'joysound-562326',
-      source_url: 'https://www.joysound.com/web/search/song/562326',
+      id: 'joysound-990950',
+      source_url: 'https://www.joysound.com/web/search/song/990950',
       title_primary: 'Radio Happy',
       artist_primary: '大槻唯(CV:山下七海)',
-      karaoke_numbers: { tj: null, ky: null, joysound: '683200' },
+      karaoke_numbers: { tj: null, ky: null, joysound: '990950' },
     });
 
     const { records, conflicts } = mergeRecords([tj, js]);
@@ -1730,6 +1735,58 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
   });
 
+  it('merges the owner-confirmed tj-28672 ↔ Baby I Love U (English Ver.) uncertain→merge pair (2026-07-20)', () => {
+    // Originally a B-wave "uncertain" verdict (the TJ latin title alone could
+    // not pin the release); the 2026-07-20 owner adjudication confirmed it via
+    // the D-1 supplemental verdict. tj-28672 is tj-only, so it encodes as Tier F.
+    const tjOnly = record({
+      id: 'tj-28672',
+      source_url: 'https://tj.test/28672',
+      title_primary: 'Baby I Love U',
+      artist_primary: "Che'Nelle",
+      karaoke_numbers: { tj: '28672', ky: null, joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-170610',
+      source_url: 'https://www.joysound.com/web/search/song/170610',
+      title_primary: 'BABY I LOVE U (English Ver.)',
+      artist_primary: "Che'Nelle",
+      karaoke_numbers: { tj: null, ky: null, joysound: '28921' },
+    });
+
+    const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '28672', ky: null, joysound: '28921' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+  });
+
+  it('merges the owner-confirmed ky-40449 ↔ 忘れていいの duet cut uncertain→merge pair (2026-07-20)', () => {
+    // Originally a B-wave "uncertain" verdict (duet vs solo cut ambiguous); the
+    // 2026-07-20 owner adjudication confirmed the duet cut (-愛の幕切れ-,
+    // 谷村新司/小川知子) via the D-1 supplemental verdict. ky-only → Tier F.
+    const kyOnly = record({
+      id: 'ky-40449',
+      source_url: 'https://kysing.kr/song/40449',
+      title_primary: '忘れていいの',
+      artist_primary: '谷村新司、小川知子',
+      karaoke_numbers: { tj: null, ky: '40449', joysound: null },
+    });
+    const joyOnly = record({
+      id: 'joysound-1546',
+      source_url: 'https://www.joysound.com/web/search/song/1546',
+      title_primary: '忘れていいの -愛の幕切れ-',
+      artist_primary: '谷村新司/小川知子',
+      karaoke_numbers: { tj: null, ky: null, joysound: '1546' },
+    });
+
+    const { records, conflicts } = mergeRecords([kyOnly, joyOnly]);
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: null, ky: '40449', joysound: '1546' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
+  });
+
   it('does not treat a TJ number as the reviewed KY number for a Tier F pair', () => {
     const tjOnly = record({
       id: 'blog-628-tj-44158',
@@ -1754,7 +1811,11 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
   });
 
-  it('keeps existing Tier-E reviewed-but-not-strong pairs out of the post-crawl allowlist', () => {
+  it('merges the released tj-68183 ↔ Radio Happy pair as a reviewed Tier F split (2026-07-20 owner adjudication)', () => {
+    // tj-68183 ↔ joysound 683200 was held in REVIEWED_TIER_F_FORBIDDEN_PAIRS
+    // ("reviewed-but-not-strong: raw tieup/credit evidence not retained") until
+    // the 2026-07-20 owner adjudication released it into the reviewed-strong
+    // Tier F allowlist. It now merges as an ordinary single-vendor split pair.
     const tj = record({
       id: 'tj-68183',
       source_url: 'https://tj.test/68183',
@@ -1772,9 +1833,9 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
 
     const { records, conflicts } = mergeRecords([tj, js]);
 
-    expect(records).toHaveLength(2);
-    expect(conflicts.filter((c) => c.field === 'tier_e_artist_credit_merge')).toHaveLength(0);
-    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '68183', ky: null, joysound: '683200' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
   });
 
   it('does not merge artist_ko leakage from a featured artist as a strong pair', () => {
@@ -1801,7 +1862,12 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
     expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
   });
 
-  it('does not merge short numeric artist aliases such as 19 without manual review', () => {
+  it('merges the released short-numeric "19" pair tj-25022 ↔ たいせつなひと as a reviewed Tier F split (2026-07-20 owner adjudication)', () => {
+    // tj-25022 ↔ joysound 11802 was held in REVIEWED_TIER_F_FORBIDDEN_PAIRS
+    // (short-numeric artist "19" needs manual review) until the 2026-07-20 owner
+    // adjudication confirmed it and released it into the reviewed-strong Tier F
+    // allowlist. The automatic short-numeric conservatism is still exercised by
+    // the synthetic Tier G assertion further below.
     const tjOnly = record({
       id: 'tj-25022',
       source_url: 'https://tj.test/25022',
@@ -1820,8 +1886,9 @@ describe('mergeRecords — Tier F post-crawl reviewed split-pair merge', () => {
 
     const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
 
-    expect(records).toHaveLength(2);
-    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(0);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.karaoke_numbers).toEqual({ tj: '25022', ky: null, joysound: '11802' });
+    expect(conflicts.filter((c) => c.field === 'tier_f_postcrawl_split_merge')).toHaveLength(1);
   });
 
   it('does not apply a reviewed pair when the JOYSOUND side now has a same-provider conflict', () => {
@@ -2399,19 +2466,24 @@ describe('mergeRecords — Tier G automatic residual split rules', () => {
   });
 
   it('does not merge short numeric expanded-artist credits without manual review', () => {
+    // Non-allowlisted numbers (tj 29951 / joysound 990951): the original real
+    // example (tj-25022 / joysound 11802, たいせつなひと / 19) was released to a
+    // reviewed Tier F pair by the 2026-07-20 owner adjudication, so this Tier G
+    // assertion uses synthetic numbers to keep testing the automatic tier's
+    // short-numeric conservatism.
     const tjOnly = record({
-      id: 'tj-25022',
-      source_url: 'https://tj.test/25022',
+      id: 'tj-29951',
+      source_url: 'https://tj.test/29951',
       title_primary: 'たいせつなひと',
       artist_primary: '19',
-      karaoke_numbers: { tj: '25022', ky: null, joysound: null },
+      karaoke_numbers: { tj: '29951', ky: null, joysound: null },
     });
     const joyOnly = record({
-      id: 'joysound-11794',
-      source_url: 'https://www.joysound.com/web/search/song/11794',
+      id: 'joysound-990951',
+      source_url: 'https://www.joysound.com/web/search/song/990951',
       title_primary: 'たいせつなひと',
       artist_primary: '19(ジューク)',
-      karaoke_numbers: { tj: null, ky: null, joysound: '11802' },
+      karaoke_numbers: { tj: null, ky: null, joysound: '990951' },
     });
 
     const { records, conflicts } = mergeRecords([tjOnly, joyOnly]);
