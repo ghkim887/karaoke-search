@@ -19,8 +19,7 @@ type KyTitleRecoveryLookup = (ky: string) => KyTitleRecoveryEntry | null;
  * `s_value` query values the live index exposes as clickable anchors on
  * `https://kysing.kr/karaoke-book/?city=jp` — 80 hiragana readings, the
  * "其他/ETC" bucket (`0`), and A–Z (107 distinct values total). Measured from
- * the live entry page 2026-07-16 (see docs/research/2026-07-16-ky-smart-
- * enumeration-resurvey.md and test/fixtures/ky/index-entry-jp.html). The index
+ * the live entry page 2026-07-16 (see docs/PROJECT-KNOWLEDGE.md#ky-source-and-title-recovery and test/fixtures/ky/index-entry-jp.html). The index
  * anchors are HIRAGANA, not katakana; the walk URL is
  * `?city=jp&s_cd=2&s_page={n}&s_value={letter}`.
  *

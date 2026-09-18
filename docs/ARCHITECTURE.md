@@ -1,197 +1,188 @@
 # Architecture
 
-Current-state structural map of the karaoke-search monorepo. For durable
-invariants, gotchas, and policy decisions see
-[PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md); for live undecided items see the
-[Open questions](ROADMAP.md#open-questions) section of ROADMAP.md.
+Current implementation checked at `4e37fa1` on 2026-09-17. Release measurements
+are in [the README](../README.md#current-state); incident details are in
+[PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md).
 
-- Live site: <https://karaokedb.pages.dev/> (Cloudflare Pages, Astro
-  `base: '/'`). GitHub Pages is intentionally disabled.
-- License: MIT.
-- Toolchain: pnpm workspaces (always invoke as `corepack pnpm` — plain `pnpm`
-  is not guaranteed on PATH, especially on Windows hosts), TypeScript,
-  Biome, Vitest, Playwright, plus Python 3.11 for some data scripts.
+## Workspaces
 
-## Workspace map
-
-| Workspace | Package | Purpose |
+| Workspace | Package | Responsibility |
 | --- | --- | --- |
-| `apps/web` | `@karaoke/web` | Astro static site with one Preact island (`src/components/App.tsx`). Client-side MiniSearch index over the bundled corpus, plus an API-first search path (see below). Device-local favorites via `localStorage`. |
-| `apps/worker` | `@karaoke/worker` | Self-hostable Node search API (`GET /api/search`; `serve:node`, `src/node-server.ts`) over a SQLite search database built by `sqlite:build` (`scripts/build-sqlite-db.mjs`). The package name is historical — the Cloudflare Workers + D1 deploy path was removed 2026-06-13. |
-| `packages/schema` | `@karaoke/schema` | Universal `SongRecord` type + Ajv validator. Both crawler and web depend on the compiled `dist/` output (build before runtime imports). |
-| `packages/search` | `@karaoke/search` | Shared search-text primitives: normalization, tokenization, character n-grams, Hangul-initials expansion, karaoke-number query parsing. Consumed by the worker and the data store so index-time and query-time text processing cannot drift. |
-| `packages/crawler` | `@karaoke/crawler` | Pluggable adapter pipeline (`Crawler` interface yields `SongRecord`), per-host rate-limited/cached HTTP client, artist-alias resolution, and the three-tier record merger. CLI at `dist/cli.js` after build. |
-| `packages/data-store` | `@karaoke/data-store` | SQLite store: schema (`SONG_SCHEMA_SQL`), corpus import/export, and the derived search-index table builder. |
-| `scripts/` | `@karaoke/scripts` | Post-crawl data pipeline, validation, PDF ingest, title_ko backfill tooling, and their Vitest + Python unittest suites. `corepack pnpm --filter @karaoke/scripts test` runs the JS tests. |
+| `apps/web` | `@karaoke/web` | Astro + Preact UI, API backend, local MiniSearch, PWA |
+| `apps/worker` | `@karaoke/worker` | Node HTTP API and SQLite release builder |
+| `packages/schema` | `@karaoke/schema` | TypeBox SongRecord schema, derived types, Ajv validation |
+| `packages/search` | `@karaoke/search` | Shared normalization, n-grams, initials, number parsing, kana transliteration |
+| `packages/crawler` | `@karaoke/crawler` | Adapters, classification, aliases, multi-stage record merger |
+| `packages/data-store` | `@karaoke/data-store` | SQLite schema, import/export, token index, delta updates |
+| `scripts` | `@karaoke/scripts` | Corpus processing, diagnostics, evidence conversion, translation replay |
 
-## Data flow (end to end)
+Toolchain: Node >=24, pnpm 9.15.4 workspaces, TypeScript, Biome, Vitest,
+Playwright, and Python for selected data scripts. Runtime workspace imports
+resolve compiled `dist/` output.
 
-Sources (each an adapter in `packages/crawler/src/adapters/`):
+## Sources and corpus preparation
 
-1. **`jpop-playlist-blog`** — Tistory blog crawl (~21k records). The main
-   source of Korean titles/artists and of KY + JOYSOUND vendor numbers.
-2. **`tj-media-direct`** — TJ Media public catalog API (~3.8k admitted
-   records). Every candidate runs through the 7-step Japanese-relevance
-   filter chain (`adapters/tj-media-direct/filterSteps.ts`; order is
-   load-bearing — see PROJECT-KNOWLEDGE).
-3. **`tjpdf-*` TJ-catalog post-step** — `scripts/ingest-tjpdf-catalog.mjs`
-   inserts records (~635) for anime/vocaloid TJ numbers absent from the other
-   adapters, from the committed TJ `searchSong` probe catalog
-   (`scripts/data/tjpdf-catalog.jsonl`, refreshed on-demand by the network probe
-   `scripts/probe-tjpdf-catalog.mjs`). Offline + coverage-only: no tagging.
+Default adapters (`packages/crawler/src/adapters/index.ts`):
 
-Pipeline order per crawl:
+- `jpop-playlist-blog`: Korean titles/artists and TJ/KY/JOYSOUND mappings.
+- `tj-media-direct`: TJ catalog and exact-number enrichment, filtered for
+  Japanese relevance. The ordered seven-step classifier includes explicit
+  song overrides, nationality checks, artist checks, and blog rescue.
+- `ky-kysing`: Japanese `karaoke-book` index walk over 107 reading/letter
+  buckets. Deduplicates by KY number; a curated map recovers truncated titles.
 
+`joysound-official` is opt-in. The standalone
+`scripts/joysound-fullcatalog-listing.mjs` provides resumable complete listing
+collection; detail sweeps enrich/classify those listings. A detail sweep
+does not discover songs absent from its input listing. The regular crawl does
+not refresh the full JOYSOUND catalog.
+
+`tjpdf-*` is a retained ID convention. Its current coverage-only post-step is
+`scripts/ingest-tjpdf-catalog.mjs`, fed by a committed TJ exact-number probe
+catalog. PDF parsing is no longer part of the current pipeline.
+
+Each adapter yields normalized SongRecords. The pipeline resolves artist
+aliases before calling `mergeRecords`, validates the output, and writes the
+corpus atomically. The ordered merger has tiers A–G plus reviewed three-way
+attachment after F:
+
+- A: shared vendor-number union.
+- B: normalized title + artist.
+- C: cross-source primary-token matching.
+- D: guarded matching with title context suffixes removed.
+- E/F: explicitly reviewed vendor-number pairs, including existing clusters.
+- F attachment: reviewed TJ/KY addition to a JOYSOUND pair already owned by E/F.
+- G: conservative automatic residual rules.
+
+Reviewed cluster attachment checks the full union for vendor-number
+collisions. The data model has one number per vendor per record, so genuine
+double registrations can remain separate. ID/number priority
+(`tj > tjpdf > joysound > ky > blog`) is independent of display-field
+ownership (TJ-first primary text, blog-first Korean fields).
+
+`scripts/run-post-crawl-pipeline.mjs` defines the twelve post-processing steps:
+atomic rename, splitter parity, TJ catalog ingest, Korean-title Stage 1,
+merger replay, Korean-artist leak cleanup, Chinese-artist leak cleanup,
+translation-cache replay, manual Korean-title fixes, cache pruning, schema
+validation, and blog/KY parity reporting. Translation-cache replay and the
+blog/KY report are fail-soft; the other steps stop the chain on failure.
+
+TJ/KY per-row classification logs and corpus cleanup decisions record the
+reasons for admitted, dropped, or protected records. The crawl workflow
+uploads these artifacts and includes attribution in its data PR.
+
+## Data artifacts
+
+- `apps/web/public/data/songs.json`: tracked offline subset and local development
+  corpus; v25 has 26,398 rows (TJ number OR KY number OR `blog-*` ID).
+- `apps/web/public/data/tj-search-cache.json`: tracked TJ enrichment cache.
+- `data/search-hints.jsonl`: tracked search-only strings.
+- `scripts/data/`: probe catalogs, reviewed decisions, translation caches,
+  and manual corrections.
+- NAS `db/releases/<release>/`: full corpus, derived SQLite, checksum manifest,
+  and release evidence. NAS `db/current` is a symlink to one release.
+- NAS `runs/`: crawl outputs, decision logs, comparisons, and audits.
+
+The full serving corpus is not in Git. GitHub Release-asset distribution and
+offsite backup plans were retired in July; the documented recovery path for
+loss of every NAS release is rebuilding from retained inputs or re-crawling.
+
+## Search and serving
+
+Public request path:
+
+```text
+Browser -> Cloudflare Pages Function -> Tailscale Funnel -> OCI Node API -> SQLite
+   |
+   +-- API failure -> bundled songs.json -> browser MiniSearch
 ```
-adapters → TJ filter chain → alias resolution (aliases.ts, pre-merge)
-  → three-tier merger (merge.ts) → apps/web/public/data/songs.json
-  → weekly post-crawl pipeline → deploy
+
+The Node server exposes `/healthz`; its handler exposes:
+
+- `GET /api/search?q=...&vendor=tj,ky&limit=50`: OR-filtered vendor search,
+  with `items` and `nextCursor` in the response.
+- `GET /api/songs?ids=...`: record lookup for device-local favorite IDs;
+  the web client batches at 100 IDs.
+- `GET /api/meta`: `dbUpdatedAt`, derived from the latest source crawl timestamp.
+
+The API adapter uses SQLite query-only mode. Search uses custom
+`search_tokens`, `search_token_stats`, and `search_texts` tables, not FTS5.
+Exact compact text ranks above weighted token matches. Number queries have
+a dedicated path; selected vendors also constrain number matches. Shared
+query expansion supports kana/romaji forms, while indexed ruby readings add
+romaji and Hangul recall. Inputs longer than 256 code points are rejected at
+the API edge.
+
+`ApiBackend` handles both search and favorite-record lookup. `FallbackBackend`
+tries the API first, then lazily loads the local corpus on failure. It tracks
+fallback state separately for browse and favorites. Multiple vendor selection
+does not trigger fallback. With no API configuration, `LocalBackend` loads the
+bundle initially and all searches use MiniSearch.
+
+The local index covers primary/Korean titles and artists, aliases, and three
+ruby-derived fields, with auxiliary number/initials recall. API and local
+ranking are different implementations. The golden parity test measures their
+overlap and first-result behavior; it does not assert identical results.
+
+Favorite IDs use `localStorage` key `karaoke-favorites:v1`. Search/filter
+controls reset on tab changes; favorites persist. UI locale is separate from
+the language and provenance of song metadata.
+
+## PWA and offline limits
+
+`apps/web/src/sw.ts` precaches the app shell and runtime-caches the corpus
+(CacheFirst, seven-day expiry) and fonts (30-day expiry). The corpus is excluded
+from shell precaching and is not fetched on a healthy API path. Without an
+already cached corpus, a completely offline first fallback has no local data.
+JOYSOUND-only rows outside the blog/TJ/KY subset are unavailable offline.
+
+The former full offline SQLite/OPFS pack direction was retired in favor of the
+subset. [Project knowledge](PROJECT-KNOWLEDGE.md#offline-size-and-parity)
+records the measurements and search-parity limitations behind that choice.
+
+Bundle extraction after a release uses `scripts/extract-offline-subset.mjs`.
+The parity baseline pins the corpus hash; its regeneration command is:
+
+```sh
+UPDATE_PARITY_SNAPSHOT=1 corepack pnpm --filter @karaoke/web exec vitest run \
+  src/lib/search-parity.golden.test.ts
 ```
 
-- The corpus `apps/web/public/data/songs.json` (~11 MB, ~25.8k records) is
-  **tracked in git** — the static deploy bakes it into the build. The TJ
-  enrichment cache `apps/web/public/data/tj-search-cache.json` is tracked too
-  (cold-start enrichment would take hours).
-- Current record/vendor counts: generate, don't trust prose —
-  `node -e "console.log(JSON.parse(require('fs').readFileSync('apps/web/public/data/songs.json','utf8')).length)"`.
-- The weekly post-crawl pipeline is `scripts/run-post-crawl-pipeline.mjs` —
-  the single source of truth for the 11-step order-load-bearing chain
-  (atomic rename → splitter parity → PDF ingest → title_ko Stage 1 → merger
-  replay → KPOP drop → Cpop drop → title_ko Stage 2 cache replay
-  (continue-on-error) → manual title_ko fixes → cache prune → schema
-  validation). `crawl.yml` invokes it as one step; it also runs locally
-  (`--corpus`, `--skip` supported).
+This is POSIX-shell syntax. The resulting per-query changes need evaluation:
+regenerating the file alone does not establish search quality.
 
-### Filter decision logs (crawl-time attribution)
+## Search-only hints and release builds
 
-The TJ filter chain and the two `drop-artist-leaks` post-crawl passes emit a
-per-row admit/drop **decision log** (JSONL), so after a crawl a maintainer can
-answer "why was TJ row X dropped / which step admitted it" — not just the five
-aggregate `KeepStats` stdout counters, which die with the Actions log. The
-crawler writes `tj-filter.jsonl` via `--decisions-out` (one
-`{ tj, title, artist, decision, step, reason }` per classified row; `reason` is
-the admit via, the firing step's reject reason, or `no-admit-path` for a silent
-fall-through); the drop passes write dropped-row-only logs when
-`FILTER_DECISIONS_DIR` is set. `crawl.yml` uploads all three as the
-`filter-decisions-<run_id>` artifact (`if: always()`, so a red leakage gate
-still ships them) and `compose-crawl-pr-body.mjs` renders a report-only
-`### TJ filter attribution` section (fail-soft; never reds the crawl). This
-closes the crawl-time observability asymmetry with the `joysound-official`
-full-catalog sweep, which already emits a per-row `DecisionRecord`
-(`adapters/joysound-official/diagnostic.ts`). Report-only: zero effect on
-admit/drop results — omit the flags and every output is byte-identical.
+The release entry point is:
 
-### Full-corpus distribution (release-asset path RETIRED 2026-07-13)
-
-The post-JOYSOUND **full** corpus (~135 MB as of v22) is NOT tracked in git
-and is NOT distributed as a downloadable asset: it lives on the production
-NAS, which is its only home. The offsite-backup plan (§8) was cancelled
-outright — the accepted recovery path for NAS loss is a full re-crawl. The
-tracked baseline `songs.json` above stays exactly as today (offline bundle +
-weekly crawl PR diff).
-
-A release-asset distribution path was designed and partly built — publish
-the corpus as a GitHub Release asset while git tracks only a small
-store-agnostic manifest (`data/full-corpus.manifest.json`), with `fetch` /
-`verify` consumers and a trust-no-one `full-corpus.yml` re-verification
-workflow. **No release was ever published**, and the live serving route
-(self-hosted Node + SQLite behind a Cloudflare Pages proxy) superseded the
-deploy flip that path assumed. As of **2026-07-13 (phase 1)** the path is
-retired: `.github/workflows/full-corpus.yml`, `scripts/fetch-full-corpus.mjs`,
-`scripts/verify-manifest.mjs`, and the dangling
-`data/full-corpus.manifest.json` are deleted, and the per-PR manifest-shape
-gate is removed from `ci.yml`.
-
-The self-host serving SQLite is built directly by the worker's
-`apps/worker/scripts/build-sqlite-db.mjs` — **the release-build entry point**.
-It reads a composed corpus JSON, schema-validates every record through
-`@karaoke/data-store`'s `importSongsJson` → `validateSongCorpus` (per-record
-validation + duplicate-id detection), and writes the custom-index SQLite:
-
-```
+```sh
 node apps/worker/scripts/build-sqlite-db.mjs \
-  --input <full-corpus.json> --output <songs.sqlite> \
+  --input <full-corpus.json> --output <candidate-release>/songs.sqlite \
   --search-hints data/search-hints.jsonl
 ```
 
-CI exercises this exact path per-PR via `pnpm --filter @karaoke/worker
-sqlite:build` (the serving gate; committed `songs.json` → SQLite). See
-[Two search paths](#two-search-paths) and
-[Search-only hint channel](#search-only-hint-channel) below. The thin
-`publish-full-corpus.mjs` wrapper that formerly fronted this build (and its
-`scripts/lib/manifest.mjs`) was deleted 2026-07-13 (phase 2); the
-post-JOYSOUND data-topology item is now fully closed — see
-[ROADMAP-LOG.md](ROADMAP-LOG.md).
+Import validates every record and rejects duplicate IDs. Hint lines use
+`{song_id, field, text, source, confidence}` and materialize low-weight
+`title_hint`/`artist_hint` tokens. They do not change displayed artist aliases
+or exported SongRecords. Omitting `--search-hints` from a full release rebuild
+would lose their extra recall. `title_ruby` remains in corpus/export data and
+index derivation; the API's serve projection does not return it.
 
-## Two search paths
+## CI and deployment
 
-1. **Offline / bundled (MiniSearch)** — `apps/web/src/lib/search.ts` builds a
-   MiniSearch index over 5 fields (`title_primary`, `title_ko`,
-   `artist_primary`, `artist_ko`, `artist_aliases`) from the bundled
-   `songs.json`. Always available; the fallback path.
-2. **API-first (self-hosted Node + SQLite)** — when
-   `PUBLIC_KARAOKE_API_BASE_URL` is set at build time, Browse searches call
-   `GET /api/search` on the self-hosted API
-   (`apps/worker/src/node-server.ts`, `pnpm --filter @karaoke/worker
-   serve:node`, SQLite-backed custom index:
-   token/prefix/n-gram/Hangul-initials tables built by
-   `@karaoke/data-store`). The API currently accepts **one** vendor filter
-   per request; the web app falls back to the bundled MiniSearch index when
-   the API is absent/unreachable or multiple vendor chips are selected, and
-   the favorites tab is always served locally.
+- `ci.yml`: lint, typecheck, package tests, build, knip, generated-sidecar drift,
+  Python tests, and SQLite build from the committed corpus. A separate job
+  runs Playwright against a fallback-mode preview. The separate offline E2E
+  script exists but is not invoked by this workflow.
+- `crawl.yml`: weekly cron/dispatch definition, currently disabled at GitHub.
+  When enabled, it generates a data PR with crawler regression and parity
+  checks inside the generating job. JOYSOUND full-catalog collection remains
+  separate.
+- `liveness.yml`: public health/meta/search probes with retries. These check
+  availability and response shape, not catalog freshness or completeness.
 
-The Cloudflare Workers + D1 variant of this API was removed 2026-06-13;
-self-hosting is the only serving path. Cloudflare Pages serves the static app
-and exposes same-origin `/api/*` via Pages Functions that proxy to the
-configured self-hosted API origin.
-
-## Search-only hint channel
-
-The search-only hint channel carries alternate strings (e.g. character / CV
-artist credits) that must improve recall WITHOUT appearing in display — unlike
-`artist_aliases`, which renders in `ResultCard`. Source of truth: the committed
-`data/search-hints.jsonl` sidecar. Each line (`{song_id, field, text, source,
-confidence}`) is materialized into `search_tokens` (`title_hint` /
-`artist_hint`) at build time and never into `search_texts` or the exported
-`SongRecord`, so a hint only ever adds low-weight token recall. Wired into the
-release build via `build-sqlite-db.mjs --search-hints data/search-hints.jsonl`
-(repeatable). To add a hint: append a line to `data/search-hints.jsonl`.
-
-## CI workflows (`.github/workflows/`)
-
-All third-party actions are pinned by 40-char SHA with the tag in a trailing
-comment; upgrades must update both. Every job bootstraps through the shared
-composite action `.github/actions/setup` (pnpm + Node from `.nvmrc` + frozen
-lockfile install).
-
-- **`ci.yml`** (every PR + main push): `verify` job — `pnpm lint` /
-  `typecheck` / `test` / `build`; sidecar-drift gate (auto-generated JSON
-  sidecars must be byte-identical to their committed versions after the
-  build); Python unittest suites
-  (`python -m unittest discover -s scripts -p "test_*.py"`);
-  `sqlite:build` (imports the committed corpus into the self-host SQLite
-  database — this **schema-validates every committed record on every PR**,
-  rejects duplicate ids, and proves the database builds). A parallel `e2e`
-  job runs
-  the Playwright suite against `astro preview` over a fallback-mode build
-  (no `PUBLIC_KARAOKE_API_BASE_URL`), so UI breakage is caught at PR time
-  instead of post-merge at the required deploy gate.
-- **`crawl.yml`** (weekly cron + dispatch): build, sidecar-drift gate, full
-  crawl into `songs.json.tmp`, then `run-post-crawl-pipeline.mjs`, then opens
-  a PR labeled `crawl-output` (requires the repo setting "Allow Actions to
-  create and approve pull requests"). Data lands on `main` by PR review,
-  never by direct push.
-- **Cloudflare Pages deploy**: GitHub Pages deployment was removed after the
-  public URL moved to `https://karaokedb.pages.dev/`. Production deploys are
-  direct Wrangler uploads of `apps/web/dist` using `apps/web/wrangler.toml`;
-  CI still runs fallback-mode Playwright in `ci.yml` so UI breakage is caught
-  before merge.
-
-## JOYSOUND status (one-liner)
-
-A `joysound-official` adapter + full-catalog sweep exists on a feature branch
-(spec: `docs/superpowers/specs/2026-06-09-joysound-full-catalog-sweep-design.md`
-on that branch) but **no `joysound-*` records are in the corpus yet** — the
-existing JOYSOUND vendor numbers are blog-sourced. The ~291k-row full-catalog
-merge is blocked on the data-topology decision and owner checkpoints tracked
-in the [Open questions](ROADMAP.md#open-questions) section of ROADMAP.md.
+Production web uploads use Wrangler from `apps/web`, including `functions/`.
+`wrangler.toml` points at `https://oci.tail04d970.ts.net`. GitHub Pages and the
+former Cloudflare Workers/D1 deployment are retired. Promoting a self-host DB
+changes the `db/current` symlink and restarts the API; a code merge alone does
+not rebuild or promote that DB.

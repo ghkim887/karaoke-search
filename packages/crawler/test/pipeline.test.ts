@@ -8,7 +8,7 @@ import { runPipeline } from '../src/pipeline.js';
 
 /**
  * Integration tests for `runPipeline` covering the alias-resolution stage's
- * effect on Tier B clustering. Spec: 2026-05-04-artist-alias-dedup-design.md.
+ * effect on Tier B clustering. Spec: docs/PROJECT-KNOWLEDGE.md (Merger and alias resolution).
  */
 
 function record(over: Partial<SongRecord>): SongRecord {

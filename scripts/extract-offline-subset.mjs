@@ -9,7 +9,7 @@
  * MiniSearch index from, and searches locally when the worker API is
  * unreachable (see apps/web/src/lib/backend.ts `FallbackBackend`). Shipping the
  * whole ~312k-song serving corpus client-side fails on index build/memory (see
- * docs/ROADMAP.md R3), so the bundle is a SUBSET.
+ * docs/ARCHITECTURE.md (PWA and offline limits)), so the bundle is a SUBSET.
  *
  * Owner scope decision (2026-07-20): the offline bundle carries the TJ ∪ KY ∪
  * blog-* records — the two Korean-facing vendor catalogues (TJ, KY) plus the

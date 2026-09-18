@@ -1,7 +1,7 @@
 /**
  * Typed FilterStep[] reducer for the TJ-direct classifyRecord filter chain.
  *
- * CLAUDE.md gotcha: the filter chain ORDER IS LOAD-BEARING. Do NOT reorder
+ * docs/PROJECT-KNOWLEDGE.md gotcha: the filter chain ORDER IS LOAD-BEARING. Do NOT reorder
  * FILTER_STEPS. Authoritative order: see the numbered list on the
  * FILTER_STEPS array at the bottom of this file — that docblock is the ONE
  * source of truth for the step order; everything else points here.
@@ -203,7 +203,7 @@ const reviewedSongDropStep: FilterStep = {
 /**
  * Step 1 — Explicit non-JPN pro reject.
  *
- * CLAUDE.md gotcha: an explicit non-JPN `nationalcode` from the searchSong
+ * docs/PROJECT-KNOWLEDGE.md gotcha: an explicit non-JPN `nationalcode` from the searchSong
  * enrichment overrules every admit path (including reviewed-song-allow and the
  * blog rescue). Defense against stale or overly broad blog rescue data.
  */
@@ -239,7 +239,7 @@ const reviewedSongAllowStep: FilterStep = {
 /**
  * Step 3 — Drop-list reject (any-component).
  *
- * CLAUDE.md gotcha (§2.E): Hand-curated Korean + Chinese (Cantopop/Mandopop)
+ * docs/PROJECT-KNOWLEDGE.md (Drop lists): Hand-curated Korean + Chinese (Cantopop/Mandopop)
  * acts that leak despite the cache signal. Applies to EVERY collab component
  * (inverse of jpn-admit-artist's lead-only admit rule): a Japanese-led record
  * featuring SUGA of BTS still drops. This overrides every admit path that
@@ -263,7 +263,7 @@ const dropListRejectStep: FilterStep = {
 /**
  * Step 4 — Per-pro JPN tag.
  *
- * CLAUDE.md gotcha: catches the case where the artist scan was AMBIGUOUS or
+ * docs/PROJECT-KNOWLEDGE.md gotcha: catches the case where the artist scan was AMBIGUOUS or
  * UNKNOWN but the specific `pro` is JPN. Runs AFTER drop-list-reject (step 3)
  * so a drop-listed Korean act with a JPN pro tag can't leak through here.
  */
@@ -280,7 +280,7 @@ const proJpnAdmitStep: FilterStep = {
 /**
  * Step 5 — Per-artist JPN tag, lead-component-only (§2.B).
  *
- * CLAUDE.md gotcha: the "lead" is index 1 when splitArtistCollab produced ≥2
+ * docs/PROJECT-KNOWLEDGE.md gotcha: the "lead" is index 1 when splitArtistCollab produced ≥2
  * elements (index 0 is the whole string), else index 0. Featured-artist
  * components do NOT contribute to admission — that admit rule was the path that
  * leaked the `Charlie Puth(Feat.宇多田ヒカル)` case pre-fix.
@@ -301,7 +301,7 @@ const jpnAdmitStep: FilterStep = {
     if (isGenericAdmitBlocked(leadKey)) return { decision: 'pass' };
     const entry = cache.artistNationalityMap[leadKey];
     if (entry?.code === 'JPN') {
-      // Filter-seam script guard (docs/ROADMAP.md "TJ filter seam"): when the
+      // Filter-seam script guard (docs/PROJECT-KNOWLEDGE.md (TJ filter chain)): when the
       // row itself reads as Korean script — Hangul present and no Japanese
       // script over `${title} ${artist}`, the #97-gate discriminator — the
       // artist verdict is a first-crawl leak. The lagging per-song `KOR`
@@ -316,7 +316,7 @@ const jpnAdmitStep: FilterStep = {
       // (step 4), both of which run before this step.
       if (readsAsKoreanScript(`${title} ${artist}`)) return { decision: 'pass' };
       // Simplified-Chinese veto (classify-time promotion of the report-only
-      // detector, docs/ROADMAP.md "TJ filter seam"): the SAME `hasSimplifiedOnlyHan`
+      // detector, docs/PROJECT-KNOWLEDGE.md (TJ filter chain)): the SAME `hasSimplifiedOnlyHan`
       // predicate the post-crawl audit uses (single-sourced from @karaoke/search).
       // A Mandopop/Cantopop row mis-tagged JPN by the artist scan that carries a
       // curated PRC-simplified-only Han character over `${title} ${artist}` is a
@@ -336,7 +336,7 @@ const jpnAdmitStep: FilterStep = {
 /**
  * Step 6 — Blog-whitelist rescue.
  *
- * CLAUDE.md gotcha: safety net for residual TJ-search index gaps. Already
+ * docs/PROJECT-KNOWLEDGE.md gotcha: safety net for residual TJ-search index gaps. Already
  * gated by step 1's explicit non-JPN pro reject above. This is NOT dead code —
  * a high `admittedByRescue` count in KeepStats signals real JPN records the
  * searchSong index can't see. The blog adapter has been hand-validated for
@@ -353,7 +353,7 @@ const blogRescueStep: FilterStep = {
 };
 
 // ---------------------------------------------------------------------------
-// The ordered pipeline — DO NOT reorder (CLAUDE.md load-bearing order)
+// The ordered pipeline — DO NOT reorder (docs/PROJECT-KNOWLEDGE.md load-bearing order)
 // ---------------------------------------------------------------------------
 
 /**

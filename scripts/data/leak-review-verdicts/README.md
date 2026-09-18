@@ -2,10 +2,10 @@
 
 Provenance record for the **2026-07-20 K-pop / Western-pop leak triage**.
 
-Owner directive: clear the K-pop / Western-pop leakage first. Starting from the
-"joyless" (no-JOYSOUND) 576-row triage set, 44 candidate rows were escalated to a
-parallel web review. Verdicts were then integrated by the orchestrator (two
-overturns — see below) into `verdicts-2026-07-20.jsonl`.
+Starting from the "joyless" (no-JOYSOUND) 576-row triage set, 44 candidate
+rows were checked against web evidence. The final decisions, including two
+corrections below, are stored in `verdicts-2026-07-20.jsonl` and were applied
+to serving release v25.
 
 ## `verdicts-2026-07-20.jsonl`
 
@@ -28,13 +28,13 @@ All drops are **per song (by number/ID), never by artist name** — the credited
 artists (Mary McGregor, MAX, LiSA, CUTIE STREET) each collide with a legitimate
 Japanese act or tie-up that must stay in scope.
 
-## Overturns (reviewer verdict changed during integration)
+## Evidence corrections
 
-- `blog-1601-1` CUTIE STREET "귀엽기만 하면 안 되나요?" — reviewer **KEEP → DROP**.
+- `blog-1601-1` CUTIE STREET "귀엽기만 하면 안 되나요?" — **KEEP → DROP**.
   Korean-language row (tj 52093 / ky 51322, no JOYSOUND); the JP original
   (tj 52410 / ky 57750 / joy 630523) and the JOYSOUND-hosted "(Korean ver.)"
   (joy 648842) both stay.
-- `blog-630-10` "Better Half" — reviewer DROP → **KEEP** (re-overturn). The stable
+- `blog-630-10` "Better Half" — DROP → **KEEP** (re-overturn). The stable
   key tj 44601 is the already-ALLOW-listed Japanese version (Omoinotake, joy
   633639, "-Japanese ver.-"); the frozen corpus's Korean credit is stale parsing
   that resolves naturally on re-crawl.

@@ -1009,7 +1009,7 @@ assertReviewedTierFPairInvariant();
  * the ky-41123 and tj-26145 supplemental adjudications — the latter is the
  * vendor-symmetric case: a tj bridge onto a ky-owned joysound). Effective at the
  * next JOYSOUND-crawl corpus (v24+ re-merge). See docs/ROADMAP.md and
- * docs/specs/2026-07-20-reviewed-3way-attach-design.md.
+ * docs/PROJECT-KNOWLEDGE.md#reviewed-three-way-attachments.
  */
 const REVIEWED_TIER_F_3WAY_ATTACH_PAIRS = [
   ['ky', '40110', '2542'], // ky-40110 愛して愛して愛しちゃったのよ / 田代美代子 ↔ 愛して愛して愛しちゃったのよ / 田代美代子/和田弘とマヒナスターズ [owner tierF tj:26162]

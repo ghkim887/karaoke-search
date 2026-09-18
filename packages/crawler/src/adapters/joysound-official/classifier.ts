@@ -131,7 +131,7 @@ const WESTERN_ACT_COMPONENTS = new Set<string>([
 // `hasHangul` adds half-width Hangul (U+FFA0–FFDC) and Jamo Extended-A/B
 // (U+A960–A97F, U+D7B0–D7FF) — widening the foreign-Korean DROP. Han alone still
 // never admits (Han-only fields stay ambiguous with the JOYSOUND Chinese catalog
-// rows). See docs/ROADMAP.md §"JOYSOUND classifier safe-predicate unification".
+// rows). See docs/PROJECT-KNOWLEDGE.md#classifier-replay-limits.
 // The foreign-name kana echo test is single-sourced from `@karaoke/search`
 // `hasKana` (T5-D). The former local `RE_KANA` (`[぀-ヿ]`, hiragana + full-width
 // katakana blocks only) missed half-width and phonetic-extension kana; the

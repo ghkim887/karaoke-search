@@ -252,7 +252,7 @@ function tierDKey(r: SongRecord): string | null {
  * values document successful soft merges (one marker emitted per cluster, not
  * per record-pair) so the merge surfaces
  * in the crawl PR body for review. Sunset cadence per
- * `2026-05-01-kpop-leak-and-merge-fix-design.md` §3.C: 4 weeks of clean
+ * `docs/PROJECT-KNOWLEDGE.md` (Merger and alias resolution): 4 weeks of clean
  * cross-source output, then downgrade to a per-cluster log line.
  */
 export interface MergeConflict {

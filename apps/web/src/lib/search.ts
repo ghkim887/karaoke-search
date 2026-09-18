@@ -35,9 +35,9 @@ const SEARCH_FIELDS = [
 
 /**
  * Per-field boosts. Title fields outrank artist fields.
- * Spec: docs/superpowers/specs/2026-04-26-karaoke-search-design.md plus the
- * 2026-05-04 alias-dedup spec for `artist_aliases` (boost equal to
- * `artist_primary`).
+ * Search architecture: docs/ARCHITECTURE.md. Alias behavior is described
+ * in docs/PROJECT-KNOWLEDGE.md (Merger and alias resolution);
+ * `artist_aliases` has the same boost as `artist_primary`.
  */
 const SEARCH_BOOSTS = {
   title_primary: 3,

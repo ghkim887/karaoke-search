@@ -1,18 +1,18 @@
 /**
- * Stage 2 orchestrator for the title_ko backfill pipeline.
+ * Stage 2 file preparation and replay for the title_ko backfill pipeline.
  *
  * Two subcommands:
  *   prep <corpus.json> <out_dir>   — chunk translatable records into
  *                                    <out_dir>/llm-translations-chunk-NN-input.json
  *   merge <corpus.json> <chunks_dir> [--review-csv <path>]
- *                                  — merge per-chunk agent outputs back
+ *                                  — merge per-chunk decisions back
  *                                    into the corpus (atomic write) and
  *                                    write low-confidence review CSV.
  *
  * Design notes: docs/PROJECT-KNOWLEDGE.md (title_ko backfill pipeline).
  *
- * The agent dispatch BETWEEN prep and merge is human-driven from a
- * Claude Code session — see scripts/title_ko_stage2_howto.md.
+ * Input/output contracts and usage: scripts/README.md#title-ko-stage-2.
+ * Prepared chunks are completed as decision files before merge.
  */
 
 import { readFileSync } from 'node:fs';

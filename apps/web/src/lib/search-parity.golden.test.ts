@@ -93,7 +93,7 @@ interface SmokeCase {
    * STABLE identity: at least one vendor karaoke number. Resolved to the
    * current record id at setup by `resolveSmokeExpectId`. Pins by number
    * instead of the POSITIONAL blog-* id, which reshuffles whenever a crawl
-   * re-touches a blog page (see docs/ROADMAP.md history).
+   * re-touches a blog page (see docs/PROJECT-KNOWLEDGE.md (record identity)).
    */
   expectNumbers: Partial<Record<VendorNumberKey, string>>;
   /**

@@ -111,12 +111,12 @@ describe('FILTER_STEPS — pipeline shape', () => {
     expect(FILTER_STEPS).toHaveLength(7);
   });
 
-  it('step names match the documented CLAUDE.md order', () => {
+  it('step names match the documented docs/PROJECT-KNOWLEDGE.md order', () => {
     expect(FILTER_STEPS.map((s) => s.name)).toEqual(EXPECTED_NAMES);
   });
 
   it('blog-rescue is reachable (step is present in FILTER_STEPS)', () => {
-    // CLAUDE.md gotcha: "blog rescue is the safety net, NOT dead code"
+    // docs/PROJECT-KNOWLEDGE.md gotcha: "blog rescue is the safety net, NOT dead code"
     expect(FILTER_STEPS.some((s) => s.name === 'blog-rescue')).toBe(true);
   });
 });

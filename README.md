@@ -1,222 +1,178 @@
 # Karaoke Search 🎤
 
-Karaoke Search is a bilingual static web app for finding Japanese, Vocaloid, and anime karaoke songs on Korean karaoke systems.
+Karaoke Search finds Japanese, Vocaloid, and anime karaoke songs across TJ,
+KY, and JOYSOUND. The public app is [karaokedb.pages.dev](https://karaokedb.pages.dev/).
+It stores song metadata, source links, and catalog numbers, not lyrics or audio.
 
-**Live site:** https://karaokedb.pages.dev/
+Search by title, artist, Korean text, romanized text, reading, initials, or
+karaoke number. Vendor chips select an OR filter: TJ + KY means a song with
+either number. Number badges copy to the clipboard. The interface supports
+Korean, English, and Japanese; favorites are device-local, with no account.
 
-The app is optimized for quick phone use at karaoke: search a song, filter by karaoke brand, tap a number, and paste it into the machine.
+## Current state
 
-## How to use the site
+Verified 2026-09-17 against code at `4e37fa1`, the production SQLite database,
+GitHub workflow state, and the public API. These are dated measurements.
 
-1. Open the [live site](https://karaokedb.pages.dev/).
-2. Search by Japanese title, Korean title, artist name, or romanized text.
-3. Narrow results with vendor chips (`TJ`, `KY`, `JOYSOUND`).
-4. Tap a karaoke number badge to copy it to your clipboard.
-5. Star songs to keep them in the device-local `즐겨찾기` tab.
-6. Check the footer for the last committed DB update date, then verify on the actual karaoke machine if the number is critical.
+| Artifact | Current contents |
+| --- | --- |
+| Serving release | v25, `data-2026-07-20-v25-reviewed-cleanup` |
+| Serving corpus | 312,571 songs |
+| Vendor coverage | TJ 6,111; KY 4,787; JOYSOUND 312,147; counts overlap |
+| Bundled offline corpus | 26,398 songs, 11,248,292 bytes |
+| API `dbUpdatedAt` | `2026-07-16`, derived from source crawl timestamps |
+| Scheduled crawl | `disabled_manually`; indefinite hold remains in effect |
 
-No account is required. Favorites are stored only in your browser.
+The offline bundle contains every serving row with a TJ number, a KY number,
+or a `blog-*` ID. It is a subset of the serving corpus, not the full catalog.
+The deployed bundle and the committed bundle have the same SHA-256:
+`cd39370e1a9a15cc185fa262708a4f41bacb0637ca1d076ab495b1adc642492e`.
+
+## Verification evidence
+
+The September 17 check validated all 26,398 bundled records and confirmed the
+same bundle hash on the public site. Public health/meta/search requests
+succeeded, including one record with TJ 26145 / KY 40449 / JOYSOUND 1546.
+
+- [Feature-commit CI](https://github.com/ghkim887/karaoke-search/actions/runs/29739957509):
+  2,263 JS/TS tests, 76 Python tests, and two E2E tests passed on July 20.
+  This is the historical feature-build result, not a new full-suite run.
+- NAS `runs/ky-v23-20260716/` holds v23–v25 reconstruction and comparison
+  reports; `audit-v25/unmerged-xref.json` records the 424 residual decisions.
+- [Merge evidence](scripts/data/b-review-merge-verdicts/) and
+  [leak-review evidence](scripts/data/leak-review-verdicts/README.md) retain
+  the number-level decisions used by v25.
 
 ## Documentation
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — workspace map, end-to-end data flow, the two search paths, CI workflows.
-- [docs/PROJECT-KNOWLEDGE.md](docs/PROJECT-KNOWLEDGE.md) — durable invariants, gotchas, and policy decisions contributors must know.
-- [docs/ROADMAP.md](docs/ROADMAP.md) — owner-prioritized future work, plus the Open questions section of live undecided items and what unblocks each.
+- [Architecture](docs/ARCHITECTURE.md): components, data flow, search, deployment.
+- [Project knowledge](docs/PROJECT-KNOWLEDGE.md): failure cases and data invariants.
+- [Roadmap](docs/ROADMAP.md): remaining work and completed scope decisions.
+- [UI design](DESIGN.md): implemented tokens, typography, and layout constraints.
+- [Script catalog](scripts/README.md): data preparation and audit tools.
 
-## Current data snapshot
-
-The checked-in corpus contains **~25.8k songs**.
-
-<!-- Counts below are a snapshot of the committed apps/web/public/data/songs.json
-     and go stale between crawls. Regenerate with:
-     node -e "const r=JSON.parse(require('fs').readFileSync('apps/web/public/data/songs.json','utf8'));const by={},v={};for(const s of r){const p=s.id.split('-')[0];by[p]=(by[p]||0)+1;for(const k in s.karaoke_numbers)if(s.karaoke_numbers[k]!=null)v[k]=(v[k]||0)+1}console.log(r.length,by,v)" -->
-
-| Source | Records | Notes |
-| --- | ---: | --- |
-| j-pop-playlist.tistory.com | 21,390 | Korean blog source with TJ/KY/JOYSOUND mappings and Korean title/artist metadata. |
-| TJ Media catalog | 3,820 | TJ public catalog API records admitted through Japanese-relevance filters and cache-backed rescue rules. |
-| Anime songbook PDF | 632 | Coverage-only `tjpdf-*` records for TJ codes absent from the other sources. |
-
-Vendor-number coverage, with overlap because one song can have multiple karaoke systems:
-
-| Vendor | Records with number |
-| --- | ---: |
-| JOYSOUND | 20,896 |
-| TJ | 6,100 |
-| KY | 1,244 |
-
-Korean metadata coverage:
-
-- `title_ko`: 17,952 records
-  - 15,390 from the blog source
-  - 2,560 LLM-translated TJ-only titles
-  - manual fixes replayed from the tracked sidecar `scripts/data/title-ko-manual-fixes.json`
-- `media_context_ko`: 1,008 records with salvaged Korean anime/OST/OP/ED context
-- `artist_aliases`: 1,893 records with normalized alias metadata
-
-## Data sources and attribution
-
-This project stores and serves metadata only: song titles, artists, karaoke numbers, source URLs, and crawl timestamps. It does **not** host lyrics or fan content.
-
-Primary sources:
-
-- [j-pop-playlist.tistory.com](https://j-pop-playlist.tistory.com/) — the main Korean-language mapping source for Japanese karaoke songs across TJ, KY, and JOYSOUND.
-- TJ Media's public catalog API — used for additional TJ-only catalog coverage.
-
-The crawler also applies post-processing and quality gates, including:
-
-- schema validation with `@karaoke/schema`
-- TJ Japanese-relevance filters
-- Korean/C-pop leak drop lists
-- artist alias normalization
-- anime songbook coverage enrichment
-- cached LLM Korean-title replay and manual title fixes
-- stale TJ search-cache pruning
-
-A big thanks to the j-pop-playlist blog author for maintaining the source resource this project builds on.
+The parent NAS directory has a separate `README-ops.md` describing live paths.
+Only `app/` is a Git repository; its parent also holds production data.
 
 ## Architecture
 
-This is a pnpm + TypeScript monorepo. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full structural map and data flow.
-
-| Path | Purpose |
+| Workspace | Role |
 | --- | --- |
-| `apps/web` | Astro static site with a Preact search island and MiniSearch client-side index. |
-| `apps/worker` | Self-hostable Node search API (`serve:node`) over a SQLite search database built from the committed corpus (`sqlite:build`). |
-| `packages/schema` | Shared `SongRecord` schema and Ajv validation. |
-| `packages/search` | Shared search-text primitives (normalization, n-grams, Hangul initials, number-query parsing). |
-| `packages/crawler` | Adapter-based crawler pipeline and three-tier record merger. |
-| `packages/data-store` | SQLite search-index store: schema, corpus import/export, and derived search-index builder. |
-| `scripts/` | Data post-processing pipeline, validation, PDF ingest, translation-cache replay, and regression tests. |
-| `.github/workflows/crawl.yml` | Weekly/dispatch data refresh workflow that opens crawl-output PRs. |
-| `apps/web/wrangler.toml` | Cloudflare Pages configuration for the public `karaokedb` project. |
+| `apps/web` | Astro static pages, Preact search UI, MiniSearch fallback, PWA |
+| `apps/worker` | Self-hosted Node HTTP API over a prebuilt SQLite database |
+| `packages/schema` | TypeBox-derived SongRecord types and Ajv validation |
+| `packages/search` | Shared normalization, number parsing, initials, transliteration |
+| `packages/crawler` | Blog/TJ/KY/JOYSOUND adapters, classifiers, alias resolution, merger |
+| `packages/data-store` | SQLite schema, import/export, derived search index, delta patching |
+| `scripts` | Corpus cleanup, translation-cache replay, audits, bundle extraction |
 
-Frontend stack: Astro, Preact, MiniSearch, self-hosted Geist/Inter/Pretendard fonts.
+The `worker` name is historical. Cloudflare Workers/D1 serving was removed;
+the current API runs on OCI. Cloudflare Pages serves the web app and its
+Functions proxy `/api/*` and `/healthz` through Tailscale Funnel to that API.
 
-Crawler/tooling stack: TypeScript, undici, cheerio, robots-parser, Ajv, Python data scripts, Biome, Vitest, Playwright.
+When `PUBLIC_KARAOKE_API_BASE_URL` is configured, searches and favorite-record
+lookups use the API. Multiple vendor chips remain on the API path. Favorite
+IDs live in `localStorage`; `/api/songs` retrieves their current metadata.
+
+An API failure triggers a lazy load of `data/songs.json` and local MiniSearch.
+The service worker caches the shell separately from the corpus. Normal API
+use does not pre-download the corpus: a fully offline first fallback with no
+cached corpus can still fail. Offline coverage is limited to the bundle above.
 
 ## Local development
 
-Requirements:
+Requirements: Node.js **24 or newer** (`.nvmrc`: 24), Corepack, and
+`pnpm@9.15.4`. Some data tools also use Python.
 
-- Node.js **24** (`.nvmrc` is `24`)
-- Corepack-enabled pnpm (`pnpm@9.15.4`)
-
-Install dependencies:
-
-```bash
-corepack enable
+```sh
 corepack pnpm install
-```
-
-Run the web app locally:
-
-```bash
+corepack pnpm build
 corepack pnpm --filter @karaoke/web dev
 ```
 
-Then open http://localhost:4321.
+The development site is at `http://localhost:4321`. Workspace runtime imports
+use compiled `dist/` packages, so the initial build supplies those dependencies.
 
-Run checks:
-
-```bash
+```sh
 corepack pnpm lint
 corepack pnpm typecheck
-corepack pnpm test
+corepack pnpm -r --no-bail test
 corepack pnpm build
+corepack pnpm knip
+python -m unittest discover -s scripts -p 'test_*.py'
 ```
 
-Useful focused checks:
+`--no-bail` lets each package finish even if an earlier package fails. A
+successful build also runs the web bundle-size and API-base checks.
 
-```bash
-# Web unit tests
-corepack pnpm --filter @karaoke/web test
+For a local API:
 
-# Web production build + bundle-size check
-corepack pnpm --filter @karaoke/web build
+```sh
+corepack pnpm --filter @karaoke/worker run sqlite:build
+corepack pnpm --filter @karaoke/worker build
+KARAOKE_SQLITE_DB_PATH="$(pwd)/apps/worker/.build/sqlite/songs.sqlite" \
+  corepack pnpm --filter @karaoke/worker run serve:node
+```
 
-# Crawler tests
-corepack pnpm --filter @karaoke/crawler test
+The environment assignment above is POSIX-shell syntax, run from the repo
+root. In PowerShell, set `$env:KARAOKE_SQLITE_DB_PATH` to the absolute DB path
+before running `serve:node`. pnpm runs the script in `apps/worker`, so a DB
+path relative to the repo root would otherwise resolve incorrectly. The default build
+uses the bundled corpus; it does not recreate the full production catalog.
 
-# Python regression tests for data scripts
-python -m unittest discover scripts -p "test_*.py"
+Set `PUBLIC_KARAOKE_API_BASE_URL=http://127.0.0.1:8787` when starting the web
+development server to use that API. Without the variable, the web app uses
+the local bundle.
 
-# Validate the committed corpus against the schema
+## Data updates
+
+The default crawl registers the Tistory blog, TJ Media, and KY kysing adapters.
+JOYSOUND full-catalog collection is a separate opt-in lane. The crawl workflow
+is currently disabled even though its YAML retains a weekly cron and dispatch
+entry. Source output needs the post-processing chain in
+`scripts/run-post-crawl-pipeline.mjs`; raw crawl output is not a release.
+
+When a new full serving corpus is available, the bundle is reproducible with:
+
+```sh
+node scripts/extract-offline-subset.mjs \
+  --corpus <full-corpus.json> --out apps/web/public/data/songs.json
 node scripts/validate-songs-json.mjs apps/web/public/data/songs.json
 ```
 
-## Working with crawler data
+The search-parity snapshot records the corpus hash. A corpus update therefore
+also needs a regenerated snapshot and an assessment of per-query ranking
+changes; the relevant command and limitations are in the architecture guide.
 
-For small local smoke tests, write output to an ignored scratch path instead of overwriting the committed corpus:
-
-```bash
-node -e "require('node:fs').mkdirSync('.cache', { recursive: true })"
-corepack pnpm --filter @karaoke/crawler start -- --source jpop-playlist-blog --limit 5 --out .cache/blog-smoke.json
-```
-
-Run `corepack pnpm --filter @karaoke/crawler start -- --help` for CLI options.
-
-Important: the raw crawler output is **not** the final product data. The production corpus is produced by the full workflow in `.github/workflows/crawl.yml`, which runs the crawler and then replays the post-processing stack listed above. For real data updates, prefer GitHub Actions `workflow_dispatch` or the scheduled weekly crawl PR, review the diff, then merge.
-
-If you intentionally update `apps/web/public/data/songs.json` locally, replay the same post-processing steps from `crawl.yml` before committing, then run schema validation.
+The full corpus and serving SQLite live on the NAS, outside Git. Git retains
+the offline bundle, translation caches, curated corrections, and audit evidence.
+The former GitHub Release-asset distribution tooling was retired on 2026-07-13.
 
 ## Deployment
 
-The public deployment is Cloudflare Pages project `karaokedb` at <https://karaokedb.pages.dev/>. GitHub Pages is intentionally disabled; pushing to `main` no longer publishes `ghkim887.github.io/karaoke-search/`.
+Cloudflare Pages project: `karaokedb`. GitHub Pages is intentionally disabled. Production
+uploads use the `apps/web` directory so Wrangler includes its `functions/`:
 
-Cloudflare deployment builds the Astro app at the domain root and uses Pages Functions for same-origin API proxying:
-
-```bash
+```sh
 PUBLIC_SITE_URL=https://karaokedb.pages.dev \
-PUBLIC_BASE_PATH=/ \
-PUBLIC_KARAOKE_API_BASE_URL=/ \
-corepack pnpm --filter @karaoke/web build
+PUBLIC_BASE_PATH=/ PUBLIC_KARAOKE_API_BASE_URL=/ \
+  corepack pnpm --filter @karaoke/web build
 
-(
-  cd apps/web
-  corepack pnpm dlx wrangler@latest pages deploy dist \
-    --project-name karaokedb --branch main
-)
+cd apps/web
+corepack pnpm dlx wrangler@latest pages deploy dist \
+  --project-name karaokedb --branch main
 ```
 
-The web app remains client-side/static, but Browse searches become API-first when `PUBLIC_KARAOKE_API_BASE_URL` is present at build time. If the API is absent/offline, or if multiple vendor chips are selected (the API accepts one vendor filter at a time), the app falls back to the bundled MiniSearch index. The Cloudflare Pages build uses same-origin `/api/*`; `apps/web/functions/` proxies those requests to the current self-hosted API origin configured in `apps/web/wrangler.toml`.
+These are POSIX-shell examples. Uploading only static assets without Functions
+can leave the page visible while search fails; `/healthz`, `/api/meta`, and
+`/api/search` exercise the public proxy chain. The self-host release build is
+`apps/worker/scripts/build-sqlite-db.mjs`, with explicit full-corpus input and
+`--search-hints data/search-hints.jsonl` for the curated search-only hints.
 
-For a local API-first web smoke, run the self-hosted API and then build or serve the web app with the same public env var:
-
-```bash
-PUBLIC_KARAOKE_API_BASE_URL=http://127.0.0.1:8787 corepack pnpm --filter @karaoke/web dev
-```
-
-The weekly crawl workflow runs separately and opens a `crawl-output` pull request instead of pushing data directly to `main`.
-
-### Self-hosted search API
-
-The search API lives in `apps/worker` as a plain Node HTTP server over a SQLite database. (The previous Cloudflare Workers + D1 deploy path was removed on 2026-06-13; CF account teardown is handled outside this repo.)
-
-Build the SQLite search database from the committed corpus, then serve it:
-
-```bash
-# Build apps/worker/.build/sqlite/songs.sqlite from apps/web/public/data/songs.json
-# (the output directory is gitignored scratch space).
-corepack pnpm --filter @karaoke/worker run sqlite:build
-
-# Compile and start the API server.
-corepack pnpm --filter @karaoke/worker build
-KARAOKE_SQLITE_DB_PATH=apps/worker/.build/sqlite/songs.sqlite corepack pnpm --filter @karaoke/worker run serve:node
-```
-
-`sqlite:build` accepts `--input`/`--output` overrides. Server environment variables:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `KARAOKE_SQLITE_DB_PATH` | (required) | Path to the SQLite database built by `sqlite:build`. |
-| `HOST` / `PORT` | `127.0.0.1` / `8787` | Listen address. |
-| `KARAOKE_CORS_ORIGIN` | unset | Value for `Access-Control-Allow-Origin` when serving a browser frontend. |
-| `KARAOKE_RATE_LIMIT_PER_MINUTE` | unset (off) | Per-client request cap per minute. |
-| `KARAOKE_TRUST_PROXY_HEADERS` | unset (off) | Trust `X-Forwarded-For`/`CF-Connecting-IP` for rate-limit client keys (set only behind a trusted proxy). |
-
-CI runs `sqlite:build` against the committed corpus on every PR — it schema-validates every record, rejects duplicate ids, and proves the self-host database builds.
+Primary metadata sources are [j-pop-playlist.tistory.com](https://j-pop-playlist.tistory.com/),
+TJ Media, KY kysing, and JOYSOUND. The blog supplies substantial Korean metadata
+and cross-vendor mappings. Each SongRecord retains a source URL.
 
 ## License
 
-MIT License (`MIT`). See [LICENSE](LICENSE).
+[MIT](LICENSE).

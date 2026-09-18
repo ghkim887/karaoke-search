@@ -1,7 +1,7 @@
 /**
  * Typed UI-string catalogs for the three chrome locales (Korean / English /
  * Japanese). This is chrome i18n only — song DATA fields (`title_ko` etc.) are
- * out of scope (see docs/ROADMAP.md §R2).
+ * out of scope (see docs/ARCHITECTURE.md (Search and serving)).
  *
  * The `ko` catalog is Korean-only chrome: every user-facing string is Korean,
  * with no bilingual `한국어 / English` fragments. The one intentional exception is

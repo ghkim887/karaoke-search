@@ -813,7 +813,7 @@ describe('classifyRecordWithReason — filter-seam script guard (jpn-admit-artis
   // Korean script (Hangul present, no Japanese script over `${title} ${artist}`,
   // the #97-gate discriminator). proEnrichmentMap is EMPTY in these cases —
   // mirroring the classify-time seam where the lagging per-song KOR
-  // nationalcode has not been written yet (docs/ROADMAP.md "TJ filter seam").
+  // nationalcode has not been written yet (docs/PROJECT-KNOWLEDGE.md (TJ filter chain)).
 
   it('vetoes an artist-vote admit for a Hangul-titled synthetic Korean act NOT on any drop list → drop / no-admit-path', () => {
     const cache = emptyCache();
@@ -890,7 +890,7 @@ describe('filter-seam script guard — 2026-07-09 incident rows', () => {
   // NOT on any drop list — proving the seam no longer depends on a
   // hand-maintained entry. BOYNEXTDOOR / "Nice Guy" is the Latin-titled
   // residual tail (no Hangul script signal) that the guard cannot see
-  // (docs/ROADMAP.md "TJ filter seam"): its clone still admits, so its
+  // (docs/PROJECT-KNOWLEDGE.md (TJ filter chain)): its clone still admits, so its
   // curated drop-list entry stays load-bearing.
 
   it('루시 / 1년 365일 (tj-32100): real drop-list entry rejects at the deny-list step', () => {
@@ -956,7 +956,7 @@ describe('classifyRecordWithReason — simplified-Chinese guard (jpn-admit-artis
   // guard vetoes an artist-vote admit when the row carries a curated PRC-only
   // simplified Han character over `${title} ${artist}`. proEnrichmentMap is EMPTY
   // in these cases — the lagging per-song nationalcode seam, exactly as for the
-  // Korean-script guard (docs/ROADMAP.md "TJ filter seam").
+  // Korean-script guard (docs/PROJECT-KNOWLEDGE.md (TJ filter chain)).
 
   it('vetoes an artist-vote admit for a simplified-Chinese-titled synthetic Mandopop act NOT on any drop list → drop / no-admit-path', () => {
     const cache = emptyCache();

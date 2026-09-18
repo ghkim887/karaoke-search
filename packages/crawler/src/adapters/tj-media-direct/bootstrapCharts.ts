@@ -23,7 +23,7 @@ import { searchSongByArtist } from './searchSong.js';
  *
  * The chart endpoint does NOT return `nationalcode` per item, but the
  * `strType` filter implicitly tags everything in the genre. The genre map
- * (verified via `docs/research/2026-04-29-tj-media-api-surface.md` §2):
+ * (verified via `docs/PROJECT-KNOWLEDGE.md#tj-api-observations`):
  *   - `strType=3` → JPOP (was the only genre swept pre-Phase-1).
  *   - `strType=1` → 가요 (K-pop) — added in Phase 1 to source KOR votes.
  *
@@ -73,7 +73,7 @@ const CONFIDENT_THRESHOLD = 3;
  * Chart genres swept on each bootstrap pass.
  *
  * `strType=1` is K-pop (가요) and `strType=3` is JPOP, per the genre table
- * in `docs/research/2026-04-29-tj-media-api-surface.md` §2 (probed live by
+ * in `docs/PROJECT-KNOWLEDGE.md#tj-api-observations` (probed live by
  * the API-surface research pass on 2026-04-29).
  *
  * `voteAs` selects which vote slot in the artist's `votes` tally a confident

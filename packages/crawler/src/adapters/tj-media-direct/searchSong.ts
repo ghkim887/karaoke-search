@@ -11,7 +11,7 @@ import {
  * `/legacy/api/searchSong` HTTP helper.
  *
  * Endpoint contract (live-verified 2026-04-29 — see
- * `docs/research/2026-04-29-tj-media-api-surface.md`):
+ * `docs/PROJECT-KNOWLEDGE.md#tj-api-observations`):
  *
  *   POST https://www.tjmedia.com/legacy/api/searchSong
  *   Content-Type: application/x-www-form-urlencoded

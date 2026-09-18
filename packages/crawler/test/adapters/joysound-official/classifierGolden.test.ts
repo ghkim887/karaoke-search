@@ -34,7 +34,7 @@ import type {
  *     match can never be LOST — dropout is structurally impossible) and that the
  *     only strings on which they differ are the documented widening zones.
  *
- * See docs/ROADMAP.md §"JOYSOUND classifier safe-predicate unification".
+ * See docs/PROJECT-KNOWLEDGE.md#classifier-replay-limits.
  */
 
 function listItem(over: Partial<JoysoundListItem>): JoysoundListItem {
@@ -310,8 +310,7 @@ describe('classifier golden — Phase-1 divergence code points (kana)', () => {
 //     each beating the kana listing title that formerly admitted.
 // All foreign-name flips are DROP widenings on rows whose ONLY foreign evidence
 // is a code point the old regex missed; the kana listing title itself is
-// unaffected (Part A / B1 still admit genuine kana rows). See docs/ROADMAP.md
-// §"JOYSOUND classifier safe-predicate unification".
+// unaffected (Part A / B1 still admit genuine kana rows). See docs/PROJECT-KNOWLEDGE.md#classifier-replay-limits.
 // ---------------------------------------------------------------------------
 describe('classifier golden — Phase-2 divergence code points (Han/Hangul unification)', () => {
   const bare = (cp: string) => listItem({ songName: cp, artistName: cp });

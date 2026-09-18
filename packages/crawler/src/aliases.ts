@@ -9,7 +9,7 @@ import { normalize } from './normalize.js';
  * happens to equal a known alias of another canonical are re-keyed to the
  * canonical surface form.
  *
- * Spec: docs/superpowers/specs/2026-05-04-artist-alias-dedup-design.md.
+ * Spec: docs/PROJECT-KNOWLEDGE.md (Merger and alias resolution).
  *
  * Splitter scope: ONLY the full-width pipe `｜` (U+FF5C). The ASCII `|`
  * (U+007C) is intentionally NOT a delimiter — the only known ASCII-pipe band

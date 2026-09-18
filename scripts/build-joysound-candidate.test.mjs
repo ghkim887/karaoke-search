@@ -398,7 +398,7 @@ describe('CHECKPOINT-1 exclusion (excludeCheckpoint1Admits)', () => {
     }));
   }
 
-  it('pins the 3 owner-removed SUSPECT selSongNos (tasks/checkpoint1-screening.md)', () => {
+  it('pins the three screened-out selection numbers', () => {
     expect(CHECKPOINT1_EXCLUDED_SEL_SONG_NOS).toEqual(['148140', '153397', '735357']);
   });
 

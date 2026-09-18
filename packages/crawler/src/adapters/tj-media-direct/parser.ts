@@ -219,7 +219,7 @@ export function parseCatalogResponse(
  * without going through the JSON-extraction wrapper.
  *
  * Filter chain (post 2026-06 FP/FN audit) — implemented as a typed
- * FilterStep[] reducer. CLAUDE.md gotcha: the order is LOAD-BEARING; do not
+ * FilterStep[] reducer. docs/PROJECT-KNOWLEDGE.md gotcha: the order is LOAD-BEARING; do not
  * reorder. Authoritative order: see the numbered list on FILTER_STEPS in
  * filterSteps.ts. If no step admits, drop.
  */

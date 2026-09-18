@@ -20,7 +20,7 @@
 // CHECKPOINT-1: the detail sweep started with a stale 175-entry ALLOW
 // classifier; the owner later removed 3 SUSPECT entries (Korean-language
 // songs) from reviewedJoysoundOverrides.ts (175 -> 172, see
-// tasks/checkpoint1-screening.md). Depending on when the sweep picked up the
+// docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs). Depending on when the sweep picked up the
 // rebuilt classifier, the decision log may record those 3 selSongNos as
 // admits (stale dist) or drops — either way they must NOT enter the corpus,
 // so this builder EXCLUDES any admit on them (`excludeCheckpoint1Admits`)
@@ -188,7 +188,7 @@ function admitNumberKey(entry) {
  * CHECKPOINT-1 SUSPECT selSongNos (dashless). The detail sweep started with a
  * stale 175-entry ALLOW classifier in memory; the owner removed these 3
  * Korean-language songs from reviewedJoysoundOverrides.ts afterwards
- * (175 -> 172, see tasks/checkpoint1-screening.md). Depending on when the
+ * (175 -> 172, see docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs). Depending on when the
  * sweep picked up the rebuilt classifier, the decision log may record them as
  * admits (stale dist) or drops — either way they must NOT (re-)enter the
  * corpus. The real 20260610 log records all 3 as `drop`/`foreign-korean`, so
@@ -214,7 +214,7 @@ export const CHECKPOINT1_EXCLUDED_SEL_SONG_NOS = ['148140', '153397', '735357'];
  * decision — collected by `readJsonlAdmits`) is used only to report
  * `droppedInLog`; it no longer gates the guard. FAIL-FAST only if a SUSPECT
  * admit somehow survives exclusion (number-key matching is broken) — see
- * tasks/checkpoint1-screening.md.
+ * docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs.
  *
  * @param {Record<string, unknown>[]} admits  decision-log admit rows
  * @param {{ selSongNo: string, decision: string }[]} [checkpoint1Decisions]
@@ -231,11 +231,11 @@ export function excludeCheckpoint1Admits(admits, checkpoint1Decisions) {
   // The loop above removes every admit on a SUSPECT number by construction, so
   // `kept` must contain none of them. If one survived, number-key matching is
   // broken — abort rather than let an owner-removed Korean-language song
-  // (re-)enter the corpus (see tasks/checkpoint1-screening.md).
+  // (re-)enter the corpus (see docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs).
   const survived = kept.filter((entry) => targets.has(admitNumberKey(entry)));
   if (survived.length > 0) {
     throw new Error(
-      `[build-joysound-candidate] CHECKPOINT-1 guard: ${survived.length} SUSPECT admit(s) survived exclusion (selSongNos [${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')}]) — number-key matching is broken; see tasks/checkpoint1-screening.md.`,
+      `[build-joysound-candidate] CHECKPOINT-1 guard: ${survived.length} SUSPECT admit(s) survived exclusion (selSongNos [${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')}]) — number-key matching is broken; see docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs.`,
     );
   }
   const droppedInLog = (checkpoint1Decisions ?? []).filter((d) => d.decision !== 'admit').length;
@@ -672,7 +672,7 @@ async function main() {
   // CHECKPOINT-1: drop any admit on the 3 owner-removed SUSPECT numbers before
   // ANY downstream stage (record building AND conflict resolution). A current
   // sweep that no longer lists them is fine (nothing to exclude) — see
-  // tasks/checkpoint1-screening.md.
+  // docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs.
   const {
     kept: admits,
     excluded: checkpoint1Excluded,
@@ -1017,7 +1017,7 @@ No flags besides -h/--help; all paths are hardcoded:
 
 CHECKPOINT-1: any admit row for selSongNos ${CHECKPOINT1_EXCLUDED_SEL_SONG_NOS.join(', ')} is
 excluded (SUSPECTs removed from reviewedJoysoundOverrides.ts after the sweep
-started — see tasks/checkpoint1-screening.md). The build fails fast unless the
+started — see docs/PROJECT-KNOWLEDGE.md#joysound-screening-and-stale-decision-logs). The build fails fast unless the
 log contains exactly one row per number (any decision).
 
 Heap: parses the ~12 MB corpus + ~291k decision rows — run with
