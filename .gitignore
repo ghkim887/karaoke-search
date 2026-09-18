@@ -7,14 +7,8 @@ dist/
 .cache/
 *.tsbuildinfo
 
-# Worker local scratch artifacts. sqlite:build writes its output under
-# apps/worker/.build/ (backend-neutral name). apps/worker/.wrangler/ is the
-# historical output dir name (Cloudflare removed 2026-06-13); kept so existing
-# local scratch state (e.g. cached crawl audits) stays ignored.
-# apps/web/.wrangler/ is Cloudflare Pages' local dev/build state and is still
-# live — see apps/web/wrangler.toml.
+# Worker SQLite build output and Cloudflare Pages local dev/build state.
 apps/worker/.build/
-apps/worker/.wrangler/
 apps/web/.wrangler/
 
 # Logs
@@ -28,9 +22,6 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
-
-# OMC session state — never commit.
-.omc/
 
 # Python
 __pycache__/
@@ -52,17 +43,9 @@ desktop.ini
 # the repo is intentionally agent-tooling-agnostic).
 CLAUDE.md
 
-# Playwright MCP tooling artifact
-.playwright-mcp/
-
-# CodeGraph generated local index
-.codegraph/
-
-# Playwright MCP screenshots from local verification runs
-apps/web/.playwright-mcp/
+# Local browser verification output
 apps/web/test-results/
 phase4-*.png
-.superpowers/
 .tmp_review/
 scripts/data/medium-chunk-*.json
 scripts/data/medium-retry-*.json
