@@ -590,7 +590,9 @@ The full-pack direction was retired July 20 in favor of the JSON subset.
 
 The v25 subset update moved mean parity Jaccard from 0.621 to 0.603 with the
 same top-one rate; seven query reductions were reviewed as KY-related ranking
-changes rather than missing target songs. Snapshot regeneration records a
+changes rather than missing target songs. The v26 update (+262 rows, 224 rows
+changed) moved it from 0.603 to 0.601 with the same top-one rate; the four
+changed queries kept their top-four results. Snapshot regeneration records a
 new baseline; it does not prove that every ranking change is acceptable.
 
 ## Translation and supplemental-catalog history

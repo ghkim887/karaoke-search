@@ -11,32 +11,40 @@ Korean, English, and Japanese; favorites are device-local, with no account.
 
 ## Current state
 
-Verified 2026-09-17 against code at `4e37fa1`, the production SQLite database,
-GitHub workflow state, and the public API. These are dated measurements.
+Verified 2026-09-23 against the v26 production SQLite database, the public
+API, and the committed offline bundle. These are dated measurements.
 
 | Artifact | Current contents |
 | --- | --- |
-| Serving release | v25, `data-2026-07-20-v25-reviewed-cleanup` |
-| Serving corpus | 312,571 songs |
-| Vendor coverage | TJ 6,111; KY 4,787; JOYSOUND 312,147; counts overlap |
-| Bundled offline corpus | 26,398 songs, 11,248,292 bytes |
-| API `dbUpdatedAt` | `2026-07-16`, derived from source crawl timestamps |
+| Serving release | v26, `data-2026-09-18-v26-tj-refresh` |
+| Serving corpus | 312,701 songs |
+| Vendor coverage | TJ 6,590; KY 4,787; JOYSOUND 312,147; counts overlap |
+| Bundled offline corpus | 26,660 songs, 11,355,330 bytes |
+| API `dbUpdatedAt` | `2026-09-18`, derived from source crawl timestamps |
 | Scheduled crawl | `disabled_manually`; indefinite hold remains in effect |
 
 The offline bundle contains every serving row with a TJ number, a KY number,
 or a `blog-*` ID. It is a subset of the serving corpus, not the full catalog.
-The deployed bundle and the committed bundle have the same SHA-256:
-`cd39370e1a9a15cc185fa262708a4f41bacb0637ca1d076ab495b1adc642492e`.
+The committed bundle SHA-256 is
+`4f17560f7bc97a0b62354e06b937e8914c640e6390930a8ab7856e6ecab1c105`.
+
+v26 adds 479 TJ numbers from a September 18 TJ-only refresh to v25: 349
+attach to existing rows and 130 are new `tj-*` rows. Seven TJ display
+corrections are included. Every v25 ID and KY/JOYSOUND number is retained.
 
 ## Verification evidence
 
-The September 17 check validated all 26,398 bundled records and confirmed the
-same bundle hash on the public site. Public health/meta/search requests
-succeeded, including one record with TJ 26145 / KY 40449 / JOYSOUND 1546.
+The September 23 promotion check passed SQLite `quick_check`, found no lost
+v25 ID or vendor number, and served TJ 90146 / JOYSOUND 432954 and the
+unchanged TJ 26145 / KY 40449 / JOYSOUND 1546 record through the public proxy.
+All 26,660 bundled records validated against the schema.
 
 - [Feature-commit CI](https://github.com/ghkim887/karaoke-search/actions/runs/29739957509):
   2,263 JS/TS tests, 76 Python tests, and two E2E tests passed on July 20.
   This is the historical feature-build result, not a new full-suite run.
+- NAS `runs/tj-refresh-20260918-141901/` holds the v26 TJ collection, change
+  report, and per-number attach decisions; the release directory holds
+  `update-report.json` and `SHA256SUMS`.
 - NAS `runs/ky-v23-20260716/` holds v23–v25 reconstruction and comparison
   reports; `audit-v25/unmerged-xref.json` records the 424 residual decisions.
 - [Merge evidence](scripts/data/b-review-merge-verdicts/) and

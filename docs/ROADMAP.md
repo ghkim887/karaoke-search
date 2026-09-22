@@ -1,21 +1,21 @@
 # Roadmap
 
-Updated 2026-09-17 against code at `4e37fa1`, GitHub workflow state, and the
-running v25 release. [The README](../README.md#current-state) contains
-measurements; [project knowledge](PROJECT-KNOWLEDGE.md) records the relevant
-implementation rationale and past failures.
+Updated 2026-09-23 against GitHub workflow state and the running v26 release.
+[The README](../README.md#current-state) contains measurements;
+[project knowledge](PROJECT-KNOWLEDGE.md) records the relevant implementation
+rationale and past failures.
 
 ## Current baseline
 
-- v25 serves 312,571 songs; vendor coverage is TJ 6,111 / KY 4,787 /
-  JOYSOUND 312,147 (overlapping counts).
+- v26 serves 312,701 songs; vendor coverage is TJ 6,590 / KY 4,787 /
+  JOYSOUND 312,147 (overlapping counts). v26 is v25 plus a TJ-only refresh.
 - Reviewed merge tables have 838 units: E 271, F 482, three-way attachment 85.
   The v25 report records 834 applied units and four conflict skips.
 - The remaining 424 JOYSOUND-less audit records are accounted for:
   244 genuine coverage gaps, 173 rejected merges, four genuine number conflicts,
   and three uncertain/no-action cases. There is no unclassified decision queue.
 - The offline subset is complete for its chosen scope: TJ OR KY OR `blog-*`,
-  26,398 records. Full-corpus offline SQLite/OPFS work is retired.
+  26,660 records in v26. Full-corpus offline SQLite/OPFS work is retired.
 - KY crawling and v23–v25 integration are implemented. The July 10 survey's
   per-number enumeration proposal was superseded by the Japanese index walk.
 
@@ -26,8 +26,16 @@ implementation rationale and past failures.
 The regular crawl is on indefinite hold. GitHub reports `disabled_manually`,
 which prevents scheduled and manual-dispatch runs despite the YAML definition.
 The timing of resumption remains undecided; this documentation update does not
-change that workflow state. `dbUpdatedAt` remains `2026-07-16` because later
-releases recomposed existing inputs rather than fetching new source data.
+change that workflow state. `dbUpdatedAt` moved to `2026-09-18` with v26, whose
+new source data is TJ only; blog, KY, and JOYSOUND inputs are unchanged since
+July.
+
+v26 applied its 479 TJ numbers outside the crawl pipeline: a number attached
+only to a single unambiguous existing row without a TJ number, otherwise it
+became a standalone `tj-*` row. A full re-merge of the same input reports 67
+merger conflicts, which the attach step did not act on. The next resumed
+crawl's merge output needs comparison against those 349 attachments and 130
+standalone rows.
 
 The next resumed crawl is the integration point for changes that have been
 tested in code or applied to frozen data but have not completed that entire
