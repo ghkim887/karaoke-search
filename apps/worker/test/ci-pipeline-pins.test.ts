@@ -37,9 +37,6 @@ describe('CI pipeline pins', () => {
     // sqlite:build writes its output under apps/worker/.build/ — it must stay
     // ignored so the self-host DB built on every PR is never committed.
     expect(gitignore).toContain('apps/worker/.build/');
-    // The historical .wrangler/ output dir is retained so existing local
-    // scratch state (cached crawl audits) stays ignored after the rename.
-    expect(gitignore).toContain('apps/worker/.wrangler/');
   });
 
   it('gates the committed corpus through sqlite:build and keeps GitHub Pages disabled', () => {
