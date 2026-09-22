@@ -74,7 +74,7 @@ uploads these artifacts and includes attribution in its data PR.
 ## Data artifacts
 
 - `apps/web/public/data/songs.json`: tracked offline subset and local development
-  corpus; v25 has 26,398 rows (TJ number OR KY number OR `blog-*` ID).
+  corpus; v26 has 26,660 rows (TJ number OR KY number OR `blog-*` ID).
 - `apps/web/public/data/tj-search-cache.json`: tracked TJ enrichment cache.
 - `data/search-hints.jsonl`: tracked search-only strings.
 - `scripts/data/`: probe catalogs, reviewed decisions, translation caches,

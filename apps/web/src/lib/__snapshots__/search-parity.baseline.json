@@ -2,12 +2,12 @@
   "_readme": "AUTO-GENERATED baseline for search-parity.golden.test.ts. Regenerate with UPDATE_PARITY_SNAPSHOT=1 (see the test file header). jaccard/top1Match are the FROZEN divergence floor; web/worker lists are the top-10 ids at generation time (informational, for reading divergences). Do not hand-edit.",
   "corpus": {
     "path": "apps/web/public/data/songs.json",
-    "sha256": "cd39370e1a9a15cc185fa262708a4f41bacb0637ca1d076ab495b1adc642492e",
-    "records": 26398
+    "sha256": "4f17560f7bc97a0b62354e06b937e8914c640e6390930a8ab7856e6ecab1c105",
+    "records": 26660
   },
   "aggregate": {
     "queryCount": 61,
-    "meanJaccard": 0.602813,
+    "meanJaccard": 0.601087,
     "top1MatchRate": 0.786885
   },
   "queries": {
@@ -1120,10 +1120,10 @@
         "joysound-2486",
         "blog-576-134",
         "tj-25526",
+        "joysound-149568",
         "ky-43989",
         "blog-169-2",
-        "blog-168-51",
-        "blog-361-113"
+        "blog-168-51"
       ],
       "worker": [
         "blog-1172-61",
@@ -1201,7 +1201,7 @@
     "short-love": {
       "query": "love",
       "vendors": [],
-      "jaccard": 0.052632,
+      "jaccard": 0,
       "top1Match": false,
       "web": [
         "blog-828-139",
@@ -1225,7 +1225,7 @@
         "blog-730-324",
         "blog-790-31",
         "tj-52956",
-        "tj-25159"
+        "joysound-944968"
       ]
     },
     "short-jamo-g": {
@@ -1347,7 +1347,7 @@
       "vendors": [
         "joysound"
       ],
-      "jaccard": 0.052632,
+      "jaccard": 0,
       "top1Match": false,
       "web": [
         "blog-828-139",
@@ -1371,7 +1371,7 @@
         "blog-730-324",
         "blog-790-31",
         "tj-52956",
-        "tj-25159"
+        "joysound-944968"
       ]
     },
     "vendor-yoasobi-tj": {
@@ -1511,14 +1511,14 @@
       "worker": [
         "tj-27249",
         "blog-525-6",
+        "joysound-242488",
         "tj-27307",
         "tj-28585",
         "tjpdf-68045",
         "tj-25517",
         "tj-25840",
         "tj-26180",
-        "blog-1508-84",
-        "blog-263-58"
+        "blog-1508-84"
       ]
     }
   }
