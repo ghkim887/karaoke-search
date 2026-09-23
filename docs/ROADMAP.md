@@ -83,6 +83,18 @@ matching implications need evaluation alongside source coverage.
 - Distinct valid numbers and ambiguous cuts stay separate where the current
   one-number-per-vendor model cannot safely combine them.
 
+### Operations follow-ups
+
+- The NAS root `README-ops.md` (outside Git) still describes v25 as the
+  `db/current` target and v24 as the retained previous release. As of
+  2026-09-23 the target is v26, v25 is the rollback release, and v24 has been
+  pruned. The file lives in the production tree and needs a server-side edit.
+- The 2026-09-23 v26 restart of `karaoke-api` reported `NeedDaemonReload=yes`.
+  However, `/etc/systemd/system/karaoke-api.service` is unchanged since
+  2026-06-13 and has no drop-ins. The cause is unknown and `daemon-reload` was
+  not run. The next reload or reboot applies whatever unit state is on disk,
+  so the cause should be found before then.
+
 ## Completed work relevant to future changes
 
 | Work | Result |
